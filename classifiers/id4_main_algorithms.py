@@ -3,9 +3,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_selection import SequentialFeatureSelector
 from sklearn.pipeline import make_pipeline
-from sklearn.metrics import confusion_matrix, accuracy_score, roc_auc_score, f1_score
+from sklearn.metrics import confusion_matrix, accuracy_score, roc_auc_score, f1_score, make_scorer
 from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import KFold, cross_val_score
 import pandas as pd
 import numpy as np
 import LogitBoost
@@ -37,6 +38,13 @@ def evaluation(model, testing_features, testing_target, estimators=None):
 
     # Determine accuracy of classifier
     accuracy = round(accuracy_score(testing_target, predictions) * 100, 3)
+
+    # accuracy_scorer = make_scorer(accuracy_score)
+
+    # if estimators is None:
+    #     accuracy = round(np.mean(cross_val_score(model, testing_features, testing_target, scoring=accuracy_scorer), 3))
+    # else:
+    #     accuracy = round(np.mean(cross_val_score(estimators, testing_features, testing_target, scoring=accuracy_scorer), 3))
 
     print("Overall Accuracy: " + str(accuracy) + "%")
 
