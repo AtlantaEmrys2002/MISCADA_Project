@@ -9,6 +9,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import KFold, cross_val_score
 import pandas as pd
 import numpy as np
+# Found this implementation of LogitBoost
 import LogitBoost
 from sklearn.svm import SVC
 
@@ -218,7 +219,9 @@ boosted_lr(X_train, y_train, X_test, y_test)
 
 # Key References
 
+# Dataset Overviews - https://cran.r-project.org/web/packages/fermicatsR/fermicatsR.pdf
 # Pandas Documentation - https://pandas.pydata.org/docs/
+# R Code from ID4 - https://scipp-legacy.pbsci.ucsc.edu/~pablo/pulsarness.html
 # sklearn Documentation - https://scikit-learn.org/stable/index.html
 
 # Bug Fixes

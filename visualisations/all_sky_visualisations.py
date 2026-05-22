@@ -4,10 +4,11 @@ import numpy as np
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 import matplotlib.pyplot as plt
+import pandas
+
+# GLOBULAR CLUSTER DISTRIBUTION
 
 # Look for all globular clusters in 4FGL (baseline)
-
-
 catalog = QTable.read('/Volumes/T7/data/catalog/4FGL_DR4.fit', format='fits', hdu=1)
 
 # Clean CLASS1 column (i.e. remove empty spaces and then ensure letter case is all the same - lower)
@@ -21,6 +22,12 @@ globular_clusters = globular_clusters['Source_Name', 'RAJ2000', 'DEJ2000', 'GLON
 
 # Format coordinates of each globular cluster into format compatible with astropy
 coords = list(zip(globular_clusters['RAJ2000'].value, globular_clusters['DEJ2000'].value))
+
+# Save coordinates of each globular cluster as CSV file
+df = pandas.DataFrame(data={"ra": globular_clusters['RAJ2000'].value, "dec": globular_clusters['DEJ2000'].value})
+df.to_csv("globular_cluster_coordiantes.csv", sep=',', index=False)
+
+# PLOT
 
 sky_coords = []
 
@@ -37,13 +44,16 @@ dec_rad = [k.dec.radian for k in sky_coords]
 fig, ax = plt.subplots(figsize=(8, 4.2), subplot_kw=dict(projection='aitoff'))
 plt.title('Distribution of Gamma-Ray Emitting Globular Clusters', pad=20)
 ax.grid(True)
-ax.scatter(ra_rad, dec_rad, marker='o', s=3)
+ax.scatter(ra_rad, dec_rad, marker='o', s=4, color='r')
 fig.subplots_adjust(top=0.95, bottom=0.0)
-plt.show()
 
-# N.B. if this method for selecting globular clusters does not work then try the extended sources ROI_num
+plt.savefig("4fgl_globular_cluster_distribution.png")
 
 # REFERENCES
 
 # Astropy Documentation - https://docs.astropy.org/en/stable/coordinates/index.html
-# Matplotlib Documentation - 
+# Matplotlib Documentation - https://matplotlib.org/stable/index.html
+
+# Bug fixing
+
+# CSV - https://stackoverflow.com/questions/2084069/create-a-csv-file-with-values-from-a-python-list
