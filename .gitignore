@@ -1,2 +1,7 @@
 .idea/
 *__pycache__*
+*.gif
+*.txt
+*.csv
+*.fits
+*DS_Store*
