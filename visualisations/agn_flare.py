@@ -63,14 +63,14 @@ for d in range(0, days - 1):
 
     frames.append(H)
 
-frames = np.asarray(frames)
+# frames = np.asarray([np.sqrt(f) for f in frames])
 
 
 def animate(frame):
 
     im.set_data(frames[frame])
 
-    plt.title(months[frame // 2])
+    plt.title(months[frame // 2] + str(frame))
 
     print(frame)
 
@@ -82,7 +82,7 @@ anim = animation.FuncAnimation(fig, animate, frames=range(0, days - 1), blit=Fal
 
 writer = animation.PillowWriter(fps=2)
 
-anim.save("./agn_flare_fps2.gif", writer=writer,)
+anim.save("./agn_flare_fps2_sqrt.gif", writer=writer,)
 
 plt.show()
 

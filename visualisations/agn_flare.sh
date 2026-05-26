@@ -15,13 +15,6 @@ conda init
 
 conda activate fermi
 
-## Select source class and front and back events
-#gtselect evclass=128 evtype=3 infile=$EVENTS outfile=$OUTFILE ra=330.68 dec=42 rad=5 tmin=749433605 tmax=752025605 \
-#  emin=50 emax=500000 zmax=180
-#
-## Select correct good time intervals and correct exposure
-#gtmktime scfile=$SPACECRAFTFILE filter="(DATA_QUAL>0)&&(LAT_CONFIG==1)" roicut=no evfile=$OUTFILE outfile=$OUTFILEGTI
-
 ls ./agn_flare_2/*_PH* > ./agn_flare_2/events.txt
 
 # Select source class and front and back events - TRIED ZENitH CUT OF 90 TO GET RID OF EARTH LIMB (zmax = 90 instead of 180)
