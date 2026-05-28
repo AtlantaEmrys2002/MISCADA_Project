@@ -16,20 +16,69 @@
 # 1. Luminosity Function - use 3FGL (and cite the paper in notes so can cite in final report) to generate sources
 # according to luminosity function - see graph in paper.
 # 2. Simulate other source types, e.g. SN, differentiate between AGN types
-# 3. XML saving
 # 4. DON'T FORGET TO ADD IN DIFFUSE BACKGROUND (GALACTIC AND INTERGALACTIC TO XML FILES)
 # 5. CHECK MIN-MAX VALUES IN XML
+# 6. Think you include the background files during gtmodel - but check!!!
+# 7. CHECK ALL UNITS - ID43
 
 # LIBRARIES
 import numpy as np
 from scipy.integrate import quad
 from astropy.table import QTable
 from astropy import units as u
-from astropy.coordinates import SkyCoord, FK5
+from astropy.coordinates import SkyCoord
 import matplotlib.pyplot as plt
 import warnings
-import xml.etree.ElementTree as ET
 from xml.dom import minidom
+
+# VISUALISATIONS
+
+
+def spatial_visualisations(galactic_longitudes, galactic_latitudes, num_agn, source_type='AGNs'):
+
+    xs, ys = [], []
+
+    for k in range(num_agn):
+
+        ra_dec = SkyCoord(l=galactic_longitudes[k] * u.rad, b=galactic_latitudes[k] * u.rad,
+                          frame='galactic').transform_to('icrs')
+
+        xs.append(ra_dec.ra.to_value(u.degree))
+        ys.append(ra_dec.dec.to_value(u.degree))
+
+    fig, ax = plt.subplots(figsize=(8, 4.2), subplot_kw=dict(projection="aitoff"))
+    ax.set_title("Distribution of Simulated " + source_type + " on the sky", pad=20)
+    ax.grid(True)
+    ax.scatter(xs, ys, marker='o', s=2, alpha=0.3)
+    fig.subplots_adjust(top=0.95, bottom=0.0)
+    plt.show()
+
+
+def agn_luminosity_function(energy_fluxes):
+
+    plt.xscale('log')
+
+    plt.xlabel('Energy Flux')
+    plt.ylabel('No. Sources')
+    #
+    # print(energy_fluxes.shape)
+    #
+    print(energy_fluxes)
+
+    print(min(energy_fluxes))
+    print(max(energy_fluxes))
+
+    bin_edges = 10**np.linspace(-15, -8, 40)
+
+    # print(bin_edges)
+
+    counts, bins = np.histogram(energy_fluxes, bins=bin_edges)
+
+    plt.stairs(counts, bins)
+
+    plt.show()
+
+
 
 # SPECTRAL MODELS
 
@@ -59,9 +108,15 @@ def pulsar_spectral_model(E, F_0, E_0, Gamma, a, b):
 def energy_flux_agn(pivot_energy, flux_density, spectral_slope, curvature):
 
     # Integrate over 0.1 - 100 GeV
+    # with warnings.catch_warnings():
+    #     warnings.simplefilter("ignore")
+    #     energy = quad(agn_spectral_model, 0.1, 100, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        energy = quad(agn_spectral_model, 0.1, 100, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
+        energy = quad(agn_spectral_model, 100, 100000, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
+
+    # Convert from MeV to Erg (see ID43)
 
     return energy
 
@@ -69,7 +124,9 @@ def energy_flux_agn(pivot_energy, flux_density, spectral_slope, curvature):
 def s1_agn(pivot_energy, flux_density, spectral_slope, curvature):
 
     # Integrate above 1 GeV
-    s1 = quad(agn_spectral_model, 1, np.inf, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
+    # s1 = quad(agn_spectral_model, 1, np.inf, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
+
+    s1 = quad(agn_spectral_model, 1000, np.inf, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
 
     return s1
 
@@ -77,15 +134,21 @@ def s1_agn(pivot_energy, flux_density, spectral_slope, curvature):
 def s10_agn(pivot_energy, flux_density, spectral_slope, curvature):
 
     # Integrate above 1 GeV
-    s1 = quad(agn_spectral_model, 10, np.inf, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
+    # s1 = quad(agn_spectral_model, 10, np.inf, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
+
+    s1 = quad(agn_spectral_model, 10000, np.inf, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
+
 
     return s1
 
 
 def energy_flux_pulsar(pivot_energy, flux_density, spectral_slope, exponential_index, exponential_factor):
 
-    # Integrate over 0.1 - 100 GeV
-    energy = quad(pulsar_spectral_model, 0.1, 100, args=(pivot_energy, flux_density, spectral_slope,
+    # Integrate over 0.1 - 100 GeV - change to 100 - 100000 MeV
+    # energy = quad(pulsar_spectral_model, 0.1, 100, args=(pivot_energy, flux_density, spectral_slope,
+    #                                                      exponential_index, exponential_factor))[0]
+
+    energy = quad(pulsar_spectral_model, 100, 100000, args=(pivot_energy, flux_density, spectral_slope,
                                                          exponential_index, exponential_factor))[0]
 
     return energy
@@ -147,16 +210,17 @@ def agn_statistics(agns):
 
     mean_pivot_energy, std_pivot_energy = np.nanmean(pivot_energies), np.nanstd(pivot_energies, ddof=1)
 
-    # mean_log_flux_density, std_log_flux_density = np.nanmean(log_flux_densities), np.nanstd(log_flux_densities,
-    # ddof=1)
+    mean_log_flux_density, std_log_flux_density = np.nanmean(log_flux_densities), np.nanstd(log_flux_densities, ddof=1)
 
-    mean_flux_density, std_flux_density = np.nanmean(flux_densities), np.nanstd(flux_densities, ddof=1)
+    # mean_flux_density, std_flux_density = np.nanmean(flux_densities), np.nanstd(flux_densities, ddof=1)
 
-    tmp = (mean_flux_density**2) / (np.sqrt((mean_flux_density**2) + std_flux_density**2))
-
-    tmp2 = np.log(1 + ((std_flux_density**2)/(mean_flux_density**2)))
-
-    mean_log_flux_density, std_log_flux_density = np.log(tmp), np.sqrt(tmp2)
+    #
+    #
+    # tmp = (mean_flux_density**2) / (np.sqrt((mean_flux_density**2) + std_flux_density**2))
+    #
+    # tmp2 = np.log(1 + ((std_flux_density**2)/(mean_flux_density**2)))
+    #
+    # mean_log_flux_density, std_log_flux_density = np.log(tmp), np.sqrt(tmp2)
 
     return (mean_alpha, std_alpha, mean_pivot_energy, std_pivot_energy, mean_log_flux_density, std_log_flux_density,
             betas)
@@ -205,11 +269,13 @@ def generate_mock_agn_catalog(agn_stats, num_agns=4000):
     pivot_energies = np.random.normal(loc=mean_pivot_energy_agn, scale=std_pivot_energy_agn, size=num_agns)
 
     # Generate new flux densities - log-normal for flux densities
-    log_flux_densities = np.random.normal(loc=mean_log_flux_density_agn, scale=std_log_flux_density_agn, size=num_agns)
+    # log_flux_densities = np.random.normal(loc=mean_log_flux_density_agn, scale=std_log_flux_density_agn, size=num_agns)
+
+    flux_densities = np.random.lognormal(mean=mean_log_flux_density_agn, sigma=std_log_flux_density_agn, size=num_agns)
 
     # CHECK BELOW LINE
 
-    flux_densities = np.exp(mean_log_flux_density_agn + (std_log_flux_density_agn * log_flux_densities))
+    # flux_densities = np.exp(mean_log_flux_density_agn + (std_log_flux_density_agn * log_flux_densities))
 
     # flux_densities = np.exp(log_flux_densities)
 
@@ -227,6 +293,9 @@ def generate_mock_agn_catalog(agn_stats, num_agns=4000):
     # Energy fluxes
     energy_fluxes = np.fromiter((energy_flux_agn(x[0], x[1], x[2], x[3]) for x in parameters), np.float64)
 
+    # Convert energy fluxes so ergs included in units instead of photons - CHECK THIS IS NECESARY
+    energy_fluxes *= 1.602 * 10**(-6)
+
     # Select rows with valid energy fluxes
     mask = ~np.isnan(energy_fluxes)
     energy_fluxes = energy_fluxes[mask]
@@ -239,34 +308,33 @@ def generate_mock_agn_catalog(agn_stats, num_agns=4000):
 
     # IMPOrtANT - TAKE THESE TO BE AT INDEX 4 and 5 IN A GIVEN ROW
 
+    # l - need at 4
     galactic_longitudes = np.random.uniform(low=0, high=2*np.pi, size=len(parameters))
 
+    # b - need at 5
     sin_galactic_latitudes = np.random.uniform(low=-1, high=1, size=len(parameters))
     galactic_latitudes = np.arcsin(sin_galactic_latitudes)
 
+    # Combine two arrays to create mock catalog's spectral parameters
+    parameters = np.concatenate((parameters, np.array([galactic_longitudes]).T), axis=1)
+
+    # Combine two arrays to create mock catalog's spectral parameters
+    parameters = np.concatenate((parameters, np.array([galactic_latitudes]).T), axis=1)
+
+    # Remove all with energy fluxes below our chosen energy flux threshold
+    # N.B. Used expression found here - https://stackoverflow.com/questions/72404872/remove-rows-in-a-2d-numpy-array-if-
+    # they-contain-a-specific-element - to select desired rows
+
+    print(len(parameters))
+
+    parameters = parameters[~(parameters[:, 4] <= np.float64(3.4 * 10**(-13))), :]
+
+    print()
+
+    print(len(parameters))
+
     # CHECK - LUMINOSITY FUNCTION!!!! - WHAT ARE THEY DOING?
-
-    plt.xscale('log')
-
-    # print(energy_fluxes.shape)
-
-    # print(energy_fluxes)
-    #
-    # bin_edges = 10**np.linspace(-16, -5, 400)
-    #
-    # print(bin_edges)
-    #
-    # counts, bins = np.histogram(energy_fluxes, bins=bin_edges, cumulative=True)
-
-    # counts, bins = np.histogram(energy_fluxes, bins=10)
-    #
-    # plt.stairs(counts, bins)
-
-    plt.xlabel('Energy Flux')
-    plt.ylabel('No. Sources')
-
-
-    plt.show()
+    agn_luminosity_function(parameters[:, 4])
 
     # NOT FINISHED -
 
@@ -293,6 +361,21 @@ def agn_xml_writer(sources):
     root.appendChild(xml)
 
     # ADD SOURCES
+
+    # Background
+
+    # extragalactic_background = root.createElement("source")
+    #
+    # extragalactic_background.setAttribute("name", "EG")
+    # extragalactic_background.setAttribute("type", "DiffuseSource")
+    #
+    # xml.appendChild(extragalactic_background)
+
+    # Pulsars
+
+    # NEED TO FILL IN
+
+    # AGN
 
     # Ranges are taken from https://git.io/JO5FP - i.e. recommended by ID4
     agn_parameters = ["norm", "alpha", "Eb", "beta"]
@@ -361,12 +444,16 @@ def agn_xml_writer(sources):
         dec.setAttribute("name", "DEC")
         dec.setAttribute("scale", "1.0")
 
-        # Convert galactic coordinates to 
-        gc = SkyCoord(l=sources[k][4])
+        # Convert galactic coordinates to equatorial
 
-        # ra.setAttribute("value", str(sources[k][4]))
+        ra_dec = SkyCoord(l=sources[k][4] * u.rad, b=sources[k][5] * u.rad, frame='galactic').transform_to('icrs')
+        ra.setAttribute("value", str(ra_dec.ra.to_value(u.degree)))
+        dec.setAttribute("value", str(ra_dec.dec.to_value(u.degree)))
 
+        spatial.appendChild(ra)
+        spatial.appendChild(dec)
 
+        source.appendChild(spatial)
 
     # FORMAT
 
@@ -381,16 +468,16 @@ def agn_xml_writer(sources):
 
 
 
-# agn_rows, pulsar_rows = catalog_data_preparation("/Volumes/T7/data/catalog/4FGL_DR4.fit")
+agn_rows, pulsar_rows = catalog_data_preparation("/Volumes/T7/data/catalog/4FGL_DR4.fit")
 #
 # pulsar_statistics(pulsar_rows)
 #
 #
-# generate_mock_agn_catalog(agn_statistics(agn_rows), 4000)
+generate_mock_agn_catalog(agn_statistics(agn_rows), 4000)
 
 # generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows), 10)
 
-agn_xml_writer(sources=[[1, 2, 3, 4, 0, 45], [2, 4, 6, 8, 0, 45]])
+# agn_xml_writer(sources=[[1, 2, 3, 4, 0, 45], [2, 4, 6, 8, 0, 45]])
 
 
 # REFERENCES
