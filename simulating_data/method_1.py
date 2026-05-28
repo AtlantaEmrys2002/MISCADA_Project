@@ -1,4 +1,4 @@
-# This method is adapted from ID4. All code is my own (except where indicated), but  Python
+# This method is adapted from ID8. All code is my own (except where indicated), but  Python
 # implementation provided by the authors to *access* datacan be found here
 # are as follows:
 # 1) I wanted to find out how to simulate Fermi data and the description in the paper provided a step-by-step method.
@@ -56,17 +56,36 @@ def spatial_visualisations(galactic_longitudes, galactic_latitudes, num_agn, sou
 
 def agn_luminosity_function(energy_fluxes):
 
+    # I implemented this to recreate a plot style (luminosity function) shown in ID8
+
+    # 4FGL
+
+    catalog = QTable.read("/Volumes/T7/data/catalog/4FGL_DR4.fit", format='fits', hdu=1)
+
+    energy_fluxes_4fgl = catalog['Energy_Flux100'].value
+
+    plt.xscale('log')
+    plt.yscale('log')
+
+    plt.xlabel('Energy Flux')
+    plt.ylabel('No. Sources')
+
+    plt.xlim(10**-14, 10**-8)
+
+    plt.ylim(top=10**4)
+
+    bin_edges = 10**np.linspace(-14, -9, 50)
+
+    counts, bins = np.histogram(energy_fluxes_4fgl, bins=bin_edges)
+
+    plt.stairs(counts, bins, label='4fgl')
+
+    # SIMULATED
+
     plt.xscale('log')
 
     plt.xlabel('Energy Flux')
     plt.ylabel('No. Sources')
-    #
-    # print(energy_fluxes.shape)
-    #
-    print(energy_fluxes)
-
-    print(min(energy_fluxes))
-    print(max(energy_fluxes))
 
     bin_edges = 10**np.linspace(-15, -8, 40)
 
@@ -74,10 +93,35 @@ def agn_luminosity_function(energy_fluxes):
 
     counts, bins = np.histogram(energy_fluxes, bins=bin_edges)
 
-    plt.stairs(counts, bins)
+    plt.stairs(counts, bins, label='simulated')
+
+    plt.legend()
 
     plt.show()
 
+
+def fgl_agn_luminosity_function(file):
+
+    catalog = QTable.read(file, format='fits', hdu=1)
+
+    energy_fluxes = catalog['Energy_Flux100'].value
+
+    plt.xscale('log')
+
+    plt.xlabel('Energy Flux')
+    plt.ylabel('No. Sources')
+
+    bin_edges = 10**np.linspace(-15, -8, 40)
+
+    counts, bins = np.histogram(energy_fluxes, bins=bin_edges)
+
+    plt.stairs(counts, bins)
+
+    plt.legend(True)
+
+    plt.show()
+
+# fgl_agn_luminosity_function("/Volumes/T7/data/catalog/4FGL_DR4.fit")
 
 
 # SPECTRAL MODELS
@@ -258,6 +302,42 @@ def pulsar_statistics(pulsars):
             mean_pivot_energy, std_pivot_energy)
 
 
+# GENERATE FIXED NUMBER OF AGNS WITHIN GIVEN ENERGY FLUX RANGE FOR FLAT EXTRAPOLATION AT LOWER ENERGY FLUXES
+def agn_generation(agn_stats, energy_flux_low, energy_flux_high):
+
+    while True:
+
+        (mean_alpha_agn, std_alpha_agn, mean_pivot_energy_agn, std_pivot_energy_agn, mean_log_flux_density_agn,
+         std_log_flux_density_agn, betas_agn) = agn_stats
+
+        # Generate new pivot energy
+        pivot_energy = np.random.normal(loc=mean_pivot_energy_agn, scale=std_pivot_energy_agn, size=1)[0]
+
+        # Generate new flux density - log-normal for flux densities
+        flux_density = np.random.lognormal(mean=mean_log_flux_density_agn, sigma=std_log_flux_density_agn, size=1)[0]
+
+        # Generate new spectral slope (alpha)
+        spectral_slope = np.random.normal(loc=mean_alpha_agn, scale=std_alpha_agn, size=1)[0]
+
+        # Generate new curvature by directly sampling 4FGL
+        beta = np.random.choice(betas_agn, size=1, replace=True)[0]
+
+        energy_flux = energy_flux_agn(pivot_energy, flux_density, spectral_slope, beta) * 1.602 * 10**(-6)
+
+        # longitude
+        longitude = np.random.uniform(low=0, high=2 * np.pi, size=1)[0]
+
+        # latitude
+        sin_galactic_latitudes = np.random.uniform(low=-1, high=1, size=1)[0]
+        latitude = np.arcsin(sin_galactic_latitudes)
+
+        if (energy_flux >= energy_flux_low) and (energy_flux < energy_flux_high):
+
+            # print(pivot_energy, flux_density, spectral_slope, beta, energy_flux, longitude, latitude)
+
+            return np.asarray([pivot_energy, flux_density, spectral_slope, beta, energy_flux, longitude, latitude])
+
+
 def generate_mock_agn_catalog(agn_stats, num_agns=4000):
 
     # SPECTRAL PARAMETERS
@@ -269,15 +349,7 @@ def generate_mock_agn_catalog(agn_stats, num_agns=4000):
     pivot_energies = np.random.normal(loc=mean_pivot_energy_agn, scale=std_pivot_energy_agn, size=num_agns)
 
     # Generate new flux densities - log-normal for flux densities
-    # log_flux_densities = np.random.normal(loc=mean_log_flux_density_agn, scale=std_log_flux_density_agn, size=num_agns)
-
     flux_densities = np.random.lognormal(mean=mean_log_flux_density_agn, sigma=std_log_flux_density_agn, size=num_agns)
-
-    # CHECK BELOW LINE
-
-    # flux_densities = np.exp(mean_log_flux_density_agn + (std_log_flux_density_agn * log_flux_densities))
-
-    # flux_densities = np.exp(log_flux_densities)
 
     # Generate new spectral slopes (alphas)
     spectral_slopes = np.random.normal(loc=mean_alpha_agn, scale=std_alpha_agn, size=num_agns)
@@ -286,14 +358,12 @@ def generate_mock_agn_catalog(agn_stats, num_agns=4000):
     betas = np.random.choice(betas_agn, size=num_agns, replace=True)
 
     # Combine into one array
-
-    # DO NOT CHANGE ORDER OF STACKING - XML WRITER INDEXES FLUX DENSITY AT 1
     parameters = np.stack((pivot_energies, flux_densities, spectral_slopes, betas), axis=-1)
 
     # Energy fluxes
     energy_fluxes = np.fromiter((energy_flux_agn(x[0], x[1], x[2], x[3]) for x in parameters), np.float64)
 
-    # Convert energy fluxes so ergs included in units instead of photons - CHECK THIS IS NECESARY
+    # Convert energy fluxes so ergs included in units instead of photons
     energy_fluxes *= 1.602 * 10**(-6)
 
     # Select rows with valid energy fluxes
@@ -306,12 +376,10 @@ def generate_mock_agn_catalog(agn_stats, num_agns=4000):
 
     # SPATIAL PARAMETERS
 
-    # IMPOrtANT - TAKE THESE TO BE AT INDEX 4 and 5 IN A GIVEN ROW
-
-    # l - need at 4
+    # l
     galactic_longitudes = np.random.uniform(low=0, high=2*np.pi, size=len(parameters))
 
-    # b - need at 5
+    # b
     sin_galactic_latitudes = np.random.uniform(low=-1, high=1, size=len(parameters))
     galactic_latitudes = np.arcsin(sin_galactic_latitudes)
 
@@ -327,13 +395,40 @@ def generate_mock_agn_catalog(agn_stats, num_agns=4000):
 
     print(len(parameters))
 
-    parameters = parameters[~(parameters[:, 4] <= np.float64(3.4 * 10**(-13))), :]
+    # Cut at detection threshold
+    parameters = parameters[~(parameters[:, 4] <= np.float64(2.0 * 10**(-12))), :]
 
-    print()
+    # Bin data and take average of first three
+    bin_edges = 10**np.linspace(-14, -9, 50)
+    counts, _ = np.histogram(parameters[:, 4], bins=bin_edges)
 
-    print(len(parameters))
+    # FAINT SOURCE FLAT EXTRAPOLATION
 
-    # CHECK - LUMINOSITY FUNCTION!!!! - WHAT ARE THEY DOING?
+    # Flat extrapolation of AGN - assume constant below given threshold (not Gaussian)
+
+    # Take average number of sources of first five bins for flat extrapolation
+    first_non_empty_bin = np.nonzero(counts)[0][0]
+    mean_counts_per_bin, std_counts_per_bin = (np.mean(counts[first_non_empty_bin: first_non_empty_bin + 5]),
+                                               np.std(counts[first_non_empty_bin: first_non_empty_bin + 5], ddof=1))
+
+    faint_sources = []
+
+    our_threshold = np.argwhere(bin_edges >= 3.4 * 10**(-13))[0][0]
+
+    for x in range(our_threshold, first_non_empty_bin):
+
+        # Generate number of sources in bin - approximately flat/same as bins at peak
+        counts_per_bin_flat_extrapolation = round(np.random.normal(loc=mean_counts_per_bin, scale=std_counts_per_bin,
+                                                                   size=1)[0])
+
+        for k in range(counts_per_bin_flat_extrapolation):
+            new_source = agn_generation(agn_stats, bin_edges[x], bin_edges[x + 1])
+            faint_sources.append(new_source)
+
+    faint_sources = np.asarray(faint_sources)
+
+    parameters = np.vstack((parameters, faint_sources))
+
     agn_luminosity_function(parameters[:, 4])
 
     # NOT FINISHED -
@@ -377,7 +472,7 @@ def agn_xml_writer(sources):
 
     # AGN
 
-    # Ranges are taken from https://git.io/JO5FP - i.e. recommended by ID4
+    # Ranges are taken from https://git.io/JO5FP - i.e. recommended by ID8
     agn_parameters = ["norm", "alpha", "Eb", "beta"]
     ranges_of_agn_parameters = [("0.001", "1000.0"), ("-5000.0", "1000.0"), ("0.0000001", "10000000000000.0"),
                                 ("-100.0", "100")]
@@ -467,13 +562,12 @@ def agn_xml_writer(sources):
         f.write(xml_str)
 
 
-
 agn_rows, pulsar_rows = catalog_data_preparation("/Volumes/T7/data/catalog/4FGL_DR4.fit")
 #
 # pulsar_statistics(pulsar_rows)
 #
 #
-generate_mock_agn_catalog(agn_statistics(agn_rows), 4000)
+generate_mock_agn_catalog(agn_statistics(agn_rows), 50000)
 
 # generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows), 10)
 
