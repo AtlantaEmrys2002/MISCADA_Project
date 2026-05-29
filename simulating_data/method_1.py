@@ -1,6 +1,6 @@
-# This method is adapted from ID8. All code is my own (except where indicated), but  Python
-# implementation provided by the authors to *access* datacan be found here
-# are as follows:
+# This method is adapted from ID8. All code is my own (except where indicated), but Python
+# implementation provided by the authors to *access* (not generate) data can be found in ID8 footnotes. Reasons for
+# implementing are as follows:
 # 1) I wanted to find out how to simulate Fermi data and the description in the paper provided a step-by-step method.
 # 2) I hoped to improve upon their implementation performance-wise - by implementing from scratch, I am familiar with
 # the code and can improve it more easily.
@@ -11,6 +11,8 @@
 # 5) NOT ALL THE METHODS FOR SIMULATING DATA WERE PROVIDED IN THE ABOVE CODE - MORE ABOUT ACCESSING PRE-GENERATED DATA!
 # - CHECK - IT'S ALL ABOUT ACCESSING PREGENERATED DATA - https://git.io/JO5FP - COULD USE TO READ MY XML FILES AND
 # GENERATE PATCHES.
+# 6) IT WILL BE USEFUL - TRAIN MODELS, BENCHMARK DETECTION SCHEMES, HAVE EXACT POSITIONS OF SOURCES SO CAN ALSO
+# EVALUATE SENSITIVITY AND LOCALISATION
 
 #TODO
 # 1. Luminosity Function - use 3FGL (and cite the paper in notes so can cite in final report) to generate sources
@@ -30,6 +32,7 @@ from astropy.coordinates import SkyCoord
 import matplotlib.pyplot as plt
 import warnings
 from xml.dom import minidom
+import time
 
 # VISUALISATIONS
 
@@ -62,7 +65,18 @@ def agn_luminosity_function(energy_fluxes):
 
     catalog = QTable.read("/Volumes/T7/data/catalog/4FGL_DR4.fit", format='fits', hdu=1)
 
-    energy_fluxes_4fgl = catalog['Energy_Flux100'].value
+    catalog['CLASS1'].name = 'Prev_CLASS1'
+    catalog['CLASS1'] = np.asarray([k.strip().lower() for k in catalog['Prev_CLASS1']])
+    catalog.remove_column('Prev_CLASS1')
+
+    # Select all rows that describe AGN
+    agn_mask = ((catalog['CLASS1'] == 'bcu') | (catalog['CLASS1'] == 'sey') | (catalog['CLASS1'] == 'ssrq') |
+                (catalog['CLASS1'] == 'bll') | (catalog['CLASS1'] == 'fsrq') | (catalog['CLASS1'] == 'rdg') |
+                (catalog['CLASS1'] == 'nlsy1') | (catalog['CLASS1'] == 'agn'))
+
+    agns = catalog[agn_mask]
+
+    energy_fluxes_4fgl = agns['Energy_Flux100'].value
 
     plt.xscale('log')
     plt.yscale('log')
@@ -87,7 +101,7 @@ def agn_luminosity_function(energy_fluxes):
     plt.xlabel('Energy Flux')
     plt.ylabel('No. Sources')
 
-    bin_edges = 10**np.linspace(-15, -8, 40)
+    bin_edges = 10**np.linspace(-15, -8, 50)
 
     # print(bin_edges)
 
@@ -182,7 +196,6 @@ def s10_agn(pivot_energy, flux_density, spectral_slope, curvature):
 
     s1 = quad(agn_spectral_model, 10000, np.inf, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
 
-
     return s1
 
 
@@ -232,6 +245,41 @@ def catalog_data_preparation(file_name):
     agns = catalog[agn_mask]
 
     return agns, pulsars
+
+
+def normal_func(x, mean, sigma):
+
+    var = sigma**2
+
+    return (1/np.sqrt(2 * np.pi * var)) * np.e**-(((x - mean)**2) / (2 * var))
+
+
+def analysing_agn_parameters(agns):
+
+    # ID8 assert that F_0 follows log normal distribution and other params in differential energy flux follow Gaussian
+    # we check this
+
+    plt.rcParams["figure.figsize"] = (8, 8)
+
+    plt.xlabel('Pivot Energies [MeV]')
+    plt.ylabel('No. Sources')
+
+    # Plot distribution of pivot energy values
+    counts, bins = np.histogram(agns['Pivot_Energy'].value, bins=1000, density=True)
+    plt.stairs(counts, bins, label='Pivot_Energy distribution')
+
+    # Plot Gaussian distribution with pivot energy mean and std
+    pivot_energy_mean, pivot_energy_std = np.mean(agns['Pivot_Energy'].value), np.std(agns['Pivot_Energy'].value,
+                                                                                      ddof=1)
+
+    plt.plot([x for x in range(0, 30000, 10)], [normal_func(x, pivot_energy_mean, pivot_energy_std) for x in
+                                                range(0, 30000, 10)], label='Gaussian')
+
+    plt.legend()
+
+    plt.show()
+
+
 
 
 def agn_statistics(agns):
@@ -333,12 +381,14 @@ def agn_generation(agn_stats, energy_flux_low, energy_flux_high):
 
         if (energy_flux >= energy_flux_low) and (energy_flux < energy_flux_high):
 
+            # print('hi')
+
             # print(pivot_energy, flux_density, spectral_slope, beta, energy_flux, longitude, latitude)
 
             return np.asarray([pivot_energy, flux_density, spectral_slope, beta, energy_flux, longitude, latitude])
 
 
-def generate_mock_agn_catalog(agn_stats, num_agns=4000):
+def generate_mock_agn_catalog(agn_stats, num_agns=100, extra=3400):
 
     # SPECTRAL PARAMETERS
 
@@ -393,23 +443,44 @@ def generate_mock_agn_catalog(agn_stats, num_agns=4000):
     # N.B. Used expression found here - https://stackoverflow.com/questions/72404872/remove-rows-in-a-2d-numpy-array-if-
     # they-contain-a-specific-element - to select desired rows
 
-    print(len(parameters))
-
     # Cut at detection threshold
-    parameters = parameters[~(parameters[:, 4] <= np.float64(2.0 * 10**(-12))), :]
+    # parameters = parameters[~(parameters[:, 4] <= np.float64(2.0 * 10**(-12))), :]
+    parameters = parameters[~(parameters[:, 4] <= np.float64(1.0 * 10 ** (-12))), :]
 
-    # Bin data and take average of first three
-    bin_edges = 10**np.linspace(-14, -9, 50)
-    counts, _ = np.histogram(parameters[:, 4], bins=bin_edges)
+    # ADD MORE SOURCES - FOLLOW LUMINOSITY FUNCTION OF 4FGL - ENSURE ENOUGH
+
+    extra_sources = []
+
+    for x in range(extra):
+
+        # CHANGED TO 1.0 * 10 ** -12 as recommended by 4FGL DR4 (ID22) paper for outside galactic plane
+
+        # new_source = agn_generation(agn_stats, 2.0 * 10**(-12), 1000)
+        new_source = agn_generation(agn_stats, 1.0 * 10 ** (-12), 1000)
+
+        # print(new_source)
+
+        extra_sources.append(new_source)
+
+        print(x + 1)
+
+    parameters = np.vstack((parameters, np.asarray(extra_sources)))
+
 
     # FAINT SOURCE FLAT EXTRAPOLATION
 
     # Flat extrapolation of AGN - assume constant below given threshold (not Gaussian)
 
+    # Bin data and take average of first three
+    bin_edges = 10**np.linspace(-14, -9, 50)
+    counts, _ = np.histogram(parameters[:, 4], bins=bin_edges)
+
+    print(counts)
+
     # Take average number of sources of first five bins for flat extrapolation
     first_non_empty_bin = np.nonzero(counts)[0][0]
-    mean_counts_per_bin, std_counts_per_bin = (np.mean(counts[first_non_empty_bin: first_non_empty_bin + 5]),
-                                               np.std(counts[first_non_empty_bin: first_non_empty_bin + 5], ddof=1))
+    mean_counts_per_bin, std_counts_per_bin = (np.mean(counts[first_non_empty_bin: first_non_empty_bin + 10]),
+                                               np.std(counts[first_non_empty_bin: first_non_empty_bin + 10], ddof=1))
 
     faint_sources = []
 
@@ -417,9 +488,17 @@ def generate_mock_agn_catalog(agn_stats, num_agns=4000):
 
     for x in range(our_threshold, first_non_empty_bin):
 
+        print(x)
+
         # Generate number of sources in bin - approximately flat/same as bins at peak
         counts_per_bin_flat_extrapolation = round(np.random.normal(loc=mean_counts_per_bin, scale=std_counts_per_bin,
                                                                    size=1)[0])
+
+        # counts_per_bin_flat_extrapolation = np.max(counts)
+        #
+        # print('hi')
+
+        print(counts_per_bin_flat_extrapolation)
 
         for k in range(counts_per_bin_flat_extrapolation):
             new_source = agn_generation(agn_stats, bin_edges[x], bin_edges[x + 1])
@@ -567,12 +646,21 @@ agn_rows, pulsar_rows = catalog_data_preparation("/Volumes/T7/data/catalog/4FGL_
 # pulsar_statistics(pulsar_rows)
 #
 #
-generate_mock_agn_catalog(agn_statistics(agn_rows), 50000)
+#
+# start = time.time()
+#
+# generate_mock_agn_catalog(agn_statistics(agn_rows), 100, extra=300)
+#
+# end = time.time()
+#
+# print("TIME: " + str(end - start) + "s")
+
 
 # generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows), 10)
 
 # agn_xml_writer(sources=[[1, 2, 3, 4, 0, 45], [2, 4, 6, 8, 0, 45]])
 
+analysing_agn_parameters(agn_rows)
 
 # REFERENCES
 
