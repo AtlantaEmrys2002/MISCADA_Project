@@ -37,6 +37,7 @@ from scipy.optimize import curve_fit
 from sklearn.mixture import GaussianMixture
 from scipy.stats import rv_continuous
 from scipy import stats
+from scipy.stats.sampling import NumericalInversePolynomial
 
 
 # VISUALISATIONS
@@ -71,6 +72,7 @@ def agn_luminosity_function(energy_fluxes):
     catalog = QTable.read("/Volumes/T7/data/catalog/4FGL_DR4.fit", format='fits', hdu=1)
 
     catalog['CLASS1'].name = 'Prev_CLASS1'
+
     catalog['CLASS1'] = np.asarray([k.strip().lower() for k in catalog['Prev_CLASS1']])
     catalog.remove_column('Prev_CLASS1')
 
@@ -230,9 +232,15 @@ def catalog_data_preparation(file_name):
                'PLEC_Exp_Index', 'PLEC_ExpfactorS', 'CLASS1', 'GLAT')
     catalog = catalog[columns]
 
+    # print(np.asarray([k.decode('utf-8').strip().lower() for k in catalog['CLASS1'].value.filled('-')]))
+
     # Reformat CLASS1 column - remove empty spaces and make all lower case
     catalog['CLASS1'].name = 'Prev_CLASS1'
-    catalog['CLASS1'] = np.asarray([k.strip().lower() for k in catalog['Prev_CLASS1']])
+
+    # catalog['CLASS1'] = np.asarray([k.strip().lower() for k in catalog['Prev_CLASS1']])
+
+    catalog['CLASS1'] = np.asarray([k.decode('utf-8').strip().lower() for k in catalog['Prev_CLASS1'].value.filled('-')])
+
     catalog.remove_column('Prev_CLASS1')
 
     # Select all rows that describe pulsars
@@ -725,17 +733,37 @@ def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350):
                                                       A_2=0.012), color='purple', label='Recommended by ID8')
 
     # CREATE NEW RANDOM DISTRIBUTION BASED ON PARAMS ABOVE
-    # class DoubleGaussianGen(stats.rv_continuous):
-    #     def __init__(self, **kwargs):
-    #         # pass
-    #
-    #         rv_continuous.__init__(self, **kwargs)
-    #         # self.a = -180
-    #         # self.b = 180
-    #
-    #     def pdf(self, x):
-    #         return split_normal(x, sigma_1=popt[0], sigma_2=popt[1], A_1=popt[2], A_2=popt[3])
-    #
+    class DoubleGaussianGen(stats.rv_continuous):
+        def __init__(self, **kwargs):
+            # pass
+
+            rv_continuous.__init__(self, **kwargs)
+            # self.a = -180
+            # self.b = 180
+
+        def support(self):
+            return (-180, 180)
+
+        def pdf(self, x):
+            return split_normal(x, sigma_1=popt[0], sigma_2=popt[1], A_1=popt[2], A_2=popt[3])
+
+
+    dist = DoubleGaussianGen()
+
+    gen = NumericalInversePolynomial(dist)
+
+    const_pdf = quad(dist.pdf, *dist.support())[0]
+
+    r = gen.rvs(size=1000)
+    x = np.linspace(r.min(), r.max(), 500)
+
+    plt.hist(r, density=True, bins=50, label='Sampled', color='black')
+
+
+
+
+
+
     # double_norm = DoubleGaussianGen(name='double_norm')
     #
     # random_numbers = double_norm.rvs(size=250)   #.sample((1000, 1))
@@ -754,23 +782,45 @@ def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350):
     #     x_values.append(start_value + (k * bin_width))
     #
     # plt.bar(x_values, counts, alpha=0.7, label='Samples')
-
-    gm = GaussianMixture(n_components=2, means_init=[[0], [0]]).fit(np.asarray([0, 0]).reshape(-1, 1))
-
-    # precisions_init = [1 / (popt[0] ** 2), 1 / (popt[1] ** 2)]
-
-    gm.means_ = [[0], [0]]
-    gm.covars_ = [(popt[0] ** 2), (popt[1] ** 2)]
-
-    sum_weights = popt[2] + popt[3]
-
-    gm.weights_ = [popt[2]/sum_weights, popt[3]/sum_weights]
-
-    gm.sample(n_samples=10)
-
-    # rng = np.random.default_rng(1)
     #
-    # random_numbers.sample(rng=rng)
+    # gm = GaussianMixture(n_components=2, means_init=[[0], [0]]).fit(np.asarray([0, 0]).reshape(-1, 1))
+    #
+    # # precisions_init = [1 / (popt[0] ** 2), 1 / (popt[1] ** 2)]
+    #
+    # gm.means_ = np.asarray([[0], [0]])
+    # gm.covars_ = pcov  # np.asarray([(popt[0] ** 2), (popt[1] ** 2)])
+    #
+    # gm.weights_ = np.asarray([1, 1])
+    #
+    # print(gm.weights_)
+    #
+    # print(pcov)
+    #
+    # print(gm.covars_)
+    #
+    # # sum_weights = popt[2] + popt[3]
+    # #
+    # # gm.weights_ = [popt[2]/sum_weights, popt[3]/sum_weights]
+    #
+    # random_nums = gm.sample(n_samples=(500))[0].flatten()
+    #
+    # print(random_nums)
+    #
+    # counts, bins = np.histogram(random_nums, bins=100, density=True)
+    #
+    # bin_width = np.abs(bins[1] - bins[0])
+    #
+    # start_value = bins[0] + (bin_width / 2)
+    #
+    # x_values = []
+    #
+    # for k in range(len(bins) - 1):
+    #     x_values.append(start_value + (k * bin_width))
+    #
+    # plt.bar(x_values, counts, alpha=0.7, label='Samples')
+    #
+    #
+
 
     plt.title('Distribution of Pulsar Latitudes')
 
