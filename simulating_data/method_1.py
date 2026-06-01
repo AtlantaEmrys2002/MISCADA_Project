@@ -33,7 +33,11 @@ import matplotlib.pyplot as plt
 import warnings
 from xml.dom import minidom
 import time
-import scipy.stats as stats
+from scipy.optimize import curve_fit
+from sklearn.mixture import GaussianMixture
+from scipy.stats import rv_continuous
+from scipy import stats
+
 
 # VISUALISATIONS
 
@@ -223,7 +227,7 @@ def catalog_data_preparation(file_name):
 
     # Select relevant columns
     columns = ('Pivot_Energy', 'LP_Flux_Density', 'PLEC_Flux_Density', 'LP_Index', 'LP_beta', 'PLEC_IndexS',
-               'PLEC_Exp_Index', 'PLEC_ExpfactorS', 'CLASS1')
+               'PLEC_Exp_Index', 'PLEC_ExpfactorS', 'CLASS1', 'GLAT')
     catalog = catalog[columns]
 
     # Reformat CLASS1 column - remove empty spaces and make all lower case
@@ -286,135 +290,6 @@ def analysing_agn_parameters(agns):
 
     plt.rcParams["figure.figsize"] = (10, 10)
 
-    # plt.xlabel('Pivot Energies [MeV]')
-    # plt.ylabel('No. Sources')
-    #
-    # pivot_energies = agns['Pivot_Energy'].value
-    #
-    # # Plot distribution of pivot energy values
-    # counts, bins = np.histogram(pivot_energies, bins=200, density=True)
-    # plt.stairs(counts, bins, label='Pivot_Energy Distribution')
-    #
-    # # Plot Gaussian distribution with pivot energy mean and std
-    # pivot_energy_mean, pivot_energy_std = np.mean(pivot_energies), np.std(pivot_energies, ddof=1)
-    #
-    # plt.plot([x for x in range(0, 30000, 10)], [normal_func(x, pivot_energy_mean, pivot_energy_std) for x in
-    #                                             range(0, 30000, 10)], label='Gaussian', linestyle='-.')
-    #
-    # # Plot log-normal (had a hunch this would be better for representing pivot energies than ID8's suggestion of
-    # # Gaussian
-    #
-    # mean_pivot_square = np.mean(pivot_energies) ** 2
-    # std_pivot_square = np.std(pivot_energies, ddof=1) ** 2
-    #
-    # mean_log_pivot_energies = np.log(mean_pivot_square/(np.sqrt(mean_pivot_square + std_pivot_square)))
-    #
-    # std_log_pivot_energies = np.sqrt(np.log(1 + (std_pivot_square/mean_pivot_square)))
-    #
-    # plt.plot([x for x in range(0, 30000, 10)], [log_norm_pdf(x, mean_log_pivot_energies,
-    #                                                          std_log_pivot_energies) for x in range(0, 30000, 10)],
-    #          label='Log-Normal', color='red', linestyle='--')
-    #
-    # # TRY REMOVING OUTLIERS BEFORE CALCULATING MEAN AND STD!!!!
-    #
-    # # counts, bins, np.histogram(reject_outliers(pivot_energies), bins=1000, density=True)
-    # # plt.stairs(counts, bins, label='Pivot_Energy distribution with outliers removed')
-    #
-    # plt.title('Distribution of Pivot Energies of 4FGL Sources')
-    #
-    # plt.legend()
-    #
-    # plt.show()
-    #
-    # # SPECTRAL SLOPE (ALPHA) ANALYSIS
-    #
-    # # Select 4FGL alphas
-    # alphas = agns['LP_Index'].data.filled(np.nan)
-    #
-    # # Line below from https://stackoverflow.com/questions/17126543/numpy-array-get-the-subset-slice-of-an-array-which-is
-    # # -not-nan
-    #
-    # alphas = alphas[~np.isnan(alphas)]
-    #
-    # plt.rcParams["figure.figsize"] = (8, 8)
-    #
-    # # Plot distribution of alpha values
-    # counts, bins = np.histogram(alphas, bins=100, density=True)
-    # plt.stairs(counts, bins, label='$\\alpha$ Distribution')
-    #
-    # # Plot Gaussian distribution over the top with alpha mean and std
-    # alpha_mean, alpha_std = np.mean(alphas), np.std(alphas, ddof=1)
-    #
-    # plt.plot([x for x in np.linspace(0, 4, 1000)], [normal_func(x, alpha_mean, alpha_std) for x in
-    #                                             np.linspace(0, 4, 1000)], label='Gaussian', linestyle='-.')
-    #
-    # # Plot log-normal (just for comparison - Gaussian is visually a good fit)
-    #
-    # mean_alpha_square = np.mean(alphas) ** 2
-    # std_alpha_square = np.std(alphas, ddof=1) ** 2
-    #
-    # mean_log_alphas = np.log(mean_alpha_square/(np.sqrt(mean_alpha_square + std_alpha_square)))
-    #
-    # std_log_alphas = np.sqrt(np.log(1 + (std_alpha_square/mean_alpha_square)))
-    #
-    # plt.plot([x for x in np.linspace(0, 4, 1000)], [log_norm_pdf(x, mean_log_alphas,
-    #                                                          std_log_alphas) for x in np.linspace(0, 4, 1000)],
-    #          label='Log-Normal', color='red', linestyle='--')
-    #
-    # plt.xlabel('Spectral Slope ($\\alpha$)')
-    # plt.ylabel('No. Sources')
-    #
-    # plt.title('Distribution of Spectral Slopes of 4FGL Sources')
-    #
-    # plt.legend()
-    #
-    # plt.show()
-    #
-    # # FLUX DENSITIES
-    #
-    # # CHECKING F_0, AGN Log-Normal is good fit
-    #
-    # # Select 4FGL
-    # fds = agns['LP_Flux_Density'].to(u.ph / (u.cm * u.cm * u.GeV * u.s)).value.filled(np.nan)
-    #
-    # fds = fds[~np.isnan(fds)]
-    #
-    # plt.rcParams["figure.figsize"] = (8, 8)
-    #
-    # # Plot distribution of alpha values
-    # counts, bins = np.histogram(fds, bins=100, density=True)
-    # plt.stairs(counts, bins, label='Flux Densities Distribution')
-    #
-    # # Plot Gaussian distribution over the top with alpha mean and std
-    # fd_mean, fd_std = np.mean(fds), np.std(fds, ddof=1)
-    #
-    # plt.plot([x for x in np.linspace(0, 1.4 * 10**-7, 1000)], [normal_func(x, fd_mean, fd_std) for x in
-    #                                             np.linspace(0, 1.4 * 10**-7, 1000)], label='Gaussian', linestyle='-.')
-    #
-    # # Plot log-normal (recommended by ID8)
-    #
-    # mean_fd_square = np.mean(fds) ** 2
-    # std_fd_square = np.std(fds, ddof=1) ** 2
-    #
-    # mean_log_fds = np.log(mean_fd_square/(np.sqrt(mean_fd_square + std_fd_square)))
-    #
-    # std_log_fds = np.sqrt(np.log(1 + (std_fd_square/mean_fd_square)))
-    #
-    # plt.plot([x for x in np.linspace(0, 1.4 * 10**-7, 1000)], [log_norm_pdf(x, mean_log_fds, std_log_fds) for x in
-    #                                                 np.linspace(0, 1.4 * 10**-7, 1000)],
-    #          label='Log-Normal', color='red', linestyle='--')
-    #
-    #
-    #
-    # plt.xlabel('Flux Densities')
-    # plt.ylabel('No. Sources')
-    #
-    # plt.title('Distribution of Flux Densities of 4FGL Sources')
-    #
-    # plt.legend()
-    #
-    # plt.show()
-
     fig, ax = plt.subplots(2, 2)
 
     # READ IN DATA
@@ -454,13 +329,10 @@ def analysing_agn_parameters(agns):
         mean_log = np.log(mean_square / (np.sqrt(mean_square + std_square)))
         std_log = np.sqrt(np.log(1 + (std_square / mean_square)))
 
-        subplot.plot(x_values, log_norm_pdf(x_values, mean_log, std_log), label='Log-Normal', color='red', linestyle='--')
+        subplot.plot(x_values, log_norm_pdf(x_values, mean_log, std_log), label='Log-Normal', color='red',
+                     linestyle='--')
 
-
-
-
-
-
+    # FORMATTING
 
     fig.suptitle('Distributions of 4FGL AGN Parameters')
 
@@ -484,7 +356,6 @@ def analysing_agn_parameters(agns):
     plt.show()
 
 
-
 def agn_statistics(agns):
 
     # Select alpha values and convert from masked to ordinary numpy array
@@ -505,21 +376,9 @@ def agn_statistics(agns):
 
     log_pivot_energies = np.log(pivot_energies)
 
-    # mean_pivot_energy, std_pivot_energy = np.nanmean(pivot_energies), np.nanstd(pivot_energies, ddof=1)
-
     mean_log_pivot_energy, std_log_pivot_energy = np.nanmean(log_pivot_energies), np.nanstd(log_pivot_energies, ddof=1)
 
     mean_log_flux_density, std_log_flux_density = np.nanmean(log_flux_densities), np.nanstd(log_flux_densities, ddof=1)
-
-    # mean_flux_density, std_flux_density = np.nanmean(flux_densities), np.nanstd(flux_densities, ddof=1)
-
-    #
-    #
-    # tmp = (mean_flux_density**2) / (np.sqrt((mean_flux_density**2) + std_flux_density**2))
-    #
-    # tmp2 = np.log(1 + ((std_flux_density**2)/(mean_flux_density**2)))
-    #
-    # mean_log_flux_density, std_log_flux_density = np.log(tmp), np.sqrt(tmp2)
 
     return (mean_alpha, std_alpha, mean_log_pivot_energy, std_log_pivot_energy, mean_log_flux_density, std_log_flux_density,
             betas)
@@ -551,10 +410,16 @@ def pulsar_statistics(pulsars):
 
     mean_log_flux_density, std_log_flux_density = np.nanmean(log_flux_densities), np.nanstd(log_flux_densities)
 
-    mean_pivot_energy, std_pivot_energy = np.nanmean(pivot_energies), np.nanstd(pivot_energies, ddof=1)
+    # mean_pivot_energy, std_pivot_energy = np.nanmean(pivot_energies), np.nanstd(pivot_energies, ddof=1)
+
+    log_pivot_energies = np.log(pivot_energies)
+
+    mean_log_pivot_energy, std_log_pivot_energy = np.nanmean(log_pivot_energies), np.nanstd(log_pivot_energies, ddof=1)
+
+    pulsar_latitudes = pulsars['GLAT']
 
     return (mean_Gamma, std_Gamma, mean_b, std_b, mean_a, std_a, mean_log_flux_density, std_log_flux_density,
-            mean_pivot_energy, std_pivot_energy)
+            mean_log_pivot_energy, std_log_pivot_energy, pulsar_latitudes)
 
 
 # GENERATE FIXED NUMBER OF AGNS WITHIN GIVEN ENERGY FLUX RANGE FOR FLAT EXTRAPOLATION AT LOWER ENERGY FLUXES
@@ -683,7 +548,6 @@ def generate_mock_agn_catalog(agn_stats, num_agns=100, extra=3400):
 
     parameters = np.vstack((parameters, np.asarray(extra_sources)))
 
-
     # FAINT SOURCE FLAT EXTRAPOLATION
 
     # Flat extrapolation of AGN - assume constant below given threshold (not Gaussian)
@@ -691,8 +555,6 @@ def generate_mock_agn_catalog(agn_stats, num_agns=100, extra=3400):
     # Bin data and take average of first three
     bin_edges = 10**np.linspace(-14, -9, 50)
     counts, _ = np.histogram(parameters[:, 4], bins=bin_edges)
-
-    print(counts)
 
     # Take average number of sources of first five bins for flat extrapolation
     first_non_empty_bin = np.nonzero(counts)[0][0]
@@ -730,11 +592,208 @@ def generate_mock_agn_catalog(agn_stats, num_agns=100, extra=3400):
     # NOT FINISHED -
 
 
+# CHOSE THIS MYSELF - THINK THIS IS WHAT ID8 WAS SUGGESTING
+def split_normal(x, sigma_1, sigma_2, A_1, A_2):
+# def split_normal(x, sigma_1, sigma_2, A):
+# def split_normal(params):
+
+    mu = 0
+
+    # CHECK A IS FROM FORMULA - some use the same A (CHECK IT IS THE SAME)
+
+    # x, mu, sigma_1, sigma_2, A_1, A_2 = params
+
+    upper = -1 * ((x - mu) ** 2)
+
+    # return np.where(x < mu, A_1 * np.exp(upper/(2 * (sigma_1 ** 2))), A_2 * np.exp(upper / 2 * (sigma_2 ** 2)))
+
+    # return np.where(np.abs(x - mu) < 10, A * np.exp(upper / (2 * (sigma_1 ** 2))), A * np.exp(upper / 2 * (sigma_2 ** 2)))
+
+    # I defined as within 10 degree of galactic plane (lat = 0 degrees)
+
+    return np.where(np.abs(x - mu) < 10, A_1 * np.exp(upper / (2 * (sigma_1 ** 2))), A_2 * np.exp(upper / 2 * (sigma_2 ** 2)))
+
+
+    # if x < mu:
+    #
+    #     lower = 2 * (sigma_1 ** 2)
+    #
+    #     return A_1 * np.exp(upper/lower)
+    #
+    # else:
+    #
+    #     lower = 2 * (sigma_2 ** 2)
+    #
+    #     return A_2 * np.exp(upper / lower)
+
+
 def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350):
 
+    # CHECK ALL PARAMETER DISTRIBUTIONS AND FIT GAUSSIAN OR LOG-NORMAL - MAYBE RESEARCH OTHER DISTRIBUTIONS IT COULD BE
+
     (mean_Gamma_pulsars, std_Gamma_pulsars, mean_b_pulsars, std_b_pulsars, mean_a_pulsars, std_a_pulsars,
-     mean_log_flux_density_pulsars, std_log_flux_density_pulsars, mean_pivot_energy_pulsars, std_pivot_energy_pulsars) \
-        = pulsar_stats
+     mean_log_flux_density_pulsars, std_log_flux_density_pulsars, mean_log_pivot_energy_pulsars,
+     std_log_pivot_energy_pulsars, latitudes_pulsars) = pulsar_stats
+
+    # SPECTRAL PARAMETERS
+
+    # Generate new pivot energies - in ID8, they randomly select pivot energies from a Gaussian distribution. However,
+    # the distribution of pivot energies in the 4FGL follows log-normal more precise (CHECK THIS IS TRUE FOR PULSARS_
+    pivot_energies = np.random.lognormal(mean=mean_log_pivot_energy_pulsars, sigma=std_log_pivot_energy_pulsars,
+                                         size=num_pulsars)
+
+    # Generate new flux densities - log-normal for flux densities
+    flux_densities = np.random.lognormal(mean=mean_log_flux_density_pulsars, sigma=std_log_flux_density_pulsars,
+                                         size=num_pulsars)
+
+    # Gaussian recommended in ID8 - AT THE MOMENT - may change to log-normal
+
+    # Generate new spectral slopes (Gammas)
+    spectral_slopes = np.random.normal(loc=mean_Gamma_pulsars, scale=std_Gamma_pulsars, size=num_pulsars)
+
+    # Generate new exponential factors (as)
+    exponential_factors = np.random.normal(loc=mean_a_pulsars, scale=std_a_pulsars, size=num_pulsars)
+
+    # Generate new exponential indices (bs)
+    exponential_indices = np.random.normal(loc=mean_b_pulsars, scale=std_b_pulsars, size=num_pulsars)
+
+    # Combine into one array
+    parameters = np.stack((pivot_energies, flux_densities, spectral_slopes, exponential_indices, exponential_factors), axis=-1)
+
+    # Energy fluxes
+    energy_fluxes = np.fromiter((energy_flux_pulsar(x[0], x[1], x[2], x[3], x[4]) for x in parameters), np.float64)
+
+    # Convert energy fluxes so ergs included in units instead of photons
+    energy_fluxes *= 1.602 * 10**(-6)
+
+    # Select rows with valid energy fluxes
+    mask = ~np.isnan(energy_fluxes)
+    energy_fluxes = energy_fluxes[mask]
+    parameters = parameters[mask]
+
+    # Combine two arrays to create mock catalog's spectral parameters
+    parameters = np.concatenate((parameters, np.array([energy_fluxes]).T), axis=1)
+
+    # SPATIAL PARAMETERS
+
+    # l - uniform distribution assumed
+    galactic_longitudes = np.random.uniform(low=0, high=2 * np.pi, size=len(parameters))
+
+    counts, bins = np.histogram(latitudes_pulsars.value, bins=40, density=True)
+
+    bin_width = np.abs(bins[1] - bins[0])
+
+    start_value = bins[0] + (bin_width / 2)
+
+    x_values = []
+
+    for k in range(len(bins) - 1):
+
+        x_values.append(start_value + (k * bin_width))
+
+    # b
+
+    lats = latitudes_pulsars.value.reshape(-1, 1)
+
+    # plt.plot(np.linspace(-30, 30, 1000), split_normal(np.linspace(-30, 30, 1000),
+    #                                                   sigma_1=1.39, sigma_2=19.2, A_1=0.11, A_2=0.012), color='red')
+
+    # gm = GaussianMixture(n_components=2, random_state=0).fit(lats)
+    #
+    # print(gm.means_)
+    # print(np.sqrt(gm.covariances_))
+    # print(gm.weights_)
+
+    popt, pcov = curve_fit(split_normal, xdata=x_values, ydata=counts, bounds=([0, 0, -np.inf, -np.inf], [360, 360, np.inf, np.inf]))
+
+    plt.bar(x_values, counts, alpha=0.7, label='4FGL Distribution')
+    #
+    # plt.plot(np.linspace(-30, 30, 1000), split_normal(np.linspace(-30, 30, 1000),
+    #                                                   sigma_1=popt[0], sigma_2=popt[1], A_1=popt[2], A_2=popt[2]), color='r')
+    #
+
+    plt.plot(np.linspace(-30, 30, 1000), split_normal(np.linspace(-30, 30, 1000), sigma_1=popt[0], sigma_2=popt[1],
+                                                      A_1=popt[2], A_2=popt[3]), color='red', label='Double Gaussian')
+
+    plt.plot(np.linspace(-30, 30, 1000), normal_func(np.linspace(-30, 30, 1000), mean=0, sigma=popt[0]), color='green',
+             linestyle='--', label='Gaussian: $\mu = 0$, $\sigma = ' + str(round(popt[0], 2)) + '$')
+
+    plt.plot(np.linspace(-30, 30, 1000), normal_func(np.linspace(-30, 30, 1000), mean=0, sigma=popt[1]), color='orange',
+             linestyle='-.', label='Gaussian: $\mu = 0$, $\sigma = ' + str(round(popt[1], 2)) + '$')
+
+    plt.plot(np.linspace(-30, 30, 1000), split_normal(np.linspace(-30, 30, 1000), sigma_1=1.39, sigma_2=19.2, A_1=0.11,
+                                                      A_2=0.012), color='purple', label='Recommended by ID8')
+
+    # CREATE NEW RANDOM DISTRIBUTION BASED ON PARAMS ABOVE
+    # class DoubleGaussianGen(stats.rv_continuous):
+    #     def __init__(self, **kwargs):
+    #         # pass
+    #
+    #         rv_continuous.__init__(self, **kwargs)
+    #         # self.a = -180
+    #         # self.b = 180
+    #
+    #     def pdf(self, x):
+    #         return split_normal(x, sigma_1=popt[0], sigma_2=popt[1], A_1=popt[2], A_2=popt[3])
+    #
+    # double_norm = DoubleGaussianGen(name='double_norm')
+    #
+    # random_numbers = double_norm.rvs(size=250)   #.sample((1000, 1))
+    #
+    # print(random_numbers)
+    #
+    # counts, bins = np.histogram(random_numbers, bins=40, density=True)
+    #
+    # bin_width = np.abs(bins[1] - bins[0])
+    #
+    # start_value = bins[0] + (bin_width / 2)
+    #
+    # x_values = []
+    #
+    # for k in range(len(bins) - 1):
+    #     x_values.append(start_value + (k * bin_width))
+    #
+    # plt.bar(x_values, counts, alpha=0.7, label='Samples')
+
+    gm = GaussianMixture(n_components=2, means_init=[[0], [0]]).fit(np.asarray([0, 0]).reshape(-1, 1))
+
+    # precisions_init = [1 / (popt[0] ** 2), 1 / (popt[1] ** 2)]
+
+    gm.means_ = [[0], [0]]
+    gm.covars_ = [(popt[0] ** 2), (popt[1] ** 2)]
+
+    sum_weights = popt[2] + popt[3]
+
+    gm.weights_ = [popt[2]/sum_weights, popt[3]/sum_weights]
+
+    gm.sample(n_samples=10)
+
+    # rng = np.random.default_rng(1)
+    #
+    # random_numbers.sample(rng=rng)
+
+    plt.title('Distribution of Pulsar Latitudes')
+
+    plt.xlabel('Latitude ($\degree$)')
+
+    plt.ylabel('Source Density')
+
+    plt.legend()
+
+    plt.show()
+
+    # random_samples = gm.sample
+
+
+
+
+    # NOT FINISHED
+
+
+
+
+def pulsar_xml_writer(sources):
+    pass
 
     # NOT FINISHED
 
@@ -873,11 +932,21 @@ agn_rows, pulsar_rows = catalog_data_preparation("/Volumes/T7/data/catalog/4FGL_
 # print("TIME: " + str(end - start) + "s")
 
 
+start = time.time()
+
+generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows), 200)
+
+end = time.time()
+
+print("TIME: " + str(end - start) + "s")
+
+
+
 # generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows), 10)
 
 # agn_xml_writer(sources=[[1, 2, 3, 4, 0, 45], [2, 4, 6, 8, 0, 45]])
 
-analysing_agn_parameters(agn_rows)
+# analysing_agn_parameters(agn_rows)
 
 # REFERENCES
 
