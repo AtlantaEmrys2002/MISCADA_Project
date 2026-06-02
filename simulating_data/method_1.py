@@ -37,8 +37,9 @@ from scipy.optimize import curve_fit
 from sklearn.mixture import GaussianMixture
 from scipy.stats import rv_continuous
 from scipy import stats
-from scipy.stats.sampling import NumericalInversePolynomial
-
+from scipy.stats.sampling import NumericalInversePolynomial, NumericalInverseHermite, RatioUniforms, SimpleRatioUniforms, TransformedDensityRejection
+from sympy.stats import ContinuousRV, MultivariateNormal, sample
+from sympy import Interval, oo, Symbol
 
 # VISUALISATIONS
 
@@ -601,7 +602,8 @@ def generate_mock_agn_catalog(agn_stats, num_agns=100, extra=3400):
 
 
 # CHOSE THIS MYSELF - THINK THIS IS WHAT ID8 WAS SUGGESTING
-def split_normal(x, sigma_1, sigma_2, A_1, A_2):
+# def split_normal(x, sigma_1, sigma_2, A_1, A_2):
+def split_normal(x, sigma_1, sigma_2):
 # def split_normal(x, sigma_1, sigma_2, A):
 # def split_normal(params):
 
@@ -619,7 +621,11 @@ def split_normal(x, sigma_1, sigma_2, A_1, A_2):
 
     # I defined as within 10 degree of galactic plane (lat = 0 degrees)
 
-    return np.where(np.abs(x - mu) < 10, A_1 * np.exp(upper / (2 * (sigma_1 ** 2))), A_2 * np.exp(upper / 2 * (sigma_2 ** 2)))
+    # return np.where(np.abs(x - mu) < 10, A_1 * np.exp(upper / (2 * (sigma_1 ** 2))), A_2 * np.exp(upper / 2 * (sigma_2 ** 2)))
+
+    A = np.sqrt(2/np.pi) * 1/(sigma_1 + sigma_2)
+
+    return np.where(np.abs(x - mu) < 10, A * np.exp(upper / (2 * (sigma_1 ** 2))), A * np.exp(upper / 2 * (sigma_2 ** 2)))
 
 
     # if x < mu:
@@ -633,6 +639,24 @@ def split_normal(x, sigma_1, sigma_2, A_1, A_2):
     #     lower = 2 * (sigma_2 ** 2)
     #
     #     return A_2 * np.exp(upper / lower)
+
+
+def split_normal_fixed(x):
+
+    mu = 0
+
+    # CHECK A IS FROM FORMULA - some use the same A (CHECK IT IS THE SAME)
+
+    sigma_1 = 0.88
+
+    sigma_2 = 1.71
+
+    upper = -1 * ((x - mu) ** 2)
+
+    A = np.sqrt(2/np.pi) * 1/(sigma_1 + sigma_2)
+
+    return np.where(np.abs(x - mu) < 10, A * np.exp(upper / (2 * (sigma_1 ** 2))), A * np.exp(upper / 2 * (sigma_2 ** 2)))
+
 
 
 def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350):
@@ -687,7 +711,7 @@ def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350):
     # l - uniform distribution assumed
     galactic_longitudes = np.random.uniform(low=0, high=2 * np.pi, size=len(parameters))
 
-    counts, bins = np.histogram(latitudes_pulsars.value, bins=40, density=True)
+    counts, bins = np.histogram(latitudes_pulsars.value, bins=100, density=True)
 
     bin_width = np.abs(bins[1] - bins[0])
 
@@ -712,7 +736,11 @@ def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350):
     # print(np.sqrt(gm.covariances_))
     # print(gm.weights_)
 
-    popt, pcov = curve_fit(split_normal, xdata=x_values, ydata=counts, bounds=([0, 0, -np.inf, -np.inf], [360, 360, np.inf, np.inf]))
+    # popt, pcov = curve_fit(split_normal, xdata=x_values, ydata=counts, bounds=([0, 0, -np.inf, -np.inf], [90, 90, np.inf, np.inf]))
+
+    popt, pcov = curve_fit(split_normal, xdata=x_values, ydata=counts, bounds=([0, 0], [90, 90]))
+
+    # print(popt)
 
     plt.bar(x_values, counts, alpha=0.7, label='4FGL Distribution')
     #
@@ -720,19 +748,29 @@ def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350):
     #                                                   sigma_1=popt[0], sigma_2=popt[1], A_1=popt[2], A_2=popt[2]), color='r')
     #
 
+    # plt.plot(np.linspace(-30, 30, 1000), split_normal(np.linspace(-30, 30, 1000), sigma_1=popt[0], sigma_2=popt[1],
+    #                                                   A_1=popt[2], A_2=popt[3]), color='red', label='Double Gaussian')
+
     plt.plot(np.linspace(-30, 30, 1000), split_normal(np.linspace(-30, 30, 1000), sigma_1=popt[0], sigma_2=popt[1],
-                                                      A_1=popt[2], A_2=popt[3]), color='red', label='Double Gaussian')
+                                                      ), color='red', label='Double Gaussian')
 
     plt.plot(np.linspace(-30, 30, 1000), normal_func(np.linspace(-30, 30, 1000), mean=0, sigma=popt[0]), color='green',
-             linestyle='--', label='Gaussian: $\mu = 0$, $\sigma = ' + str(round(popt[0], 2)) + '$')
+             linestyle='--', label='Gaussian: $\mu = 0$, $\sigma_1 = ' + str(round(popt[0], 2)) + '$')
 
     plt.plot(np.linspace(-30, 30, 1000), normal_func(np.linspace(-30, 30, 1000), mean=0, sigma=popt[1]), color='orange',
-             linestyle='-.', label='Gaussian: $\mu = 0$, $\sigma = ' + str(round(popt[1], 2)) + '$')
+             linestyle='-.', label='Gaussian: $\mu = 0$, $\sigma_2 = ' + str(round(popt[1], 2)) + '$')
 
-    plt.plot(np.linspace(-30, 30, 1000), split_normal(np.linspace(-30, 30, 1000), sigma_1=1.39, sigma_2=19.2, A_1=0.11,
-                                                      A_2=0.012), color='purple', label='Recommended by ID8')
+    # plt.plot(np.linspace(-30, 30, 1000), split_normal(np.linspace(-30, 30, 1000), sigma_1=1.39, sigma_2=19.2, A_1=0.11,
+    #                                                   A_2=0.012), color='purple', label='Recommended by ID8')
+
+    plt.plot(np.linspace(-30, 30, 1000), split_normal(np.linspace(-30, 30, 1000), sigma_1=1.39, sigma_2=19.2,
+                                                      ), color='purple', label='Recommended by ID8')
 
     # CREATE NEW RANDOM DISTRIBUTION BASED ON PARAMS ABOVE
+
+    # Code below inspired by https://stackoverflow.com/questions/46055690/python-how-to-define-customized-distributions
+    # Looked into continuous rvs and this provided a few good recommendations about inverting PDF.
+
     class DoubleGaussianGen(stats.rv_continuous):
         def __init__(self, **kwargs):
             # pass
@@ -742,22 +780,60 @@ def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350):
             # self.b = 180
 
         def support(self):
-            return (-180, 180)
+            return (-90, 90)
 
         def pdf(self, x):
-            return split_normal(x, sigma_1=popt[0], sigma_2=popt[1], A_1=popt[2], A_2=popt[3])
+            # return split_normal(x, sigma_1=popt[0], sigma_2=popt[1], A_1=popt[2], A_2=popt[3])
 
+            return split_normal(x, sigma_1=popt[0], sigma_2=popt[1])
 
     dist = DoubleGaussianGen()
 
-    gen = NumericalInversePolynomial(dist)
+    urng = np.random.default_rng()
 
-    const_pdf = quad(dist.pdf, *dist.support())[0]
+    # gen = NumericalInversePolynomial(dist, random_state=urng)
 
-    r = gen.rvs(size=1000)
-    x = np.linspace(r.min(), r.max(), 500)
+    umax = np.sqrt(split_normal(0, sigma_1=popt[0], sigma_2=popt[0]))
 
-    plt.hist(r, density=True, bins=50, label='Sampled', color='black')
+    v = np.sqrt(2 / np.pi) * 1 / (popt[0] + popt[1])
+
+    gen = RatioUniforms(dist, random_state=urng, umax=umax, vmin=-v, vmax=v)
+
+    print([popt[0], popt[1]])
+
+    cov = [[popt[0]**2, 0], [0, popt[1]**2]]
+
+    # X = MultivariateNormal('X', mu=[0, 0], sigma=cov)
+    #
+    # print('NEw')
+    #
+    # samples = sample(X, size=1000)
+    #
+    # print(samples.flatten())
+    #
+    # x = Symbol('x')
+    #
+    # X = ContinuousRV(x, split_normal, set=Interval(-30, 30))
+    #
+    # samples = sample(X, size=1000)
+
+    X1 = stats.Normal(mu=0, sigma=popt[0])
+    X2 = stats.Normal(mu=0, sigma=popt[1])
+
+    mixture = stats.Mixture([X1, X2])
+
+    samples = mixture.sample(shape=(10000, 1))
+
+    # const_pdf = quad(dist.pdf, *dist.support())[0]
+
+    # print(const_pdf)
+
+    # r = gen.rvs(size=10000,)
+    # x = np.linspace(r.min(), r.max(), 500)
+
+    # plt.plot(x, dist.pdf(x) / const_pdf, color='black')
+
+    plt.hist(samples.flatten(), density=True, bins=40, label='Randomly Generated', color='grey', alpha=0.6)
 
 
 
