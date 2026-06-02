@@ -64,6 +64,51 @@ def spatial_visualisations(galactic_longitudes, galactic_latitudes, num_agn, sou
     plt.show()
 
 
+def visualising_pulsar_latitude_distributions(sigma_1, sigma_2, x_values, counts):
+
+    # sigma_1 and sigma_2 are the fitted standard distributions of the two overlapping Gaussians of the 4FGL data
+    # x_values and counts are the binned 4FGL data (latitude values and number of sources within that latitude range
+
+    plt.bar(x_values, counts, alpha=0.7, label='4FGL Distribution')
+
+    # Rounded standard deviations - not used except in plots
+    std_1, std_2 = str(round(sigma_1, 2)), str(round(sigma_2, 2))
+
+    latitude_range = np.linspace(-30, 30, 1000)
+
+    plt.plot(latitude_range, split_normal(latitude_range, sigma_1=sigma_1, sigma_2=sigma_2), color='red',
+             label='Mixture Gaussian $\mu=0$, \n $\sigma_1=$' + std_1 + "$, \sigma_2 = $" + std_2)
+
+    plt.plot(latitude_range, normal_func(latitude_range, mean=0, sigma=sigma_1), color='green',
+             linestyle='--', label='Gaussian: $\mu = 0$, $\sigma_1 = ' + std_1 + '$')
+
+    plt.plot(latitude_range, normal_func(latitude_range, mean=0, sigma=sigma_2), color='orange',
+             linestyle='-.', label='Gaussian: $\mu = 0$, $\sigma_2 = ' + std_2 + '$')
+
+    plt.plot(latitude_range, split_normal(latitude_range, sigma_1=1.39, sigma_2=19.2), color='purple',
+             label='Recommended by ID8')
+
+    # Randomly sample pulsar latitudes from distribution created above
+    X1 = stats.Normal(mu=0, sigma=sigma_1)
+    X2 = stats.Normal(mu=0, sigma=sigma_2)
+
+    # CHANGE WEIGHTS HERE TO REFLECT MSP VS YNG
+
+    mixture = stats.Mixture([X1, X2])
+
+    samples = mixture.sample(shape=(10000, 1))
+
+    plt.hist(samples.flatten(), density=True, bins=40, label='Randomly Generated', color='pink', alpha=0.6)
+
+    # Formatting
+    plt.title('Distribution of Pulsar Latitudes')
+    plt.xlabel('Latitude ($\degree$)')
+    plt.ylabel('Source Density')
+    plt.legend()
+
+    plt.show()
+
+
 def agn_luminosity_function(energy_fluxes):
 
     # I implemented this to recreate a plot style (luminosity function) shown in ID8
@@ -214,7 +259,7 @@ def energy_flux_pulsar(pivot_energy, flux_density, spectral_slope, exponential_i
     #                                                      exponential_index, exponential_factor))[0]
 
     energy = quad(pulsar_spectral_model, 100, 100000, args=(pivot_energy, flux_density, spectral_slope,
-                                                         exponential_index, exponential_factor))[0]
+                                                            exponential_index, exponential_factor))[0]
 
     return energy
 
@@ -524,10 +569,10 @@ def generate_mock_agn_catalog(agn_stats, num_agns=100, extra=3400):
     sin_galactic_latitudes = np.random.uniform(low=-1, high=1, size=len(parameters))
     galactic_latitudes = np.arcsin(sin_galactic_latitudes)
 
-    # Combine two arrays to create mock catalog's spectral parameters
+    # Combine two arrays to create mock catalog's spatial parameters
     parameters = np.concatenate((parameters, np.array([galactic_longitudes]).T), axis=1)
 
-    # Combine two arrays to create mock catalog's spectral parameters
+    # Combine two arrays to create mock catalog's spatial parameters
     parameters = np.concatenate((parameters, np.array([galactic_latitudes]).T), axis=1)
 
     # Remove all with energy fluxes below our chosen energy flux threshold
@@ -598,48 +643,25 @@ def generate_mock_agn_catalog(agn_stats, num_agns=100, extra=3400):
 
     agn_luminosity_function(parameters[:, 4])
 
-    # NOT FINISHED -
+    return parameters
 
 
 # CHOSE THIS MYSELF - THINK THIS IS WHAT ID8 WAS SUGGESTING
-# def split_normal(x, sigma_1, sigma_2, A_1, A_2):
 def split_normal(x, sigma_1, sigma_2):
-# def split_normal(x, sigma_1, sigma_2, A):
-# def split_normal(params):
 
     mu = 0
 
-    # CHECK A IS FROM FORMULA - some use the same A (CHECK IT IS THE SAME)
-
-    # x, mu, sigma_1, sigma_2, A_1, A_2 = params
-
     upper = -1 * ((x - mu) ** 2)
 
-    # return np.where(x < mu, A_1 * np.exp(upper/(2 * (sigma_1 ** 2))), A_2 * np.exp(upper / 2 * (sigma_2 ** 2)))
+    # I defined cutoff between distributions as within 10 degree of galactic plane (lat = 0 degrees)
 
-    # return np.where(np.abs(x - mu) < 10, A * np.exp(upper / (2 * (sigma_1 ** 2))), A * np.exp(upper / 2 * (sigma_2 ** 2)))
-
-    # I defined as within 10 degree of galactic plane (lat = 0 degrees)
-
-    # return np.where(np.abs(x - mu) < 10, A_1 * np.exp(upper / (2 * (sigma_1 ** 2))), A_2 * np.exp(upper / 2 * (sigma_2 ** 2)))
-
+    # ID8 found different values A_1 and A_2 - normalizing factor is the same for both distributions here (as indicated
+    # in split normal distribution wiki - even though this is not a traditional split normal, but a mixture normal)
     A = np.sqrt(2/np.pi) * 1/(sigma_1 + sigma_2)
 
-    return np.where(np.abs(x - mu) < 10, A * np.exp(upper / (2 * (sigma_1 ** 2))), A * np.exp(upper / 2 * (sigma_2 ** 2)))
+    mask = np.abs(x - mu) < 10
 
-
-    # if x < mu:
-    #
-    #     lower = 2 * (sigma_1 ** 2)
-    #
-    #     return A_1 * np.exp(upper/lower)
-    #
-    # else:
-    #
-    #     lower = 2 * (sigma_2 ** 2)
-    #
-    #     return A_2 * np.exp(upper / lower)
-
+    return np.where(mask, A * np.exp(upper / (2 * (sigma_1 ** 2))), A * np.exp(upper / 2 * (sigma_2 ** 2)))
 
 def split_normal_fixed(x):
 
@@ -656,7 +678,6 @@ def split_normal_fixed(x):
     A = np.sqrt(2/np.pi) * 1/(sigma_1 + sigma_2)
 
     return np.where(np.abs(x - mu) < 10, A * np.exp(upper / (2 * (sigma_1 ** 2))), A * np.exp(upper / 2 * (sigma_2 ** 2)))
-
 
 
 def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350):
@@ -711,215 +732,181 @@ def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350):
     # l - uniform distribution assumed
     galactic_longitudes = np.random.uniform(low=0, high=2 * np.pi, size=len(parameters))
 
+    # b - double Gaussian - two overlapping sampled as one
     counts, bins = np.histogram(latitudes_pulsars.value, bins=100, density=True)
 
     bin_width = np.abs(bins[1] - bins[0])
 
     start_value = bins[0] + (bin_width / 2)
 
-    x_values = []
+    x_values = [start_value + (k * bin_width) for k in range(len(bins) - 1)]
 
-    for k in range(len(bins) - 1):
+    popt, _ = curve_fit(f=split_normal, xdata=np.asarray(x_values), ydata=np.asarray(counts), bounds=([0, 0], [90, 90]))
 
-        x_values.append(start_value + (k * bin_width))
+    # Visualise distributions
 
-    # b
+    # visualising_pulsar_latitude_distributions(sigma_1=popt[0], sigma_2=popt[1], x_values=x_values, counts=counts)
 
-    lats = latitudes_pulsars.value.reshape(-1, 1)
-
-    # plt.plot(np.linspace(-30, 30, 1000), split_normal(np.linspace(-30, 30, 1000),
-    #                                                   sigma_1=1.39, sigma_2=19.2, A_1=0.11, A_2=0.012), color='red')
-
-    # gm = GaussianMixture(n_components=2, random_state=0).fit(lats)
-    #
-    # print(gm.means_)
-    # print(np.sqrt(gm.covariances_))
-    # print(gm.weights_)
-
-    # popt, pcov = curve_fit(split_normal, xdata=x_values, ydata=counts, bounds=([0, 0, -np.inf, -np.inf], [90, 90, np.inf, np.inf]))
-
-    popt, pcov = curve_fit(split_normal, xdata=x_values, ydata=counts, bounds=([0, 0], [90, 90]))
-
-    # print(popt)
-
-    plt.bar(x_values, counts, alpha=0.7, label='4FGL Distribution')
-    #
-    # plt.plot(np.linspace(-30, 30, 1000), split_normal(np.linspace(-30, 30, 1000),
-    #                                                   sigma_1=popt[0], sigma_2=popt[1], A_1=popt[2], A_2=popt[2]), color='r')
-    #
-
-    # plt.plot(np.linspace(-30, 30, 1000), split_normal(np.linspace(-30, 30, 1000), sigma_1=popt[0], sigma_2=popt[1],
-    #                                                   A_1=popt[2], A_2=popt[3]), color='red', label='Double Gaussian')
-
-    plt.plot(np.linspace(-30, 30, 1000), split_normal(np.linspace(-30, 30, 1000), sigma_1=popt[0], sigma_2=popt[1],
-                                                      ), color='red', label='Double Gaussian')
-
-    plt.plot(np.linspace(-30, 30, 1000), normal_func(np.linspace(-30, 30, 1000), mean=0, sigma=popt[0]), color='green',
-             linestyle='--', label='Gaussian: $\mu = 0$, $\sigma_1 = ' + str(round(popt[0], 2)) + '$')
-
-    plt.plot(np.linspace(-30, 30, 1000), normal_func(np.linspace(-30, 30, 1000), mean=0, sigma=popt[1]), color='orange',
-             linestyle='-.', label='Gaussian: $\mu = 0$, $\sigma_2 = ' + str(round(popt[1], 2)) + '$')
-
-    # plt.plot(np.linspace(-30, 30, 1000), split_normal(np.linspace(-30, 30, 1000), sigma_1=1.39, sigma_2=19.2, A_1=0.11,
-    #                                                   A_2=0.012), color='purple', label='Recommended by ID8')
-
-    plt.plot(np.linspace(-30, 30, 1000), split_normal(np.linspace(-30, 30, 1000), sigma_1=1.39, sigma_2=19.2,
-                                                      ), color='purple', label='Recommended by ID8')
-
-    # CREATE NEW RANDOM DISTRIBUTION BASED ON PARAMS ABOVE
-
-    # Code below inspired by https://stackoverflow.com/questions/46055690/python-how-to-define-customized-distributions
-    # Looked into continuous rvs and this provided a few good recommendations about inverting PDF.
-
-    class DoubleGaussianGen(stats.rv_continuous):
-        def __init__(self, **kwargs):
-            # pass
-
-            rv_continuous.__init__(self, **kwargs)
-            # self.a = -180
-            # self.b = 180
-
-        def support(self):
-            return (-90, 90)
-
-        def pdf(self, x):
-            # return split_normal(x, sigma_1=popt[0], sigma_2=popt[1], A_1=popt[2], A_2=popt[3])
-
-            return split_normal(x, sigma_1=popt[0], sigma_2=popt[1])
-
-    dist = DoubleGaussianGen()
-
-    urng = np.random.default_rng()
-
-    # gen = NumericalInversePolynomial(dist, random_state=urng)
-
-    umax = np.sqrt(split_normal(0, sigma_1=popt[0], sigma_2=popt[0]))
-
-    v = np.sqrt(2 / np.pi) * 1 / (popt[0] + popt[1])
-
-    gen = RatioUniforms(dist, random_state=urng, umax=umax, vmin=-v, vmax=v)
-
-    print([popt[0], popt[1]])
-
-    cov = [[popt[0]**2, 0], [0, popt[1]**2]]
-
-    # X = MultivariateNormal('X', mu=[0, 0], sigma=cov)
-    #
-    # print('NEw')
-    #
-    # samples = sample(X, size=1000)
-    #
-    # print(samples.flatten())
-    #
-    # x = Symbol('x')
-    #
-    # X = ContinuousRV(x, split_normal, set=Interval(-30, 30))
-    #
-    # samples = sample(X, size=1000)
-
+    # Randomly sample pulsar latitudes from distribution created above
     X1 = stats.Normal(mu=0, sigma=popt[0])
     X2 = stats.Normal(mu=0, sigma=popt[1])
 
+    # CHANGE WEIGHTS HERE TO REFLECT MSP VS YNG
+
     mixture = stats.Mixture([X1, X2])
 
-    samples = mixture.sample(shape=(10000, 1))
+    galactic_latitudes = mixture.sample(shape=(num_pulsars, 1)).flatten()
 
-    # const_pdf = quad(dist.pdf, *dist.support())[0]
+    # Combine two arrays to create mock catalog's spatial parameters
+    parameters = np.concatenate((parameters, np.array([galactic_longitudes]).T), axis=1)
 
-    # print(const_pdf)
+    # Combine two arrays to create mock catalog's spatial parameters
+    parameters = np.concatenate((parameters, np.array([galactic_latitudes]).T), axis=1)
 
-    # r = gen.rvs(size=10000,)
-    # x = np.linspace(r.min(), r.max(), 500)
+    # CUTOFF THRESHOLD AND LUMINOSITY FUNCTION CHECK
 
-    # plt.plot(x, dist.pdf(x) / const_pdf, color='black')
-
-    plt.hist(samples.flatten(), density=True, bins=40, label='Randomly Generated', color='grey', alpha=0.6)
-
-
-
-
-
-
-    # double_norm = DoubleGaussianGen(name='double_norm')
-    #
-    # random_numbers = double_norm.rvs(size=250)   #.sample((1000, 1))
-    #
-    # print(random_numbers)
-    #
-    # counts, bins = np.histogram(random_numbers, bins=40, density=True)
-    #
-    # bin_width = np.abs(bins[1] - bins[0])
-    #
-    # start_value = bins[0] + (bin_width / 2)
-    #
-    # x_values = []
-    #
-    # for k in range(len(bins) - 1):
-    #     x_values.append(start_value + (k * bin_width))
-    #
-    # plt.bar(x_values, counts, alpha=0.7, label='Samples')
-    #
-    # gm = GaussianMixture(n_components=2, means_init=[[0], [0]]).fit(np.asarray([0, 0]).reshape(-1, 1))
-    #
-    # # precisions_init = [1 / (popt[0] ** 2), 1 / (popt[1] ** 2)]
-    #
-    # gm.means_ = np.asarray([[0], [0]])
-    # gm.covars_ = pcov  # np.asarray([(popt[0] ** 2), (popt[1] ** 2)])
-    #
-    # gm.weights_ = np.asarray([1, 1])
-    #
-    # print(gm.weights_)
-    #
-    # print(pcov)
-    #
-    # print(gm.covars_)
-    #
-    # # sum_weights = popt[2] + popt[3]
-    # #
-    # # gm.weights_ = [popt[2]/sum_weights, popt[3]/sum_weights]
-    #
-    # random_nums = gm.sample(n_samples=(500))[0].flatten()
-    #
-    # print(random_nums)
-    #
-    # counts, bins = np.histogram(random_nums, bins=100, density=True)
-    #
-    # bin_width = np.abs(bins[1] - bins[0])
-    #
-    # start_value = bins[0] + (bin_width / 2)
-    #
-    # x_values = []
-    #
-    # for k in range(len(bins) - 1):
-    #     x_values.append(start_value + (k * bin_width))
-    #
-    # plt.bar(x_values, counts, alpha=0.7, label='Samples')
-    #
-    #
-
-
-    plt.title('Distribution of Pulsar Latitudes')
-
-    plt.xlabel('Latitude ($\degree$)')
-
-    plt.ylabel('Source Density')
-
-    plt.legend()
-
-    plt.show()
-
-    # random_samples = gm.sample
-
-
-
-
-    # NOT FINISHED
-
-
+    return parameters
 
 
 def pulsar_xml_writer(sources):
-    pass
+
+    # CREATE DOCUMENT
+
+    root = minidom.Document()
+
+    xml = root.createElement('source_library')
+
+    xml.setAttribute('title', 'source library')
+
+    root.appendChild(xml)
+
+    # PARAMETERS
+
+    # in parameters (order) - pivot_energies, flux_densities, spectral_slopes, exponential_indices, exponential_factors
+    # THEN ENERGY FLUXES
+    # Then longitudes then latitudes
+
+    # prefactor - F_0
+    # index1
+    # scale
+    # expfactor
+    # index2
+
+    pulsar_parameters = ["Prefactor", "Index1", "Scale", "Expfactor", "Index2"]
+
+    # Ranges are taken from https://git.io/JO5FP - i.e. recommended by ID8
+    ranges_of_pulsar_parameters = [("0.00000001", "1000000000.0"), ("-50000.0", "5000.0"),
+                                   ("-3000000.0", "3000000000000.0"), ("-100000000", "1000000"), ("0", "20")]
+
+    for k in range(len(sources)):
+
+        source = root.createElement("source")
+
+        source.setAttribute("name", "PSR_" + str(k))
+        source.setAttribute("type", "PointSource")
+
+        xml.appendChild(source)
+
+        # SPECTRAL
+
+        spectrum = root.createElement("spectrum")
+
+        spectrum.setAttribute("type", "PLSuperExpCutoff2")
+
+        for x in range(len(pulsar_parameters)):
+
+            param = root.createElement("parameter")
+
+            param.setAttribute("max", str(ranges_of_pulsar_parameters[x][1]))
+            param.setAttribute("min", str(ranges_of_pulsar_parameters[x][0]))
+            param.setAttribute("name", pulsar_parameters[x])
+
+            if x == 0:
+
+                # FLUX DENSITY OR PREFACTOR
+
+                param.setAttribute("free", "1")
+                param.setAttribute("scale", str(sources[k][1]))
+                param.setAttribute("value", "1")
+
+
+            elif x == 1:
+
+                # SPECTRAL SLOPE OR GAMMA OR INDEX1
+
+                param.setAttribute("free", "1")
+                param.setAttribute("scale", "1.0")
+                param.setAttribute("value", str(sources[k][2]))
+
+            elif x == 2:
+
+                # SCALE Eb OR PIVOT ENERGY
+
+                param.setAttribute("free", "0")
+                param.setAttribute("scale", "1.0")
+                param.setAttribute("value", str(sources[k][0]))
+
+            elif x == 3:
+
+                # EXPONENTIAL FACTOR A
+
+                param.setAttribute("free", "1")
+                param.setAttribute("scale", "1.0")
+                param.setAttribute("value", str(sources[k][4]))
+
+            else:
+
+                # INDEX2 OR B OR EXPONENTIAL INDEX
+
+                param.setAttribute("free", "0")
+                param.setAttribute("scale", "1")
+                param.setAttribute("value", str(sources[k][3]))
+
+            spectrum.appendChild(param)
+
+        source.appendChild(spectrum)
+
+        # SPATIAL
+
+        spatial = root.createElement("spatialModel")
+
+        spatial.setAttribute("type", "SkyDirFunction")
+
+        ra = root.createElement("parameter")
+        dec = root.createElement("parameter")
+
+        ra.setAttribute("free", "0")
+        ra.setAttribute("max", "360.")
+        ra.setAttribute("min", "-360.")
+        ra.setAttribute("name", "RA")
+        ra.setAttribute("scale", "1.0")
+
+        dec.setAttribute("free", "0")
+        dec.setAttribute("max", "90.")
+        dec.setAttribute("min", "-90.")
+        dec.setAttribute("name", "DEC")
+        dec.setAttribute("scale", "1.0")
+
+        # Convert galactic coordinates to equatorial
+
+        ra_dec = SkyCoord(l=sources[k][6] * u.rad, b=sources[k][7] * u.rad, frame='galactic').transform_to('icrs')
+        ra.setAttribute("value", str(ra_dec.ra.to_value(u.degree)))
+        dec.setAttribute("value", str(ra_dec.dec.to_value(u.degree)))
+
+        spatial.appendChild(ra)
+        spatial.appendChild(dec)
+
+        source.appendChild(spatial)
+
+    # SAVE
+
+    xml_str = root.toprettyxml(indent="\t")
+
+    save_path_file = "pulsars.xml"
+
+    with open(save_path_file, "w") as f:
+        f.write(xml_str)
+
 
     # NOT FINISHED
 
@@ -946,10 +933,6 @@ def agn_xml_writer(sources):
     # extragalactic_background.setAttribute("type", "DiffuseSource")
     #
     # xml.appendChild(extragalactic_background)
-
-    # Pulsars
-
-    # NEED TO FILL IN
 
     # AGN
 
@@ -1037,7 +1020,7 @@ def agn_xml_writer(sources):
 
     # SAVE
 
-    save_path_file = "sources.xml"
+    save_path_file = "agns.xml"
 
     with open(save_path_file, "w") as f:
         f.write(xml_str)
@@ -1071,6 +1054,9 @@ print("TIME: " + str(end - start) + "s")
 # generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows), 10)
 
 # agn_xml_writer(sources=[[1, 2, 3, 4, 0, 45], [2, 4, 6, 8, 0, 45]])
+
+
+pulsar_xml_writer(sources=[[1, 2, 3, 4, 5, 6, 0, 1], [2, 4, 6, 8, 10, 12, 0, 1.5]])
 
 # analysing_agn_parameters(agn_rows)
 
