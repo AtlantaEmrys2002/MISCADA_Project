@@ -37,10 +37,13 @@ from scipy.optimize import curve_fit
 from sklearn.mixture import GaussianMixture
 from scipy.stats import rv_continuous
 from scipy import stats
-from scipy.stats.sampling import NumericalInversePolynomial, NumericalInverseHermite, RatioUniforms, SimpleRatioUniforms, TransformedDensityRejection
+from scipy.stats.sampling import (NumericalInversePolynomial, NumericalInverseHermite, RatioUniforms,
+                                  SimpleRatioUniforms, TransformedDensityRejection)
 from sympy.stats import ContinuousRV, MultivariateNormal, sample
 from sympy import Interval, oo, Symbol
 from scipy.integrate import trapezoid
+import pandas as pd
+from itertools import product, combinations
 
 # VISUALISATIONS
 
@@ -429,6 +432,8 @@ def analysing_pulsar_parameters(pulsars):
     Gammas = pulsars['PLEC_IndexS'].data.filled(np.nan)
     b_values = pulsars['PLEC_Exp_Index'].data.filled(np.nan)
 
+    print(len(np.abs(fds - np.mean(fds)) < np.std(fds, ddof=1)))
+
     # Select exponential factors - CHECK (SAYS IN UNITS OF MeV^-b BUT NEED with GeV)
     a_values = pulsars['PLEC_ExpfactorS'].data
 
@@ -440,7 +445,7 @@ def analysing_pulsar_parameters(pulsars):
         values = pair[1][~np.isnan(pair[1])]
 
         # Plot actual 4FGL source distribution
-        counts, bins = np.histogram(values, bins=20, density=True)
+        counts, bins = np.histogram(values, bins=30, density=True)
         subplot.stairs(counts, bins, label='4FGL Distribution')
 
         # Calculate mean and standard deviation of data
@@ -478,6 +483,8 @@ def analysing_pulsar_parameters(pulsars):
     ax[1, 0].set_xlabel('$\\Gamma$')
     ax[1, 1].set_xlabel('$b$')
     ax[2, 0].set_xlabel('$a\ [MeV$^{-b}$]$')
+
+    ax[0, 0].set_ylim(0, 1 * 10 ** 11)
 
     # Label axes and enable legends
     for a in ax.flatten():
@@ -555,7 +562,10 @@ def pulsar_statistics(pulsars):
 
     pulsar_latitudes = pulsars['GLAT']
 
-    return (mean_Gamma, std_Gamma, mean_b, std_b, mean_log_a, std_log_a, mean_log_flux_density, std_log_flux_density,
+    # return (mean_Gamma, std_Gamma, mean_b, std_b, mean_log_a, std_log_a, mean_log_flux_density, std_log_flux_density,
+    #         mean_log_pivot_energy, std_log_pivot_energy, pulsar_latitudes)
+
+    return (mean_Gamma, std_Gamma, b_values, len(pulsars), mean_log_a, std_log_a, mean_log_flux_density, std_log_flux_density,
             mean_log_pivot_energy, std_log_pivot_energy, pulsar_latitudes)
 
 
@@ -760,9 +770,13 @@ def pulsar_generation(pulsar_stats, energy_flux_low, energy_flux_high, sigma_1, 
 
     # sigma_1 and sigma_2 are the fitted standard deviations of Gaussian distribution
 
-    (mean_Gamma_pulsars, std_Gamma_pulsars, mean_b_pulsars, std_b_pulsars, mean_log_a_pulsars, std_log_a_pulsars,
+    (mean_Gamma_pulsars, std_Gamma_pulsars,b_values, len_pulsars, mean_log_a_pulsars, std_log_a_pulsars,
      mean_log_flux_density_pulsars, std_log_flux_density_pulsars, mean_log_pivot_energy_pulsars,
      std_log_pivot_energy_pulsars, latitudes_pulsars) = pulsar_stats
+
+    unique_values = np.unique_all(b_values)
+    choice_values = unique_values.values
+    new_weights = unique_values.counts/len_pulsars
 
     while True:
 
@@ -787,7 +801,8 @@ def pulsar_generation(pulsar_stats, energy_flux_low, energy_flux_high, sigma_1, 
         exponential_factor = np.random.lognormal(loc=mean_log_a_pulsars, scale=std_log_a_pulsars, size=1)[0]
 
         # Generate new exponential indices (bs)
-        exponential_index = np.random.normal(loc=mean_b_pulsars, scale=std_b_pulsars, size=1)[0]
+        # exponential_index = np.random.normal(loc=mean_b_pulsars, scale=std_b_pulsars, size=1)[0]
+        exponential_index = np.random.choice(choice_values, p=new_weights)
 
         # Energy fluxes and convert energy fluxes so ergs included in units instead of photons
 
@@ -821,7 +836,7 @@ def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350, extra=10):
 
     # CHECK ALL PARAMETER DISTRIBUTIONS AND FIT GAUSSIAN OR LOG-NORMAL - MAYBE RESEARCH OTHER DISTRIBUTIONS IT COULD BE
 
-    (mean_Gamma_pulsars, std_Gamma_pulsars, mean_b_pulsars, std_b_pulsars, mean_log_a_pulsars, std_log_a_pulsars,
+    (mean_Gamma_pulsars, std_Gamma_pulsars, b_values, len_pulsars, mean_log_a_pulsars, std_log_a_pulsars,
      mean_log_flux_density_pulsars, std_log_flux_density_pulsars, mean_log_pivot_energy_pulsars,
      std_log_pivot_energy_pulsars, latitudes_pulsars) = pulsar_stats
 
@@ -845,8 +860,14 @@ def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350, extra=10):
     # FOUND IN analysing_pulsar_parameters() function)
     exponential_factors = np.random.lognormal(loc=mean_log_a_pulsars, scale=std_log_a_pulsars, size=num_pulsars)
 
-    # Generate new exponential indices (bs)
-    exponential_indices = np.random.normal(loc=mean_b_pulsars, scale=std_b_pulsars, size=num_pulsars)
+    # Generate new exponential indices (bs) by selecting from values available
+    # exponential_indices = np.random.normal(loc=mean_b_pulsars, scale=std_b_pulsars, size=num_pulsars)
+    unique_values = np.unique_all(b_values)
+    choice_values = unique_values.values
+    # Divide by number of pulsars in 4FGL to get probabilities
+    new_weights = unique_values.counts/len_pulsars
+
+    exponential_indices = np.random.choice(choice_values, p=new_weights, size=num_pulsars)
 
     # Combine into one array
     parameters = np.stack((pivot_energies, flux_densities, spectral_slopes, exponential_indices, exponential_factors), axis=-1)
@@ -1205,7 +1226,94 @@ def agn_xml_writer(sources):
 #
 print("starting...")
 
+
+def analysis_agn_correlation(sources, agn_params=False):
+
+    # Used for labelling axes and titles - gives mathematical notation equivalent to variable
+    mathematical_notation = {"Pivot_Energy": "$E_0$", "LP_Flux_Density": "$F_0$", "LP_Index": "$\\alpha$",
+                             "LP_beta": "$\\beta$", "PLEC_Flux_Density": "$F_0$", "PLEC_IndexS": "$\Gamma$",
+                             "PLEC_Exp_Index": "$b$", "PLEC_ExpfactorS": "$a$", "GLAT": "Latitude"}
+
+    # CHECKING IF ROWS ARE INDEPENDENT
+
+    if agn_params is True:
+        sources.remove_columns(['PLEC_Flux_Density', 'PLEC_IndexS', 'PLEC_Exp_Index', 'PLEC_ExpfactorS'])
+
+        # Remove spatial column for AGNS - AGNs are known to be approximately isotropically distributed on the sky
+        sources.remove_column('GLAT')
+
+    else:
+        sources.remove_columns(['LP_Flux_Density', 'LP_Index', 'LP_beta'])
+
+    # Convert to pandas for covariance and correlation calculations, as well as plotting
+    sources = sources.to_pandas()
+
+    # Find all possible combinations of parameters
+    columns = list(sources.columns)
+    variable_combinations = list(combinations(columns, 2))
+
+    # Check if an odd number of parameter combinations will need to be plotted
+    # odd_num_combination = len(variable_combinations) % 2 == 1
+    #
+    # if odd_num_combination:
+    #     num_plot_rows += 1
+
+    # Create plot
+
+    plt.rcParams["figure.figsize"] = (10, 14)
+
+    if agn_params is True:
+        num_plot_cols = 2
+    else:
+        num_plot_cols = 3
+
+    # Find number of rows of subplots that will be in figure
+    num_plot_rows = len(variable_combinations) // num_plot_cols
+
+    fig, ax = plt.subplots(num_plot_rows, num_plot_cols)
+
+    # Used to index subplots
+    plot_indices = list(product(range(0, num_plot_rows), range(0, num_plot_cols)))
+
+    # Deal with odd number of combinations
+    # if odd_num_combination:
+    #     fig.delaxes(ax[num_plot_rows - 1, 1])
+    #     plot_indices.pop(-1)
+
+    # Colours for each plot
+    colours = ['red', 'orange', 'gold', 'limegreen', 'darkgreen', 'midnightblue', 'blue', 'deepskyblue', 'purple', 'darkviolet', 'fuchsia', 'pink', 'brown', 'grey', 'black']
+
+    # Plot data for each subplot
+    for sp in range(len(plot_indices)):
+
+        row, col = plot_indices[sp][0], plot_indices[sp][1]
+        var1, var2 = variable_combinations[sp][0], variable_combinations[sp][1]
+
+        # Plot data
+        ax[row, col].scatter(sources[var2], sources[var1], color=colours[sp])
+
+        # Subplot formatting
+        ax[row, col].set_title(mathematical_notation[var1] + ' against ' + mathematical_notation[var2], fontsize=12)
+        ax[row, col].set_xlabel(mathematical_notation[var1])
+        ax[row, col].set_ylabel(mathematical_notation[var2])
+
+    # Figure formatting
+
+    fig.suptitle("Plotting AGN Parameters Against Each Other", fontsize=18, y=0.98)
+    fig.tight_layout()
+
+    fig.show()
+
+
+
+
+
 agn_rows, pulsar_rows = catalog_data_preparation("/Volumes/T7/data/catalog/4FGL_DR4.fit")
+
+
+analysis_agn_correlation(agn_rows)
+# print(agn_rows.columns)
+
 
 print("data preparation completed.")
 #
@@ -1233,7 +1341,7 @@ print("data preparation completed.")
 #
 # print("TIME: " + str(end - start) + "s")
 
-analysing_pulsar_parameters(pulsar_rows)
+# analysing_pulsar_parameters(pulsar_rows)
 
 
 # REFERENCES
@@ -1244,6 +1352,7 @@ analysing_pulsar_parameters(pulsar_rows)
 # Masked to Ordinary Numpy Array - https://www.w3resource.com/python-exercises/numpy/convert-masked-numpy-array-to-regul
 # ar-array-with-nan.php
 # Numpy Documentation - https://numpy.org/doc/stable/user/index.html
+# Python Documentation - https://docs.python.org/3/
 # Scipy Documentation - https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.quad.html#scipy.integrate.
 # quad
 
