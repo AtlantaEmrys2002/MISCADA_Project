@@ -44,6 +44,8 @@ from sympy import Interval, oo, Symbol
 from scipy.integrate import trapezoid
 import pandas as pd
 from itertools import product, combinations
+import seaborn as sns
+from sklearn.metrics import root_mean_squared_error
 
 # VISUALISATIONS
 
@@ -569,6 +571,36 @@ def pulsar_statistics(pulsars):
             mean_log_pivot_energy, std_log_pivot_energy, pulsar_latitudes)
 
 
+def agn_flux_densities(pivot_energies, a=0.10975452653160912, b=-2.8553356136745753, c=-21.159501476671274,
+                   noise_std=0.9181233644485474):
+
+    # a: 0.10975452653160912
+    # b: -2.8553356136745753
+    # c: -21.159501476671274
+
+    # Default values for a, b, and c based on correlation analysis between pivot energies and flux densities. Found that
+    # relation between E_0 and F_0 could be simulated as logF = a * logE^2 + b * logE + c
+
+    log_pivot_energies = np.log(pivot_energies)
+
+    log_flux_densities = (a * (log_pivot_energies ** 2)) + (b * log_pivot_energies) + c
+
+    # Found standard deviation of the residuals of fit of 4FGL data and quadratic fitted to logE_0 and logF_0
+    # (noise_std), assuming mean = 0. Add this simulated noise to log of flux densities to increase realism.
+
+    # Add noise
+    if isinstance(log_pivot_energies, np.float64):
+        noise = np.random.normal(loc=0, scale=noise_std)
+    else:
+        noise = np.random.normal(loc=0, scale=noise_std, size=len(log_pivot_energies))
+
+    log_flux_densities += noise
+
+    flux_densities = np.e ** log_flux_densities
+
+    return flux_densities
+
+
 # GENERATE FIXED NUMBER OF AGNS WITHIN GIVEN ENERGY FLUX RANGE FOR FLAT EXTRAPOLATION AT LOWER ENERGY FLUXES
 def agn_generation(agn_stats, energy_flux_low, energy_flux_high):
 
@@ -587,7 +619,11 @@ def agn_generation(agn_stats, energy_flux_low, energy_flux_high):
                                              size=1)[0]
 
         # Generate new flux density - log-normal for flux densities
-        flux_density = np.random.lognormal(mean=mean_log_flux_density_agn, sigma=std_log_flux_density_agn, size=1)[0]
+        flux_density_ln = np.random.lognormal(mean=mean_log_flux_density_agn, sigma=std_log_flux_density_agn, size=1)[0]
+
+        # FLUX DENSITIES AND PIVOT ENERGY ARE DEPENDENT - THEREFORE FITTED RELATIONSHIP AND CALCULATE
+        # FLUX DENSITY AS SUCH (THEREFORE, CHANGED SO GENERATION IS RELATED to PIVOt ENERGY)
+        flux_density = agn_flux_densities(pivot_energy)
 
         # Generate new spectral slope (alpha)
         spectral_slope = np.random.normal(loc=mean_alpha_agn, scale=std_alpha_agn, size=1)[0]
@@ -627,7 +663,11 @@ def generate_mock_agn_catalog(agn_stats, num_agns=100, extra=3400):
     pivot_energies = np.random.lognormal(mean=mean_log_pivot_energy_agn, sigma=std_log_pivot_energy_agn, size=num_agns)
 
     # Generate new flux densities - log-normal for flux densities
-    flux_densities = np.random.lognormal(mean=mean_log_flux_density_agn, sigma=std_log_flux_density_agn, size=num_agns)
+    # flux_densities = np.random.lognormal(mean=mean_log_flux_density_agn, sigma=std_log_flux_density_agn, size=num_agns)
+
+    # FLUX DENSITIES AND PIVOT ENERGY ARE DEPENDENT - THEREFORE FITTED RELATIONSHIP AND CALCULATE
+    # FLUX DENSITY AS SUCH (THEREFORE, CHANGED SO GENERATION IS RELATED to PIVOt ENERGY)
+    flux_densities = agn_flux_densities(pivot_energies)
 
     # Generate new spectral slopes (alphas)
     spectral_slopes = np.random.normal(loc=mean_alpha_agn, scale=std_alpha_agn, size=num_agns)
@@ -726,6 +766,13 @@ def generate_mock_agn_catalog(agn_stats, num_agns=100, extra=3400):
     parameters = np.vstack((parameters, faint_sources))
 
     agn_luminosity_function(parameters[:, 4])
+
+    # CHECK SIMULATED FLUX DENSITIES AND PIVOT ENERGIES HAVE SAME CORRELATION AS IN 4FGL
+    # plt.title('Simulated $F_0$ against $E_0$')
+    # plt.xlabel('$E_0$')
+    # plt.ylabel('$F_{0, AGN}$')
+    # plt.scatter(np.log(parameters[:, 0]), np.log(parameters[:, 1]), s=2)
+    # plt.show()
 
     return parameters
 
@@ -1227,14 +1274,12 @@ def agn_xml_writer(sources):
 print("starting...")
 
 
-def analysis_agn_correlation(sources, agn_params=False):
+def analysis_correlation(sources, agn_params=False):
 
     # Used for labelling axes and titles - gives mathematical notation equivalent to variable
     mathematical_notation = {"Pivot_Energy": "$E_0$", "LP_Flux_Density": "$F_0$", "LP_Index": "$\\alpha$",
                              "LP_beta": "$\\beta$", "PLEC_Flux_Density": "$F_0$", "PLEC_IndexS": "$\Gamma$",
                              "PLEC_Exp_Index": "$b$", "PLEC_ExpfactorS": "$a$", "GLAT": "Latitude"}
-
-    # CHECKING IF ROWS ARE INDEPENDENT
 
     if agn_params is True:
         sources.remove_columns(['PLEC_Flux_Density', 'PLEC_IndexS', 'PLEC_Exp_Index', 'PLEC_ExpfactorS'])
@@ -1252,14 +1297,6 @@ def analysis_agn_correlation(sources, agn_params=False):
     columns = list(sources.columns)
     variable_combinations = list(combinations(columns, 2))
 
-    # Check if an odd number of parameter combinations will need to be plotted
-    # odd_num_combination = len(variable_combinations) % 2 == 1
-    #
-    # if odd_num_combination:
-    #     num_plot_rows += 1
-
-    # Create plot
-
     plt.rcParams["figure.figsize"] = (10, 14)
 
     if agn_params is True:
@@ -1275,13 +1312,7 @@ def analysis_agn_correlation(sources, agn_params=False):
     # Used to index subplots
     plot_indices = list(product(range(0, num_plot_rows), range(0, num_plot_cols)))
 
-    # Deal with odd number of combinations
-    # if odd_num_combination:
-    #     fig.delaxes(ax[num_plot_rows - 1, 1])
-    #     plot_indices.pop(-1)
-
-    # Colours for each plot
-    colours = ['red', 'orange', 'gold', 'limegreen', 'darkgreen', 'midnightblue', 'blue', 'deepskyblue', 'purple', 'darkviolet', 'fuchsia', 'pink', 'brown', 'grey', 'black']
+    # PLOT DATA AGAINST DATA
 
     # Plot data for each subplot
     for sp in range(len(plot_indices)):
@@ -1289,13 +1320,24 @@ def analysis_agn_correlation(sources, agn_params=False):
         row, col = plot_indices[sp][0], plot_indices[sp][1]
         var1, var2 = variable_combinations[sp][0], variable_combinations[sp][1]
 
+        # Check Kendall coefficient, as Pearson only determines if linear relationship.
+
+        correlation_coefficient = str(round(sources[var1].corr(sources[var2]), 3))
+        kendall_coefficient = str(round(sources[var1].corr(sources[var2], method='kendall'), 3))
+
         # Plot data
-        ax[row, col].scatter(sources[var2], sources[var1], color=colours[sp])
+        ax[row, col].scatter(sources[var2], sources[var1], color='red', label="Pearson: " + correlation_coefficient +
+                                                                              "\nKendall: " + kendall_coefficient, marker='+', s=8)
 
         # Subplot formatting
         ax[row, col].set_title(mathematical_notation[var1] + ' against ' + mathematical_notation[var2], fontsize=12)
         ax[row, col].set_xlabel(mathematical_notation[var1])
         ax[row, col].set_ylabel(mathematical_notation[var2])
+
+        # Label with correlation coefficient
+        # sources[[var1, var2]].corr(numeric_only=True)
+
+        ax[row, col].legend(fontsize=8, loc='upper left')
 
     # Figure formatting
 
@@ -1304,22 +1346,277 @@ def analysis_agn_correlation(sources, agn_params=False):
 
     fig.show()
 
+    # LOG-LOG PLOTS
+
+    fig, ax = plt.subplots(num_plot_rows, num_plot_cols)
+
+    # Plot data for each subplot
+    for sp in range(len(plot_indices)):
+
+        row, col = plot_indices[sp][0], plot_indices[sp][1]
+        var1, var2 = variable_combinations[sp][0], variable_combinations[sp][1]
+
+        log_var1 = np.log(sources[var1])
+        log_var2 = np.log(sources[var2])
+
+        # Check Kendall coefficient, as Pearson only determines if linear relationship.
+
+        correlation_coefficient = str(round(sources[var1].corr(sources[var2]), 3))
+        kendall_coefficient = str(round(sources[var1].corr(sources[var2], method='kendall'), 3))
+
+        # Plot data
+        ax[row, col].scatter(log_var2, log_var1, color='red', label="Pearson: " + correlation_coefficient +
+                                                                              "\nKendall: " + kendall_coefficient, marker='+', s=8)
+
+        # Subplot formatting
+        ax[row, col].set_title(mathematical_notation[var1] + ' against ' + mathematical_notation[var2], fontsize=12)
+        ax[row, col].set_xlabel(mathematical_notation[var1])
+        ax[row, col].set_ylabel(mathematical_notation[var2])
+
+        ax[row, col].legend(fontsize=8, loc='upper left')
+
+    # Figure formatting
+
+    fig.suptitle("Log-Log Plotting AGN Parameters Against Each Other", fontsize=18, y=0.98)
+    fig.tight_layout()
+
+    fig.show()
+
+    # CORRELATION MATRICES
+
+    # Pearson
+
+    corr = sources.corr()
+
+    plt.figure(figsize=(13, 11))
+
+    plt.title('Pearson Correlation Coefficient Matrix', fontsize=20)
+
+    matrix_labels = [mathematical_notation[k] for k in corr.columns.values]
+
+    sns.heatmap(np.abs(corr), xticklabels=matrix_labels, yticklabels=matrix_labels, annot=corr, cmap='Greens')
+
+    plt.show()
+
+    # Kendall Rank
+
+    corr = sources.corr(method='kendall')
+
+    plt.figure(figsize=(13, 11))
+
+    plt.title('Kendall Rank Correlation Coefficient Matrix', fontsize=20)
+
+    matrix_labels = [mathematical_notation[k] for k in corr.columns.values]
+
+    # N.B. This is very important - took the absolute value to highlight suggestions of strong correlation, but
+    # continued to label with + and - indicating positive or negative correlation
+
+    sns.heatmap(np.abs(corr), xticklabels=matrix_labels, yticklabels=matrix_labels, annot=corr, cmap='Blues')
+
+    plt.show()
 
 
+def straight_line(x, m, c):
+    return (m * x) + c
+
+
+def quadratic(x, a, b, c):
+    return (a * x ** 2) + (b * x) + c
+
+
+def cubic(x, a, b, c, d):
+    return (a * x ** 3) + (b * x ** 2) + (c * x) + d
+
+
+def fitting_agn_pivot_energy_flux_density_relation(agns):
+
+    # IMPORTANT
+    # N.B. Could come back to and take into account ERROR on each observation of pivot energy etc. (using uncertainty
+    # for both E_0 and F_0)
+
+    # Format data
+
+    # Remove pulsar columns
+    agns.remove_columns(['PLEC_Flux_Density', 'PLEC_IndexS', 'PLEC_Exp_Index', 'PLEC_ExpfactorS'])
+
+    # Remove spatial column for AGNS - AGNs are known to be approximately isotropically distributed on the sky
+    agns.remove_column('GLAT')
+
+    # Convert units
+
+    # Select pivot energy values and convert from MeV to GeV
+
+    agns['Pivot_Energy'] = agns['Pivot_Energy'].to(u.GeV)
+    agns['LP_Flux_Density'] = agns['LP_Flux_Density'].to(u.ph / (u.cm * u.cm * u.GeV * u.s))
+
+    agns = agns.to_pandas()
+
+    # Remove sources with NaN values
+    agns.dropna(inplace=True)
+
+    # Create plot
+
+    plt.rcParams["figure.figsize"] = (8, 4)
+    fig, ax = plt.subplots(1, 2)
+
+    # Plot raw data
+
+    log_pivot_energy = np.log(agns['Pivot_Energy'])
+    log_flux_density = np.log(agns['LP_Flux_Density'])
+
+    ax[0].scatter(agns['Pivot_Energy'], agns['LP_Flux_Density'], s=8, marker='+')
+    ax[1].scatter(log_pivot_energy, log_flux_density, s=8, marker='+')
+
+    # Fit relationships between AGN flux density and pivot energy
+
+    x_values = np.linspace(np.min(agns['Pivot_Energy']), np.max(agns['Pivot_Energy']), 1000)
+    log_x_values = np.linspace(np.min(log_pivot_energy), np.max(log_pivot_energy), 1000)
+
+    # Straight line
+    m, c = np.polyfit(log_pivot_energy, log_flux_density, deg=1)
+    ax[1].plot(log_x_values, m * log_x_values + c, color='red', label='Linear')
+
+    # non-logarithmic fit
+    ax[0].plot(x_values, (x_values ** m) * (np.e ** c), label='Log Linear', color='red')
+
+    # Normalised/Standardised/Studentised Residual https://stats.stackexchange.com/questions/22653/raw-residuals-versus-standardised-residuals-versus-studentised-residuals-what
+    residuals_straight = log_flux_density - (m * log_pivot_energy + c)
+
+    print("RMSE of Linear Fit: {}".format(root_mean_squared_error(log_flux_density, m * log_pivot_energy + c)))
+    print('m: {} c: {}'.format(m, c))
+
+    # Quadratic
+    # x_values = np.linspace(np.min(log_pivot_energy), np.max(log_pivot_energy), 1000)
+    a, b, c = np.polyfit(log_pivot_energy, log_flux_density, deg=2)
+    ax[1].plot(np.log(x_values), (a * np.log(x_values) ** 2) + (b * np.log(x_values)) + c, color='green', label='Quadratic', linestyle='-.')
+
+    # non-logarithmic fit
+    ax[0].plot(np.e ** log_x_values, np.e ** ((a * log_x_values ** 2) + (b * log_x_values) + c), color='green', label='Log Quadratic', linestyle='-.')
+
+    residuals_quad = log_flux_density - ((a * log_pivot_energy ** 2) + (b * log_pivot_energy) + c)
+
+    print("RMSE of Quadratic Fit: {}".format(root_mean_squared_error(log_flux_density, (a * log_pivot_energy ** 2)
+                                                                     + (b * log_pivot_energy) + c)))
+    print('a: {} b: {} c: {}'.format(a, b, c))
+
+    print("No. Real Solutions: ".format((b ** 2) - (4 * a * c)))
+
+    # Cubic
+    # x_values = np.linspace(np.min(log_pivot_energy), np.max(log_pivot_energy), 1000)
+    a, b, c, d = np.polyfit(log_pivot_energy, log_flux_density, deg=3)
+    ax[1].plot(log_x_values, (a * log_x_values ** 3) + (b * log_x_values ** 2) + (c * log_x_values) + d, color='orange',
+               label='Cubic', linestyle='--')
+
+    # non-logarithmic fit
+    ax[0].plot(np.e ** np.log(x_values), np.e ** ((a * np.log(x_values) ** 3) + (b * np.log(x_values) ** 2) + (c * np.log(x_values)) + d), linestyle='--', label='Log Cubic', color='orange')
+
+    residuals_cubic = log_flux_density - ((a * log_pivot_energy ** 3) + (b * log_pivot_energy ** 2) + (c * log_pivot_energy)
+                                    + d)
+
+    print("RMSE of Cubic Fit: {}".format(root_mean_squared_error(log_flux_density, (a * log_pivot_energy ** 3) + (b * log_pivot_energy ** 2) + (c * log_pivot_energy)
+                                    + d)))
+    print('a: {} b: {} c: {} d: {}'.format(a, b, c, d))
+
+    # n^4
+
+    # x_values = np.linspace(np.min(log_pivot_energy), np.max(log_pivot_energy), 1000)
+    a, b, c, d, e = np.polyfit(log_pivot_energy, log_flux_density, deg=4)
+    ax[1].plot(log_x_values, (a * log_x_values ** 4) + (b * log_x_values ** 3) + (c * log_x_values ** 2) +
+               (d * log_x_values) + e, color='purple', label='$n^4$', linestyle=':')
+
+    # non-logarithmic fit
+    ax[0].plot(np.e ** np.log(x_values), np.e ** ((a * np.log(x_values) ** 4) + (b * np.log(x_values) ** 3) + (c * np.log(x_values) ** 2) +
+               (d * np.log(x_values)) + e), color='purple', label='Log $n^4$', linestyle=':')
+
+    residuals_4 = log_flux_density - ((a * log_pivot_energy ** 4) + (b * log_pivot_energy ** 3) + (c * log_pivot_energy ** 2) + (d * log_pivot_energy) + e)
+
+    print("RMSE of $n^4$ Fit: {}".format(root_mean_squared_error(log_flux_density, (a * log_pivot_energy ** 4) + (b * log_pivot_energy ** 3) + (c * log_pivot_energy ** 2) + (d * log_pivot_energy) + e)))
+    print('a: {} b: {} c: {} d: {} e: {}'.format(a, b, c, d, e))
+
+    # Calculate least squares fit - in case variables need to be normally distributed, we know that log of E_0 and log
+    # of F_0 are both normally distributed (log-normal distribution)
+
+    # Formatting
+
+    fig.suptitle('Fitting AGN Flux Density-Pivot Energy Relationship')
+
+    ax[0].set_xlabel('$E_0$')
+    ax[0].set_ylabel('$F_{0, AGN}$')
+    ax[0].set_title('Flux Density against Pivot Energy', fontsize=10)
+    ax[0].legend()
+
+    ax[1].set_title('Log-Log Plot of Flux Density against Pivot Energy', fontsize=10)
+    ax[1].set_xlabel('log $E_0$')
+    ax[1].set_ylabel('log $F_{0, AGN}$')
+    ax[1].legend()
+
+    # Scientific notation
+    t = ax[0].yaxis.get_offset_text()
+    t.set_x(-0.2)
+
+    fig.tight_layout()
+    fig.align_titles()
+
+    fig.show()
+
+    # Residuals
+
+    plt.rcParams["figure.figsize"] = (27, 6)
+
+    fig2, ax2 = plt.subplots(1, 4)
+
+    fig2.suptitle('Residuals')
+
+    ax2[0].scatter(log_pivot_energy, residuals_straight / (np.std(residuals_straight, ddof=1)), s=4)
+    ax2[1].scatter(log_pivot_energy, residuals_quad / np.std(residuals_quad, ddof=1), s=4)
+
+    print("Standard Deviation of Residuals for Quadratic Fit: {}".format(np.std(residuals_quad, ddof=1)))
+
+    # CHECKING SIMULATED NOISE
+    ax2[1].scatter(log_pivot_energy, np.random.normal(loc=0, scale=np.std(residuals_quad, ddof=1), size=len(log_pivot_energy)), s=2)
+
+    # LOOKING AT MEASUREMENTS TEXTBOOK - WANT ABOUT 96% BETWEEN -2 and +2
+    print("Percentage of normalised residuals outside of [-2, 2]: {}".format(1 - np.sum(np.abs(residuals_quad / np.std(residuals_quad)) > 2)/len(residuals_quad)))
+
+    ax2[2].scatter(log_pivot_energy, residuals_cubic / np.std(residuals_cubic, ddof=1), s=4)
+    ax2[3].scatter(log_pivot_energy, residuals_4 / np.std(residuals_4, ddof=1), s=4)
+
+    ax2[0].set_title('Linear Fit to Log-Log Plot')
+    ax2[1].set_title('Quadratic Fit to Log-Log Plot')
+    ax2[2].set_title('Cubic Fit to Log-Log Plot')
+    ax2[3].set_title('$n^4$ Fit to Log-Log Plot')
+
+    ax2[0].set_xlabel('log $E_0$')
+    ax2[1].set_xlabel('log $E_0$')
+    ax2[2].set_xlabel('log $E_0$')
+    ax2[3].set_xlabel('log $E_0$')
+
+    ax2[0].set_ylabel('$y_i - \hat{y}_i$')
+    ax2[1].set_ylabel('$y_i - \hat{y}_i$')
+    ax2[2].set_ylabel('$y_i - \hat{y}_i$')
+    ax2[3].set_ylabel('$y_i - \hat{y}_i$')
+
+    fig2.show()
 
 
 agn_rows, pulsar_rows = catalog_data_preparation("/Volumes/T7/data/catalog/4FGL_DR4.fit")
 
+# analysis_correlation(agn_rows.copy(), agn_params=True)
 
-analysis_agn_correlation(agn_rows)
-# print(agn_rows.columns)
+fitting_agn_pivot_energy_flux_density_relation(agn_rows.copy())
+
+# analysis_correlation(pulsar_rows, agn_params=False)
 
 
 print("data preparation completed.")
 #
 # start = time.time()
 #
-# agns = generate_mock_agn_catalog(agn_statistics(agn_rows), 100, extra=3000)
+# agns = generate_mock_agn_catalog(agn_statistics(agn_rows.copy()), num_agns=100, extra=3000)
+#
+# print(agns)
+
+
 #
 # print("agns created.")
 #
@@ -1327,7 +1624,7 @@ print("data preparation completed.")
 #
 # print("agns saved.")
 #
-# pulsars = generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows), 10, extra=200)
+# pulsars = generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows.copy(), 10, extra=200)
 #
 # print("pulsars created")
 #
@@ -1341,7 +1638,7 @@ print("data preparation completed.")
 #
 # print("TIME: " + str(end - start) + "s")
 
-# analysing_pulsar_parameters(pulsar_rows)
+# analysing_pulsar_parameters(pulsar_rows.copy()
 
 
 # REFERENCES
