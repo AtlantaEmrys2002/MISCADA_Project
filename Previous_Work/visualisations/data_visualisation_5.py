@@ -49,7 +49,7 @@ def animate(k):
     # return mesh
 
 
-with fits.open("./test_data_5/roi_filtered_gti.fits", memmap=True) as hdul:
+with fits.open("test_data_5/roi_filtered_gti.fits", memmap=True) as hdul:
     print(hdul[1].columns)
 
     # print(min(hdul[1].data['TIME'])) # 239566097.30712715
