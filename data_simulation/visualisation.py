@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 from scipy.stats import Normal, chi2, lognorm
+from scipy.special import erf
 
 
 def agn_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64]) -> None:
@@ -76,6 +77,16 @@ def log_norm_pdf(x, mu, sigma):
     return f_x
 
 
+def log_norm_cdf(x, mu, sigma):
+
+    upper = np.log(x) - mu
+    lower = sigma * np.sqrt(2)
+
+    phi_x = 0.5 * (1 + erf(upper / lower))
+
+    return phi_x
+
+
 def chi_squared_goodness_of_fit_gaussian(observed_counts, bin_intervals, mean, sigma, number_of_sources):
 
     # Add 0 count for all < than bin_intervals[0] and for all > bin_intervals[len(bin_intervals)]
@@ -88,6 +99,8 @@ def chi_squared_goodness_of_fit_gaussian(observed_counts, bin_intervals, mean, s
     num_bins = len(bin_intervals) - 1
 
     # Probability of parameter value falling into this interval
+    # probs = [X.cdf(bin_intervals[x], bin_intervals[x + 1]) for x in range(0, len(bin_intervals) - 1)]
+
     probs = [X.cdf(bin_intervals[x], bin_intervals[x + 1]) for x in range(0, len(bin_intervals) - 1)]
 
     # Probability of parameter value falling below bin_intervals[0]
@@ -123,6 +136,185 @@ def chi_squared_goodness_of_fit_gaussian(observed_counts, bin_intervals, mean, s
         cdf_probability = 1 - chi_squared_distribution.cdf(test_statistic)
 
         # print("P(X^2_min; {}) = {}".format(degrees_of_freedom, cdf_probability))
+
+        return str(test_statistic), str(reduced_chi_squared_min), str(cdf_probability), str(degrees_of_freedom)
+
+    else:
+
+        # print("Automatic rejection of distribution as chi^2 = infinity due to divide by 0 error.")
+
+        return "N/A", "N/A", "N/A", "N/A"
+
+
+# def log_normal_cdf(x, mu, sigma):
+#
+#     return 0.5 * (1 + erf((np.log(x) - mu)/(np.sqrt(2) * sigma)))
+
+
+def chi_squared_goodness_of_fit_log_normal(observed_counts, bin_intervals, number_of_sources, loc, scale, muX, sigmaX):
+
+    # Add 0 count for all < than bin_intervals[0] and for all > bin_intervals[len(bin_intervals)]
+    observed_counts = list(observed_counts)
+    observed_counts.insert(0, 0)
+    observed_counts.append(0)
+    num_bins = len(bin_intervals) - 1
+
+    # X = lognorm(s=np.log(np.std(observed_counts, ddof=1)), loc=0, scale=np.log(np.mean(observed_counts)))
+
+    # BELOW 5 LINES FROM HERE - https://stackoverflow.com/questions/68361048/how-to-generate-lognormal-distribution-with-specific-mean-and-std-in-python
+    mu = loc  # target mean
+    sigma = scale  # target std
+
+    # a = 1 + (sigma / mu) ** 2
+    # s_2 = np.sqrt(np.log(a))
+    # scale_2 = mu / np.sqrt(a)
+
+    # X = lognorm(scale=scale, loc=loc, s=1)
+    # X = lognorm(scale=1, loc=loc, s=scale)
+    # X = lognorm(scale=scale_2, s=s_2)
+
+    # X = lognorm(scale=muX, loc=0, s=sigmaX)
+
+    X = lognorm(scale=np.exp(loc), loc=0, s=scale)
+
+    fig2, ax2 = plt.subplots(1, 1)
+
+    x_val = np.linspace(np.min(bin_intervals), np.max(bin_intervals), 10000)
+
+    ax2.plot(x_val, log_norm_pdf(x_val, mu=loc, sigma=scale), label='1')
+
+    ax2.plot(x_val, [X.pdf(x) for x in x_val], label='2')
+
+    fig2.legend()
+
+    fig2.show()
+
+
+
+
+    # Probability of parameter value falling into this interval
+    # probs = [X.cdf(bin_intervals[x], bin_intervals[x + 1]) for x in range(0, len(bin_intervals) - 1)]
+
+    # BELOW BEST SO FAR
+
+    # probs = [X.cdf(bin_intervals[x + 1]) - X.cdf(bin_intervals[x]) for x in range(0, len(bin_intervals) - 1)]
+
+    probs = [log_norm_cdf(bin_intervals[x + 1], mu=loc, sigma=scale) - log_norm_cdf(bin_intervals[x], mu=loc, sigma=scale) for x in range(0, len(bin_intervals) - 1)]
+
+    # Probability of parameter value falling below bin_intervals[0]
+    probs.insert(0, log_norm_cdf(bin_intervals[0], mu=loc, sigma=scale))
+
+    # print(probs)
+
+    # Probability of parameter value falling above bin_intervals[-1]
+    probs.append(1 - log_norm_cdf(bin_intervals[-1], mu=loc, sigma=scale))
+
+    expected_counts = number_of_sources * np.array(probs)
+
+    # print(np.sum(expected_counts))
+
+    # print(expected_counts)
+
+    # log_observed_counts = np.log(observed_counts)
+
+    # mean_log = np.mean(log_observed_counts)
+    # std_log = np.std(log_observed_counts, ddof=1)
+
+    # mean_log = np.log(np.mean(observed_counts))
+    # std_log = np.log(np.std(observed_counts, ddof=1))
+
+    #
+    # print(observed_counts[0])
+    # print(np.log(observed_counts)[0])
+
+
+    # X = Normal(mu=mean_log, sigma=std_log)
+    #
+    # scaled_intervals = np.log(bin_intervals)
+
+    # print(scaled_intervals)
+    #
+    # print(X.cdf(scaled_intervals[0]))
+
+    # Probability of parameter value falling into this interval
+    # probs = [X.cdf(scaled_intervals[x], scaled_intervals[x + 1]) for x in range(0, len(bin_intervals) - 1)]
+    #
+    # # Probability of parameter value falling below bin_intervals[0]
+    # probs.insert(0, X.cdf(scaled_intervals[0]))
+    #
+    # # Probability of parameter value falling above bin_intervals[-1]
+    # probs.append(1 - X.cdf(scaled_intervals[-1]))
+    #
+    #
+    # print(probs)
+
+
+
+    # X = Normal(mu=mean, sigma=sigma)
+
+    # X = lognorm(loc=np.e**np.mean(np.log(observed_counts)), s=np.std(np.log(observed_counts)))
+
+    # Probability of parameter value falling into this interval
+    # probs = [X.cdf(bin_intervals[x], bin_intervals[x + 1]) for x in range(0, len(bin_intervals) - 1)]
+
+    # print(probs)
+
+    # probs = [X.cdf(bin_intervals[x + 1]) - X.cdf(bin_intervals[x]) for x in range(0, len(bin_intervals) - 1)]
+
+    # probs = [log_normal_cdf(bin_intervals[x + 1], mu=np.e**np.mean(np.log(observed_counts)), sigma=np.std(np.log(observed_counts))) - log_normal_cdf(bin_intervals[x], mu=np.e**np.mean(np.log(observed_counts)), sigma=np.std(np.log(observed_counts))) for x in range(0, len(bin_intervals) - 1)]
+
+    # log_data = np.log(observed_counts)
+
+    # mean_data = np.mean(observed_counts)
+    # std_data = np.std(observed_counts, ddof=1)
+    # mean_square = mean_data ** 2
+    # variance_data = std_data ** 2
+
+    # mu = np.log(mean_square / np.sqrt(mean_square + variance_data))
+    # std = np.sqrt(np.log(1 + (variance_data / mean_square)))
+
+    # scaled_intervals = (np.log(bin_intervals) - np.mean(np.log(observed_counts)))/np.std(np.log(observed_counts), ddof=1)
+
+    # X = Normal(mu=0, sigma=1)
+
+    # probs = [X.cdf(scaled_intervals[x], scaled_intervals[x + 1]) for x in range(0, len(bin_intervals) - 1)]
+
+    # probs = [log_normal_cdf(bin_intervals[x + 1], mu=mu, sigma=std) - log_normal_cdf(bin_intervals[x], mu=mu, sigma=std) for x in range(0, len(bin_intervals) - 1)]
+
+    # print(probs)
+
+    # Probability of parameter value falling below bin_intervals[0]
+    # probs.insert(0, X.cdf(bin_intervals[0]))
+    # probs.insert(0, log_normal_cdf(bin_intervals[0], mu=mu, sigma=std))
+
+    # Probability of parameter value falling above bin_intervals[-1]
+    # probs.append(1 - log_normal_cdf(bin_intervals[-1], mu=mu, sigma=std))
+
+    # print(observed_counts)
+    # print(expected_counts)
+
+
+
+    # expected_counts = number_of_sources * np.array(probs)
+
+    # if outliers cause 1-5 divide by 0 errors with a few observations, but have expected count of 0 take out the values
+    if len(np.argwhere(np.logical_and((expected_counts == 0), (observed_counts != 0)).flatten())) < 5:
+
+        observed_counts = np.array([observed_counts[x] for x in range(len(observed_counts)) if expected_counts[x] > 0])
+        expected_counts = np.array([x for x in expected_counts if x > 0])
+
+        # N.B. Both normal and log-normal have two free parameters to be fitted - mean and sigma
+
+        degrees_of_freedom = num_bins - 2 - 1
+
+        test_statistic = np.sum(((observed_counts - expected_counts) ** 2) / expected_counts)
+
+        reduced_chi_squared_min = test_statistic/degrees_of_freedom
+
+        chi_squared_distribution = chi2(df=degrees_of_freedom)
+
+        # Ideally about 0.5
+        cdf_probability = 1 - chi_squared_distribution.cdf(test_statistic)
 
         return str(test_statistic), str(reduced_chi_squared_min), str(cdf_probability), str(degrees_of_freedom)
 
@@ -169,7 +361,8 @@ def analysing_agn_parameters(agns):
 
         counts_2, bins_2 = np.histogram(values, bins=100, density=False)
 
-        chi_squared, reduced_chi_squared, chi2_cdf_prob, degree_freedom = chi_squared_goodness_of_fit_gaussian(counts_2, bins_2, mean, sigma, number_of_sources=len(values))
+        chi_squared, reduced_chi_squared, chi2_cdf_prob, degree_freedom = (
+            chi_squared_goodness_of_fit_gaussian(counts_2, bins_2, mean, sigma, number_of_sources=len(values)))
 
         if chi_squared != "N/A":
 
@@ -199,6 +392,28 @@ def analysing_agn_parameters(agns):
 
         mean_log = np.log(mean_square / (np.sqrt(mean_square + std_square)))
         std_log = np.sqrt(np.log(1 + (std_square / mean_square)))
+
+        # counts_2, bins_2 = np.histogram(values, bins=100, density=False)
+
+        muX, sigmaX = np.mean(np.log(values)), np.std(np.log(values), ddof=1)
+
+        chi_squared, reduced_chi_squared, chi2_cdf_prob, degree_freedom = (
+            chi_squared_goodness_of_fit_log_normal(counts_2, bins_2, number_of_sources=len(values), loc=mean_log, scale=std_log, muX=muX, sigmaX=sigmaX))
+
+        if chi_squared != "N/A":
+
+            print("Goodness of Fit of Log-Normal Distribution: ")
+
+            print("Chi Squared Min Test Statistic: {}".format(chi_squared))
+            print("Reduced Chi-Squared Min Statistic: {}".format(reduced_chi_squared))
+            print("P(X^2_min; {}) = {}".format(degree_freedom, chi2_cdf_prob))
+
+            print('\n')
+
+        else:
+
+            print("Automatic Rejection of Log-Normal Fit")
+            print("\n")
 
         subplot.plot(x_values, log_norm_pdf(x_values, mean_log, std_log), label='Log-Normal', color='red',
                      linestyle='--')
