@@ -1,5 +1,4 @@
 import numpy as np
-import numpy.typing as npt
 from scipy.stats import chi2, kstest, lognorm, Normal
 
 
@@ -73,7 +72,7 @@ def chi_squared_test(values, num_bins: int, distribution: str) -> None:
         cdf_probability = 1 - chi_squared_distribution.cdf(test_statistic)
 
         print("-" * 60)
-        print("Goodness of Fit of {} Distribution to {}: ".format(distribution, parameter_name))
+        print("Chi-Squared Goodness of Fit of {} Distribution to {}: ".format(distribution, parameter_name))
 
         print("Chi Squared Min Test Statistic, X^2_min: {}".format(test_statistic))
         print("P(X^2_min; {}) = {}".format(degrees_of_freedom, cdf_probability))
@@ -136,7 +135,7 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05) -> None:
         critical_val = 1.22385 / np.sqrt(number_of_sources)
 
     print("-" * 60)
-    print("Goodness of Fit of {} Distribution to {}: ".format(distribution, parameter_name))
+    print("K-S Goodness of Fit of {} Distribution to {}: ".format(distribution, parameter_name))
     print("Test Stat, K: {}".format(ks_stat))
     print("P(K < {}) = {}".format(ks_stat, p_val))
 

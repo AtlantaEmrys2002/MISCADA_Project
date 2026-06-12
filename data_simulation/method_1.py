@@ -30,7 +30,7 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 import matplotlib.pyplot as plt
 import warnings
-from xml.dom import minidom
+# from xml.dom import minidom
 import time
 from scipy.optimize import curve_fit
 from sklearn.mixture import GaussianMixture
@@ -49,8 +49,10 @@ from sklearn.metrics import root_mean_squared_error
 # import math
 
 # My functions
-from analysis.visualisation import plot_parameter_distributions # analysing_agn_parameters, agn_luminosity_function, analysing_pulsar_parameters, analysing_parameters
+from analysis.visualisation import agn_luminosity_function, plot_parameter_distributions
+from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
 
+from xml_writers import agn_xml_writer, pulsar_xml_writer
 
 # VISUALISATIONS
 
@@ -865,252 +867,6 @@ def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350, extra=10):
     return parameters
 
 
-def pulsar_xml_writer(sources):
-
-    # CREATE DOCUMENT
-
-    root = minidom.Document()
-
-    xml = root.createElement('source_library')
-
-    xml.setAttribute('title', 'source library')
-
-    root.appendChild(xml)
-
-    # PARAMETERS
-
-    pulsar_parameters = ["Prefactor", "Index1", "Scale", "Expfactor", "Index2"]
-
-    # Ranges are taken from https://git.io/JO5FP - i.e. recommended by ID8
-    ranges_of_pulsar_parameters = [("0.00000001", "1000000000.0"), ("-50000.0", "5000.0"),
-                                   ("-3000000.0", "3000000000000.0"), ("-100000000", "1000000"), ("0", "20")]
-
-    for k in range(len(sources)):
-
-        source = root.createElement("source")
-
-        source.setAttribute("name", "PSR_" + str(k))
-        source.setAttribute("type", "PointSource")
-
-        xml.appendChild(source)
-
-        # SPECTRAL
-
-        spectrum = root.createElement("spectrum")
-
-        spectrum.setAttribute("type", "PLSuperExpCutoff2")
-
-        for x in range(len(pulsar_parameters)):
-
-            param = root.createElement("parameter")
-
-            param.setAttribute("max", str(ranges_of_pulsar_parameters[x][1]))
-            param.setAttribute("min", str(ranges_of_pulsar_parameters[x][0]))
-            param.setAttribute("name", pulsar_parameters[x])
-
-            if x == 0:
-
-                # FLUX DENSITY OR PREFACTOR
-
-                param.setAttribute("free", "1")
-                param.setAttribute("scale", str(sources[k][1]))
-                param.setAttribute("value", "1")
-
-            elif x == 1:
-
-                # SPECTRAL SLOPE OR GAMMA OR INDEX1
-
-                param.setAttribute("free", "1")
-                param.setAttribute("scale", "1.0")
-                param.setAttribute("value", str(sources[k][2]))
-
-            elif x == 2:
-
-                # SCALE Eb OR PIVOT ENERGY
-
-                param.setAttribute("free", "0")
-                param.setAttribute("scale", "1.0")
-                param.setAttribute("value", str(sources[k][0]))
-
-            elif x == 3:
-
-                # EXPONENTIAL FACTOR A
-
-                param.setAttribute("free", "1")
-                param.setAttribute("scale", "1.0")
-                param.setAttribute("value", str(sources[k][4]))
-
-            else:
-
-                # INDEX2 OR B OR EXPONENTIAL INDEX
-
-                param.setAttribute("free", "0")
-                param.setAttribute("scale", "1")
-                param.setAttribute("value", str(sources[k][3]))
-
-            spectrum.appendChild(param)
-
-        source.appendChild(spectrum)
-
-        # SPATIAL
-
-        spatial = root.createElement("spatialModel")
-
-        spatial.setAttribute("type", "SkyDirFunction")
-
-        ra = root.createElement("parameter")
-        dec = root.createElement("parameter")
-
-        ra.setAttribute("free", "0")
-        ra.setAttribute("max", "360.")
-        ra.setAttribute("min", "-360.")
-        ra.setAttribute("name", "RA")
-        ra.setAttribute("scale", "1.0")
-
-        dec.setAttribute("free", "0")
-        dec.setAttribute("max", "90.")
-        dec.setAttribute("min", "-90.")
-        dec.setAttribute("name", "DEC")
-        dec.setAttribute("scale", "1.0")
-
-        # Convert galactic coordinates to equatorial
-
-        ra_dec = SkyCoord(l=sources[k][6] * u.rad, b=sources[k][7] * u.deg, frame='galactic').transform_to('icrs')
-        ra.setAttribute("value", str(ra_dec.ra.to_value(u.degree)))
-        dec.setAttribute("value", str(ra_dec.dec.to_value(u.degree)))
-
-        spatial.appendChild(ra)
-        spatial.appendChild(dec)
-
-        source.appendChild(spatial)
-
-    # SAVE
-
-    xml_str = root.toprettyxml(indent="\t")
-
-    save_path_file = "pulsars.xml"
-
-    with open(save_path_file, "w") as f:
-        f.write(xml_str)
-
-
-    # NOT FINISHED
-
-
-def agn_xml_writer(sources):
-
-    # CREATE DOCUMENT
-
-    root = minidom.Document()
-
-    xml = root.createElement('source_library')
-
-    xml.setAttribute('title', 'source library')
-
-    root.appendChild(xml)
-
-    # ADD SOURCES
-
-    # Background
-
-    # extragalactic_background = root.createElement("source")
-    #
-    # extragalactic_background.setAttribute("name", "EG")
-    # extragalactic_background.setAttribute("type", "DiffuseSource")
-    #
-    # xml.appendChild(extragalactic_background)
-
-    # AGN
-
-    # Ranges are taken from https://git.io/JO5FP - i.e. recommended by ID8
-    agn_parameters = ["norm", "alpha", "Eb", "beta"]
-    ranges_of_agn_parameters = [("0.001", "1000.0"), ("-5000.0", "1000.0"), ("0.0000001", "10000000000000.0"),
-                                ("-100.0", "100")]
-
-    for k in range(len(sources)):
-
-        source = root.createElement("source")
-
-        source.setAttribute("name", "AGN_" + str(k))
-        source.setAttribute("type", "PointSource")
-
-        xml.appendChild(source)
-
-        # SPECTRAL
-
-        spectrum = root.createElement("spectrum")
-
-        spectrum.setAttribute("type", "LogParabola")
-
-        for x in range(len(agn_parameters)):
-
-            param = root.createElement("parameter")
-            param.setAttribute("free", "1")
-            param.setAttribute("max", str(ranges_of_agn_parameters[x][1]))
-            param.setAttribute("min", str(ranges_of_agn_parameters[x][0]))
-            param.setAttribute("name", agn_parameters[x])
-
-            if x % 2 != 0:
-                param.setAttribute("scale", "-1.0")
-                if x == 1:
-                    param.setAttribute("value", str(sources[k][2]))
-                else:
-                    param.setAttribute("value", str(sources[k][3]))
-            elif x == 2:
-                param.setAttribute("scale", "1.0")
-                param.setAttribute("value", str(sources[k][0]))
-            else:
-                # Set to value of
-                param.setAttribute("scale", str(sources[k][1]))
-                param.setAttribute("value", str(1))
-
-            spectrum.appendChild(param)
-
-        source.appendChild(spectrum)
-
-        # SPATIAL
-
-        spatial = root.createElement("spatialModel")
-
-        spatial.setAttribute("type", "SkyDirFunction")
-
-        ra = root.createElement("parameter")
-        dec = root.createElement("parameter")
-
-        ra.setAttribute("free", "0")
-        ra.setAttribute("max", "360.")
-        ra.setAttribute("min", "-360.")
-        ra.setAttribute("name", "RA")
-        ra.setAttribute("scale", "1.0")
-
-        dec.setAttribute("free", "0")
-        dec.setAttribute("max", "90.")
-        dec.setAttribute("min", "-90.")
-        dec.setAttribute("name", "DEC")
-        dec.setAttribute("scale", "1.0")
-
-        # Convert galactic coordinates to equatorial
-
-        ra_dec = SkyCoord(l=sources[k][4] * u.rad, b=sources[k][5] * u.deg, frame='galactic').transform_to('icrs')
-        ra.setAttribute("value", str(ra_dec.ra.to_value(u.degree)))
-        dec.setAttribute("value", str(ra_dec.dec.to_value(u.degree)))
-
-        spatial.appendChild(ra)
-        spatial.appendChild(dec)
-
-        source.appendChild(spatial)
-
-    # FORMAT
-
-    xml_str = root.toprettyxml(indent="\t")
-
-    # SAVE
-
-    save_path_file = "agns.xml"
-
-    with open(save_path_file, "w") as f:
-        f.write(xml_str)
-#
 print("starting...")
 
 
@@ -1467,7 +1223,6 @@ def fitting_agn_pivot_energy_spectral_slope_relation(agns):
     # Fitting
 
     x_values = np.linspace(np.min(pivot_energies), np.max(pivot_energies), 1000)
-    # log_x_values = np.linspace(np.min(log_pivot_energies), np.max(log_pivot_energies), 1000)
     log_x_values = np.log(x_values)
     exp_x_values = np.exp(log_x_values)
 
@@ -1584,7 +1339,76 @@ def fitting_agn_pivot_energy_spectral_slope_relation(agns):
     fig2.show()
 
 
+def analysis(agn_rows, pulsar_rows):
+
+    # PREPARE DATA
+
+    # Convert to pandas dataframes
+    agns = agn_rows.to_pandas()
+    pulsars = pulsar_rows.to_pandas()
+
+    # PARAMETER DISTRIBUTIONS
+
+    prob_dist = ['normal', 'lognorm']
+
+    # AGNs
+
+    print("AGNs")
+
+    # Fit probability distributions and determine goodness-of-fit for each parameter
+    for parameter in agns:
+
+        # Remove NaN values
+        mask = ~np.isnan(agns[parameter])
+        values = agns[parameter][mask]
+
+        # Iterate all over distributions to fit to parameters
+        for dist in prob_dist:
+
+            # Perform chi_squared goodness of fit test
+            chi_squared_test(values, num_bins=100, distribution=dist)
+
+            # Perform K-S goodness of fit test
+            kolmogorov_smirnov_test(values=values, distribution=dist)
+
+    # Plot AGN parameter distributions
+    plot_parameter_distributions(agn_rows.copy(), source_type='AGN')
+
+    # Pulsars
+
+    print("Pulsars")
+
+    # Fit probability distributions and determine goodness-of-fit for each parameter
+    for parameter in pulsars:
+
+        mask = ~np.isnan(pulsars[parameter])
+        values = pulsars[parameter][mask]
+
+        # Iterate all over distributions to fit to parameters
+        for dist in prob_dist:
+            # Perform chi_squared goodness of fit test
+            chi_squared_test(values, num_bins=100, distribution=dist)
+
+            # Perform K-S goodness of fit test
+            kolmogorov_smirnov_test(values=values, distribution=dist)
+
+    # Plot pulsar parameter distributions
+    plot_parameter_distributions(pulsar_rows.copy(), source_type='Pulsars')
+
+
 agn_rows, pulsar_rows = catalog_data_preparation("/Volumes/T7/data/catalog/4FGL_DR4.fit")
+
+# SELECT APPROPRIATE COLUMNS (MOVE THIS INTO DATA PREP IF DON'T ENCOUNTER ANY PROBLEMS)
+
+agn_rows = agn_rows['LP_Flux_Density', 'Pivot_Energy', 'LP_Index', 'LP_beta']
+pulsar_rows = pulsar_rows['PLEC_Flux_Density', 'Pivot_Energy', 'PLEC_IndexS', 'PLEC_Exp_Index', 'PLEC_ExpfactorS', 'GLAT']
+
+# Analyse parameters, their distributions, and their correlations
+
+analysis(agn_rows, pulsar_rows)
+
+
+
 
 # analysis_correlation(agn_rows.copy(), agn_params=True)
 
@@ -1600,22 +1424,15 @@ agn_rows, pulsar_rows = catalog_data_preparation("/Volumes/T7/data/catalog/4FGL_
 #
 # agns = generate_mock_agn_catalog(agn_statistics(agn_rows.copy()), num_agns=100, extra=30)
 
-# analysing_agn_parameters(agn_rows.copy()['LP_Flux_Density', 'Pivot_Energy', 'LP_Index', 'LP_beta'])
-
-# plot_parameter_distributions(pulsar_rows.copy()['PLEC_Flux_Density', 'Pivot_Energy', 'PLEC_IndexS', 'PLEC_Exp_Index', 'PLEC_ExpfactorS'])
-
-plot_parameter_distributions(pulsar_rows.copy()['PLEC_Flux_Density', 'Pivot_Energy', 'PLEC_IndexS', 'PLEC_Exp_Index', 'PLEC_ExpfactorS'], source_type='Pulsars')
-
-# analysing_parameters(agn_rows.copy()['LP_Flux_Density', 'Pivot_Energy', 'LP_Index', 'LP_beta'], source_type="AGN")
-
 #
 # print("agns created.")
 #
-# agn_xml_writer(agns)
 #
-# print("agns saved.")
+print("agns saved.")
 #
-# pulsars = generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows.copy()), 10, extra=5)
+#
+#
+pulsars = generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows.copy()), 10, extra=5)
 
 # print(pulsars)
 
@@ -1625,7 +1442,7 @@ plot_parameter_distributions(pulsar_rows.copy()['PLEC_Flux_Density', 'Pivot_Ener
 #
 # print("pulsars created")
 #
-# pulsar_xml_writer(pulsars)
+pulsar_xml_writer(pulsars)
 #
 # print("pulsars saved")
 #
@@ -1634,8 +1451,6 @@ end = time.time()
 print("completed.")
 #
 # print("TIME: " + str(end - start) + "s")
-
-# analysing_pulsar_parameters(pulsar_rows.copy()
 
 
 # REFERENCES
