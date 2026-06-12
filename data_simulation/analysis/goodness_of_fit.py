@@ -3,7 +3,9 @@ import numpy.typing as npt
 from scipy.stats import chi2, kstest, lognorm, Normal
 
 
-def chi_squared_test(values: npt.NDArray[np.float64], num_bins: int, distribution: str) -> None:
+def chi_squared_test(values, num_bins: int, distribution: str) -> None:
+
+    parameter_name = values.name
 
     # bin data and record number of agns with values within each interval
     observed_counts, bin_intervals = np.histogram(values, bins=num_bins, density=False)
@@ -71,7 +73,7 @@ def chi_squared_test(values: npt.NDArray[np.float64], num_bins: int, distributio
         cdf_probability = 1 - chi_squared_distribution.cdf(test_statistic)
 
         print("-" * 60)
-        print("Goodness of Fit of {} Distribution: ".format(distribution))
+        print("Goodness of Fit of {} Distribution to {}: ".format(distribution, parameter_name))
 
         print("Chi Squared Min Test Statistic, X^2_min: {}".format(test_statistic))
         print("P(X^2_min; {}) = {}".format(degrees_of_freedom, cdf_probability))
@@ -84,19 +86,21 @@ def chi_squared_test(values: npt.NDArray[np.float64], num_bins: int, distributio
             print("There is not sufficient evidence to reject {} distribution as a good fit.".format(distribution))
 
         print("-" * 60)
-        print('\n')
 
     else:
 
+        print("-" * 60)
         print("The {} distribution cannot be fit, as there are too many intervals in which the observed count is zero\n"
-              " and the expected count is non-zero.".format(distribution))
-        print("\n")
+              "and the expected count is non-zero.".format(distribution))
+        print("-" * 60)
 
 
-def kolmogorov_smirnov_test(values: npt.NDArray[np.float64], distribution: str, alpha=0.05) -> None:
+def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05) -> None:
 
     # N.B. This tutorial was consulted when creating this function:
     # https://www.geeksforgeeks.org/machine-learning/kolmogorov-smirnov-test-ks-test/
+
+    parameter_name = values.name
 
     # used for creating specific distribution
     mean, sigma = np.mean(values), np.std(values, ddof=1)
@@ -132,7 +136,7 @@ def kolmogorov_smirnov_test(values: npt.NDArray[np.float64], distribution: str, 
         critical_val = 1.22385 / np.sqrt(number_of_sources)
 
     print("-" * 60)
-    print("Goodness of Fit of {} Distribution: ".format(distribution))
+    print("Goodness of Fit of {} Distribution to {}: ".format(distribution, parameter_name))
     print("Test Stat, K: {}".format(ks_stat))
     print("P(K < {}) = {}".format(ks_stat, p_val))
 

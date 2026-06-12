@@ -1,10 +1,9 @@
-from astropy import units as u
 from astropy.table import QTable
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 from scipy.stats import lognorm, norm
-from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
+from .goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
 
 
 def agn_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64]) -> None:
@@ -56,6 +55,21 @@ def agn_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64]
     plt.show()
 
 
+def log_normal_parameter(values):
+
+    # This calculates the parameters for creating a log normal distribution based on parameter data
+
+    mean, sigma = np.mean(values), np.std(values, ddof=1)
+
+    mean_square = mean ** 2
+    std_square = sigma ** 2
+
+    mean_log = np.log(mean_square / (np.sqrt(mean_square + std_square)))
+    std_log = np.sqrt(np.log(1 + (std_square / mean_square)))
+
+    return np.exp(mean_log), std_log
+
+
 def analysing_agn_parameters(agns):
 
     # ID8 assert that F_0 follows log normal distribution and other params in differential energy flux follow Gaussian
@@ -69,14 +83,11 @@ def analysing_agn_parameters(agns):
 
     # READ IN DATA
 
-    fds = agns['LP_Flux_Density'].to(u.ph / (u.cm * u.cm * u.MeV * u.s)).value.filled(np.nan)
-    pivot_energies = agns['Pivot_Energy'].value
-    alphas = agns['LP_Index'].data.filled(np.nan)
-    betas = agns['LP_beta'].data.filled(np.nan)
+    agns = agns.to_pandas()
 
     # PLOT DISTRIBUTIONS
 
-    for pair in zip(ax.flatten(), [fds, pivot_energies, alphas, betas]):
+    for pair in zip(ax.flatten(), [agns[col] for col in agns]):
 
         subplot = pair[0]
 
@@ -87,33 +98,22 @@ def analysing_agn_parameters(agns):
         counts, bins = np.histogram(values, bins=100, density=True)
         subplot.stairs(counts, bins, label='4FGL Distribution')
 
-        # Calculate mean and standard deviation of data
+        # Calculate distribution parameters of data
         mean, sigma = np.mean(values), np.std(values, ddof=1)
+        scale, s = log_normal_parameter(values)
 
-        chi_squared_test(values, num_bins=100, distribution='normal')
+        x_values = np.linspace(np.min(values), np.max(values), 1000)
 
         # Plot Gaussian using mean and standard deviation of data
-        x_values = np.linspace(np.min(values), np.max(values), 1000)
-        y_values = norm.pdf(x_values, loc=mean, scale=sigma)
-        subplot.plot(x_values, y_values, label='Gaussian', linestyle='-.')
+        subplot.plot(x_values, norm.pdf(x_values, loc=mean, scale=sigma), label='Gaussian', linestyle='-.')
 
         # Plot Log-Normal distribution using mean and standard deviation of data (recommended by ID8 for F_0, but not
         # any of the other AGN parameters)
+        subplot.plot(x_values, lognorm.pdf(x_values, s=s, scale=scale), color='red',
+                     label='Log-Normal', linestyle='--')
 
-        mean_square = mean ** 2
-        std_square = sigma ** 2
-
-        mean_log = np.log(mean_square / (np.sqrt(mean_square + std_square)))
-        std_log = np.sqrt(np.log(1 + (std_square / mean_square)))
-
+        chi_squared_test(values, num_bins=100, distribution='normal')
         chi_squared_test(values, num_bins=100, distribution="lognorm")
-
-        subplot.plot(x_values, lognorm.pdf(x_values, s=std_log, scale=np.exp(mean_log)), color='red', label='Log-Normal',
-                     linestyle='--')
-
-        # kolmogorov_smirnov_test(values=values, gaussian_mean=mean, gaussian_std=sigma, lognorm_mean=std_log,
-        #                    lognorm_std=np.exp(mean_log))
-
         kolmogorov_smirnov_test(values=values, distribution='normal')
         kolmogorov_smirnov_test(values=values, distribution='lognorm')
 
@@ -148,15 +148,9 @@ def analysing_pulsar_parameters(pulsars):
     fig, ax = plt.subplots(3, 2)
     fig.delaxes(ax[2, 1])
 
-    fds = pulsars['PLEC_Flux_Density'].to(u.ph / (u.cm * u.cm * u.MeV * u.s)).value.filled(np.nan)
-    pivot_energies = pulsars['Pivot_Energy'].value
-    Gammas = pulsars['PLEC_IndexS'].data.filled(np.nan)
-    b_values = pulsars['PLEC_Exp_Index'].data.filled(np.nan)
+    pulsars = pulsars.to_pandas()
 
-    # Select exponential factors - CHECK (SAYS IN UNITS OF MeV^-b BUT NEED with GeV)
-    a_values = pulsars['PLEC_ExpfactorS'].data
-
-    for pair in zip(ax.flatten(), [fds, pivot_energies, Gammas, b_values, a_values]):
+    for pair in zip(ax.flatten(), [pulsars[col] for col in pulsars]):
 
         subplot = pair[0]
 
@@ -167,32 +161,21 @@ def analysing_pulsar_parameters(pulsars):
         counts, bins = np.histogram(values, bins=30, density=True)
         subplot.stairs(counts, bins, label='4FGL Distribution')
 
-        # Calculate mean and standard deviation of data
+        # Calculate distribution parameters of data
         mean, sigma = np.mean(values), np.std(values, ddof=1)
-
-        chi_squared_test(values, num_bins=30, distribution='normal')
+        scale, s = log_normal_parameter(values)
 
         # Plot Gaussian using mean and standard deviation of data
         x_values = np.linspace(np.min(values), np.max(values), 1000)
-        y_values = norm.pdf(x_values, loc=mean, scale=sigma)
-        subplot.plot(x_values, y_values, label='Gaussian', linestyle='-.')
+        subplot.plot(x_values, norm.pdf(x_values, loc=mean, scale=sigma), label='Gaussian', linestyle='-.')
 
         # Plot Log-Normal distribution using mean and standard deviation of data (recommended by ID8 for F_0, but not
         # any of the other AGN parameters)
-
-        chi_squared_test(values, num_bins=30, distribution='lognorm')
-
-        mean, sigma = np.mean(values), np.std(values, ddof=1)
-
-        mean_square = mean ** 2
-        std_square = sigma ** 2
-
-        mean_log = np.log(mean_square / (np.sqrt(mean_square + std_square)))
-        std_log = np.sqrt(np.log(1 + (std_square / mean_square)))
-
-        subplot.plot(x_values, lognorm.pdf(x_values, s=std_log, scale=np.exp(mean_log)), color='red', label='Log-Normal',
+        subplot.plot(x_values, lognorm.pdf(x_values, s=s, scale=scale), color='red', label='Log-Normal',
                      linestyle='--')
 
+        chi_squared_test(values, num_bins=30, distribution='normal')
+        chi_squared_test(values, num_bins=30, distribution='lognorm')
         kolmogorov_smirnov_test(values=values, distribution='normal')
         kolmogorov_smirnov_test(values=values, distribution='lognorm')
 
@@ -213,6 +196,74 @@ def analysing_pulsar_parameters(pulsars):
     ax[2, 0].set_xlabel('$a\ [MeV$^{-b}$]$')
 
     ax[0, 0].set_ylim(0, 1 * 10 ** 11)
+
+    # Label axes and enable legends
+    for a in ax.flatten():
+        a.set_ylabel('Source Density')
+        a.legend()
+
+    fig.tight_layout()
+
+    plt.show()
+
+
+def plot_parameter_distributions(sources, source_type: str):
+
+    # Used to label axes
+    axis_labels = {"LP_Flux_Density": "Differential Flux Density, $F_0$ \n [ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$",
+                   "Pivot_Energy": "Pivot Energy, $E_0$ [MeV]", "LP_Index": "Spectral Slope, $\\alpha$",
+                   "LP_beta": "Spectral Curvature, $\\beta$", "PLEC_IndexS": "Spectral Slope, $\\Gamma$",
+                   "PLEC_Flux_Density": "Differential Flux Density, $F_0$ \n [ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$",
+                   "PLEC_Exp_Index": "Exponential Index, $b$", "PLEC_ExpfactorS": "Exponential Factor, $a$"}
+
+    num_parameters = len(sources.colnames)
+
+    # CREATE PLOTS
+
+    # Calculate appropriate number of parameters
+    num_cols = (num_parameters // 2) + (num_parameters % 2)
+    num_rows = 2
+
+    plt.rcParams["figure.figsize"] = (num_rows * 4, num_cols * 4)
+    fig, ax = plt.subplots(num_cols, num_rows)
+
+    if (num_parameters % 2) == 1:
+        fig.delaxes(ax[num_cols - 1, 1])
+
+    # GENERATE DATA
+
+    # Format sources
+    sources = sources.to_pandas()
+
+    for pair in zip(ax.flatten(), [sources[col] for col in sources]):
+
+        subplot = pair[0]
+
+        # Remove NaN values
+        values = pair[1][~np.isnan(pair[1])]
+
+        # Plot actual 4FGL source distribution
+        counts, bins = np.histogram(values, bins=30, density=True)
+        subplot.stairs(counts, bins, label='4FGL Distribution')
+
+        # Calculate distribution parameters of data
+        mean, sigma = np.mean(values), np.std(values, ddof=1)
+        scale, s = log_normal_parameter(values)
+
+        # Plot Gaussian using mean and standard deviation of data
+        x_values = np.linspace(np.min(values), np.max(values), 1000)
+        subplot.plot(x_values, norm.pdf(x_values, loc=mean, scale=sigma), label='Gaussian', linestyle='-.')
+
+        # Plot Log-Normal distribution using mean and standard deviation of data (recommended by ID8 for F_0, but not
+        # any of the other AGN parameters)
+        subplot.plot(x_values, lognorm.pdf(x_values, s=s, scale=scale), color='red', label='Log-Normal',
+                     linestyle='--')
+
+        subplot.set_xlabel(axis_labels[values.name])
+
+    # FORMATTING
+
+    fig.suptitle('Distributions of 4FGL {} Parameters'.format(source_type))
 
     # Label axes and enable legends
     for a in ax.flatten():

@@ -49,7 +49,7 @@ from sklearn.metrics import root_mean_squared_error
 # import math
 
 # My functions
-from visualisation import analysing_agn_parameters, agn_luminosity_function, analysing_pulsar_parameters
+from analysis.visualisation import plot_parameter_distributions # analysing_agn_parameters, agn_luminosity_function, analysing_pulsar_parameters, analysing_parameters
 
 
 # VISUALISATIONS
@@ -1600,10 +1600,13 @@ agn_rows, pulsar_rows = catalog_data_preparation("/Volumes/T7/data/catalog/4FGL_
 #
 # agns = generate_mock_agn_catalog(agn_statistics(agn_rows.copy()), num_agns=100, extra=30)
 
-# analysing_agn_parameters(agn_rows.copy())
+# analysing_agn_parameters(agn_rows.copy()['LP_Flux_Density', 'Pivot_Energy', 'LP_Index', 'LP_beta'])
 
-analysing_pulsar_parameters(pulsar_rows.copy())
+# plot_parameter_distributions(pulsar_rows.copy()['PLEC_Flux_Density', 'Pivot_Energy', 'PLEC_IndexS', 'PLEC_Exp_Index', 'PLEC_ExpfactorS'])
 
+plot_parameter_distributions(pulsar_rows.copy()['PLEC_Flux_Density', 'Pivot_Energy', 'PLEC_IndexS', 'PLEC_Exp_Index', 'PLEC_ExpfactorS'], source_type='Pulsars')
+
+# analysing_parameters(agn_rows.copy()['LP_Flux_Density', 'Pivot_Energy', 'LP_Index', 'LP_beta'], source_type="AGN")
 
 #
 # print("agns created.")
