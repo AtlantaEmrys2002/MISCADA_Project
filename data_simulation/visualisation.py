@@ -3,8 +3,8 @@ from astropy.table import QTable
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
-from scipy.stats import Normal, chi2, lognorm, norm, kstest
-from scipy.special import erf
+from scipy.stats import lognorm, norm
+from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
 
 
 def agn_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64]) -> None:
@@ -56,206 +56,6 @@ def agn_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64]
     plt.show()
 
 
-def normal_func(x, mean, sigma):
-
-    var = sigma**2
-
-    # return (1/np.sqrt(2 * np.pi * var)) * np.e**-(((x - mean)**2) / (2 * var))
-
-    return (1 / np.sqrt(2 * np.pi * var)) * np.exp(-(((x - mean) ** 2) / (2 * var)))
-
-
-def log_norm_pdf(x, mu, sigma):
-
-    upper = (np.log(x) - mu)**2
-    lower = 2 * (sigma ** 2)
-    fraction = -1 * upper / lower
-
-    f_x = (1/(x * sigma * np.sqrt(2 * np.pi))) * np.exp(fraction)
-
-    return f_x
-
-
-def log_norm_cdf(x, mu, sigma):
-
-    upper = np.log(x) - mu
-    lower = sigma * np.sqrt(2)
-
-    phi_x = 0.5 * (1 + erf(upper / lower))
-
-    return phi_x
-
-
-def chi_squared_goodness_of_fit_gaussian(observed_counts, bin_intervals, mean, sigma, number_of_sources):
-
-    # Add 0 count for all < than bin_intervals[0] and for all > bin_intervals[len(bin_intervals)]
-    observed_counts = list(observed_counts)
-    observed_counts.insert(0, 0)
-    observed_counts.append(0)
-
-    X = Normal(mu=mean, sigma=sigma)
-
-    num_bins = len(bin_intervals) - 1
-
-    # Probability of parameter value falling into this interval
-    # probs = [X.cdf(bin_intervals[x], bin_intervals[x + 1]) for x in range(0, len(bin_intervals) - 1)]
-
-    probs = [X.cdf(bin_intervals[x], bin_intervals[x + 1]) for x in range(0, len(bin_intervals) - 1)]
-
-    # Probability of parameter value falling below bin_intervals[0]
-    probs.insert(0, X.cdf(bin_intervals[0]))
-
-    # Probability of parameter value falling above bin_intervals[-1]
-    probs.append(1 - X.cdf(bin_intervals[-1]))
-
-    expected_counts = number_of_sources * np.array(probs)
-
-    # if outliers cause 1-5 divide by 0 errors with a few observations, but have expected count of 0 take out the values
-    if len(np.argwhere(np.logical_and((expected_counts == 0), (observed_counts != 0)).flatten())) < 5:
-
-        observed_counts = np.array([observed_counts[x] for x in range(len(observed_counts)) if expected_counts[x] > 0])
-        expected_counts = np.array([x for x in expected_counts if x > 0])
-
-        # N.B. Both normal and log-normal have two free parameters to be fitted - mean and sigma
-
-        degrees_of_freedom = num_bins - 2 - 1
-
-        test_statistic = np.sum(((observed_counts - expected_counts) ** 2) / expected_counts)
-
-        reduced_chi_squared_min = test_statistic/degrees_of_freedom
-
-        # print("\n")
-        # print("Chi Squared Min Test Statistic: {}".format(test_statistic))
-        # print("Degrees of Freedom: {}".format(degrees_of_freedom))
-        # print("Reduced Chi-Squared Min Statistic: {}".format(reduced_chi_squared_min))
-
-        chi_squared_distribution = chi2(df=degrees_of_freedom)
-
-        # Ideally about 0.5
-        cdf_probability = 1 - chi_squared_distribution.cdf(test_statistic)
-
-        # print("P(X^2_min; {}) = {}".format(degrees_of_freedom, cdf_probability))
-
-        return str(test_statistic), str(reduced_chi_squared_min), str(cdf_probability), str(degrees_of_freedom)
-
-    else:
-
-        # print("Automatic rejection of distribution as chi^2 = infinity due to divide by 0 error.")
-
-        return "N/A", "N/A", "N/A", "N/A"
-
-
-def chi_squared_goodness_of_fit_log_normal(observed_counts, bin_intervals, number_of_sources, loc, scale):
-
-    # Add 0 count for all < than bin_intervals[0] and for all > bin_intervals[len(bin_intervals)]
-    observed_counts = list(observed_counts)
-    observed_counts.insert(0, 0)
-    observed_counts.append(0)
-    num_bins = len(bin_intervals) - 1
-
-
-    # Probability of parameter value falling into this interval
-
-    probs = [log_norm_cdf(bin_intervals[x + 1], mu=loc, sigma=scale) - log_norm_cdf(bin_intervals[x], mu=loc, sigma=scale) for x in range(0, len(bin_intervals) - 1)]
-
-    # Probability of parameter value falling below bin_intervals[0]
-    probs.insert(0, log_norm_cdf(bin_intervals[0], mu=loc, sigma=scale))
-
-    # print(probs)
-
-    # Probability of parameter value falling above bin_intervals[-1]
-    probs.append(1 - log_norm_cdf(bin_intervals[-1], mu=loc, sigma=scale))
-
-    expected_counts = number_of_sources * np.array(probs)
-
-    # if outliers cause 1-5 divide by 0 errors with a few observations, but have expected count of 0 take out the values
-    if len(np.argwhere(np.logical_and((expected_counts == 0), (observed_counts != 0)).flatten())) < 5:
-
-        observed_counts = np.array([observed_counts[x] for x in range(len(observed_counts)) if expected_counts[x] > 0])
-        expected_counts = np.array([x for x in expected_counts if x > 0])
-
-        # N.B. Both normal and log-normal have two free parameters to be fitted - mean and sigma
-
-        degrees_of_freedom = num_bins - 2 - 1
-
-        test_statistic = np.sum(((observed_counts - expected_counts) ** 2) / expected_counts)
-
-        reduced_chi_squared_min = test_statistic/degrees_of_freedom
-
-        chi_squared_distribution = chi2(df=degrees_of_freedom)
-
-        # Ideally about 0.5
-        cdf_probability = 1 - chi_squared_distribution.cdf(test_statistic)
-
-        # print("CRITICAL VALUE: {}".format(print(chi2.ppf(0.1, 97))))
-
-        return str(test_statistic), str(reduced_chi_squared_min), str(cdf_probability), str(degrees_of_freedom)
-
-    else:
-
-        # print("Automatic rejection of distribution as chi^2 = infinity due to divide by 0 error.")
-
-        return "N/A", "N/A", "N/A", "N/A"
-
-
-def kolmogorov_smirnov(observed_values, gaussian_mean, gaussian_std, lognorm_mean, lognorm_std, alpha=0.05):
-
-    # Default test at 5%.
-
-    print("----------------------------")
-    print("Kolmogorov-Smirnov Test")
-
-    print("GAUSSIAN")
-
-    # Followed this - https://www.geeksforgeeks.org/machine-learning/kolmogorov-smirnov-test-ks-test/
-
-    ks_stat, p_val = kstest(observed_values, 'norm', args=(gaussian_mean, gaussian_std))
-
-    print("Test Stat: {}".format(ks_stat))
-    print("p-value: {}".format(p_val))
-
-    if alpha == 0.05:
-        # https://real-statistics.com/statistics-tables/kolmogorov-smirnov-table/
-        critical_val = 1.35810 / np.sqrt(len(observed_values))
-
-    else:
-        # 10% significance
-        critical_val = 1.22385 / np.sqrt(len(observed_values))
-
-    print("Critical Value: {}".format(critical_val))
-
-    if ks_stat > critical_val or p_val < alpha:
-        print('Gaussian not suitable')
-    else:
-        print("Gaussian suitable")
-
-    print("LOG NORMAL")
-
-    x = lognorm(s=lognorm_mean, scale=lognorm_std)
-
-    # ks_stat, p_val = kstest(observed_values, 'lognorm', args=(lognorm_mean, lognorm_std))
-    ks_stat, p_val = kstest(observed_values, x.cdf)
-
-
-    print("Test Stat: {}".format(ks_stat))
-    print("p-value: {}".format(p_val))
-
-    alpha = 0.05
-
-    # https://real-statistics.com/statistics-tables/kolmogorov-smirnov-table/
-    critical_val = 1.35810 / np.sqrt(len(observed_values))
-
-    print("Critical Value: {}".format(critical_val))
-
-    if ks_stat > critical_val or p_val < alpha:
-        print('LogNorm not suitable')
-    else:
-        print("LogNorm suitable")
-
-    print("----------------------------")
-    print('\n')
-
-
 def analysing_agn_parameters(agns):
 
     # ID8 assert that F_0 follows log normal distribution and other params in differential energy flux follow Gaussian
@@ -290,29 +90,11 @@ def analysing_agn_parameters(agns):
         # Calculate mean and standard deviation of data
         mean, sigma = np.mean(values), np.std(values, ddof=1)
 
-        counts_2, bins_2 = np.histogram(values, bins=100, density=False)
-
-        chi_squared, reduced_chi_squared, chi2_cdf_prob, degree_freedom = (
-            chi_squared_goodness_of_fit_gaussian(counts_2, bins_2, mean, sigma, number_of_sources=len(values)))
-
-        if chi_squared != "N/A":
-
-            print("Goodness of Fit of Gaussian Distribution: ")
-
-            print("Chi Squared Min Test Statistic: {}".format(chi_squared))
-            print("Reduced Chi-Squared Min Statistic: {}".format(reduced_chi_squared))
-            print("P(X^2_min; {}) = {}".format(degree_freedom, chi2_cdf_prob))
-
-            print('\n')
-
-        else:
-
-            print("Automatic Rejection of Gaussian Fit")
-            print("\n")
+        chi_squared_test(values, num_bins=100, distribution='normal')
 
         # Plot Gaussian using mean and standard deviation of data
         x_values = np.linspace(np.min(values), np.max(values), 1000)
-        y_values = normal_func(x_values, mean, sigma)
+        y_values = norm.pdf(x_values, loc=mean, scale=sigma)
         subplot.plot(x_values, y_values, label='Gaussian', linestyle='-.')
 
         # Plot Log-Normal distribution using mean and standard deviation of data (recommended by ID8 for F_0, but not
@@ -324,33 +106,16 @@ def analysing_agn_parameters(agns):
         mean_log = np.log(mean_square / (np.sqrt(mean_square + std_square)))
         std_log = np.sqrt(np.log(1 + (std_square / mean_square)))
 
-        chi_squared, reduced_chi_squared, chi2_cdf_prob, degree_freedom = (
-            chi_squared_goodness_of_fit_log_normal(counts_2, bins_2, number_of_sources=len(values), loc=mean_log,
-                                                   scale=std_log))
+        chi_squared_test(values, num_bins=100, distribution="lognorm")
 
-        if chi_squared != "N/A":
-
-            print("Goodness of Fit of Log-Normal Distribution: ")
-
-            print("Chi Squared Min Test Statistic: {}".format(chi_squared))
-            print("Reduced Chi-Squared Min Statistic: {}".format(reduced_chi_squared))
-            print("P(X^2_min; {}) = {}".format(degree_freedom, chi2_cdf_prob))
-
-            print('\n')
-
-        else:
-
-            print("Automatic Rejection of Log-Normal Fit")
-            print("\n")
-
-        subplot.plot(x_values, log_norm_pdf(x_values, mean_log, std_log), label='Log-Normal', color='red',
+        subplot.plot(x_values, lognorm.pdf(x_values, s=std_log, scale=np.exp(mean_log)), color='red', label='Log-Normal',
                      linestyle='--')
 
-        subplot.plot(x_values, lognorm.pdf(x_values, s=std_log, scale=np.exp(mean_log)), color='black', label='TEST',
-                     linestyle=':')
+        # kolmogorov_smirnov_test(values=values, gaussian_mean=mean, gaussian_std=sigma, lognorm_mean=std_log,
+        #                    lognorm_std=np.exp(mean_log))
 
-        kolmogorov_smirnov(observed_values=values, gaussian_mean=mean, gaussian_std=sigma, lognorm_mean=std_log,
-                           lognorm_std=np.exp(mean_log))
+        kolmogorov_smirnov_test(values=values, distribution='normal')
+        kolmogorov_smirnov_test(values=values, distribution='lognorm')
 
     # FORMATTING
 
@@ -383,14 +148,10 @@ def analysing_pulsar_parameters(pulsars):
     fig, ax = plt.subplots(3, 2)
     fig.delaxes(ax[2, 1])
 
-    # pivot_energies, flux_densities, spectral_slopes, exponential_indices, exponential_factors
-
     fds = pulsars['PLEC_Flux_Density'].to(u.ph / (u.cm * u.cm * u.MeV * u.s)).value.filled(np.nan)
     pivot_energies = pulsars['Pivot_Energy'].value
     Gammas = pulsars['PLEC_IndexS'].data.filled(np.nan)
     b_values = pulsars['PLEC_Exp_Index'].data.filled(np.nan)
-
-    print(len(np.abs(fds - np.mean(fds)) < np.std(fds, ddof=1)))
 
     # Select exponential factors - CHECK (SAYS IN UNITS OF MeV^-b BUT NEED with GeV)
     a_values = pulsars['PLEC_ExpfactorS'].data
@@ -409,33 +170,19 @@ def analysing_pulsar_parameters(pulsars):
         # Calculate mean and standard deviation of data
         mean, sigma = np.mean(values), np.std(values, ddof=1)
 
-        counts_2, bins_2 = np.histogram(values, bins=30, density=False)
-
-        chi_squared, reduced_chi_squared, chi2_cdf_prob, degree_freedom = (
-            chi_squared_goodness_of_fit_gaussian(counts_2, bins_2, mean, sigma, number_of_sources=len(values)))
-
-        if chi_squared != "N/A":
-
-            print("Goodness of Fit of Gaussian Distribution: ")
-
-            print("Chi Squared Min Test Statistic: {}".format(chi_squared))
-            print("Reduced Chi-Squared Min Statistic: {}".format(reduced_chi_squared))
-            print("P(X^2_min; {}) = {}".format(degree_freedom, chi2_cdf_prob))
-
-            print('\n')
-
-        else:
-
-            print("Automatic Rejection of Gaussian Fit")
-            print("\n")
+        chi_squared_test(values, num_bins=30, distribution='normal')
 
         # Plot Gaussian using mean and standard deviation of data
         x_values = np.linspace(np.min(values), np.max(values), 1000)
-        y_values = normal_func(x_values, mean, sigma)
+        y_values = norm.pdf(x_values, loc=mean, scale=sigma)
         subplot.plot(x_values, y_values, label='Gaussian', linestyle='-.')
 
         # Plot Log-Normal distribution using mean and standard deviation of data (recommended by ID8 for F_0, but not
         # any of the other AGN parameters)
+
+        chi_squared_test(values, num_bins=30, distribution='lognorm')
+
+        mean, sigma = np.mean(values), np.std(values, ddof=1)
 
         mean_square = mean ** 2
         std_square = sigma ** 2
@@ -443,45 +190,11 @@ def analysing_pulsar_parameters(pulsars):
         mean_log = np.log(mean_square / (np.sqrt(mean_square + std_square)))
         std_log = np.sqrt(np.log(1 + (std_square / mean_square)))
 
-        chi_squared, reduced_chi_squared, chi2_cdf_prob, degree_freedom = (
-            chi_squared_goodness_of_fit_log_normal(counts_2, bins_2, number_of_sources=len(values), loc=mean_log,
-                                                   scale=std_log))
-
-        if chi_squared != "N/A":
-
-            print("Goodness of Fit of Log-Normal Distribution: ")
-
-            print("Chi Squared Min Test Statistic: {}".format(chi_squared))
-            print("Reduced Chi-Squared Min Statistic: {}".format(reduced_chi_squared))
-            print("P(X^2_min; {}) = {}".format(degree_freedom, chi2_cdf_prob))
-
-            print('\n')
-
-        else:
-
-            print("Automatic Rejection of Log-Normal Fit")
-            print("\n")
-
-        subplot.plot(x_values, log_norm_pdf(x_values, mean_log, std_log), label='Log-Normal', color='red',
+        subplot.plot(x_values, lognorm.pdf(x_values, s=std_log, scale=np.exp(mean_log)), color='red', label='Log-Normal',
                      linestyle='--')
 
-        # subplot.plot(x_values, log_norm_pdf(x_values, mean_log, std_log), label='Log-Normal', color='red',
-        #              linestyle='--')
-
-        # TESTING - TAKE OUT BELOW LINES - FOUND IN BUILT LOGNORM THAT WORKS AFTER READING https://medium.com/data-bistrot/log-normal-distribution-with-python-7b8e384e939e
-
-        # test_mean = np.nanmean(np.log(values))
-        # test_std = np.nanstd(np.log(values), ddof=1)
-        #
-        # subplot.plot(x_values, log_norm_pdf(x_values, mu=test_mean, sigma=test_std), label='try')
-        #
-        # subplot.plot(x_values, lognorm.pdf(x_values, s=test_std, scale=np.exp(test_mean)), color='black', label='TEST', linestyle=':')
-
-        subplot.plot(x_values, lognorm.pdf(x_values, s=std_log, scale=np.exp(mean_log)), color='black', label='TEST',
-                     linestyle=':')
-
-        kolmogorov_smirnov(observed_values=values, gaussian_mean=mean, gaussian_std=sigma, lognorm_mean=std_log,
-                           lognorm_std=np.exp(mean_log))
+        kolmogorov_smirnov_test(values=values, distribution='normal')
+        kolmogorov_smirnov_test(values=values, distribution='lognorm')
 
     # FORMATTING
 
@@ -516,3 +229,4 @@ def analysing_pulsar_parameters(pulsars):
 # Astropy Documentation - https://docs.astropy.org/en/stable/index_user_docs.html
 # Numpy Documentation - https://numpy.org/doc/stable/index.html
 # Numpy Typing - https://stackoverflow.com/questions/35673895/type-hinting-annotation-pep-484-for-numpy-ndarray
+# Scipy Documentation - https://docs.scipy.org/doc/scipy/index.html

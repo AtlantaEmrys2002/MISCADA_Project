@@ -46,7 +46,7 @@ from itertools import product, combinations
 import seaborn as sns
 from sklearn.metrics import root_mean_squared_error
 
-import math
+# import math
 
 # My functions
 from visualisation import analysing_agn_parameters, agn_luminosity_function, analysing_pulsar_parameters
@@ -239,8 +239,6 @@ def normal_func(x, mean, sigma):
 
     var = sigma**2
 
-    # return (1/np.sqrt(2 * np.pi * var)) * np.e**-(((x - mean)**2) / (2 * var))
-
     return (1 / np.sqrt(2 * np.pi * var)) * np.exp(-(((x - mean) ** 2) / (2 * var)))
 
 
@@ -262,159 +260,6 @@ def log_norm_pdf(x, mu, sigma):
     f_x = (1/(x * sigma * np.sqrt(2 * np.pi))) * np.exp(fraction)
 
     return f_x
-
-
-# def analysing_agn_parameters(agns):
-#
-#     # ID8 assert that F_0 follows log normal distribution and other params in differential energy flux follow Gaussian
-#     # we check this
-#
-#     # PIVOT ENERGY ANALYSIS
-#
-#     plt.rcParams["figure.figsize"] = (10, 10)
-#
-#     fig, ax = plt.subplots(2, 2)
-#
-#     # READ IN DATA
-#
-#     fds = agns['LP_Flux_Density'].to(u.ph / (u.cm * u.cm * u.MeV * u.s)).value.filled(np.nan)
-#     pivot_energies = agns['Pivot_Energy'].value
-#     alphas = agns['LP_Index'].data.filled(np.nan)
-#     betas = agns['LP_beta'].data.filled(np.nan)
-#
-#     # PLOT DISTRIBUTIONS
-#
-#     for pair in zip(ax.flatten(), [fds, pivot_energies, alphas, betas]):
-#
-#         subplot = pair[0]
-#
-#         # Remove NaN values
-#         values = pair[1][~np.isnan(pair[1])]
-#
-#         # Plot actual 4FGL source distribution
-#         counts, bins = np.histogram(values, bins=100, density=True)
-#         subplot.stairs(counts, bins, label='4FGL Distribution')
-#
-#         # Calculate mean and standard deviation of data
-#         mean, sigma = np.mean(values), np.std(values, ddof=1)
-#
-#         # Plot Gaussian using mean and standard deviation of data
-#         x_values = np.linspace(np.min(values), np.max(values), 1000)
-#         y_values = normal_func(x_values, mean, sigma)
-#         subplot.plot(x_values, y_values, label='Gaussian', linestyle='-.')
-#
-#         # Plot Log-Normal distribution using mean and standard deviation of data (recommended by ID8 for F_0, but not
-#         # any of the other AGN parameters)
-#
-#         mean_square = mean ** 2
-#         std_square = sigma ** 2
-#
-#         mean_log = np.log(mean_square / (np.sqrt(mean_square + std_square)))
-#         std_log = np.sqrt(np.log(1 + (std_square / mean_square)))
-#
-#         subplot.plot(x_values, log_norm_pdf(x_values, mean_log, std_log), label='Log-Normal', color='red',
-#                      linestyle='--')
-#
-#     # FORMATTING
-#
-#     fig.suptitle('Distributions of 4FGL AGN Parameters')
-#
-#     ax[0, 0].set_title('Differential Flux Densities, $F_0$')
-#     ax[0, 1].set_title('Pivot Energies, $E_0$')
-#     ax[1, 0].set_title('Spectral Slopes, $\\alpha$')
-#     ax[1, 1].set_title('Spectral Curvature, $\\beta$')
-#
-#     ax[0, 0].set_xlabel('$F_0$ [ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$]')
-#     ax[0, 1].set_xlabel('$E_0$ [MeV]')
-#     ax[1, 0].set_xlabel('$\\alpha$')
-#     ax[1, 1].set_xlabel('$\\beta$')
-#
-#     # Label axes and enable legends
-#     for a in ax.flatten():
-#         a.set_ylabel('Source Density')
-#         a.legend()
-#
-#     fig.tight_layout()
-#
-#     plt.show()
-
-
-# def analysing_pulsar_parameters(pulsars):
-#
-#     # Create plot
-#     plt.rcParams["figure.figsize"] = (8, 12)
-#     fig, ax = plt.subplots(3, 2)
-#     fig.delaxes(ax[2, 1])
-#
-#     # pivot_energies, flux_densities, spectral_slopes, exponential_indices, exponential_factors
-#
-#     fds = pulsars['PLEC_Flux_Density'].to(u.ph / (u.cm * u.cm * u.MeV * u.s)).value.filled(np.nan)
-#     pivot_energies = pulsars['Pivot_Energy'].value
-#     Gammas = pulsars['PLEC_IndexS'].data.filled(np.nan)
-#     b_values = pulsars['PLEC_Exp_Index'].data.filled(np.nan)
-#
-#     print(len(np.abs(fds - np.mean(fds)) < np.std(fds, ddof=1)))
-#
-#     # Select exponential factors - CHECK (SAYS IN UNITS OF MeV^-b BUT NEED with GeV)
-#     a_values = pulsars['PLEC_ExpfactorS'].data
-#
-#     for pair in zip(ax.flatten(), [fds, pivot_energies, Gammas, b_values, a_values]):
-#
-#         subplot = pair[0]
-#
-#         # Remove NaN values
-#         values = pair[1][~np.isnan(pair[1])]
-#
-#         # Plot actual 4FGL source distribution
-#         counts, bins = np.histogram(values, bins=30, density=True)
-#         subplot.stairs(counts, bins, label='4FGL Distribution')
-#
-#         # Calculate mean and standard deviation of data
-#         mean, sigma = np.mean(values), np.std(values, ddof=1)
-#
-#         # Plot Gaussian using mean and standard deviation of data
-#         x_values = np.linspace(np.min(values), np.max(values), 1000)
-#         y_values = normal_func(x_values, mean, sigma)
-#         subplot.plot(x_values, y_values, label='Gaussian', linestyle='-.')
-#
-#         # Plot Log-Normal distribution using mean and standard deviation of data (recommended by ID8 for F_0, but not
-#         # any of the other AGN parameters)
-#
-#         mean_square = mean ** 2
-#         std_square = sigma ** 2
-#
-#         mean_log = np.log(mean_square / (np.sqrt(mean_square + std_square)))
-#         std_log = np.sqrt(np.log(1 + (std_square / mean_square)))
-#
-#         subplot.plot(x_values, log_norm_pdf(x_values, mean_log, std_log), label='Log-Normal', color='red',
-#                      linestyle='--')
-#
-#     # FORMATTING
-#
-#     fig.suptitle('Distributions of 4FGL Pulsar Parameters')
-#
-#     ax[0, 0].set_title('Differential Flux Densities, $F_0$')
-#     ax[0, 1].set_title('Pivot Energies, $E_0$')
-#     ax[1, 0].set_title('Spectral Slopes, $\\Gamma$')
-#     ax[1, 1].set_title('Exponential Indices, $b$')
-#     ax[2, 0].set_title('Exponential Factors, $a$')
-#
-#     ax[0, 0].set_xlabel('$F_0$ [ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$]')
-#     ax[0, 1].set_xlabel('$E_0$ [MeV]')
-#     ax[1, 0].set_xlabel('$\\Gamma$')
-#     ax[1, 1].set_xlabel('$b$')
-#     ax[2, 0].set_xlabel('$a\ [MeV$^{-b}$]$')
-#
-#     ax[0, 0].set_ylim(0, 1 * 10 ** 11)
-#
-#     # Label axes and enable legends
-#     for a in ax.flatten():
-#         a.set_ylabel('Source Density')
-#         a.legend()
-#
-#     fig.tight_layout()
-#
-#     plt.show()
 
 
 def agn_statistics(agns):
@@ -1755,9 +1600,9 @@ agn_rows, pulsar_rows = catalog_data_preparation("/Volumes/T7/data/catalog/4FGL_
 #
 # agns = generate_mock_agn_catalog(agn_statistics(agn_rows.copy()), num_agns=100, extra=30)
 
-analysing_agn_parameters(agn_rows.copy())
+# analysing_agn_parameters(agn_rows.copy())
 
-# analysing_pulsar_parameters(pulsar_rows.copy())
+analysing_pulsar_parameters(pulsar_rows.copy())
 
 
 #
