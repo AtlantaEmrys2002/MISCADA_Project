@@ -1,11 +1,20 @@
 from astropy.table import QTable
+from itertools import combinations, product
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 from scipy.stats import lognorm, norm
+from .utils import log_normal_parameter
+import seaborn as sns
 
 
-def agn_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64]) -> None:
+# Used for labelling axes and titles - gives mathematical notation equivalent to variable
+mathematical_notation = {"Pivot_Energy": "$E_0$", "LP_Flux_Density": "$F_0$", "LP_Index": "$\\alpha$",
+                         "LP_beta": "$\\beta$", "PLEC_Flux_Density": "$F_0$", "PLEC_IndexS": "$\Gamma$",
+                         "PLEC_Exp_Index": "$b$", "PLEC_ExpfactorS": "$a$", "GLAT": "Latitude"}
+
+
+def agn_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64], directory) -> None:
 
     # Data Processing
 
@@ -51,25 +60,40 @@ def agn_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64]
 
     plt.legend()
 
-    plt.show()
+    plt.savefig(directory + "/4fgl_agn_luminosity_function.png")
 
 
-def log_normal_parameter(values):
+def correlation_matrices(sources, source_type, directory):
 
-    # This calculates the parameters for creating a log normal distribution based on parameter data
+    # CREATE PLOT
 
-    mean, sigma = np.mean(values), np.std(values, ddof=1)
+    plt.rcParams["figure.figsize"] = (27, 11)
 
-    mean_square = mean ** 2
-    std_square = sigma ** 2
+    fig, axs = plt.subplots(1, 2)
 
-    mean_log = np.log(mean_square / (np.sqrt(mean_square + std_square)))
-    std_log = np.sqrt(np.log(1 + (std_square / mean_square)))
+    # Calculate both Pearson and Kendall Rank correlation coefficients
+    corr_pearson = sources.corr()
+    corr_kendall = sources.corr(method='kendall')
 
-    return np.exp(mean_log), std_log
+    # Used for labelling matrix
+    matrix_labels = [mathematical_notation[k] for k in corr_pearson.columns.values]
+
+    # Plot matrices - took the absolute value of coefficients to highlight suggestions of strong correlation, but
+    # continued to label with + and - indicating positive or negative correlation
+    sns.heatmap(np.abs(corr_pearson), xticklabels=matrix_labels, yticklabels=matrix_labels, annot=corr_pearson,
+                cmap='Greens', ax=axs[0])
+    sns.heatmap(np.abs(corr_kendall), xticklabels=matrix_labels, yticklabels=matrix_labels, annot=corr_kendall,
+                cmap='Blues', ax=axs[1])
+
+    # FORMATTING
+
+    axs[0].set_title('Pearson Correlation Coefficient Matrix for {} Parameters'.format(source_type), fontsize=20)
+    axs[1].set_title('Kendall Rank Correlation Coefficient Matrix for {} Parameters'.format(source_type), fontsize=20)
+
+    plt.savefig(directory + "/{}_parameter_correlation_matrix.png".format(source_type.lower()))
 
 
-def plot_parameter_distributions(sources, source_type: str):
+def plot_parameter_distributions(sources, source_type: str, directory: str):
 
     # Used to label axes
     axis_labels = {"LP_Flux_Density": "Differential Flux Density, $F_0$ \n [ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$",
@@ -79,7 +103,7 @@ def plot_parameter_distributions(sources, source_type: str):
                    "PLEC_Exp_Index": "Exponential Index, $b$", "PLEC_ExpfactorS": "Exponential Factor, $a$",
                    "GLAT": "Latitude [$\degree$]"}
 
-    num_parameters = len(sources.colnames)
+    num_parameters = sources.shape[1]
 
     # CREATE PLOTS
 
@@ -94,9 +118,6 @@ def plot_parameter_distributions(sources, source_type: str):
         fig.delaxes(ax[num_cols - 1, 1])
 
     # GENERATE DATA
-
-    # Format sources
-    sources = sources.to_pandas()
 
     for pair in zip(ax.flatten(), [sources[col] for col in sources]):
 
@@ -135,12 +156,91 @@ def plot_parameter_distributions(sources, source_type: str):
 
     fig.tight_layout()
 
-    plt.show()
+    plt.savefig(directory + "/{}_parameter_distributions.png".format(source_type.lower()))
+
+
+def plot_parameter_relationships(sources, source_type: str, directory: str):
+
+    # Find all possible combinations of parameters
+    variable_combinations = list(combinations(list(sources.columns), 2))
+
+    # CREATE PLOT AND LOG-LOG PLOT
+
+    plt.rcParams["figure.figsize"] = (10, 14)
+
+    if source_type == "AGN":
+        num_plot_cols = 2
+    else:
+        num_plot_cols = 3
+
+    # Find number of rows of subplots that will be in figure
+    num_plot_rows = len(variable_combinations) // num_plot_cols
+
+    # Plot parameters against one another in fig1 and the log of parameters against one another in fig2
+    fig, ax = plt.subplots(num_plot_rows, num_plot_cols)
+    fig2, ax2 = plt.subplots(num_plot_rows, num_plot_cols)
+
+    # Used to index subplots
+    plot_indices = list(product(range(num_plot_rows), range(num_plot_cols)))
+
+    # PLOT DATA
+
+    num_subplots = len(plot_indices)
+
+    # Plot data for each subplot
+    for sp in range(num_subplots):
+
+        row, col = plot_indices[sp][0], plot_indices[sp][1]
+        var1, var2 = variable_combinations[sp][0], variable_combinations[sp][1]
+
+        parameter_1 = sources[var1]
+        parameter_2 = sources[var2]
+
+        # Calculate correlation coefficients - check for non-linear relationship using Kendall correlation coefficient,
+        # as Pearson only determines if linear relationship.
+        correlation_coefficient = str(round(parameter_1.corr(parameter_2), 3))
+        kendall_coefficient = str(round(parameter_1.corr(parameter_2, method='kendall'), 3))
+
+        # Plot data
+        ax[row, col].scatter(parameter_2, parameter_1, color='red', label="Pearson: " + correlation_coefficient
+                                                                          + "\nKendall: " + kendall_coefficient,
+                             marker='+', s=8)
+
+        # Plot log-log data data
+        log_var1 = np.log(parameter_1)
+        log_var2 = np.log(parameter_2)
+
+        ax2[row, col].scatter(log_var2, log_var1, color='red', label="Pearson: " + correlation_coefficient +
+                                                                     "\nKendall: " + kendall_coefficient, marker='+',
+                              s=8)
+
+        # Subplot formatting
+        for a in [ax, ax2]:
+
+            a[row, col].set_title(mathematical_notation[var1] + ' against ' + mathematical_notation[var2], fontsize=12)
+            ax2[row, col].set_xlabel(mathematical_notation[var2])
+            ax2[row, col].set_ylabel(mathematical_notation[var1])
+
+            ax2[row, col].legend(fontsize=8, loc='upper left')
+
+    # Figure formatting
+
+    fig.suptitle("Plotting {} Parameters Against Each Other".format(source_type), fontsize=18, y=0.98)
+    fig.tight_layout()
+
+    fig2.suptitle("Log-Log Plotting {} Parameters Against Each Other".format(source_type), fontsize=18, y=0.98)
+    fig2.tight_layout()
+
+    fig.savefig(directory + "/{}_parameter_relationships.png".format(source_type.lower()))
+    fig2.savefig(directory + "/{}_logarithmic_parameter_relationships.png".format(source_type.lower()))
 
 
 # REFERENCES
 
 # Astropy Documentation - https://docs.astropy.org/en/stable/index_user_docs.html
+# Log-Normals - https://stackoverflow.com/questions/68361048/how-to-generate-lognormal-distribution-with-specific-mean-
+# and-std-in-python
 # Numpy Documentation - https://numpy.org/doc/stable/index.html
 # Numpy Typing - https://stackoverflow.com/questions/35673895/type-hinting-annotation-pep-484-for-numpy-ndarray
+# Pandas Documentation - https://pandas.pydata.org/docs/index.html
 # Scipy Documentation - https://docs.scipy.org/doc/scipy/index.html

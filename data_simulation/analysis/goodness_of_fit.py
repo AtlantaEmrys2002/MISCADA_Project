@@ -151,8 +151,22 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05) -> None:
 
 # REFERENCES
 
+# Adding Noise to Simulated Data - https://medium.com/@ms_somanna/guide-to-adding-noise-to-your-data-using-python-
+# and-numpy-c8be815df524
+# Appending Integers - https://stackoverflow.com/questions/17911091/append-integer-to-beginning-of-list-in-python
 # Astropy Documentation - https://docs.astropy.org/en/stable/index_user_docs.html
+# Chi-Squared Critical Value - https://www.statology.org/chi-square-critical-value-python/
+# Chi-Squared Goodness of Fit - http://www.stat.yale.edu/Courses/1997-98/101/chigf.htm
+# Chi-Squared Test - https://en.wikipedia.org/wiki/Chi-squared_test
+# Chi-Squred with Zero Expected Counts - https://stats.stackexchange.com/questions/78101/chi-squared-test-with-0-
+# expected-values
+# Goodness of Fit - https://www.lboro.ac.uk/media/media/schoolanddepartments/mlsc/downloads/HELM%20Workbook%2042%20
+# Goodness%20of%20Fit%20and%20Contingency%20Tables.pdf
+# Kolmogorov-Smirnov Statistic - https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test
 # K-S Table - https://real-statistics.com/statistics-tables/kolmogorov-smirnov-table/
 # K-S Tutorial - https://www.geeksforgeeks.org/machine-learning/kolmogorov-smirnov-test-ks-test/
+# Match in Python - https://www.w3schools.com/python/python_match.asp
 # Numpy Documentation - https://numpy.org/doc/stable/index.html
+# Python Documentation - https://docs.python.org/3/index.html
+# Reduced Chi-Squared - https://en.wikipedia.org/wiki/Reduced_chi-squared_statistic
 # Scipy Documentation - https://docs.scipy.org/doc/scipy/index.html
