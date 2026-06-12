@@ -49,7 +49,8 @@ from sklearn.metrics import root_mean_squared_error
 import math
 
 # My functions
-from visualisation import analysing_agn_parameters, agn_luminosity_function
+from visualisation import analysing_agn_parameters, agn_luminosity_function, analysing_pulsar_parameters
+
 
 # VISUALISATIONS
 
@@ -338,82 +339,82 @@ def log_norm_pdf(x, mu, sigma):
 #     plt.show()
 
 
-def analysing_pulsar_parameters(pulsars):
-
-    # Create plot
-    plt.rcParams["figure.figsize"] = (8, 12)
-    fig, ax = plt.subplots(3, 2)
-    fig.delaxes(ax[2, 1])
-
-    # pivot_energies, flux_densities, spectral_slopes, exponential_indices, exponential_factors
-
-    fds = pulsars['PLEC_Flux_Density'].to(u.ph / (u.cm * u.cm * u.MeV * u.s)).value.filled(np.nan)
-    pivot_energies = pulsars['Pivot_Energy'].value
-    Gammas = pulsars['PLEC_IndexS'].data.filled(np.nan)
-    b_values = pulsars['PLEC_Exp_Index'].data.filled(np.nan)
-
-    print(len(np.abs(fds - np.mean(fds)) < np.std(fds, ddof=1)))
-
-    # Select exponential factors - CHECK (SAYS IN UNITS OF MeV^-b BUT NEED with GeV)
-    a_values = pulsars['PLEC_ExpfactorS'].data
-
-    for pair in zip(ax.flatten(), [fds, pivot_energies, Gammas, b_values, a_values]):
-
-        subplot = pair[0]
-
-        # Remove NaN values
-        values = pair[1][~np.isnan(pair[1])]
-
-        # Plot actual 4FGL source distribution
-        counts, bins = np.histogram(values, bins=30, density=True)
-        subplot.stairs(counts, bins, label='4FGL Distribution')
-
-        # Calculate mean and standard deviation of data
-        mean, sigma = np.mean(values), np.std(values, ddof=1)
-
-        # Plot Gaussian using mean and standard deviation of data
-        x_values = np.linspace(np.min(values), np.max(values), 1000)
-        y_values = normal_func(x_values, mean, sigma)
-        subplot.plot(x_values, y_values, label='Gaussian', linestyle='-.')
-
-        # Plot Log-Normal distribution using mean and standard deviation of data (recommended by ID8 for F_0, but not
-        # any of the other AGN parameters)
-
-        mean_square = mean ** 2
-        std_square = sigma ** 2
-
-        mean_log = np.log(mean_square / (np.sqrt(mean_square + std_square)))
-        std_log = np.sqrt(np.log(1 + (std_square / mean_square)))
-
-        subplot.plot(x_values, log_norm_pdf(x_values, mean_log, std_log), label='Log-Normal', color='red',
-                     linestyle='--')
-
-    # FORMATTING
-
-    fig.suptitle('Distributions of 4FGL Pulsar Parameters')
-
-    ax[0, 0].set_title('Differential Flux Densities, $F_0$')
-    ax[0, 1].set_title('Pivot Energies, $E_0$')
-    ax[1, 0].set_title('Spectral Slopes, $\\Gamma$')
-    ax[1, 1].set_title('Exponential Indices, $b$')
-    ax[2, 0].set_title('Exponential Factors, $a$')
-
-    ax[0, 0].set_xlabel('$F_0$ [ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$]')
-    ax[0, 1].set_xlabel('$E_0$ [MeV]')
-    ax[1, 0].set_xlabel('$\\Gamma$')
-    ax[1, 1].set_xlabel('$b$')
-    ax[2, 0].set_xlabel('$a\ [MeV$^{-b}$]$')
-
-    ax[0, 0].set_ylim(0, 1 * 10 ** 11)
-
-    # Label axes and enable legends
-    for a in ax.flatten():
-        a.set_ylabel('Source Density')
-        a.legend()
-
-    fig.tight_layout()
-
-    plt.show()
+# def analysing_pulsar_parameters(pulsars):
+#
+#     # Create plot
+#     plt.rcParams["figure.figsize"] = (8, 12)
+#     fig, ax = plt.subplots(3, 2)
+#     fig.delaxes(ax[2, 1])
+#
+#     # pivot_energies, flux_densities, spectral_slopes, exponential_indices, exponential_factors
+#
+#     fds = pulsars['PLEC_Flux_Density'].to(u.ph / (u.cm * u.cm * u.MeV * u.s)).value.filled(np.nan)
+#     pivot_energies = pulsars['Pivot_Energy'].value
+#     Gammas = pulsars['PLEC_IndexS'].data.filled(np.nan)
+#     b_values = pulsars['PLEC_Exp_Index'].data.filled(np.nan)
+#
+#     print(len(np.abs(fds - np.mean(fds)) < np.std(fds, ddof=1)))
+#
+#     # Select exponential factors - CHECK (SAYS IN UNITS OF MeV^-b BUT NEED with GeV)
+#     a_values = pulsars['PLEC_ExpfactorS'].data
+#
+#     for pair in zip(ax.flatten(), [fds, pivot_energies, Gammas, b_values, a_values]):
+#
+#         subplot = pair[0]
+#
+#         # Remove NaN values
+#         values = pair[1][~np.isnan(pair[1])]
+#
+#         # Plot actual 4FGL source distribution
+#         counts, bins = np.histogram(values, bins=30, density=True)
+#         subplot.stairs(counts, bins, label='4FGL Distribution')
+#
+#         # Calculate mean and standard deviation of data
+#         mean, sigma = np.mean(values), np.std(values, ddof=1)
+#
+#         # Plot Gaussian using mean and standard deviation of data
+#         x_values = np.linspace(np.min(values), np.max(values), 1000)
+#         y_values = normal_func(x_values, mean, sigma)
+#         subplot.plot(x_values, y_values, label='Gaussian', linestyle='-.')
+#
+#         # Plot Log-Normal distribution using mean and standard deviation of data (recommended by ID8 for F_0, but not
+#         # any of the other AGN parameters)
+#
+#         mean_square = mean ** 2
+#         std_square = sigma ** 2
+#
+#         mean_log = np.log(mean_square / (np.sqrt(mean_square + std_square)))
+#         std_log = np.sqrt(np.log(1 + (std_square / mean_square)))
+#
+#         subplot.plot(x_values, log_norm_pdf(x_values, mean_log, std_log), label='Log-Normal', color='red',
+#                      linestyle='--')
+#
+#     # FORMATTING
+#
+#     fig.suptitle('Distributions of 4FGL Pulsar Parameters')
+#
+#     ax[0, 0].set_title('Differential Flux Densities, $F_0$')
+#     ax[0, 1].set_title('Pivot Energies, $E_0$')
+#     ax[1, 0].set_title('Spectral Slopes, $\\Gamma$')
+#     ax[1, 1].set_title('Exponential Indices, $b$')
+#     ax[2, 0].set_title('Exponential Factors, $a$')
+#
+#     ax[0, 0].set_xlabel('$F_0$ [ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$]')
+#     ax[0, 1].set_xlabel('$E_0$ [MeV]')
+#     ax[1, 0].set_xlabel('$\\Gamma$')
+#     ax[1, 1].set_xlabel('$b$')
+#     ax[2, 0].set_xlabel('$a\ [MeV$^{-b}$]$')
+#
+#     ax[0, 0].set_ylim(0, 1 * 10 ** 11)
+#
+#     # Label axes and enable legends
+#     for a in ax.flatten():
+#         a.set_ylabel('Source Density')
+#         a.legend()
+#
+#     fig.tight_layout()
+#
+#     plt.show()
 
 
 def agn_statistics(agns):
@@ -462,7 +463,11 @@ def pulsar_statistics(pulsars):
     flux_densities = pulsars['PLEC_Flux_Density'].to(u.ph / (u.cm * u.cm * u.GeV * u.s)).value
     log_flux_densities = np.log(flux_densities)
 
-    mean_Gamma, std_Gamma = np.nanmean(Gammas), np.nanstd(Gammas, ddof=1)
+    # mean_Gamma, std_Gamma = np.nanmean(Gammas), np.nanstd(Gammas, ddof=1)
+
+    log_Gammas = np.log(Gammas)
+
+    mean_log_Gamma, std_log_Gamma = np.nanmean(log_Gammas), np.nanstd(log_Gammas, ddof=1)
 
     mean_b, std_b = np.nanmean(b_values), np.nanstd(b_values, ddof=1)
 
@@ -485,8 +490,11 @@ def pulsar_statistics(pulsars):
     # return (mean_Gamma, std_Gamma, mean_b, std_b, mean_log_a, std_log_a, mean_log_flux_density, std_log_flux_density,
     #         mean_log_pivot_energy, std_log_pivot_energy, pulsar_latitudes)
 
-    return (mean_Gamma, std_Gamma, b_values, len(pulsars), mean_log_a, std_log_a, mean_log_flux_density, std_log_flux_density,
-            mean_log_pivot_energy, std_log_pivot_energy, pulsar_latitudes)
+    # return (mean_Gamma, std_Gamma, b_values, len(pulsars), mean_log_a, std_log_a, mean_log_flux_density, std_log_flux_density,
+    #         mean_log_pivot_energy, std_log_pivot_energy, pulsar_latitudes)
+
+    return (mean_log_Gamma, std_log_Gamma, b_values, len(pulsars), mean_log_a, std_log_a, mean_log_flux_density, std_log_flux_density,
+    mean_log_pivot_energy, std_log_pivot_energy, pulsar_latitudes)
 
 
 def agn_flux_densities(pivot_energies, a=0.10975452653160912, b=-2.8553356136745753, c=-21.159501476671274,
@@ -776,7 +784,7 @@ def pulsar_generation(pulsar_stats, energy_flux_low, energy_flux_high, sigma_1, 
 
     # sigma_1 and sigma_2 are the fitted standard deviations of Gaussian distribution
 
-    (mean_Gamma_pulsars, std_Gamma_pulsars,b_values, len_pulsars, mean_log_a_pulsars, std_log_a_pulsars,
+    (mean_log_Gamma_pulsars, std_log_Gamma_pulsars, b_values, len_pulsars, mean_log_a_pulsars, std_log_a_pulsars,
      mean_log_flux_density_pulsars, std_log_flux_density_pulsars, mean_log_pivot_energy_pulsars,
      std_log_pivot_energy_pulsars, latitudes_pulsars) = pulsar_stats
 
@@ -800,8 +808,10 @@ def pulsar_generation(pulsar_stats, energy_flux_low, energy_flux_high, sigma_1, 
 
         # Gaussian recommended in ID8 - AT THE MOMENT - may change to log-normal
 
-        # Generate new spectral slopes (Gammas)
-        spectral_slope = np.random.normal(loc=mean_Gamma_pulsars, scale=std_Gamma_pulsars, size=1)[0]
+        # Generate new spectral slopes (Gammas) - CHANGED FROM GAUSSIAN TO LOG-NORMAL BASED ON CHI SQUARED GOODNESS OF FIT
+        # ANALYSIS (THIS IS A CHANGE FROM ID8, WHICH RECOMMENDED GAUSSIAN)
+        # spectral_slope = np.random.normal(loc=mean_Gamma_pulsars, scale=std_Gamma_pulsars, size=1)[0]
+        spectral_slope = np.random.lognormal(mean=mean_log_Gamma_pulsars, sigma=std_log_Gamma_pulsars, size=1)[0]
 
         # Generate new exponential factors (as)
         exponential_factor = np.random.lognormal(mean=mean_log_a_pulsars, sigma=std_log_a_pulsars, size=1)[0]
@@ -842,7 +852,11 @@ def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350, extra=10):
 
     # CHECK ALL PARAMETER DISTRIBUTIONS AND FIT GAUSSIAN OR LOG-NORMAL - MAYBE RESEARCH OTHER DISTRIBUTIONS IT COULD BE
 
-    (mean_Gamma_pulsars, std_Gamma_pulsars, b_values, len_pulsars, mean_log_a_pulsars, std_log_a_pulsars,
+    # (mean_Gamma_pulsars, std_Gamma_pulsars, b_values, len_pulsars, mean_log_a_pulsars, std_log_a_pulsars,
+    #  mean_log_flux_density_pulsars, std_log_flux_density_pulsars, mean_log_pivot_energy_pulsars,
+    #  std_log_pivot_energy_pulsars, latitudes_pulsars) = pulsar_stats
+
+    (mean_log_Gamma_pulsars, std_log_Gamma_pulsars, b_values, len_pulsars, mean_log_a_pulsars, std_log_a_pulsars,
      mean_log_flux_density_pulsars, std_log_flux_density_pulsars, mean_log_pivot_energy_pulsars,
      std_log_pivot_energy_pulsars, latitudes_pulsars) = pulsar_stats
 
@@ -860,7 +874,9 @@ def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350, extra=10):
     # Gaussian recommended in ID8 - AT THE MOMENT - may change to log-normal
 
     # Generate new spectral slopes (Gammas)
-    spectral_slopes = np.random.normal(loc=mean_Gamma_pulsars, scale=std_Gamma_pulsars, size=num_pulsars)
+    # spectral_slopes = np.random.normal(loc=mean_Gamma_pulsars, scale=std_Gamma_pulsars, size=num_pulsars)
+
+    spectral_slopes = np.random.lognormal(mean=mean_log_Gamma_pulsars, sigma=std_log_Gamma_pulsars, size=num_pulsars)
 
     # Generate new exponential factors (as) - log-normal (CHANGED FROM ID8, which used normal/Gaussian BASED ON RESULTS
     # FOUND IN analysing_pulsar_parameters() function)
@@ -899,9 +915,6 @@ def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350, extra=10):
 
     # # Convert to degrees
     # galactic_longitudes = np.rad2deg(galactic_longitudes)
-
-
-
 
     # b - double Gaussian - two overlapping sampled as one
     counts, bins = np.histogram(latitudes_pulsars.value, bins=100, density=True)
@@ -1744,7 +1757,7 @@ agn_rows, pulsar_rows = catalog_data_preparation("/Volumes/T7/data/catalog/4FGL_
 
 analysing_agn_parameters(agn_rows.copy())
 
-# print(agns)
+# analysing_pulsar_parameters(pulsar_rows.copy())
 
 
 #
@@ -1754,7 +1767,9 @@ analysing_agn_parameters(agn_rows.copy())
 #
 # print("agns saved.")
 #
-# pulsars = generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows.copy()), 200, extra=5)
+# pulsars = generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows.copy()), 10, extra=5)
+
+# print(pulsars)
 
 # spatial_visualisations(pulsars[:, 6], pulsars[:, 7], num_sources=len(pulsars), source_type='Pulsars')
 
