@@ -30,7 +30,6 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 import matplotlib.pyplot as plt
 import warnings
-# from xml.dom import minidom
 import time
 from scipy.optimize import curve_fit
 from sklearn.mixture import GaussianMixture
@@ -46,13 +45,12 @@ from itertools import product, combinations
 import seaborn as sns
 from sklearn.metrics import root_mean_squared_error
 
-# import math
-
-# My functions
-from analysis.visualisation import agn_luminosity_function, plot_parameter_distributions
+# Relative imports
+from analysis.correlation import analysis_correlation
 from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
-
+from analysis.visualisation import agn_luminosity_function, plot_parameter_distributions
 from xml_writers import agn_xml_writer, pulsar_xml_writer
+
 
 # VISUALISATIONS
 
@@ -869,147 +867,147 @@ def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350, extra=10):
 
 print("starting...")
 
-
-def analysis_correlation(sources, agn_params=False):
-
-    # Used for labelling axes and titles - gives mathematical notation equivalent to variable
-    mathematical_notation = {"Pivot_Energy": "$E_0$", "LP_Flux_Density": "$F_0$", "LP_Index": "$\\alpha$",
-                             "LP_beta": "$\\beta$", "PLEC_Flux_Density": "$F_0$", "PLEC_IndexS": "$\Gamma$",
-                             "PLEC_Exp_Index": "$b$", "PLEC_ExpfactorS": "$a$", "GLAT": "Latitude"}
-
-    if agn_params is True:
-        sources.remove_columns(['PLEC_Flux_Density', 'PLEC_IndexS', 'PLEC_Exp_Index', 'PLEC_ExpfactorS'])
-
-        # Remove spatial column for AGNS - AGNs are known to be approximately isotropically distributed on the sky
-        sources.remove_column('GLAT')
-
-    else:
-        sources.remove_columns(['LP_Flux_Density', 'LP_Index', 'LP_beta'])
-
-    # Convert to pandas for covariance and correlation calculations, as well as plotting
-    sources = sources.to_pandas()
-
-    # Find all possible combinations of parameters
-    columns = list(sources.columns)
-    variable_combinations = list(combinations(columns, 2))
-
-    plt.rcParams["figure.figsize"] = (10, 14)
-
-    if agn_params is True:
-        num_plot_cols = 2
-    else:
-        num_plot_cols = 3
-
-    # Find number of rows of subplots that will be in figure
-    num_plot_rows = len(variable_combinations) // num_plot_cols
-
-    fig, ax = plt.subplots(num_plot_rows, num_plot_cols)
-
-    # Used to index subplots
-    plot_indices = list(product(range(0, num_plot_rows), range(0, num_plot_cols)))
-
-    # PLOT DATA AGAINST DATA
-
-    # Plot data for each subplot
-    for sp in range(len(plot_indices)):
-
-        row, col = plot_indices[sp][0], plot_indices[sp][1]
-        var1, var2 = variable_combinations[sp][0], variable_combinations[sp][1]
-
-        # Check Kendall coefficient, as Pearson only determines if linear relationship.
-
-        correlation_coefficient = str(round(sources[var1].corr(sources[var2]), 3))
-        kendall_coefficient = str(round(sources[var1].corr(sources[var2], method='kendall'), 3))
-
-        # Plot data
-        ax[row, col].scatter(sources[var2], sources[var1], color='red', label="Pearson: " + correlation_coefficient +
-                                                                              "\nKendall: " + kendall_coefficient, marker='+', s=8)
-
-        # Subplot formatting
-        ax[row, col].set_title(mathematical_notation[var1] + ' against ' + mathematical_notation[var2], fontsize=12)
-        ax[row, col].set_xlabel(mathematical_notation[var2])
-        ax[row, col].set_ylabel(mathematical_notation[var1])
-
-        # Label with correlation coefficient
-        # sources[[var1, var2]].corr(numeric_only=True)
-
-        ax[row, col].legend(fontsize=8, loc='upper left')
-
-    # Figure formatting
-
-    fig.suptitle("Plotting AGN Parameters Against Each Other", fontsize=18, y=0.98)
-    fig.tight_layout()
-
-    fig.show()
-
-    # LOG-LOG PLOTS
-
-    fig, ax = plt.subplots(num_plot_rows, num_plot_cols)
-
-    # Plot data for each subplot
-    for sp in range(len(plot_indices)):
-
-        row, col = plot_indices[sp][0], plot_indices[sp][1]
-        var1, var2 = variable_combinations[sp][0], variable_combinations[sp][1]
-
-        log_var1 = np.log(sources[var1])
-        log_var2 = np.log(sources[var2])
-
-        # Check Kendall coefficient, as Pearson only determines if linear relationship.
-
-        correlation_coefficient = str(round(sources[var1].corr(sources[var2]), 3))
-        kendall_coefficient = str(round(sources[var1].corr(sources[var2], method='kendall'), 3))
-
-        # Plot data
-        ax[row, col].scatter(log_var2, log_var1, color='red', label="Pearson: " + correlation_coefficient +
-                                                                              "\nKendall: " + kendall_coefficient, marker='+', s=8)
-
-        # Subplot formatting
-        ax[row, col].set_title(mathematical_notation[var1] + ' against ' + mathematical_notation[var2], fontsize=12)
-        ax[row, col].set_xlabel(mathematical_notation[var2])
-        ax[row, col].set_ylabel(mathematical_notation[var1])
-
-        ax[row, col].legend(fontsize=8, loc='upper left')
-
-    # Figure formatting
-
-    fig.suptitle("Log-Log Plotting AGN Parameters Against Each Other", fontsize=18, y=0.98)
-    fig.tight_layout()
-
-    fig.show()
-
-    # CORRELATION MATRICES
-
-    # Pearson
-
-    corr = sources.corr()
-
-    plt.figure(figsize=(13, 11))
-
-    plt.title('Pearson Correlation Coefficient Matrix', fontsize=20)
-
-    matrix_labels = [mathematical_notation[k] for k in corr.columns.values]
-
-    sns.heatmap(np.abs(corr), xticklabels=matrix_labels, yticklabels=matrix_labels, annot=corr, cmap='Greens')
-
-    plt.show()
-
-    # Kendall Rank
-
-    corr = sources.corr(method='kendall')
-
-    plt.figure(figsize=(13, 11))
-
-    plt.title('Kendall Rank Correlation Coefficient Matrix', fontsize=20)
-
-    matrix_labels = [mathematical_notation[k] for k in corr.columns.values]
-
-    # N.B. This is very important - took the absolute value to highlight suggestions of strong correlation, but
-    # continued to label with + and - indicating positive or negative correlation
-
-    sns.heatmap(np.abs(corr), xticklabels=matrix_labels, yticklabels=matrix_labels, annot=corr, cmap='Blues')
-
-    plt.show()
+#
+# def analysis_correlation(sources, agn_params=False):
+#
+#     # Used for labelling axes and titles - gives mathematical notation equivalent to variable
+#     mathematical_notation = {"Pivot_Energy": "$E_0$", "LP_Flux_Density": "$F_0$", "LP_Index": "$\\alpha$",
+#                              "LP_beta": "$\\beta$", "PLEC_Flux_Density": "$F_0$", "PLEC_IndexS": "$\Gamma$",
+#                              "PLEC_Exp_Index": "$b$", "PLEC_ExpfactorS": "$a$", "GLAT": "Latitude"}
+#
+#     if agn_params is True:
+#         sources.remove_columns(['PLEC_Flux_Density', 'PLEC_IndexS', 'PLEC_Exp_Index', 'PLEC_ExpfactorS'])
+#
+#         # Remove spatial column for AGNS - AGNs are known to be approximately isotropically distributed on the sky
+#         sources.remove_column('GLAT')
+#
+#     else:
+#         sources.remove_columns(['LP_Flux_Density', 'LP_Index', 'LP_beta'])
+#
+#     # Convert to pandas for covariance and correlation calculations, as well as plotting
+#     sources = sources.to_pandas()
+#
+#     # Find all possible combinations of parameters
+#     columns = list(sources.columns)
+#     variable_combinations = list(combinations(columns, 2))
+#
+#     plt.rcParams["figure.figsize"] = (10, 14)
+#
+#     if agn_params is True:
+#         num_plot_cols = 2
+#     else:
+#         num_plot_cols = 3
+#
+#     # Find number of rows of subplots that will be in figure
+#     num_plot_rows = len(variable_combinations) // num_plot_cols
+#
+#     fig, ax = plt.subplots(num_plot_rows, num_plot_cols)
+#
+#     # Used to index subplots
+#     plot_indices = list(product(range(0, num_plot_rows), range(0, num_plot_cols)))
+#
+#     # PLOT DATA AGAINST DATA
+#
+#     # Plot data for each subplot
+#     for sp in range(len(plot_indices)):
+#
+#         row, col = plot_indices[sp][0], plot_indices[sp][1]
+#         var1, var2 = variable_combinations[sp][0], variable_combinations[sp][1]
+#
+#         # Check Kendall coefficient, as Pearson only determines if linear relationship.
+#
+#         correlation_coefficient = str(round(sources[var1].corr(sources[var2]), 3))
+#         kendall_coefficient = str(round(sources[var1].corr(sources[var2], method='kendall'), 3))
+#
+#         # Plot data
+#         ax[row, col].scatter(sources[var2], sources[var1], color='red', label="Pearson: " + correlation_coefficient +
+#                                                                               "\nKendall: " + kendall_coefficient, marker='+', s=8)
+#
+#         # Subplot formatting
+#         ax[row, col].set_title(mathematical_notation[var1] + ' against ' + mathematical_notation[var2], fontsize=12)
+#         ax[row, col].set_xlabel(mathematical_notation[var2])
+#         ax[row, col].set_ylabel(mathematical_notation[var1])
+#
+#         # Label with correlation coefficient
+#         # sources[[var1, var2]].corr(numeric_only=True)
+#
+#         ax[row, col].legend(fontsize=8, loc='upper left')
+#
+#     # Figure formatting
+#
+#     fig.suptitle("Plotting AGN Parameters Against Each Other", fontsize=18, y=0.98)
+#     fig.tight_layout()
+#
+#     fig.show()
+#
+#     # LOG-LOG PLOTS
+#
+#     fig, ax = plt.subplots(num_plot_rows, num_plot_cols)
+#
+#     # Plot data for each subplot
+#     for sp in range(len(plot_indices)):
+#
+#         row, col = plot_indices[sp][0], plot_indices[sp][1]
+#         var1, var2 = variable_combinations[sp][0], variable_combinations[sp][1]
+#
+#         log_var1 = np.log(sources[var1])
+#         log_var2 = np.log(sources[var2])
+#
+#         # Check Kendall coefficient, as Pearson only determines if linear relationship.
+#
+#         correlation_coefficient = str(round(sources[var1].corr(sources[var2]), 3))
+#         kendall_coefficient = str(round(sources[var1].corr(sources[var2], method='kendall'), 3))
+#
+#         # Plot data
+#         ax[row, col].scatter(log_var2, log_var1, color='red', label="Pearson: " + correlation_coefficient +
+#                                                                               "\nKendall: " + kendall_coefficient, marker='+', s=8)
+#
+#         # Subplot formatting
+#         ax[row, col].set_title(mathematical_notation[var1] + ' against ' + mathematical_notation[var2], fontsize=12)
+#         ax[row, col].set_xlabel(mathematical_notation[var2])
+#         ax[row, col].set_ylabel(mathematical_notation[var1])
+#
+#         ax[row, col].legend(fontsize=8, loc='upper left')
+#
+#     # Figure formatting
+#
+#     fig.suptitle("Log-Log Plotting AGN Parameters Against Each Other", fontsize=18, y=0.98)
+#     fig.tight_layout()
+#
+#     fig.show()
+#
+#     # CORRELATION MATRICES
+#
+#     # Pearson
+#
+#     corr = sources.corr()
+#
+#     plt.figure(figsize=(13, 11))
+#
+#     plt.title('Pearson Correlation Coefficient Matrix', fontsize=20)
+#
+#     matrix_labels = [mathematical_notation[k] for k in corr.columns.values]
+#
+#     sns.heatmap(np.abs(corr), xticklabels=matrix_labels, yticklabels=matrix_labels, annot=corr, cmap='Greens')
+#
+#     plt.show()
+#
+#     # Kendall Rank
+#
+#     corr = sources.corr(method='kendall')
+#
+#     plt.figure(figsize=(13, 11))
+#
+#     plt.title('Kendall Rank Correlation Coefficient Matrix', fontsize=20)
+#
+#     matrix_labels = [mathematical_notation[k] for k in corr.columns.values]
+#
+#     # N.B. This is very important - took the absolute value to highlight suggestions of strong correlation, but
+#     # continued to label with + and - indicating positive or negative correlation
+#
+#     sns.heatmap(np.abs(corr), xticklabels=matrix_labels, yticklabels=matrix_labels, annot=corr, cmap='Blues')
+#
+#     plt.show()
 
 
 # def straight_line(x, m, c):
@@ -1343,7 +1341,7 @@ def analysis(agn_rows, pulsar_rows):
 
     # PREPARE DATA
 
-    # Convert to pandas dataframes
+    # Convert to pandas dataframes for covariance and correlation calculations, as well as plotting
     agns = agn_rows.to_pandas()
     pulsars = pulsar_rows.to_pandas()
 
@@ -1362,7 +1360,7 @@ def analysis(agn_rows, pulsar_rows):
         mask = ~np.isnan(agns[parameter])
         values = agns[parameter][mask]
 
-        # Iterate all over distributions to fit to parameters
+        # Iterate over candidate distributions and fit each to parameters
         for dist in prob_dist:
 
             # Perform chi_squared goodness of fit test
@@ -1384,7 +1382,7 @@ def analysis(agn_rows, pulsar_rows):
         mask = ~np.isnan(pulsars[parameter])
         values = pulsars[parameter][mask]
 
-        # Iterate all over distributions to fit to parameters
+        # Iterate over candidate distributions and fit each to parameters
         for dist in prob_dist:
             # Perform chi_squared goodness of fit test
             chi_squared_test(values, num_bins=100, distribution=dist)
@@ -1394,6 +1392,18 @@ def analysis(agn_rows, pulsar_rows):
 
     # Plot pulsar parameter distributions
     plot_parameter_distributions(pulsar_rows.copy(), source_type='Pulsars')
+
+    # CORRELATION ANALYSIS
+
+    # AGNs
+
+    analysis_correlation(agns)
+
+    # Pulsars
+
+    analysis_correlation(pulsars)
+
+
 
 
 agn_rows, pulsar_rows = catalog_data_preparation("/Volumes/T7/data/catalog/4FGL_DR4.fit")
@@ -1432,9 +1442,7 @@ print("agns saved.")
 #
 #
 #
-pulsars = generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows.copy()), 10, extra=5)
-
-# print(pulsars)
+# pulsars = generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows.copy()), 10, extra=5)
 
 # spatial_visualisations(pulsars[:, 6], pulsars[:, 7], num_sources=len(pulsars), source_type='Pulsars')
 
@@ -1442,7 +1450,7 @@ pulsars = generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows.copy()), 10
 #
 # print("pulsars created")
 #
-pulsar_xml_writer(pulsars)
+# pulsar_xml_writer(pulsars)
 #
 # print("pulsars saved")
 #
