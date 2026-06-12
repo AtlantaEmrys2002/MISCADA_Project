@@ -41,13 +41,9 @@ from scipy.stats.sampling import (NumericalInversePolynomial, NumericalInverseHe
 from sympy.stats import ContinuousRV, MultivariateNormal, sample
 from sympy import Interval, oo, Symbol
 from scipy.integrate import trapezoid
-import pandas as pd
-from itertools import product, combinations
-import seaborn as sns
 from sklearn.metrics import root_mean_squared_error
 
 # Relative imports
-# from analysis.correlation import analysis_correlation
 from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
 from analysis.visualisation import (agn_luminosity_function, correlation_matrices, plot_parameter_distributions,
                                     plot_parameter_relationships)
@@ -75,6 +71,12 @@ def spatial_visualisations(galactic_longitudes, galactic_latitudes, num_sources,
     ax.scatter(xs, ys, marker='o', s=2, alpha=0.3)
     fig.subplots_adjust(top=0.95, bottom=0.0)
     plt.show()
+
+def normal_func(x, mean, sigma):
+
+    var = sigma**2
+
+    return (1 / np.sqrt(2 * np.pi * var)) * np.exp(-(((x - mean) ** 2) / (2 * var)))
 
 
 def visualising_pulsar_latitude_distributions(sigma_1, sigma_2, x_values, counts):
@@ -128,7 +130,6 @@ def agn_spectral_model(E, E_0, F_0, alpha, beta):
 
     division = E/E_0
 
-    # with suppress(RuntimeWarning):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         exponent = - alpha - (beta * np.log(division))
@@ -150,10 +151,6 @@ def pulsar_spectral_model(E, F_0, E_0, Gamma, a, b):
 def energy_flux_agn(pivot_energy, flux_density, spectral_slope, curvature):
 
     # Integrate over 0.1 - 100 GeV
-    # with warnings.catch_warnings():
-    #     warnings.simplefilter("ignore")
-    #     energy = quad(agn_spectral_model, 0.1, 100, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
-
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         energy = quad(agn_spectral_model, 100, 100000, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
@@ -185,10 +182,7 @@ def s10_agn(pivot_energy, flux_density, spectral_slope, curvature):
 
 def energy_flux_pulsar(pivot_energy, flux_density, spectral_slope, exponential_index, exponential_factor):
 
-    # Integrate over 0.1 - 100 GeV - change to 100 - 100000 MeV
-    # energy = quad(pulsar_spectral_model, 0.1, 100, args=(pivot_energy, flux_density, spectral_slope,
-    #                                                      exponential_index, exponential_factor))[0]
-
+    # Integrate over 0.1 - 100 GeV - converted to 100 - 100000 MeV
     energy = quad(pulsar_spectral_model, 100, 100000, args=(pivot_energy, flux_density, spectral_slope,
                                                             exponential_index, exponential_factor))[0]
 
@@ -236,22 +230,6 @@ def catalog_data_preparation(file_name):
 
     return agns, pulsars
 
-
-def normal_func(x, mean, sigma):
-
-    var = sigma**2
-
-    return (1 / np.sqrt(2 * np.pi * var)) * np.exp(-(((x - mean) ** 2) / (2 * var)))
-
-
-# This function from here - https://stackoverflow.com/questions/11686720/is-there-a-numpy-builtin-to-reject-outliers-
-# from-a-list
-# Using median instead of mean to check for outliers
-# def reject_outliers(data, m=100.):
-#     d = np.abs(data - np.median(data))
-#     mdev = np.median(d)
-#     s = d/mdev if mdev else np.zeros(len(d))
-#     return data[s < m]
 
 def log_norm_pdf(x, mu, sigma):
 
@@ -345,7 +323,7 @@ def pulsar_statistics(pulsars):
 
 
 def agn_flux_densities(pivot_energies, a=0.10975452653160912, b=-2.8553356136745753, c=-21.159501476671274,
-                   noise_std=0.9181233644485474):
+                       noise_std=0.9181233644485474):
 
     # a: 0.10975452653160912
     # b: -2.8553356136745753
@@ -407,9 +385,6 @@ def agn_generation(agn_stats, energy_flux_low, energy_flux_high):
      std_log_flux_density_agn, betas_agn) = agn_stats
 
     while True:
-
-        # (mean_alpha_agn, std_alpha_agn, mean_log_pivot_energy_agn, std_log_pivot_energy_agn, mean_log_flux_density_agn,
-        #  std_log_flux_density_agn, betas_agn) = agn_stats
 
         # Generate new pivot energy
         # pivot_energy = np.random.normal(loc=mean_pivot_energy_agn, scale=std_pivot_energy_agn, size=1)[0]
@@ -869,17 +844,6 @@ def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350, extra=10):
 
 print("starting...")
 
-# def straight_line(x, m, c):
-#     return (m * x) + c
-#
-#
-# def quadratic(x, a, b, c):
-#     return (a * x ** 2) + (b * x) + c
-#
-#
-# def cubic(x, a, b, c, d):
-#     return (a * x ** 3) + (b * x ** 2) + (c * x) + d
-
 
 def fitting_agn_pivot_energy_flux_density_relation(agns):
 
@@ -1293,46 +1257,15 @@ pulsar_rows = pulsar_rows['PLEC_Flux_Density', 'Pivot_Energy', 'PLEC_IndexS', 'P
 
 analysis(agn_rows, pulsar_rows)
 
-
-
-
-# analysis_correlation(agn_rows.copy(), agn_params=True)
-
 # fitting_agn_pivot_energy_flux_density_relation(agn_rows.copy())
 
 # fitting_agn_pivot_energy_spectral_slope_relation(agn_rows.copy())
 
-# print("data preparation completed.")
-# #
-# start = time.time()
-#
 # agns = generate_mock_agn_catalog(agn_statistics(agn_rows.copy()), num_agns=100, extra=30)
 
-#
-# print("agns created.")
-#
-#
-print("agns saved.")
-#
-#
-#
 # pulsars = generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows.copy()), 10, extra=5)
 
 # spatial_visualisations(pulsars[:, 6], pulsars[:, 7], num_sources=len(pulsars), source_type='Pulsars')
-
-
-#
-# print("pulsars created")
-#
-# pulsar_xml_writer(pulsars)
-#
-# print("pulsars saved")
-#
-end = time.time()
-#
-print("completed.")
-#
-# print("TIME: " + str(end - start) + "s")
 
 
 # REFERENCES
@@ -1340,6 +1273,7 @@ print("completed.")
 # Astropy Documentation - https://docs.astropy.org/en/stable/
 # ID8 Paper - Identification of point sources in gamma rays using U-shaped convolutional neural networks and a data
 # challenge
+# Log-Normal Distribution - https://en.wikipedia.org/wiki/Log-normal_distribution
 # Masked to Ordinary Numpy Array - https://www.w3resource.com/python-exercises/numpy/convert-masked-numpy-array-to-regul
 # ar-array-with-nan.php
 # Numpy Documentation - https://numpy.org/doc/stable/user/index.html
