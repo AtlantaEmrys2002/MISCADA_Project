@@ -3,7 +3,7 @@ from itertools import combinations, product
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
-from scipy.stats import lognorm, norm
+from scipy.stats import fisk, logistic, lognorm, norm
 from .utils import log_normal_parameter
 import seaborn as sns
 
@@ -133,6 +133,10 @@ def plot_parameter_distributions(sources, source_type: str, directory: str):
         # Calculate distribution parameters of data
         mean, sigma = np.mean(values), np.std(values, ddof=1)
         scale, s = log_normal_parameter(values)
+        logistic_scale = sigma * (np.sqrt(3) / np.pi)
+        log_logistic_scale = np.log(np.std(values, ddof=1) * (np.sqrt(3) / np.pi))
+
+        # np.std(np.log(values), ddof=1) * (np.sqrt(3) / np.pi)
 
         # Plot Gaussian using mean and standard deviation of data
         x_values = np.linspace(np.min(values), np.max(values), 1000)
@@ -142,6 +146,14 @@ def plot_parameter_distributions(sources, source_type: str, directory: str):
         # any of the other AGN parameters)
         subplot.plot(x_values, lognorm.pdf(x_values, s=s, scale=scale), color='red', label='Log-Normal',
                      linestyle='--')
+
+        # Plot Logistic distribution using mean and standard deviation of data (I noted similarity of shapes)
+        subplot.plot(x_values, logistic.pdf(x_values, loc=mean, scale=logistic_scale), color='purple', label='Logistic',
+                     linestyle=":")
+
+        # Plot log-logistic distribution using mean and standard deviation of data (I noted similarity of shapes)
+        subplot.plot(x_values, fisk.pdf(x_values, scale=np.exp(np.mean(np.log(x_values))), c=1 / log_logistic_scale), color='green',
+                     label='Log-Logistic')
 
         subplot.set_xlabel(axis_labels[values.name])
 

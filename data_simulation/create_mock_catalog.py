@@ -995,7 +995,7 @@ agn_rows, pulsar_rows, source_detection_threshold, fluxes_4fgl = catalog_data_pr
 
 # Analyse parameters, their distributions, and their correlations
 
-# analysis(agn_rows, pulsar_rows)
+analysis(agn_rows, pulsar_rows)
 
 # fitting_agn_pivot_energy_flux_density_relation(agn_rows.copy())
 
@@ -1007,9 +1007,9 @@ agn_rows, pulsar_rows, source_detection_threshold, fluxes_4fgl = catalog_data_pr
 
 # agns = generate_mock_agn_catalog(agn_rows.copy(), num_agns=100, extra=30)
 
-agns = generate_mock_agn_catalog(agn_rows.copy(), num_agns=300, detection_threshold=source_detection_threshold)
+# agns = generate_mock_agn_catalog(agn_rows.copy(), num_agns=300, detection_threshold=source_detection_threshold)
 
-print(agns[0])
+# print(agns[0])
 
 # Generate simulated pulsar sources
 
