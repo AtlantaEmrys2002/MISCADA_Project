@@ -1,9 +1,11 @@
 from astropy import units as u
 from astropy.coordinates import SkyCoord
+from astropy.table import QTable
+import numpy as np
 from xml.dom import minidom
 
 
-def agn_xml_writer(sources):
+def agn_xml_writer(sources, save_path_file):
 
     # CREATE DOCUMENT
 
@@ -99,13 +101,48 @@ def agn_xml_writer(sources):
 
     # SAVE
 
-    save_path_file = "agns.xml"
-
     with open(save_path_file, "w") as f:
         f.write(xml_str)
 
 
-def pulsar_xml_writer(sources):
+def catalog_data_preparation(file_name: str):
+
+    # Access 4FGL catalog - note, file originally called gll_psc_v35.fit
+    # Read catalog data and format as astropy QTable (allowing for units to be associated with each column, if necessary
+    # Assume catalog data conforms to standard NASA format
+    catalog = QTable.read(file_name, format='fits', hdu=1)
+
+    # Select relevant columns
+    columns = ('Pivot_Energy', 'LP_Flux_Density', 'PLEC_Flux_Density', 'LP_Index', 'LP_beta', 'PLEC_IndexS',
+               'PLEC_Exp_Index', 'PLEC_ExpfactorS', 'CLASS1', 'GLAT')
+    catalog = catalog[columns]
+
+    # Reformat CLASS1 column - remove empty spaces and make all lower case
+    catalog['CLASS1'] = np.asarray([k.decode('utf-8').strip().lower() for k in catalog['CLASS1'].value.filled('-')])
+
+    # Select all rows that describe pulsars
+    pulsar_mask = (catalog['CLASS1'] == 'psr')
+
+    # Select all rows that describe AGN
+    agn_mask = np.isin(catalog['CLASS1'].data, np.array(['bcu', 'sey', 'ssrq', 'bll', 'fsrq', 'rdg', 'nlsy1', 'agn']))
+
+    # Delete unnecessary column
+    catalog.remove_column('CLASS1')
+
+    agn_data = catalog[agn_mask].copy()
+    pulsar_data = catalog[pulsar_mask].copy()
+
+    # Select relevant columns for each source type
+
+    agn_data = agn_data["LP_Flux_Density", "Pivot_Energy", "LP_Index", "LP_beta"]
+    pulsar_data = pulsar_data[
+        ("PLEC_Flux_Density", "Pivot_Energy", "PLEC_IndexS", "PLEC_Exp_Index", "PLEC_ExpfactorS", "GLAT")]
+
+    # Separate into AGN and pulsars
+    return agn_data, pulsar_data
+
+
+def pulsar_xml_writer(sources, save_path_file: str):
 
     # CREATE DOCUMENT
 
@@ -228,7 +265,10 @@ def pulsar_xml_writer(sources):
 
     xml_str = root.toprettyxml(indent="\t")
 
-    save_path_file = "pulsars.xml"
-
     with open(save_path_file, "w") as f:
         f.write(xml_str)
+
+
+# REFERENCES
+
+# Astropy Documentation - https://docs.astropy.org/en/stable/

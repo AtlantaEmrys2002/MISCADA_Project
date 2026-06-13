@@ -24,13 +24,10 @@
 
 # LIBRARIES
 import numpy as np
-from scipy.integrate import quad
-from astropy.table import QTable
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 import matplotlib.pyplot as plt
 from pathlib import Path
-import warnings
 from scipy.optimize import curve_fit
 from scipy import stats
 from sklearn.metrics import root_mean_squared_error
@@ -39,11 +36,14 @@ from sklearn.metrics import root_mean_squared_error
 from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
 from analysis.visualisation import (agn_luminosity_function, correlation_matrices, plot_parameter_distributions,
                                     plot_parameter_relationships)
-from physical_properties.spectral_models import agn_spectral_model
-from physical_properties.agn_parameters import energy_flux_agn, agn_flux_density, agn_spectral_slope
-from physical_properties.pulsar_parameters import energy_flux_pulsar
+from source_generation.agn_spectral_parameters import energy_flux_agn, agn_flux_density, agn_spectral_slope
+from source_generation.pulsar_spectral_parameters import energy_flux_pulsar
+from source_generation.agn_generator import agn_generation, agn_statistics
+from utils import split_normal
+from read_write_functions import catalog_data_preparation
 
 # VISUALISATIONS
+
 
 # IN PROCESS OF MOVING INTO SEPARATE FILE
 def spatial_visualisations(galactic_longitudes, galactic_latitudes, num_sources, source_type):
@@ -118,74 +118,32 @@ def visualising_pulsar_latitude_distributions(sigma_1, sigma_2, x_values, counts
     plt.show()
 
 
-# DATA PREP
-
-def catalog_data_preparation(file_name):
-
-    # Access 4FGL catalog - note, file originally called gll_psc_v35.fit
-    # Read catalog data and format as astropy QTable (allowing for units to be associated with each column, if necessary
-    # Assume catalog data conforms to standard NASA format
-    catalog = QTable.read(file_name, format='fits', hdu=1)
-
-    # Select relevant columns
-    columns = ('Pivot_Energy', 'LP_Flux_Density', 'PLEC_Flux_Density', 'LP_Index', 'LP_beta', 'PLEC_IndexS',
-               'PLEC_Exp_Index', 'PLEC_ExpfactorS', 'CLASS1', 'GLAT')
-    catalog = catalog[columns]
-
-    # print(np.asarray([k.decode('utf-8').strip().lower() for k in catalog['CLASS1'].value.filled('-')]))
-
-    # Reformat CLASS1 column - remove empty spaces and make all lower case
-    catalog['CLASS1'].name = 'Prev_CLASS1'
-
-    # catalog['CLASS1'] = np.asarray([k.strip().lower() for k in catalog['Prev_CLASS1']])
-
-    catalog['CLASS1'] = np.asarray([k.decode('utf-8').strip().lower() for k in catalog['Prev_CLASS1'].value.filled('-')])
-
-    catalog.remove_column('Prev_CLASS1')
-
-    # Select all rows that describe pulsars
-    pulsar_mask = (catalog['CLASS1'] == 'psr')
-
-    # Select all rows that describe AGN
-    agn_mask = ((catalog['CLASS1'] == 'bcu') | (catalog['CLASS1'] == 'sey') | (catalog['CLASS1'] == 'ssrq') |
-                (catalog['CLASS1'] == 'bll') | (catalog['CLASS1'] == 'fsrq') | (catalog['CLASS1'] == 'rdg') |
-                (catalog['CLASS1'] == 'nlsy1') | (catalog['CLASS1'] == 'agn'))
-
-    catalog.remove_column('CLASS1')
-
-    # Separate into AGN and pulsars
-    pulsars = catalog[pulsar_mask]
-    agns = catalog[agn_mask]
-
-    return agns, pulsars
-
-
-def agn_statistics(agns):
-
-    # Select alpha values and convert from masked to ordinary numpy array
-    alphas = agns['LP_Index'].data.filled(np.nan)
-
-    # Select beta values and convert from masked to ordinary numpy array
-    betas = agns['LP_beta'].data.filled(np.nan)
-
-    # Select pivot energy values and convert from MeV to GeV
-    pivot_energies = agns['Pivot_Energy'].to(u.GeV).value
-
-    # Select flux density values and convert from ph / (cm2 MeV s) to ph / (cm2 GeV s)
-    flux_densities = agns['LP_Flux_Density'].to(u.ph / (u.cm * u.cm * u.GeV * u.s)).value.filled(np.nan)
-
-    log_flux_densities = np.log(flux_densities)
-
-    mean_alpha, std_alpha = np.nanmean(alphas), np.nanstd(alphas, ddof=1)
-
-    log_pivot_energies = np.log(pivot_energies)
-
-    mean_log_pivot_energy, std_log_pivot_energy = np.nanmean(log_pivot_energies), np.nanstd(log_pivot_energies, ddof=1)
-
-    mean_log_flux_density, std_log_flux_density = np.nanmean(log_flux_densities), np.nanstd(log_flux_densities, ddof=1)
-
-    return (mean_alpha, std_alpha, mean_log_pivot_energy, std_log_pivot_energy, mean_log_flux_density, std_log_flux_density,
-            betas)
+# def agn_statistics(agns):
+#
+#     # Select alpha values and convert from masked to ordinary numpy array
+#     alphas = agns['LP_Index'].data.filled(np.nan)
+#
+#     # Select beta values and convert from masked to ordinary numpy array
+#     betas = agns['LP_beta'].data.filled(np.nan)
+#
+#     # Select pivot energy values and convert from MeV to GeV
+#     pivot_energies = agns['Pivot_Energy'].to(u.GeV).value
+#
+#     # Select flux density values and convert from ph / (cm2 MeV s) to ph / (cm2 GeV s)
+#     flux_densities = agns['LP_Flux_Density'].to(u.ph / (u.cm * u.cm * u.GeV * u.s)).value.filled(np.nan)
+#
+#     log_flux_densities = np.log(flux_densities)
+#
+#     mean_alpha, std_alpha = np.nanmean(alphas), np.nanstd(alphas, ddof=1)
+#
+#     log_pivot_energies = np.log(pivot_energies)
+#
+#     mean_log_pivot_energy, std_log_pivot_energy = np.nanmean(log_pivot_energies), np.nanstd(log_pivot_energies, ddof=1)
+#
+#     mean_log_flux_density, std_log_flux_density = np.nanmean(log_flux_densities), np.nanstd(log_flux_densities, ddof=1)
+#
+#     return (mean_alpha, std_alpha, mean_log_pivot_energy, std_log_pivot_energy, mean_log_flux_density, std_log_flux_density,
+#             betas)
 
 
 def pulsar_statistics(pulsars):
@@ -230,69 +188,18 @@ def pulsar_statistics(pulsars):
 
     pulsar_latitudes = pulsars['GLAT']
 
-    # return (mean_Gamma, std_Gamma, mean_b, std_b, mean_log_a, std_log_a, mean_log_flux_density, std_log_flux_density,
-    #         mean_log_pivot_energy, std_log_pivot_energy, pulsar_latitudes)
-
-    # return (mean_Gamma, std_Gamma, b_values, len(pulsars), mean_log_a, std_log_a, mean_log_flux_density, std_log_flux_density,
-    #         mean_log_pivot_energy, std_log_pivot_energy, pulsar_latitudes)
-
-    return (mean_log_Gamma, std_log_Gamma, b_values, len(pulsars), mean_log_a, std_log_a, mean_log_flux_density, std_log_flux_density,
-    mean_log_pivot_energy, std_log_pivot_energy, pulsar_latitudes)
-
-
-# GENERATE FIXED NUMBER OF AGNS WITHIN GIVEN ENERGY FLUX RANGE FOR FLAT EXTRAPOLATION AT LOWER ENERGY FLUXES
-def agn_generation(agn_stats, energy_flux_low, energy_flux_high):
-
-    (mean_alpha_agn, std_alpha_agn, mean_log_pivot_energy_agn, std_log_pivot_energy_agn, mean_log_flux_density_agn,
-     std_log_flux_density_agn, betas_agn) = agn_stats
-
-    while True:
-
-        # Generate new pivot energy
-        # pivot_energy = np.random.normal(loc=mean_pivot_energy_agn, scale=std_pivot_energy_agn, size=1)[0]
-
-        pivot_energy = np.random.lognormal(mean=mean_log_pivot_energy_agn, sigma=std_log_pivot_energy_agn,
-                                             size=1)[0]
-
-        # Generate new flux density - log-normal for flux densities
-        flux_density_ln = np.random.lognormal(mean=mean_log_flux_density_agn, sigma=std_log_flux_density_agn, size=1)[0]
-
-        # FLUX DENSITIES AND PIVOT ENERGY ARE DEPENDENT - THEREFORE FITTED RELATIONSHIP AND CALCULATE
-        # FLUX DENSITY AS SUCH (THEREFORE, CHANGED SO GENERATION IS RELATED to PIVOt ENERGY)
-        flux_density = agn_flux_density(pivot_energy)[0]
-
-        # Generate new spectral slope (alpha)
-        # spectral_slope = np.random.normal(loc=mean_alpha_agn, scale=std_alpha_agn, size=1)[0]
-
-        # FLUX DENSITY, PIVOT ENERGY, AND SPECTRAL SLOPE ARE DEPENDENT
-        spectral_slope = agn_spectral_slope(pivot_energy)[0]
-
-        # Generate new curvature by directly sampling 4FGL
-        beta = np.random.choice(betas_agn, size=1, replace=True)[0]
-
-        energy_flux = energy_flux_agn(pivot_energy, flux_density, spectral_slope, beta) * 1.602 * 10**(-6)
-
-        # longitude
-        longitude = np.random.uniform(low=0, high=2 * np.pi, size=1)[0]
-
-        # latitude
-        sin_galactic_latitudes = np.random.uniform(low=-1, high=1, size=1)[0]
-        latitude = np.arcsin(sin_galactic_latitudes)
-
-        if (energy_flux >= energy_flux_low) and (energy_flux < energy_flux_high):
-
-            return np.asarray([pivot_energy, flux_density, spectral_slope, beta, energy_flux, longitude, latitude])
+    return (mean_log_Gamma, std_log_Gamma, b_values, len(pulsars), mean_log_a, std_log_a, mean_log_flux_density,
+            std_log_flux_density, mean_log_pivot_energy, std_log_pivot_energy, pulsar_latitudes)
 
 
 def generate_mock_agn_catalog(agn_stats, num_agns=100, extra=3400):
 
     # SPECTRAL PARAMETERS
 
-    # (mean_alpha_agn, std_alpha_agn, mean_pivot_energy_agn, std_pivot_energy_agn, mean_log_flux_density_agn,
-    #  std_log_flux_density_agn, betas_agn) = agn_stats
+    # (_, _, mean_log_pivot_energy_agn, std_log_pivot_energy_agn, _,
+    #  _, betas_agn) = agn_stats
 
-    (mean_alpha_agn, std_alpha_agn, mean_log_pivot_energy_agn, std_log_pivot_energy_agn, mean_log_flux_density_agn,
-     std_log_flux_density_agn, betas_agn) = agn_stats
+    (mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn) = agn_stats
 
     # Generate new pivot energies - in ID8, they randomly select pivot energies from a Gaussian distribution. However,
     # the distribution of pivot energies in the 4FGL follows log-normal more precisely (see my plots in agn analysis
@@ -321,9 +228,6 @@ def generate_mock_agn_catalog(agn_stats, num_agns=100, extra=3400):
 
     # Energy fluxes
     energy_fluxes = np.fromiter((energy_flux_agn(x[0], x[1], x[2], x[3]) for x in parameters), np.float64)
-
-    # Convert energy fluxes so ergs included in units instead of photons - see ID43
-    energy_fluxes *= 1.602 * 10**(-6)
 
     # Select rows with valid energy fluxes
     mask = ~np.isnan(energy_fluxes)
@@ -426,24 +330,6 @@ def generate_mock_agn_catalog(agn_stats, num_agns=100, extra=3400):
     print(np.max(galactic_longitudes))
 
     return parameters
-
-
-# CHOSE THIS MYSELF - THINK THIS IS WHAT ID8 WAS SUGGESTING
-def split_normal(x, sigma_1, sigma_2):
-
-    mu = 0
-
-    upper = -1 * ((x - mu) ** 2)
-
-    # I defined cutoff between distributions as within 10 degree of galactic plane (lat = 0 degrees)
-
-    # ID8 found different values A_1 and A_2 - normalizing factor is the same for both distributions here (as indicated
-    # in split normal distribution wiki - even though this is not a traditional split normal, but a mixture normal)
-    A = np.sqrt(2/np.pi) * 1/(sigma_1 + sigma_2)
-
-    mask = np.abs(x - mu) < 10
-
-    return np.where(mask, A * np.exp(upper / (2 * (sigma_1 ** 2))), A * np.exp(upper / 2 * (sigma_2 ** 2)))
 
 
 # GENERATE FIXED NUMBER OF AGNS WITHIN GIVEN ENERGY FLUX RANGE FOR FLAT EXTRAPOLATION AT LOWER ENERGY FLUXES
@@ -1091,12 +977,9 @@ def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
     correlation_matrices(pulsars, source_type="Pulsar", directory=directory)
 
 
+# Read in catalog data
+
 agn_rows, pulsar_rows = catalog_data_preparation("/Volumes/T7/data/catalog/4FGL_DR4.fit")
-
-# SELECT APPROPRIATE COLUMNS (MOVE THIS INTO DATA PREP IF DON'T ENCOUNTER ANY PROBLEMS)
-
-agn_rows = agn_rows['LP_Flux_Density', 'Pivot_Energy', 'LP_Index', 'LP_beta']
-pulsar_rows = pulsar_rows['PLEC_Flux_Density', 'Pivot_Energy', 'PLEC_IndexS', 'PLEC_Exp_Index', 'PLEC_ExpfactorS', 'GLAT']
 
 # Analyse parameters, their distributions, and their correlations
 
@@ -1106,9 +989,13 @@ pulsar_rows = pulsar_rows['PLEC_Flux_Density', 'Pivot_Energy', 'PLEC_IndexS', 'P
 
 # fitting_agn_pivot_energy_spectral_slope_relation(agn_rows.copy())
 
+# Generate simulated AGN sources
+
 agns = generate_mock_agn_catalog(agn_statistics(agn_rows.copy()), num_agns=100, extra=30)
 
 print(agns[0])
+
+# Generate simulated pulsar sources
 
 pulsars = generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows.copy()), 10, extra=5)
 

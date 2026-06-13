@@ -15,7 +15,8 @@ def energy_flux_agn(pivot_energy, flux_density, spectral_slope, curvature):
         warnings.simplefilter("ignore")
         energy = quad(agn_spectral_model, 100, 100000, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
 
-    return energy
+    # Convert energy fluxes so ergs included in units instead of photons - see ID43
+    return energy * 1.602 * 10**(-6)
 
 
 def agn_flux_density(pivot_energies, noise_std=0.9181233644485474):
