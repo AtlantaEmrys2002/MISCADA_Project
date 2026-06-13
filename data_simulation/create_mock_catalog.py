@@ -48,6 +48,7 @@ from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
 from analysis.visualisation import (agn_luminosity_function, correlation_matrices, plot_parameter_distributions,
                                     plot_parameter_relationships)
 from xml_writers import agn_xml_writer, pulsar_xml_writer
+from spectral_models import agn_spectral_model, pulsar_spectral_model
 
 
 # VISUALISATIONS
@@ -71,6 +72,7 @@ def spatial_visualisations(galactic_longitudes, galactic_latitudes, num_sources,
     ax.scatter(xs, ys, marker='o', s=2, alpha=0.3)
     fig.subplots_adjust(top=0.95, bottom=0.0)
     plt.show()
+
 
 def normal_func(x, mean, sigma):
 
@@ -122,30 +124,6 @@ def visualising_pulsar_latitude_distributions(sigma_1, sigma_2, x_values, counts
     plt.legend()
 
     plt.show()
-
-
-# SPECTRAL MODELS
-
-def agn_spectral_model(E, E_0, F_0, alpha, beta):
-
-    division = E/E_0
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        exponent = - alpha - (beta * np.log(division))
-
-    dF_dE = F_0 * np.power(division, exponent)
-
-    return E * dF_dE
-
-
-def pulsar_spectral_model(E, F_0, E_0, Gamma, a, b):
-
-    exponent = a * (np.power(E_0, b) - np.power(E, b))
-
-    dF_dE = F_0 * np.power((E/E_0), -Gamma) * np.exp(exponent)
-
-    return E * dF_dE
 
 
 def energy_flux_agn(pivot_energy, flux_density, spectral_slope, curvature):
@@ -584,21 +562,21 @@ def split_normal(x, sigma_1, sigma_2):
     return np.where(mask, A * np.exp(upper / (2 * (sigma_1 ** 2))), A * np.exp(upper / 2 * (sigma_2 ** 2)))
 
 
-def split_normal_fixed(x):
-
-    mu = 0
-
-    # CHECK A IS FROM FORMULA - some use the same A (CHECK IT IS THE SAME)
-
-    sigma_1 = 0.88
-
-    sigma_2 = 1.71
-
-    upper = -1 * ((x - mu) ** 2)
-
-    A = np.sqrt(2/np.pi) * 1/(sigma_1 + sigma_2)
-
-    return np.where(np.abs(x - mu) < 10, A * np.exp(upper / (2 * (sigma_1 ** 2))), A * np.exp(upper / 2 * (sigma_2 ** 2)))
+# def split_normal_fixed(x):
+#
+#     mu = 0
+#
+#     # CHECK A IS FROM FORMULA - some use the same A (CHECK IT IS THE SAME)
+#
+#     sigma_1 = 0.88
+#
+#     sigma_2 = 1.71
+#
+#     upper = -1 * ((x - mu) ** 2)
+#
+#     A = np.sqrt(2/np.pi) * 1/(sigma_1 + sigma_2)
+#
+#     return np.where(np.abs(x - mu) < 10, A * np.exp(upper / (2 * (sigma_1 ** 2))), A * np.exp(upper / 2 * (sigma_2 ** 2)))
 
 
 # GENERATE FIXED NUMBER OF AGNS WITHIN GIVEN ENERGY FLUX RANGE FOR FLAT EXTRAPOLATION AT LOWER ENERGY FLUXES
@@ -1255,15 +1233,19 @@ pulsar_rows = pulsar_rows['PLEC_Flux_Density', 'Pivot_Energy', 'PLEC_IndexS', 'P
 
 # Analyse parameters, their distributions, and their correlations
 
-analysis(agn_rows, pulsar_rows)
+# analysis(agn_rows, pulsar_rows)
 
 # fitting_agn_pivot_energy_flux_density_relation(agn_rows.copy())
 
 # fitting_agn_pivot_energy_spectral_slope_relation(agn_rows.copy())
 
-# agns = generate_mock_agn_catalog(agn_statistics(agn_rows.copy()), num_agns=100, extra=30)
+agns = generate_mock_agn_catalog(agn_statistics(agn_rows.copy()), num_agns=100, extra=30)
 
-# pulsars = generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows.copy()), 10, extra=5)
+print(agns[0])
+
+pulsars = generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows.copy()), 10, extra=5)
+
+print(pulsars[0])
 
 # spatial_visualisations(pulsars[:, 6], pulsars[:, 7], num_sources=len(pulsars), source_type='Pulsars')
 
