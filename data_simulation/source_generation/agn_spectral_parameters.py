@@ -92,5 +92,6 @@ def s10_agn(pivot_energy, flux_density, spectral_slope, curvature):
 # ID8 Paper - Identification of point sources in gamma rays using U-shaped convolutional neural networks and a data
 # challenge
 # Numpy Documentation - https://numpy.org/doc/stable/user/index.html
+# Numpy Polynomials - https://stackoverflow.com/questions/76603915/get-polynomial-x-at-y-python-3-10-numpy
 # Scipy Documentation - https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.quad.html#scipy.integrate.
 # quad

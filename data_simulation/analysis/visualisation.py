@@ -14,7 +14,7 @@ mathematical_notation = {"Pivot_Energy": "$E_0$", "LP_Flux_Density": "$F_0$", "L
                          "PLEC_Exp_Index": "$b$", "PLEC_ExpfactorS": "$a$", "GLAT": "Latitude"}
 
 
-def agn_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64], directory) -> None:
+def plot_agn_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64], directory) -> None:
 
     # Data Processing
 
@@ -63,7 +63,7 @@ def agn_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64]
     plt.savefig(directory + "/4fgl_agn_luminosity_function.png")
 
 
-def correlation_matrices(sources, source_type, directory):
+def plot_correlation_matrices(sources, source_type, directory):
 
     # CREATE PLOT
 

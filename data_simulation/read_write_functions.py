@@ -115,6 +115,14 @@ def catalog_data_preparation(file_name: str):
     # Select relevant columns
     columns = ('Pivot_Energy', 'LP_Flux_Density', 'PLEC_Flux_Density', 'LP_Index', 'LP_beta', 'PLEC_IndexS',
                'PLEC_Exp_Index', 'PLEC_ExpfactorS', 'CLASS1', 'GLAT')
+
+    # Find detection threshold of sources (characterised by minimum energy flux)
+    source_detection_threshold = np.min(catalog['Energy_Flux100'].value)
+
+    # Used to determine the number of sources to generate
+    energy_fluxes_4fgl = catalog['Energy_Flux100'].value
+
+    # Select relevant columns
     catalog = catalog[columns]
 
     # Reformat CLASS1 column - remove empty spaces and make all lower case
@@ -139,7 +147,7 @@ def catalog_data_preparation(file_name: str):
         ("PLEC_Flux_Density", "Pivot_Energy", "PLEC_IndexS", "PLEC_Exp_Index", "PLEC_ExpfactorS", "GLAT")]
 
     # Separate into AGN and pulsars
-    return agn_data, pulsar_data
+    return agn_data, pulsar_data, source_detection_threshold, energy_fluxes_4fgl
 
 
 def pulsar_xml_writer(sources, save_path_file: str):

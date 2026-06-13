@@ -165,6 +165,9 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05) -> None:
 # Kolmogorov-Smirnov Statistic - https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test
 # K-S Table - https://real-statistics.com/statistics-tables/kolmogorov-smirnov-table/
 # K-S Tutorial - https://www.geeksforgeeks.org/machine-learning/kolmogorov-smirnov-test-ks-test/
+# Log-Normals - https://stackoverflow.com/questions/8747761/scipy-lognormal-distribution-parameters
+# Log-Normals - https://www.reddit.com/r/AskStatistics/comments/110rprt/scale_location_and_shape_of_a_lognormal/
+# Log-Normals - https://statisticsbyjim.com/probability/lognormal-distribution/
 # Match in Python - https://www.w3schools.com/python/python_match.asp
 # Numpy Documentation - https://numpy.org/doc/stable/index.html
 # Python Documentation - https://docs.python.org/3/index.html
