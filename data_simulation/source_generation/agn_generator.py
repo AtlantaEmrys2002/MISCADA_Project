@@ -19,7 +19,7 @@ def agn_generation(agn_stats, energy_flux_low=0, energy_flux_high=1000):
         # pivot energy are correlated).
         pivot_energy = np.random.lognormal(mean=mean_log_pivot_energy_agn, sigma=std_log_pivot_energy_agn, size=1)[0]
 
-        # Flux densities and pivot energies are correlated and depend one another - therefore, I fitted a polynomial
+        # Flux densities and pivot energies are correlated and depend on one another - therefore, I fitted a polynomial
         # relationship to the log of both values and add noise to improve data realism instead of randomly sampling
         # flux densities.
         flux_density = agn_flux_density(pivot_energy)[0]
@@ -32,15 +32,16 @@ def agn_generation(agn_stats, energy_flux_low=0, energy_flux_high=1000):
         spectral_slope = agn_spectral_slope(pivot_energy)[0]
 
         # Generate new curvature by directly sampling 4FGL
-        beta = np.random.choice(betas_agn, size=1, replace=True)[0]
+        beta = np.random.choice(betas_agn)
 
+        # Calculate energy flux of source
         energy_flux = energy_flux_agn(pivot_energy, flux_density, spectral_slope, beta)
 
         # longitude
-        longitude = np.random.uniform(low=0, high=2 * np.pi, size=1)[0]
+        longitude = np.random.uniform(low=0, high=2 * np.pi)
 
         # latitude
-        sin_galactic_latitudes = np.random.uniform(low=-1, high=1, size=1)[0]
+        sin_galactic_latitudes = np.random.uniform(low=-1, high=1)
         latitude = np.arcsin(sin_galactic_latitudes)
 
         if (energy_flux >= energy_flux_low) and (energy_flux < energy_flux_high):
@@ -48,29 +49,16 @@ def agn_generation(agn_stats, energy_flux_low=0, energy_flux_high=1000):
             return np.array([pivot_energy, flux_density, spectral_slope, beta, energy_flux, longitude, latitude])
 
 
-def agn_statistics(agns):
-
-    # Select alpha values and convert from masked to ordinary numpy array
-    alphas = agns['LP_Index'].data.filled(np.nan)
-
-    # Select beta values and convert from masked to ordinary numpy array
-    betas = agns['LP_beta'].data.filled(np.nan)
-
-    # Select pivot energy values and convert from MeV to GeV
-    pivot_energies = agns['Pivot_Energy'].to(u.GeV).value
-
-    # Select flux density values and convert from ph / (cm2 MeV s) to ph / (cm2 GeV s)
-    flux_densities = agns['LP_Flux_Density'].to(u.ph / (u.cm * u.cm * u.GeV * u.s)).value.filled(np.nan)
-
-    log_flux_densities = np.log(flux_densities)
-
-    mean_alpha, std_alpha = np.nanmean(alphas), np.nanstd(alphas, ddof=1)
-
-    log_pivot_energies = np.log(pivot_energies)
-
-    mean_log_pivot_energy, std_log_pivot_energy = np.nanmean(log_pivot_energies), np.nanstd(log_pivot_energies, ddof=1)
-
-    mean_log_flux_density, std_log_flux_density = np.nanmean(log_flux_densities), np.nanstd(log_flux_densities, ddof=1)
-
-    return mean_log_pivot_energy, std_log_pivot_energy, betas
-
+# def agn_statistics(agns):
+#
+#     # Select beta values and convert from masked to ordinary numpy array
+#     betas = agns['LP_beta'].data.filled(np.nan)
+#
+#     # Select pivot energy values and convert from MeV to GeV
+#     pivot_energies = agns['Pivot_Energy'].to(u.GeV).value
+#
+#     log_pivot_energies = np.log(pivot_energies)
+#
+#     mean_log_pivot_energy, std_log_pivot_energy = np.nanmean(log_pivot_energies), np.nanstd(log_pivot_energies, ddof=1)
+#
+#     return mean_log_pivot_energy, std_log_pivot_energy, betas

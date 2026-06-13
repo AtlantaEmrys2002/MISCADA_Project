@@ -38,7 +38,7 @@ from analysis.visualisation import (agn_luminosity_function, correlation_matrice
                                     plot_parameter_relationships)
 from source_generation.agn_spectral_parameters import energy_flux_agn, agn_flux_density, agn_spectral_slope
 from source_generation.pulsar_spectral_parameters import energy_flux_pulsar
-from source_generation.agn_generator import agn_generation, agn_statistics
+from source_generation.agn_generator import agn_generation
 from utils import split_normal
 from read_write_functions import catalog_data_preparation
 
@@ -192,14 +192,26 @@ def pulsar_statistics(pulsars):
             std_log_flux_density, mean_log_pivot_energy, std_log_pivot_energy, pulsar_latitudes)
 
 
-def generate_mock_agn_catalog(agn_stats, num_agns=100, extra=3400):
+# def generate_mock_agn_catalog(agn_stats, num_agns=100, extra=3400):
+
+def generate_mock_agn_catalog(agn_data, num_agns=100, extra=3400):
 
     # SPECTRAL PARAMETERS
 
-    # (_, _, mean_log_pivot_energy_agn, std_log_pivot_energy_agn, _,
-    #  _, betas_agn) = agn_stats
+    # Select beta values and convert from masked to ordinary numpy array
+    betas_agn = agn_data['LP_beta'].data.filled(np.nan)
 
-    (mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn) = agn_stats
+    # Select pivot energy values and convert from MeV to GeV
+    pivot_energies = agn_data['Pivot_Energy'].to(u.GeV).value
+
+    log_pivot_energies = np.log(pivot_energies)
+
+    mean_log_pivot_energy_agn, std_log_pivot_energy_agn = (np.nanmean(log_pivot_energies),
+                                                           np.nanstd(log_pivot_energies, ddof=1))
+
+    agn_stats = (mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn)
+
+    # CREATE NEW SPECTRAL PARAMETERS FOR SIMUALTED SOURCES
 
     # Generate new pivot energies - in ID8, they randomly select pivot energies from a Gaussian distribution. However,
     # the distribution of pivot energies in the 4FGL follows log-normal more precisely (see my plots in agn analysis
@@ -207,9 +219,6 @@ def generate_mock_agn_catalog(agn_stats, num_agns=100, extra=3400):
     # pivot_energies = np.random.normal(loc=mean_pivot_energy_agn, scale=std_pivot_energy_agn, size=num_agns)
 
     pivot_energies = np.random.lognormal(mean=mean_log_pivot_energy_agn, sigma=std_log_pivot_energy_agn, size=num_agns)
-
-    # Generate new flux densities - log-normal for flux densities
-    # flux_densities = np.random.lognormal(mean=mean_log_flux_density_agn, sigma=std_log_flux_density_agn, size=num_agns)
 
     # FLUX DENSITIES AND PIVOT ENERGY ARE DEPENDENT - THEREFORE FITTED RELATIONSHIP AND CALCULATE
     # FLUX DENSITY AS SUCH (THEREFORE, CHANGED SO GENERATION IS RELATED to PIVOt ENERGY)
@@ -257,7 +266,6 @@ def generate_mock_agn_catalog(agn_stats, num_agns=100, extra=3400):
     # they-contain-a-specific-element - to select desired rows
 
     # Cut at detection threshold
-    # parameters = parameters[~(parameters[:, 4] <= np.float64(2.0 * 10**(-12))), :]
     parameters = parameters[~(parameters[:, 4] <= np.float64(1.0 * 10 ** (-12))), :]
 
     # ADD MORE SOURCES - FOLLOW LUMINOSITY FUNCTION OF 4FGL - ENSURE ENOUGH
@@ -325,9 +333,6 @@ def generate_mock_agn_catalog(agn_stats, num_agns=100, extra=3400):
     # plt.ylabel('log $\\alpha$')
     # plt.scatter(np.log(parameters[:, 0]), np.log(parameters[:, 2]), s=2)
     # plt.show()
-
-    print(np.max(galactic_latitudes))
-    print(np.max(galactic_longitudes))
 
     return parameters
 
@@ -991,7 +996,9 @@ agn_rows, pulsar_rows = catalog_data_preparation("/Volumes/T7/data/catalog/4FGL_
 
 # Generate simulated AGN sources
 
-agns = generate_mock_agn_catalog(agn_statistics(agn_rows.copy()), num_agns=100, extra=30)
+# agns = generate_mock_agn_catalog(agn_statistics(agn_rows.copy()), num_agns=100, extra=30)
+
+agns = generate_mock_agn_catalog(agn_rows.copy(), num_agns=100, extra=30)
 
 print(agns[0])
 
@@ -1019,3 +1026,5 @@ print(pulsars[0])
 # quad
 # String Formatting - https://stackoverflow.com/questions/12018992/print-combining-strings-and-numbers
 
+# N.B. Useful conversion:
+# flux_densities = agns['LP_Flux_Density'].to(u.ph / (u.cm * u.cm * u.GeV * u.s)).value.filled(np.nan)
