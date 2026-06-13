@@ -39,8 +39,9 @@ from sklearn.metrics import root_mean_squared_error
 from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
 from analysis.visualisation import (agn_luminosity_function, correlation_matrices, plot_parameter_distributions,
                                     plot_parameter_relationships)
-from physical_properties.spectral_models import agn_spectral_model, pulsar_spectral_model
-from physical_properties.agn_parameters import agn_flux_density, agn_spectral_slope
+from physical_properties.spectral_models import agn_spectral_model
+from physical_properties.agn_parameters import energy_flux_agn, agn_flux_density, agn_spectral_slope
+from physical_properties.pulsar_parameters import energy_flux_pulsar
 
 # VISUALISATIONS
 
@@ -117,47 +118,6 @@ def visualising_pulsar_latitude_distributions(sigma_1, sigma_2, x_values, counts
     plt.show()
 
 
-def energy_flux_agn(pivot_energy, flux_density, spectral_slope, curvature):
-
-    # Integrate over 0.1 - 100 GeV
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        energy = quad(agn_spectral_model, 100, 100000, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
-
-    # Convert from MeV to Erg (see ID43)
-
-    return energy
-
-
-def s1_agn(pivot_energy, flux_density, spectral_slope, curvature):
-
-    # Integrate above 1 GeV
-    # s1 = quad(agn_spectral_model, 1, np.inf, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
-
-    s1 = quad(agn_spectral_model, 1000, np.inf, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
-
-    return s1
-
-
-def s10_agn(pivot_energy, flux_density, spectral_slope, curvature):
-
-    # Integrate above 1 GeV
-    # s1 = quad(agn_spectral_model, 10, np.inf, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
-
-    s1 = quad(agn_spectral_model, 10000, np.inf, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
-
-    return s1
-
-
-def energy_flux_pulsar(pivot_energy, flux_density, spectral_slope, exponential_index, exponential_factor):
-
-    # Integrate over 0.1 - 100 GeV - converted to 100 - 100000 MeV
-    energy = quad(pulsar_spectral_model, 100, 100000, args=(pivot_energy, flux_density, spectral_slope,
-                                                            exponential_index, exponential_factor))[0]
-
-    return energy
-
-
 # DATA PREP
 
 def catalog_data_preparation(file_name):
@@ -198,17 +158,6 @@ def catalog_data_preparation(file_name):
     agns = catalog[agn_mask]
 
     return agns, pulsars
-
-
-def log_norm_pdf(x, mu, sigma):
-
-    upper = (np.log(x) - mu)**2
-    lower = 2 * (sigma ** 2)
-    fraction = -1 * upper / lower
-
-    f_x = (1/(x * sigma * np.sqrt(2 * np.pi))) * np.exp(fraction)
-
-    return f_x
 
 
 def agn_statistics(agns):
@@ -373,7 +322,7 @@ def generate_mock_agn_catalog(agn_stats, num_agns=100, extra=3400):
     # Energy fluxes
     energy_fluxes = np.fromiter((energy_flux_agn(x[0], x[1], x[2], x[3]) for x in parameters), np.float64)
 
-    # Convert energy fluxes so ergs included in units instead of photons
+    # Convert energy fluxes so ergs included in units instead of photons - see ID43
     energy_fluxes *= 1.602 * 10**(-6)
 
     # Select rows with valid energy fluxes
