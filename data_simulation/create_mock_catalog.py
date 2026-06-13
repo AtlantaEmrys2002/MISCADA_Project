@@ -31,25 +31,16 @@ from astropy.coordinates import SkyCoord
 import matplotlib.pyplot as plt
 from pathlib import Path
 import warnings
-import time
 from scipy.optimize import curve_fit
-from sklearn.mixture import GaussianMixture
-from scipy.stats import rv_continuous
 from scipy import stats
-from scipy.stats.sampling import (NumericalInversePolynomial, NumericalInverseHermite, RatioUniforms,
-                                  SimpleRatioUniforms, TransformedDensityRejection)
-from sympy.stats import ContinuousRV, MultivariateNormal, sample
-from sympy import Interval, oo, Symbol
-from scipy.integrate import trapezoid
 from sklearn.metrics import root_mean_squared_error
 
 # Relative imports
 from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
 from analysis.visualisation import (agn_luminosity_function, correlation_matrices, plot_parameter_distributions,
                                     plot_parameter_relationships)
-from xml_writers import agn_xml_writer, pulsar_xml_writer
-from spectral_models import agn_spectral_model, pulsar_spectral_model
-
+from physical_properties.spectral_models import agn_spectral_model, pulsar_spectral_model
+from physical_properties.agn_parameters import agn_flux_density, agn_spectral_slope
 
 # VISUALISATIONS
 
@@ -300,62 +291,6 @@ def pulsar_statistics(pulsars):
     mean_log_pivot_energy, std_log_pivot_energy, pulsar_latitudes)
 
 
-def agn_flux_densities(pivot_energies, a=0.10975452653160912, b=-2.8553356136745753, c=-21.159501476671274,
-                       noise_std=0.9181233644485474):
-
-    # a: 0.10975452653160912
-    # b: -2.8553356136745753
-    # c: -21.159501476671274
-
-    # Default values for a, b, and c based on correlation analysis between pivot energies and flux densities. Found that
-    # relation between E_0 and F_0 could be simulated as logF = a * logE^2 + b * logE + c
-
-    log_pivot_energies = np.log(pivot_energies)
-
-    log_flux_densities = (a * (log_pivot_energies ** 2)) + (b * log_pivot_energies) + c
-
-    # Found standard deviation of the residuals of fit of 4FGL data and quadratic fitted to logE_0 and logF_0
-    # (noise_std), assuming mean = 0. Add this simulated noise to log of flux densities to increase realism.
-
-    # Add noise
-    if isinstance(log_pivot_energies, np.float64):
-        noise = np.random.normal(loc=0, scale=noise_std)
-    else:
-        noise = np.random.normal(loc=0, scale=noise_std, size=len(log_pivot_energies))
-
-    log_flux_densities += noise
-
-    flux_densities = np.e ** log_flux_densities
-
-    return flux_densities
-
-
-def agn_spectral_slopes(pivot_energies, m=-0.3454412867553224, c=2.369026429991104, noise_std=0.1005791425704956):
-
-    # Based on correlation analysis of pivot energies and flux densities and spectral slopes,
-    # created this method for generating spectral slopes based on pivot energies after fitting relation
-    # found in cited paper (see fitting_agn_pivot_energy_spectral_slope_relation() for more info)
-
-    log_pivot_energies = np.log(pivot_energies)
-
-    log_alphas = np.log((log_pivot_energies * m) + c)
-
-    # Found standard deviation of the residuals of fit of 4FGL data (noise_std), assuming mean = 0. Add this simulated
-    # noise to log of alphas to increase realism.
-
-    # Add noise
-    if isinstance(log_pivot_energies, np.float64):
-        noise = np.random.normal(loc=0, scale=noise_std)
-    else:
-        noise = np.random.normal(loc=0, scale=noise_std, size=len(log_pivot_energies))
-
-    log_alphas += noise
-
-    alphas = np.exp(log_alphas)
-
-    return alphas
-
-
 # GENERATE FIXED NUMBER OF AGNS WITHIN GIVEN ENERGY FLUX RANGE FOR FLAT EXTRAPOLATION AT LOWER ENERGY FLUXES
 def agn_generation(agn_stats, energy_flux_low, energy_flux_high):
 
@@ -375,13 +310,13 @@ def agn_generation(agn_stats, energy_flux_low, energy_flux_high):
 
         # FLUX DENSITIES AND PIVOT ENERGY ARE DEPENDENT - THEREFORE FITTED RELATIONSHIP AND CALCULATE
         # FLUX DENSITY AS SUCH (THEREFORE, CHANGED SO GENERATION IS RELATED to PIVOt ENERGY)
-        flux_density = agn_flux_densities(pivot_energy)
+        flux_density = agn_flux_density(pivot_energy)[0]
 
         # Generate new spectral slope (alpha)
         # spectral_slope = np.random.normal(loc=mean_alpha_agn, scale=std_alpha_agn, size=1)[0]
 
         # FLUX DENSITY, PIVOT ENERGY, AND SPECTRAL SLOPE ARE DEPENDENT
-        spectral_slope = agn_spectral_slopes(pivot_energy)
+        spectral_slope = agn_spectral_slope(pivot_energy)[0]
 
         # Generate new curvature by directly sampling 4FGL
         beta = np.random.choice(betas_agn, size=1, replace=True)[0]
@@ -422,12 +357,12 @@ def generate_mock_agn_catalog(agn_stats, num_agns=100, extra=3400):
 
     # FLUX DENSITIES AND PIVOT ENERGY ARE DEPENDENT - THEREFORE FITTED RELATIONSHIP AND CALCULATE
     # FLUX DENSITY AS SUCH (THEREFORE, CHANGED SO GENERATION IS RELATED to PIVOt ENERGY)
-    flux_densities = agn_flux_densities(pivot_energies)
+    flux_densities = agn_flux_density(pivot_energies)
 
     # Generate new spectral slopes (alphas)
     # spectral_slopes = np.random.normal(loc=mean_alpha_agn, scale=std_alpha_agn, size=num_agns)
 
-    spectral_slopes = agn_spectral_slopes(pivot_energies)
+    spectral_slopes = agn_spectral_slope(pivot_energies)
 
     # Generate new curvatures by directly sampling 4FGL
     betas = np.random.choice(betas_agn, size=num_agns, replace=True)
@@ -560,23 +495,6 @@ def split_normal(x, sigma_1, sigma_2):
     mask = np.abs(x - mu) < 10
 
     return np.where(mask, A * np.exp(upper / (2 * (sigma_1 ** 2))), A * np.exp(upper / 2 * (sigma_2 ** 2)))
-
-
-# def split_normal_fixed(x):
-#
-#     mu = 0
-#
-#     # CHECK A IS FROM FORMULA - some use the same A (CHECK IT IS THE SAME)
-#
-#     sigma_1 = 0.88
-#
-#     sigma_2 = 1.71
-#
-#     upper = -1 * ((x - mu) ** 2)
-#
-#     A = np.sqrt(2/np.pi) * 1/(sigma_1 + sigma_2)
-#
-#     return np.where(np.abs(x - mu) < 10, A * np.exp(upper / (2 * (sigma_1 ** 2))), A * np.exp(upper / 2 * (sigma_2 ** 2)))
 
 
 # GENERATE FIXED NUMBER OF AGNS WITHIN GIVEN ENERGY FLUX RANGE FOR FLAT EXTRAPOLATION AT LOWER ENERGY FLUXES
