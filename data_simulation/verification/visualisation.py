@@ -54,6 +54,8 @@ def plot_agn_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.flo
 
     plt.savefig(directory + "/4fgl_agn_luminosity_function.png")
 
+    plt.close()
+
 
 def plot_spatial_distribution(galactic_longitudes, galactic_latitudes, source_type: str, directory: str):
 
@@ -85,6 +87,8 @@ def plot_spatial_distribution(galactic_longitudes, galactic_latitudes, source_ty
     fig.subplots_adjust(top=0.95, bottom=0.0)
 
     fig.savefig(directory + "/simulated_{}_spatial_distributions.png".format(source_type.lower()))
+
+    plt.close()
 
 # REFERENCES
 

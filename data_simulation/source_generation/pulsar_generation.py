@@ -5,25 +5,23 @@ from . utils import split_normal
 from scipy.optimize import curve_fit
 from scipy.stats import Mixture, Normal
 
-import matplotlib.pyplot as plt
-
 
 def pulsar_generator(pulsar_stats, energy_flux_low, energy_flux_high, sigma_1, sigma_2):
 
     # sigma_1 and sigma_2 are the fitted standard deviations of Gaussian distribution
 
-    (mean_log_Gamma_pulsars, std_log_Gamma_pulsars, b_values, mean_log_a_pulsars, std_log_a_pulsars,
+    (mean_log_Gamma_pulsars, std_log_Gamma_pulsars, mean_log_a_pulsars, std_log_a_pulsars,
      mean_log_flux_density_pulsars, std_log_flux_density_pulsars, mean_log_pivot_energy_pulsars,
-     std_log_pivot_energy_pulsars) = pulsar_stats
+     std_log_pivot_energy_pulsars, choice_values, new_weights) = pulsar_stats
 
-    # Generate new exponential indices (bs) by selecting from values available (instead of Gaussian recommended by ID8)
-    len_pulsars = len(b_values)
-
-    unique_values = np.unique_all(b_values)
-    choice_values = unique_values.values
-
-    # Divide by number of pulsars in 4FGL to get probabilities
-    new_weights = unique_values.counts / len_pulsars
+    # # Generate new exponential indices (bs) by selecting from values available (instead of Gaussian recommended by ID8)
+    # len_pulsars = len(b_values)
+    #
+    # unique_values = np.unique_all(b_values)
+    # choice_values = unique_values.values
+    #
+    # # Divide by number of pulsars in 4FGL to get probabilities
+    # new_weights = unique_values.counts / len_pulsars
 
     while True:
 
@@ -50,7 +48,7 @@ def pulsar_generator(pulsar_stats, energy_flux_low, energy_flux_high, sigma_1, s
 
         # Generate new exponential indices (bs) - changed to random choice instead of Gaussian (which was recommended in
         # ID8)
-        exponential_index = np.random.choice(choice_values, p=new_weights)
+        exponential_index = np.random.choice(choice_values, p=new_weights, size=1)[0]
 
         # Generate energy fluxes
         energy_flux = energy_flux_pulsar(pivot_energy, flux_density, spectral_slope, exponential_index,
@@ -81,8 +79,8 @@ def pulsar_generator(pulsar_stats, energy_flux_low, energy_flux_high, sigma_1, s
 
 def generate_mock_pulsar_catalog(pulsars, num_pulsars=350):
 
-    # Select pivot energy values and convert from MeV to GeV
-    pivot_energies = pulsars['Pivot_Energy'].to(u.GeV).value
+    # Select pivot energy values (in GeV)
+    pivot_energies = pulsars['Pivot_Energy'].value
 
     # Select Gamma values and convert from masked to ordinary numpy array
     Gammas = pulsars['PLEC_IndexS'].data.filled(np.nan)
@@ -118,9 +116,17 @@ def generate_mock_pulsar_catalog(pulsars, num_pulsars=350):
     mean_log_pivot_energy_pulsars, std_log_pivot_energy_pulsars = (np.nanmean(log_pivot_energies),
                                                                    np.nanstd(log_pivot_energies, ddof=1))
 
-    pulsar_stats = (mean_log_Gamma_pulsars, std_log_Gamma_pulsars, b_values, mean_log_a_pulsars, std_log_a_pulsars,
+    # Generate new exponential indices (bs) by selecting from values available (instead of Gaussian recommended by ID8)
+
+    unique_values = np.unique_all(b_values)
+    choice_values = unique_values.values
+
+    # Divide by number of pulsars in 4FGL to get probabilities
+    new_weights = unique_values.counts / len(b_values)
+
+    pulsar_stats = (mean_log_Gamma_pulsars, std_log_Gamma_pulsars, mean_log_a_pulsars, std_log_a_pulsars,
      mean_log_flux_density_pulsars, std_log_flux_density_pulsars, mean_log_pivot_energy_pulsars,
-     std_log_pivot_energy_pulsars)
+     std_log_pivot_energy_pulsars, choice_values, new_weights)
 
     # Fit split-normal distribution that describes pulsar latitudes and pass the appropriate parameters to
     # pulsar_generator()
@@ -135,8 +141,6 @@ def generate_mock_pulsar_catalog(pulsars, num_pulsars=350):
 
     popt, _ = curve_fit(f=split_normal, xdata=np.asarray(x_values), ydata=np.asarray(counts), bounds=([0, 0], [2 * np.pi, 2 * np.pi]))
 
-    print(popt)
-
     parameters = []
 
     for x in range(num_pulsars):
@@ -144,24 +148,7 @@ def generate_mock_pulsar_catalog(pulsars, num_pulsars=350):
                                       sigma_2=popt[1])
         parameters.append(np.array(new_source))
 
-    parameters = np.array(parameters)
 
-    counts, bins = np.histogram(pulsars["GLAT"].value, bins=100, density=True)
-
-    plt.stairs(counts, bins, label='4FGL')
-
-    # Randomly sample pulsar latitudes from distribution created above
-    # X1 = Normal(mu=0, sigma=popt[0])
-    # X2 = Normal(mu=0, sigma=popt[1])
-    #
-    # # CHANGE WEIGHTS HERE TO REFLECT MSP VS YNG
-    # mixture = Mixture([X1, X2])
-    #
-    # x_val = np.linspace(-10, 10, 1000)
-    #
-    # plt.plot(x_val, mixture.pdf(x_val) * 180/np.pi)
-
-    plt.show()
 
     # CUTOFF THRESHOLD AND LUMINOSITY FUNCTION CHECK
 
@@ -220,4 +207,4 @@ def generate_mock_pulsar_catalog(pulsars, num_pulsars=350):
 
     # CHECK LUMIN FUNCTION - NOT FINISHED!!!!!!
 
-    return parameters
+    return np.array(parameters)

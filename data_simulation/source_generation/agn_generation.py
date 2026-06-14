@@ -64,8 +64,8 @@ def generate_mock_agn_catalog(agn_data, num_agns=200, detection_threshold=np.flo
     # Select beta values and convert from masked to ordinary numpy array
     betas_agn = agn_data['LP_beta'].data.filled(np.nan)
 
-    # Select pivot energy values and convert from MeV to GeV
-    pivot_energies = agn_data['Pivot_Energy'].to(u.GeV).value
+    # Select pivot energy values (in GeV)
+    pivot_energies = agn_data['Pivot_Energy'].value
 
     # Calculate mean and standard deviation of log of pivot energies for random sampling
     log_pivot_energies = np.log(pivot_energies)

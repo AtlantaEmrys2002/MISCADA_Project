@@ -41,12 +41,14 @@ def plot_correlation_matrices(sources, source_type, directory):
 
     plt.savefig(directory + "/{}_parameter_correlation_matrix.png".format(source_type.lower()))
 
+    plt.close()
+
 
 def plot_parameter_distributions(sources, source_type: str, directory: str):
 
     # Used to label axes
     axis_labels = {"LP_Flux_Density": "Differential Flux Density, $F_0$ \n [ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$",
-                   "Pivot_Energy": "Pivot Energy, $E_0$ [MeV]", "LP_Index": "Spectral Slope, $\\alpha$",
+                   "Pivot_Energy": "Pivot Energy, $E_0$ [GeV]", "LP_Index": "Spectral Slope, $\\alpha$",
                    "LP_beta": "Spectral Curvature, $\\beta$", "PLEC_IndexS": "Spectral Slope, $\\Gamma$",
                    "PLEC_Flux_Density": "Differential Flux Density, $F_0$ \n [ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$",
                    "PLEC_Exp_Index": "Exponential Index, $b$", "PLEC_ExpfactorS": "Exponential Factor, $a$",
@@ -116,6 +118,8 @@ def plot_parameter_distributions(sources, source_type: str, directory: str):
     fig.tight_layout()
 
     plt.savefig(directory + "/{}_parameter_distributions.png".format(source_type.lower()))
+
+    plt.close()
 
 
 def plot_parameter_relationships(sources, source_type: str, directory: str):
@@ -192,6 +196,8 @@ def plot_parameter_relationships(sources, source_type: str, directory: str):
 
     fig.savefig(directory + "/{}_parameter_relationships.png".format(source_type.lower()))
     fig2.savefig(directory + "/{}_logarithmic_parameter_relationships.png".format(source_type.lower()))
+
+    plt.close()
 
 
 # REFERENCES

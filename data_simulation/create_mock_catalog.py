@@ -31,6 +31,7 @@ from scipy import stats
 from sklearn.metrics import root_mean_squared_error
 
 # Relative imports
+from analysis.correlation import fitting_agn_pivot_energy_spectral_slope_relation
 from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
 from analysis.visualisation import (plot_correlation_matrices, plot_parameter_distributions,
                                     plot_parameter_relationships)
@@ -269,150 +270,6 @@ def fitting_agn_pivot_energy_flux_density_relation(agns):
     fig2.show()
 
 
-def fitting_agn_pivot_energy_spectral_slope_relation(agns):
-
-    plt.rcParams["figure.figsize"] = (10, 5)
-
-    # Unit conversion
-    agns['Pivot_Energy'] = agns['Pivot_Energy'].to(u.GeV)
-
-    # Convert data type
-    agns = agns.to_pandas()
-
-    # Remove sources with NaN values
-    agns.dropna(inplace=True)
-
-    pivot_energies, alphas = agns['Pivot_Energy'], agns['LP_Index']
-    log_pivot_energies, log_alphas = np.log(pivot_energies), np.log(alphas)
-
-    # Create plot
-
-    fig, ax = plt.subplots(1, 2)
-
-    # Plot data
-
-    ax[0].scatter(pivot_energies, alphas, s=4, marker='+')
-    ax[1].scatter(log_pivot_energies, log_alphas, s=4, marker="+")
-
-    # Fitting
-
-    x_values = np.linspace(np.min(pivot_energies), np.max(pivot_energies), 1000)
-    log_x_values = np.log(x_values)
-    exp_x_values = np.exp(log_x_values)
-
-    # Linear Fit
-    m, c = np.polyfit(log_pivot_energies, log_alphas, deg=1)
-    ax[0].plot(x_values, (x_values ** m) * (np.e ** c), label='Log Linear', color='red')
-    ax[1].plot(log_x_values, m * log_x_values + c, color='red', label='Linear')
-    linear_residuals = log_alphas - (m * log_pivot_energies + c)
-    print("RMSE of Linear Fit: {}".format(root_mean_squared_error(log_alphas, m * log_pivot_energies + c)))
-    print('m: {} c: {}'.format(m, c))
-
-    # Quadratic fit
-    a, b, c = np.polyfit(log_pivot_energies, log_alphas, deg=2)
-    ax[0].plot(exp_x_values, np.e ** ((a * log_x_values ** 2) + (b * log_x_values) + c), color='green',
-               label='Log Quadratic', linestyle='-.')
-    ax[1].plot(log_x_values, (a * log_x_values ** 2) + (b * log_x_values) + c, color='green',
-               label='Quadratic', linestyle='-.')
-    quadratic_residuals = log_alphas - ((a * log_pivot_energies ** 2) + (b * log_pivot_energies) + c)
-    print("RMSE of Quadratic Fit: {}".format(root_mean_squared_error(log_alphas, (a * log_pivot_energies ** 2)
-                                                                     + (b * log_pivot_energies) + c)))
-    print('a: {} b: {} c: {}'.format(a, b, c))
-
-    # Cubic fit
-    a, b, c, d = np.polyfit(log_pivot_energies, log_alphas, deg=3)
-    ax[0].plot(exp_x_values, np.e ** ((a * log_x_values ** 3) + (b * log_x_values ** 2) + (c * log_x_values) + d),
-               linestyle='--', label='Log Cubic', color='orange')
-    ax[1].plot(log_x_values, (a * log_x_values ** 3) + (b * log_x_values ** 2) + (c * log_x_values) + d, color='orange',
-               label='Cubic', linestyle='--')
-    cubic_residuals = log_alphas - ((a * log_pivot_energies ** 3) + (b * log_pivot_energies ** 2)
-                                    + (c * log_pivot_energies) + d)
-    print("RMSE of Cubic Fit: {}".format(root_mean_squared_error(log_alphas, ((a * log_pivot_energies ** 3)
-                                                                              + (b * log_pivot_energies ** 2)
-                                                                              + (c * log_pivot_energies) + d))))
-    print('a: {} b: {} c: {} d: {}'.format(a, b, c, d))
-
-    # Quartic fit
-    a, b, c, d, e = np.polyfit(log_pivot_energies, log_alphas, deg=4)
-    ax[0].plot(exp_x_values, np.e ** ((a * log_x_values ** 4) + (b * log_x_values ** 3) + (c * log_x_values ** 2) +
-                                      (d * log_x_values) + e), color='purple', label='Log Quartic', linestyle=':')
-    ax[1].plot(log_x_values, (a * log_x_values ** 4) + (b * log_x_values ** 3) + (c * log_x_values ** 2) +
-               (d * log_x_values) + e, color='purple', label='Quartic', linestyle=':')
-    quartic_residuals = log_alphas - ((a * log_pivot_energies ** 4) + (b * log_pivot_energies ** 3) +
-                                      (c * log_pivot_energies ** 2) + (d * log_pivot_energies) + e)
-    print("RMSE of Quartic Fit: {}".format(root_mean_squared_error(log_alphas, ((a * log_pivot_energies ** 4) +
-                                                                                (b * log_pivot_energies ** 3) +
-                                                                                (c * log_pivot_energies ** 2) +
-                                                                                (d * log_pivot_energies) + e))))
-    print('a: {} b: {} c: {} d: {} e: {}'.format(a, b, c, d, e))
-
-    # Suggested fit
-    # This paper states that the spectral index depends linearly on ln E - https://journals-aps-org.ezphost.dur.ac.uk/
-    # prd/abstract/10.1103/k5dp-5str
-    m, c = np.polyfit(log_pivot_energies, alphas, deg=1)
-    ax[0].plot(x_values, (m * log_x_values) + c, color='black', label='Suggested')
-    ax[1].plot(log_x_values, np.log((log_x_values * m) + c), color='black', label='Suggested')
-    suggested_residuals = log_alphas - (np.log((log_pivot_energies * m) + c))
-    print("RMSE of Suggested Fit: {}".format(root_mean_squared_error(log_alphas, np.log((log_pivot_energies * m) + c))))
-    print('m: {} c: {}'.format(m, c))
-
-    # Formatting
-
-    ax[0].set_xlabel("$E_0$")
-    ax[0].set_ylabel("$\\alpha$")
-    ax[0].set_title("Pivot Energy vs Spectral Slope")
-    ax[0].legend()
-
-    ax[1].set_xlabel("log $E_0$")
-    ax[1].set_ylabel("log $\\alpha$")
-    ax[1].set_title("Log-Log Plot of Pivot Energy vs Spectral Slope")
-    ax[1].legend()
-
-    fig.suptitle("Fitting AGN $E_0$-$\\alpha$ Dependency")
-
-    fig.tight_layout()
-
-    fig.show()
-
-    # Residuals
-
-    plt.rcParams["figure.figsize"] = (30, 6)
-
-    fig2, ax2 = plt.subplots(1, 5)
-
-    fig2.suptitle('Residuals')
-
-    ax2[0].scatter(log_pivot_energies, linear_residuals / (np.std(linear_residuals, ddof=1)), s=4)
-    ax2[1].scatter(log_pivot_energies, quadratic_residuals / np.std(quadratic_residuals, ddof=1), s=4)
-    ax2[2].scatter(log_pivot_energies, cubic_residuals / np.std(cubic_residuals, ddof=1), s=4)
-    ax2[3].scatter(log_pivot_energies, quartic_residuals / np.std(quartic_residuals, ddof=1), s=4)
-    ax2[4].scatter(log_pivot_energies, suggested_residuals / np.std(suggested_residuals, ddof=1), s=4)
-
-    print("Standard Deviation of Residuals for Suggested Fit: {}".format(np.std(suggested_residuals, ddof=1)))
-
-    # Formatting
-
-    ax2[0].set_title('Linear Fit to Log-Log Plot')
-    ax2[1].set_title('Quadratic Fit to Log-Log Plot')
-    ax2[2].set_title('Cubic Fit to Log-Log Plot')
-    ax2[3].set_title('Quartic Fit to Log-Log Plot')
-    ax2[4].set_title('Suggested Fit to Log-Log Plot')
-
-    ax2[0].set_xlabel('log $E_0$')
-    ax2[1].set_xlabel('log $E_0$')
-    ax2[2].set_xlabel('log $E_0$')
-    ax2[3].set_xlabel('log $E_0$')
-    ax2[4].set_xlabel('log $E_0$')
-
-    ax2[0].set_ylabel('$y_i - \hat{y}_i$')
-    ax2[1].set_ylabel('$y_i - \hat{y}_i$')
-    ax2[2].set_ylabel('$y_i - \hat{y}_i$')
-    ax2[3].set_ylabel('$y_i - \hat{y}_i$')
-    ax2[4].set_ylabel('$y_i - \hat{y}_i$')
-
-    fig2.show()
-
-
 def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
 
     # Create directory to store results
@@ -423,6 +280,10 @@ def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
     # Convert to pandas dataframes for covariance and correlation calculations, as well as plotting
     agns = agn_rows.to_pandas()
     pulsars = pulsar_rows.to_pandas()
+
+    # Remove sources with NaN values
+    pulsars.dropna(inplace=True)
+    agns.dropna(inplace=True)
 
     # PARAMETER DISTRIBUTIONS
 
@@ -489,6 +350,9 @@ def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
 
     # Plot AGN parameter correlation matrices
     plot_correlation_matrices(agns, source_type="AGN", directory=directory)
+
+    # Fit relationships to identified correlated variables - pivot energy and spectral slope (alpha)
+    fitting_agn_pivot_energy_spectral_slope_relation(agns["Pivot_Energy"], agns["LP_Index"])
 
     # Pulsars
 
@@ -564,7 +428,7 @@ agn_rows, pulsar_rows, source_detection_threshold, fluxes_4fgl = catalog_data_pr
 
 # Analyse parameters, their distributions, and their correlations
 
-# analysis(agn_rows, pulsar_rows)
+analysis(agn_rows, pulsar_rows)
 
 # fitting_agn_pivot_energy_flux_density_relation(agn_rows.copy())
 
@@ -572,18 +436,16 @@ agn_rows, pulsar_rows, source_detection_threshold, fluxes_4fgl = catalog_data_pr
 
 # Generate simulated AGN sources
 
-agns = generate_mock_agn_catalog(agn_rows.copy(), num_agns=30, detection_threshold=source_detection_threshold)
+# agns = generate_mock_agn_catalog(agn_rows.copy(), num_agns=100, detection_threshold=source_detection_threshold)
 
 # Generate simulated pulsar sources
 
-# pulsars = generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows.copy()), 100)
+# pulsars = generate_mock_pulsar_catalog(pulsar_rows.copy(), 100)
 
-pulsars = generate_mock_pulsar_catalog(pulsar_rows.copy(), 1000)
-
-print(pulsars)
+# print(pulsars[0])
 
 # Verify realism and correctness of generated gamma-ray sources
-verification(agns, pulsars)
+# verification(agns, pulsars)
 
 
 # REFERENCES
