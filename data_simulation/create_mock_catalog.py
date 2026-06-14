@@ -36,7 +36,8 @@ from analysis.visualisation import (plot_correlation_matrices, plot_parameter_di
                                     plot_parameter_relationships)
 from verification.visualisation import plot_agn_luminosity_function, plot_spatial_distribution
 from read_write_functions import catalog_data_preparation
-from source_generation.pulsar_generation import generate_mock_pulsar_catalog, pulsar_statistics
+from source_generation.agn_generation import generate_mock_agn_catalog
+from source_generation.pulsar_generation import generate_mock_pulsar_catalog
 from data_simulation.source_generation.utils import split_normal
 
 # VISUALISATIONS
@@ -571,16 +572,18 @@ agn_rows, pulsar_rows, source_detection_threshold, fluxes_4fgl = catalog_data_pr
 
 # Generate simulated AGN sources
 
-# agns = generate_mock_agn_catalog(agn_rows.copy(), num_agns=300, detection_threshold=source_detection_threshold)
+agns = generate_mock_agn_catalog(agn_rows.copy(), num_agns=30, detection_threshold=source_detection_threshold)
 
 # Generate simulated pulsar sources
 
-pulsars = generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows.copy()), 10)
+# pulsars = generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows.copy()), 100)
+
+pulsars = generate_mock_pulsar_catalog(pulsar_rows.copy(), 1000)
 
 print(pulsars)
 
 # Verify realism and correctness of generated gamma-ray sources
-# verification(agns, pulsars)
+verification(agns, pulsars)
 
 
 # REFERENCES

@@ -5,17 +5,24 @@ from . utils import split_normal
 from scipy.optimize import curve_fit
 from scipy.stats import Mixture, Normal
 
+import matplotlib.pyplot as plt
+
 
 def pulsar_generator(pulsar_stats, energy_flux_low, energy_flux_high, sigma_1, sigma_2):
 
     # sigma_1 and sigma_2 are the fitted standard deviations of Gaussian distribution
 
-    (mean_log_Gamma_pulsars, std_log_Gamma_pulsars, b_values, len_pulsars, mean_log_a_pulsars, std_log_a_pulsars,
+    (mean_log_Gamma_pulsars, std_log_Gamma_pulsars, b_values, mean_log_a_pulsars, std_log_a_pulsars,
      mean_log_flux_density_pulsars, std_log_flux_density_pulsars, mean_log_pivot_energy_pulsars,
-     std_log_pivot_energy_pulsars, latitudes_pulsars) = pulsar_stats
+     std_log_pivot_energy_pulsars) = pulsar_stats
+
+    # Generate new exponential indices (bs) by selecting from values available (instead of Gaussian recommended by ID8)
+    len_pulsars = len(b_values)
 
     unique_values = np.unique_all(b_values)
     choice_values = unique_values.values
+
+    # Divide by number of pulsars in 4FGL to get probabilities
     new_weights = unique_values.counts / len_pulsars
 
     while True:
@@ -23,8 +30,7 @@ def pulsar_generator(pulsar_stats, energy_flux_low, energy_flux_high, sigma_1, s
         # SPECTRAL PARAMETERS
 
         # Generate new pivot energies - in ID8, they randomly select pivot energies from a Gaussian distribution.
-        # However, the distribution of pivot energies in the 4FGL follows log-normal more precise (CHECK THIS IS TRUE
-        # FOR PULSARS_
+        # However, the distribution of pivot energies in the 4FGL follows log-normal more precise
         pivot_energy = np.random.lognormal(mean=mean_log_pivot_energy_pulsars, sigma=std_log_pivot_energy_pulsars,
                                              size=1)[0]
 
@@ -50,6 +56,7 @@ def pulsar_generator(pulsar_stats, energy_flux_low, energy_flux_high, sigma_1, s
         energy_flux = energy_flux_pulsar(pivot_energy, flux_density, spectral_slope, exponential_index,
                                          exponential_factor)
 
+        # Check energy flux in given range AND that the energy flux is valid
         if (energy_flux >= energy_flux_low) and (energy_flux < energy_flux_high) and (~np.isnan(energy_flux)):
 
             # SPATIAL PARAMETERS
@@ -72,7 +79,7 @@ def pulsar_generator(pulsar_stats, energy_flux_low, energy_flux_high, sigma_1, s
                                energy_flux, longitude, latitude])
 
 
-def pulsar_statistics(pulsars):
+def generate_mock_pulsar_catalog(pulsars, num_pulsars=350):
 
     # Select pivot energy values and convert from MeV to GeV
     pivot_energies = pulsars['Pivot_Energy'].to(u.GeV).value
@@ -84,6 +91,8 @@ def pulsar_statistics(pulsars):
     b_values = pulsars['PLEC_Exp_Index'].data.filled(np.nan)
 
     # Select exponential factors - CHECK (SAYS IN UNITS OF MeV^-b BUT NEED with GeV)
+    # Generate new exponential factors (as) - log-normal (CHANGED FROM ID8, which used normal/Gaussian BASED ON RESULTS
+    # FOUND IN analysing_pulsar_parameters() function)
     a_values = pulsars['PLEC_ExpfactorS'].data
 
     # Select flux density values and convert from ph / (cm2 MeV s) to ph / (cm2 GeV s)
@@ -93,80 +102,30 @@ def pulsar_statistics(pulsars):
     # Log-normal for Gamma even though says Gaussian in ID8
     log_Gammas = np.log(Gammas)
 
-    mean_log_Gamma, std_log_Gamma = np.nanmean(log_Gammas), np.nanstd(log_Gammas, ddof=1)
+    mean_log_Gamma_pulsars, std_log_Gamma_pulsars = np.nanmean(log_Gammas), np.nanstd(log_Gammas, ddof=1)
 
     log_a_values = np.log(a_values)
 
     # Log-normal for values of a even if ID8 says Gaussian
-    mean_log_a, std_log_a = np.nanmean(log_a_values), np.nanstd(log_a_values, ddof=1)
+    mean_log_a_pulsars, std_log_a_pulsars = np.nanmean(log_a_values), np.nanstd(log_a_values, ddof=1)
 
-    mean_log_flux_density, std_log_flux_density = np.nanmean(log_flux_densities), np.nanstd(log_flux_densities)
+    mean_log_flux_density_pulsars, std_log_flux_density_pulsars = (np.nanmean(log_flux_densities),
+                                                                   np.nanstd(log_flux_densities))
 
     # Log-normal for pivot energy even though ID8 says Gaussian
     log_pivot_energies = np.log(pivot_energies)
 
-    mean_log_pivot_energy, std_log_pivot_energy = np.nanmean(log_pivot_energies), np.nanstd(log_pivot_energies, ddof=1)
+    mean_log_pivot_energy_pulsars, std_log_pivot_energy_pulsars = (np.nanmean(log_pivot_energies),
+                                                                   np.nanstd(log_pivot_energies, ddof=1))
 
-    pulsar_latitudes = pulsars['GLAT']
-
-    return (mean_log_Gamma, std_log_Gamma, b_values, len(pulsars), mean_log_a, std_log_a, mean_log_flux_density,
-            std_log_flux_density, mean_log_pivot_energy, std_log_pivot_energy, pulsar_latitudes)
-
-
-def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350):
-
-    (mean_log_Gamma_pulsars, std_log_Gamma_pulsars, b_values, len_pulsars, mean_log_a_pulsars, std_log_a_pulsars,
+    pulsar_stats = (mean_log_Gamma_pulsars, std_log_Gamma_pulsars, b_values, mean_log_a_pulsars, std_log_a_pulsars,
      mean_log_flux_density_pulsars, std_log_flux_density_pulsars, mean_log_pivot_energy_pulsars,
-     std_log_pivot_energy_pulsars, latitudes_pulsars) = pulsar_stats
-    #
-    # # SPECTRAL PARAMETERS
-    #
-    # # Generate new pivot energies - in ID8, they randomly select pivot energies from a Gaussian distribution. However,
-    # # the distribution of pivot energies in the 4FGL follows log-normal more precise (CHECK THIS IS TRUE FOR PULSARS_
-    # pivot_energies = np.random.lognormal(mean=mean_log_pivot_energy_pulsars, sigma=std_log_pivot_energy_pulsars,
-    #                                      size=num_pulsars)
-    #
-    # # Generate new flux densities - log-normal for flux densities
-    # flux_densities = np.random.lognormal(mean=mean_log_flux_density_pulsars, sigma=std_log_flux_density_pulsars,
-    #                                      size=num_pulsars)
-    #
-    # # Generate new spectral slopes (Gammas) - changed to log-normal for ID8 gaussian
-    # spectral_slopes = np.random.lognormal(mean=mean_log_Gamma_pulsars, sigma=std_log_Gamma_pulsars, size=num_pulsars)
-    #
-    # # Generate new exponential factors (as) - log-normal (CHANGED FROM ID8, which used normal/Gaussian BASED ON RESULTS
-    # # FOUND IN analysing_pulsar_parameters() function)
-    # exponential_factors = np.random.lognormal(mean=mean_log_a_pulsars, sigma=std_log_a_pulsars, size=num_pulsars)
-    #
-    # # Generate new exponential indices (bs) by selecting from values available (instead of Gaussian recommended by ID8)
-    # unique_values = np.unique_all(b_values)
-    # choice_values = unique_values.values
-    #
-    # # Divide by number of pulsars in 4FGL to get probabilities
-    # new_weights = unique_values.counts / len_pulsars
-    #
-    # exponential_indices = np.random.choice(choice_values, p=new_weights, size=num_pulsars)
-    #
-    # # Combine into one array
-    # parameters = np.stack((pivot_energies, flux_densities, spectral_slopes, exponential_indices, exponential_factors), axis=-1)
-    #
-    # # Energy fluxes
-    # energy_fluxes = np.fromiter((energy_flux_pulsar(x[0], x[1], x[2], x[3], x[4]) for x in parameters), np.float64)
-    #
-    # # Select rows with valid energy fluxes
-    # mask = ~np.isnan(energy_fluxes)
-    # energy_fluxes = energy_fluxes[mask]
-    # parameters = parameters[mask]
-    #
-    # # Combine two arrays to create mock catalog's spectral parameters
-    # parameters = np.concatenate((parameters, np.array([energy_fluxes]).T), axis=1)
-    #
-    # # SPATIAL PARAMETERS
-    #
-    # # l - uniform distribution assumed
-    # galactic_longitudes = np.random.uniform(low=0, high=2 * np.pi, size=len(parameters))
+     std_log_pivot_energy_pulsars)
 
-    # b - double Gaussian - two overlapping sampled as one
-    counts, bins = np.histogram(latitudes_pulsars.value, bins=100, density=True)
+    # Fit split-normal distribution that describes pulsar latitudes and pass the appropriate parameters to
+    # pulsar_generator()
+
+    counts, bins = np.histogram(pulsars['GLAT'].value, bins=100, density=True)
 
     bin_width = np.abs(bins[1] - bins[0])
 
@@ -174,24 +133,9 @@ def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350):
 
     x_values = [start_value + (k * bin_width) for k in range(len(bins) - 1)]
 
-    popt, _ = curve_fit(f=split_normal, xdata=np.asarray(x_values), ydata=np.asarray(counts), bounds=([0, 0], [90, 90]))
+    popt, _ = curve_fit(f=split_normal, xdata=np.asarray(x_values), ydata=np.asarray(counts), bounds=([0, 0], [2 * np.pi, 2 * np.pi]))
 
-    # # Randomly sample pulsar latitudes from distribution created above
-    # X1 = Normal(mu=0, sigma=popt[0])
-    # X2 = Normal(mu=0, sigma=popt[1])
-    #
-    # # CHANGE WEIGHTS HERE TO REFLECT MSP VS YNG
-    #
-    # mixture = Mixture([X1, X2])
-    #
-    # galactic_latitudes = mixture.sample(shape=(num_pulsars, 1)).flatten()
-    #
-    # # Combine two arrays to create mock catalog's spatial parameters
-    # parameters = np.concatenate((parameters, np.array([galactic_longitudes]).T), axis=1)
-    #
-    # # Combine two arrays to create mock catalog's spatial parameters
-    # parameters = np.concatenate((parameters, np.array([galactic_latitudes]).T), axis=1)
-
+    print(popt)
 
     parameters = []
 
@@ -202,7 +146,22 @@ def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350):
 
     parameters = np.array(parameters)
 
+    counts, bins = np.histogram(pulsars["GLAT"].value, bins=100, density=True)
 
+    plt.stairs(counts, bins, label='4FGL')
+
+    # Randomly sample pulsar latitudes from distribution created above
+    # X1 = Normal(mu=0, sigma=popt[0])
+    # X2 = Normal(mu=0, sigma=popt[1])
+    #
+    # # CHANGE WEIGHTS HERE TO REFLECT MSP VS YNG
+    # mixture = Mixture([X1, X2])
+    #
+    # x_val = np.linspace(-10, 10, 1000)
+    #
+    # plt.plot(x_val, mixture.pdf(x_val) * 180/np.pi)
+
+    plt.show()
 
     # CUTOFF THRESHOLD AND LUMINOSITY FUNCTION CHECK
 
