@@ -1,10 +1,6 @@
-from astropy.coordinates import SkyCoord
-from astropy.table import QTable
-from astropy import units as u
 from itertools import combinations, product
 import matplotlib.pyplot as plt
 import numpy as np
-import numpy.typing as npt
 from scipy.stats import fisk, logistic, lognorm, norm
 from .utils import log_normal_parameter
 import seaborn as sns
@@ -14,55 +10,6 @@ import seaborn as sns
 mathematical_notation = {"Pivot_Energy": "$E_0$", "LP_Flux_Density": "$F_0$", "LP_Index": "$\\alpha$",
                          "LP_beta": "$\\beta$", "PLEC_Flux_Density": "$F_0$", "PLEC_IndexS": "$\Gamma$",
                          "PLEC_Exp_Index": "$b$", "PLEC_ExpfactorS": "$a$", "GLAT": "Latitude"}
-
-
-def plot_agn_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64], directory) -> None:
-
-    # Data Processing
-
-    # Read 4FGL Catalog
-    catalog = QTable.read(catalog, format='fits', hdu=1)['CLASS1', 'Energy_Flux100']
-
-    # Reformat columns
-    catalog['CLASS1'] = np.asarray([k.decode('utf-8').strip().lower() for k in catalog['CLASS1'].value.filled('-')])
-
-    # Select all rows that describe AGN
-    agn_mask = np.isin(catalog['CLASS1'].data, np.array(['bcu', 'sey', 'ssrq', 'bll', 'fsrq', 'rdg', 'nlsy1', 'agn']))
-    agns = catalog[agn_mask]
-
-    energy_fluxes_4fgl = agns['Energy_Flux100'].value
-
-    # Plotting
-
-    # Set plot size
-    plt.rcParams["figure.figsize"] = (6.4, 4.8)
-
-    # Plot 4FGL data
-    bin_edges = 10**np.linspace(-14, -9, 50)
-    counts, bins = np.histogram(energy_fluxes_4fgl, bins=bin_edges)
-    plt.stairs(counts, bins, label='4FGL')
-
-    # Plot simulated data
-    bin_edges = 10**np.linspace(-15, -8, 50)
-    counts, bins = np.histogram(energy_fluxes, bins=bin_edges)
-    plt.stairs(counts, bins, label='Simulated')
-
-    # Formatting
-
-    plt.title('AGN Luminosity Function')
-
-    plt.xlabel('Energy Flux')
-    plt.ylabel('No. Sources')
-
-    plt.xscale('log')
-    plt.yscale('log')
-
-    plt.xlim(10**-14, 10**-8)
-    plt.ylim(top=10**4)
-
-    plt.legend()
-
-    plt.savefig(directory + "/4fgl_agn_luminosity_function.png")
 
 
 def plot_correlation_matrices(sources, source_type, directory):
@@ -246,37 +193,6 @@ def plot_parameter_relationships(sources, source_type: str, directory: str):
     fig.savefig(directory + "/{}_parameter_relationships.png".format(source_type.lower()))
     fig2.savefig(directory + "/{}_logarithmic_parameter_relationships.png".format(source_type.lower()))
 
-
-def plot_spatial_distribution(galactic_longitudes, galactic_latitudes, source_type: str, directory: str):
-
-    # N.B. longitudes and latitudes should be passed to this function in radians (not in degrees)
-
-    # CALCULATE RA AND DEC
-
-    xs, ys = [], []
-
-    for k in range(galactic_latitudes.shape[0]):
-
-        ra_dec = SkyCoord(l=galactic_longitudes[k] * u.rad, b=galactic_latitudes[k] * u.rad,
-                          frame='galactic').transform_to('icrs')
-
-        xs.append(ra_dec.ra.to_value(u.degree))
-        ys.append(ra_dec.dec.to_value(u.degree))
-
-    # CREATE FIGURE
-
-    fig, ax = plt.subplots(figsize=(8, 4.2), subplot_kw=dict(projection="aitoff"))
-
-    # Plot
-    ax.scatter(xs, ys, marker='o', s=2, alpha=0.5)
-
-    # FORMATTING
-
-    ax.set_title("Spatial Distribution of Simulated " + source_type + " on the Sky", pad=20)
-    ax.grid(True)
-    fig.subplots_adjust(top=0.95, bottom=0.0)
-
-    fig.savefig(directory + "/simulated_{}_spatial_distributions.png".format(source_type.lower()))
 
 # REFERENCES
 

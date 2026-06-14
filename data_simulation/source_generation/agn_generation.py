@@ -1,11 +1,10 @@
 from . agn_spectral_parameters import agn_flux_density, agn_spectral_slope, energy_flux_agn
 from astropy import units as u
 import numpy as np
-from analysis.visualisation import plot_agn_luminosity_function
 
 
 # GENERATE FIXED NUMBER OF AGNS WITHIN GIVEN ENERGY FLUX RANGE FOR FLAT EXTRAPOLATION AT LOWER ENERGY FLUXES
-def agn_generation(agn_stats, energy_flux_low=0., energy_flux_high=1000.):
+def agn_generator(agn_stats, energy_flux_low=0., energy_flux_high=1000.):
 
     # Default is effectively source with any energy flux
 
@@ -78,7 +77,7 @@ def generate_mock_agn_catalog(agn_data, num_agns=200, detection_threshold=np.flo
     parameters = []
 
     for x in range(num_agns):
-        new_source = agn_generation((mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn),
+        new_source = agn_generator((mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn),
                                     energy_flux_low=detection_threshold, energy_flux_high=1000)
         parameters.append(np.array(new_source))
 
@@ -108,7 +107,7 @@ def generate_mock_agn_catalog(agn_data, num_agns=200, detection_threshold=np.flo
         counts_per_bin_flat_extrapolation = round(np.random.normal(loc=mean_counts_per_bin, scale=std_counts_per_bin))
 
         for k in range(counts_per_bin_flat_extrapolation):
-            new_source = agn_generation((mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn),
+            new_source = agn_generator((mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn),
                                         bin_edges[x], bin_edges[x + 1])
 
             faint_sources.append(new_source)
@@ -116,9 +115,6 @@ def generate_mock_agn_catalog(agn_data, num_agns=200, detection_threshold=np.flo
     faint_sources = np.asarray(faint_sources)
 
     parameters = np.vstack((parameters, faint_sources))
-
-    plot_agn_luminosity_function("/Volumes/T7/data/catalog/4FGL_DR4.fit", parameters[:, 4],
-                                 directory="./plots/analysis")
 
     # CHECK SIMULATED FLUX DENSITIES AND PIVOT ENERGIES HAVE SAME CORRELATION AS IN 4FGL
     # plt.title('Simulated $F_0$ against $E_0$')

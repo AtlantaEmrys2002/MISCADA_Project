@@ -9,7 +9,8 @@ def energy_flux_pulsar(pivot_energy, flux_density, spectral_slope, exponential_i
     energy = quad(pulsar_spectral_model, 100, 100000, args=(pivot_energy, flux_density, spectral_slope,
                                                             exponential_index, exponential_factor))[0]
 
-    return energy
+    # Convert energy fluxes so ergs included in units instead of photons - see ID43
+    return energy * 1.602 * 10 ** (-6)
 
 
 def s1_agn(pivot_energy, flux_density, spectral_slope, curvature):

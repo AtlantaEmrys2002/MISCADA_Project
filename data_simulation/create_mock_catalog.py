@@ -25,7 +25,6 @@
 # LIBRARIES
 import numpy as np
 from astropy import units as u
-from astropy.coordinates import SkyCoord
 import matplotlib.pyplot as plt
 from pathlib import Path
 from scipy.optimize import curve_fit
@@ -34,12 +33,13 @@ from sklearn.metrics import root_mean_squared_error
 
 # Relative imports
 from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
-from analysis.visualisation import (plot_agn_luminosity_function, plot_correlation_matrices,
-                                    plot_parameter_distributions, plot_parameter_relationships,
-                                    plot_spatial_distribution)
+from analysis.visualisation import (plot_correlation_matrices, plot_parameter_distributions,
+                                    plot_parameter_relationships)
+from verification.visualisation import plot_agn_luminosity_function, plot_spatial_distribution
 from read_write_functions import catalog_data_preparation
-from source_generation.agn_generator import generate_mock_agn_catalog
+from source_generation.agn_generation import generate_mock_agn_catalog
 from source_generation.pulsar_spectral_parameters import energy_flux_pulsar
+from source_generation.pulsar_generation import pulsar_generator, pulsar_statistics
 from utils import split_normal
 
 # VISUALISATIONS
@@ -97,270 +97,50 @@ def visualising_pulsar_latitude_distributions(sigma_1, sigma_2, x_values, counts
     plt.show()
 
 
-def pulsar_statistics(pulsars):
-
-    # Select pivot energy values and convert from MeV to GeV
-    pivot_energies = pulsars['Pivot_Energy'].to(u.GeV).value
-
-    # Select Gamma values and convert from masked to ordinary numpy array
-    Gammas = pulsars['PLEC_IndexS'].data.filled(np.nan)
-
-    # Select exponential indices
-    b_values = pulsars['PLEC_Exp_Index'].data.filled(np.nan)
-
-    # Select exponential factors - CHECK (SAYS IN UNITS OF MeV^-b BUT NEED with GeV)
-    a_values = pulsars['PLEC_ExpfactorS'].data
-
-    # Select flux density values and convert from ph / (cm2 MeV s) to ph / (cm2 GeV s)
-    flux_densities = pulsars['PLEC_Flux_Density'].to(u.ph / (u.cm * u.cm * u.GeV * u.s)).value
-    log_flux_densities = np.log(flux_densities)
-
-    # mean_Gamma, std_Gamma = np.nanmean(Gammas), np.nanstd(Gammas, ddof=1)
-
-    log_Gammas = np.log(Gammas)
-
-    mean_log_Gamma, std_log_Gamma = np.nanmean(log_Gammas), np.nanstd(log_Gammas, ddof=1)
-
-    mean_b, std_b = np.nanmean(b_values), np.nanstd(b_values, ddof=1)
-
-    log_a_values = np.log(a_values)
-
-    # mean_a, std_a = np.nanmean(a_values), np.nanstd(a_values, ddof=1)
-
-    mean_log_a, std_log_a = np.nanmean(log_a_values), np.nanstd(log_a_values, ddof=1)
-
-    mean_log_flux_density, std_log_flux_density = np.nanmean(log_flux_densities), np.nanstd(log_flux_densities)
-
-    # mean_pivot_energy, std_pivot_energy = np.nanmean(pivot_energies), np.nanstd(pivot_energies, ddof=1)
-
-    log_pivot_energies = np.log(pivot_energies)
-
-    mean_log_pivot_energy, std_log_pivot_energy = np.nanmean(log_pivot_energies), np.nanstd(log_pivot_energies, ddof=1)
-
-    pulsar_latitudes = pulsars['GLAT']
-
-    return (mean_log_Gamma, std_log_Gamma, b_values, len(pulsars), mean_log_a, std_log_a, mean_log_flux_density,
-            std_log_flux_density, mean_log_pivot_energy, std_log_pivot_energy, pulsar_latitudes)
-
-
-# def generate_mock_agn_catalog(agn_stats, num_agns=100, extra=3400):
-
-# def generate_mock_agn_catalog(agn_data, num_agns=100, extra=3400):
-#
-#     # SPECTRAL PARAMETERS
-#
-#     # Select beta values and convert from masked to ordinary numpy array
-#     betas_agn = agn_data['LP_beta'].data.filled(np.nan)
+# def pulsar_statistics(pulsars):
 #
 #     # Select pivot energy values and convert from MeV to GeV
-#     pivot_energies = agn_data['Pivot_Energy'].to(u.GeV).value
+#     pivot_energies = pulsars['Pivot_Energy'].to(u.GeV).value
 #
-#     # Calculate mean and standard deviation of log of pivot energies for random sampling
+#     # Select Gamma values and convert from masked to ordinary numpy array
+#     Gammas = pulsars['PLEC_IndexS'].data.filled(np.nan)
+#
+#     # Select exponential indices
+#     b_values = pulsars['PLEC_Exp_Index'].data.filled(np.nan)
+#
+#     # Select exponential factors - CHECK (SAYS IN UNITS OF MeV^-b BUT NEED with GeV)
+#     a_values = pulsars['PLEC_ExpfactorS'].data
+#
+#     # Select flux density values and convert from ph / (cm2 MeV s) to ph / (cm2 GeV s)
+#     flux_densities = pulsars['PLEC_Flux_Density'].to(u.ph / (u.cm * u.cm * u.GeV * u.s)).value
+#     log_flux_densities = np.log(flux_densities)
+#
+#     # mean_Gamma, std_Gamma = np.nanmean(Gammas), np.nanstd(Gammas, ddof=1)
+#
+#     log_Gammas = np.log(Gammas)
+#
+#     mean_log_Gamma, std_log_Gamma = np.nanmean(log_Gammas), np.nanstd(log_Gammas, ddof=1)
+#
+#     mean_b, std_b = np.nanmean(b_values), np.nanstd(b_values, ddof=1)
+#
+#     log_a_values = np.log(a_values)
+#
+#     # mean_a, std_a = np.nanmean(a_values), np.nanstd(a_values, ddof=1)
+#
+#     mean_log_a, std_log_a = np.nanmean(log_a_values), np.nanstd(log_a_values, ddof=1)
+#
+#     mean_log_flux_density, std_log_flux_density = np.nanmean(log_flux_densities), np.nanstd(log_flux_densities)
+#
+#     # mean_pivot_energy, std_pivot_energy = np.nanmean(pivot_energies), np.nanstd(pivot_energies, ddof=1)
+#
 #     log_pivot_energies = np.log(pivot_energies)
-#     mean_log_pivot_energy_agn, std_log_pivot_energy_agn = (np.nanmean(log_pivot_energies),
-#                                                            np.nanstd(log_pivot_energies, ddof=1))
 #
-#     # CREATE NEW SPECTRAL PARAMETERS
+#     mean_log_pivot_energy, std_log_pivot_energy = np.nanmean(log_pivot_energies), np.nanstd(log_pivot_energies, ddof=1)
 #
-#     # # Generate new pivot energies - in ID8, they randomly select pivot energies from a Gaussian distribution. However,
-#     # # the distribution of pivot energies in the 4FGL follows log-normal more precisely (see my plots in agn analysis
-#     # # above). Therefore, I have changed the way pivot energies are randomly generated (now use log-normal distribution)
-#     # pivot_energies = np.random.lognormal(mean=mean_log_pivot_energy_agn, sigma=std_log_pivot_energy_agn, size=num_agns)
-#     #
-#     # # Calculate flux densities (with noise to improve realism)
-#     # flux_densities = agn_flux_density(pivot_energies)
-#     #
-#     # # Generate new spectral slopes (alphas)
-#     # spectral_slopes = agn_spectral_slope(pivot_energies)
-#     #
-#     # # Generate new curvatures by directly sampling 4FGL
-#     # betas = np.random.choice(betas_agn, size=num_agns, replace=True)
-#     #
-#     # # Combine into one array
-#     # parameters = np.stack((pivot_energies, flux_densities, spectral_slopes, betas), axis=-1)
-#     #
-#     # # Calculate energy fluxes
-#     # energy_fluxes = np.fromiter((energy_flux_agn(x[0], x[1], x[2], x[3]) for x in parameters), np.float64)
-#     #
-#     # # Select rows with valid energy fluxes
-#     # mask = ~np.isnan(energy_fluxes)
-#     # energy_fluxes = energy_fluxes[mask]
-#     # parameters = parameters[mask]
-#     #
-#     # # Combine two arrays to create mock catalog's spectral parameters
-#     # parameters = np.concatenate((parameters, np.array([energy_fluxes]).T), axis=1)
+#     pulsar_latitudes = pulsars['GLAT']
 #
-#     threshold = np.float64(1.0 * 10 ** (-12))
-#
-#     parameters = []
-#
-#     for x in range(num_agns):
-#         new_source = agn_generation((mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn),
-#                                     energy_flux_low=threshold, energy_flux_high=1000)
-#
-#         parameters.append(np.array(new_source))
-#
-#     parameters = np.array(parameters)
-#
-#     # print(parameters)
-#
-#     # SPATIAL PARAMETERS - MOVE THESE SO THEY ARE ONLY GENERATED AT THE END - THIS IS IMPORTANT AND SAVES COMPUTATION TIME
-#     #
-#     # # l
-#     # galactic_longitudes = np.random.uniform(low=0, high=2 * np.pi, size=len(parameters))
-#     #
-#     # # b
-#     # sin_galactic_latitudes = np.random.uniform(low=-1, high=1, size=len(parameters))
-#     # galactic_latitudes = np.arcsin(sin_galactic_latitudes)
-#     #
-#     # # Combine two arrays to create mock catalog's spatial parameters
-#     # parameters = np.concatenate((parameters, np.array([galactic_longitudes]).T), axis=1)
-#     #
-#     # # Combine two arrays to create mock catalog's spatial parameters
-#     # parameters = np.concatenate((parameters, np.array([galactic_latitudes]).T), axis=1)
-#
-#
-#
-#
-#     # Remove all with energy fluxes below our chosen energy flux threshold
-#     # N.B. Used expression found here - https://stackoverflow.com/questions/72404872/remove-rows-in-a-2d-numpy-array-if-
-#     # they-contain-a-specific-element - to select desired rows
-#
-#     # Cut at detection threshold
-#     # parameters = parameters[~(parameters[:, 4] <= np.float64(1.0 * 10 ** (-12))), :]
-#     parameters = parameters[~(parameters[:, 4] <= threshold), :]
-#
-#     # ADD MORE SOURCES - FOLLOW LUMINOSITY FUNCTION OF 4FGL - ENSURE ENOUGH
-#
-#     # extra_sources = []
-#     #
-#     # for x in range(extra):
-#     #
-#     #     # CHANGED FROM 2.0 * 10 ** -12 TO 1.0 * 10 ** -12 as threshold recommended by 4FGL DR4 (ID22) paper for outside
-#     #     # galactic plane
-#     #     new_source = agn_generation((mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn),
-#     #                                 1.0 * 10 ** (-12), 1000)
-#     #
-#     #     extra_sources.append(new_source)
-#
-#     # parameters = np.vstack((parameters, np.asarray(extra_sources)))
-#
-#     # FAINT SOURCE FLAT EXTRAPOLATION
-#
-#     # Flat extrapolation of AGN - assume constant below given threshold (not Gaussian)
-#
-#     # Bin data and take average of first three
-#     bin_edges = 10**np.linspace(-14, -9, 50)
-#     counts, _ = np.histogram(parameters[:, 4], bins=bin_edges)
-#
-#     # Take average number of sources of first five bins for flat extrapolation
-#     first_non_empty_bin = np.nonzero(counts)[0][0]
-#     mean_counts_per_bin, std_counts_per_bin = (np.mean(counts[first_non_empty_bin: first_non_empty_bin + 10]),
-#                                                np.std(counts[first_non_empty_bin: first_non_empty_bin + 10], ddof=1))
-#
-#     faint_sources = []
-#
-#     our_threshold = np.argwhere(bin_edges >= 3.4 * 10**(-13))[0][0]
-#
-#     for x in range(our_threshold, first_non_empty_bin):
-#
-#         # Generate number of sources in bin - approximately flat/same as bins at peak
-#         counts_per_bin_flat_extrapolation = round(np.random.normal(loc=mean_counts_per_bin, scale=std_counts_per_bin))
-#
-#         for k in range(counts_per_bin_flat_extrapolation):
-#             new_source = agn_generation((mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn), bin_edges[x], bin_edges[x + 1])
-#             faint_sources.append(new_source)
-#
-#     faint_sources = np.asarray(faint_sources)
-#
-#     parameters = np.vstack((parameters, faint_sources))
-#
-#     plot_agn_luminosity_function("/Volumes/T7/data/catalog/4FGL_DR4.fit", parameters[:, 4], directory="./plots/analysis")
-#
-#     # CHECK SIMULATED FLUX DENSITIES AND PIVOT ENERGIES HAVE SAME CORRELATION AS IN 4FGL
-#     # plt.title('Simulated $F_0$ against $E_0$')
-#     # plt.xlabel('log $E_0$')
-#     # plt.ylabel('log $F_{0, AGN}$')
-#     # plt.scatter(np.log(parameters[:, 0]), np.log(parameters[:, 1]), s=2)
-#     # plt.show()
-#     #
-#     # # CHECK SIMULATED PIVOT ENERGIES AND SPECTRAL INDICES (ALPHAS) HAVE SAME CORRELATION AS IN 4FGL
-#     # plt.title('Simulated $\\alpha$ against $E_0$')
-#     # plt.xlabel('log $E_0$')
-#     # plt.ylabel('log $\\alpha$')
-#     # plt.scatter(np.log(parameters[:, 0]), np.log(parameters[:, 2]), s=2)
-#     # plt.show()
-#
-#     return parameters
-
-
-# GENERATE FIXED NUMBER OF AGNS WITHIN GIVEN ENERGY FLUX RANGE FOR FLAT EXTRAPOLATION AT LOWER ENERGY FLUXES
-def pulsar_generation(pulsar_stats, energy_flux_low, energy_flux_high, sigma_1, sigma_2):
-
-    # sigma_1 and sigma_2 are the fitted standard deviations of Gaussian distribution
-
-    (mean_log_Gamma_pulsars, std_log_Gamma_pulsars, b_values, len_pulsars, mean_log_a_pulsars, std_log_a_pulsars,
-     mean_log_flux_density_pulsars, std_log_flux_density_pulsars, mean_log_pivot_energy_pulsars,
-     std_log_pivot_energy_pulsars, latitudes_pulsars) = pulsar_stats
-
-    unique_values = np.unique_all(b_values)
-    choice_values = unique_values.values
-    new_weights = unique_values.counts/len_pulsars
-
-    while True:
-
-        # SPECTRAL PARAMETERS
-
-        # Generate new pivot energies - in ID8, they randomly select pivot energies from a Gaussian distribution.
-        # However, the distribution of pivot energies in the 4FGL follows log-normal more precise (CHECK THIS IS TRUE
-        # FOR PULSARS_
-        pivot_energy = np.random.lognormal(mean=mean_log_pivot_energy_pulsars, sigma=std_log_pivot_energy_pulsars,
-                                             size=1)[0]
-
-        # Generate new flux densities - log-normal for flux densities
-        flux_density = np.random.lognormal(mean=mean_log_flux_density_pulsars, sigma=std_log_flux_density_pulsars,
-                                             size=1)[0]
-
-        # Gaussian recommended in ID8 - AT THE MOMENT - may change to log-normal
-
-        # Generate new spectral slopes (Gammas) - CHANGED FROM GAUSSIAN TO LOG-NORMAL BASED ON CHI SQUARED GOODNESS OF FIT
-        # ANALYSIS (THIS IS A CHANGE FROM ID8, WHICH RECOMMENDED GAUSSIAN)
-        # spectral_slope = np.random.normal(loc=mean_Gamma_pulsars, scale=std_Gamma_pulsars, size=1)[0]
-        spectral_slope = np.random.lognormal(mean=mean_log_Gamma_pulsars, sigma=std_log_Gamma_pulsars, size=1)[0]
-
-        # Generate new exponential factors (as)
-        exponential_factor = np.random.lognormal(mean=mean_log_a_pulsars, sigma=std_log_a_pulsars, size=1)[0]
-
-        # Generate new exponential indices (bs)
-        # exponential_index = np.random.normal(loc=mean_b_pulsars, scale=std_b_pulsars, size=1)[0]
-        exponential_index = np.random.choice(choice_values, p=new_weights)
-
-        # Energy fluxes and convert energy fluxes so ergs included in units instead of photons
-
-        energy_flux = energy_flux_pulsar(pivot_energy, flux_density, spectral_slope, exponential_index,
-                                         exponential_factor) * 1.602 * 10 ** (-6)
-
-        # SPATIAL PARAMETERS
-
-        # l - uniform distribution assumed
-        longitude = np.random.uniform(low=0, high=2 * np.pi, size=1)[0]
-
-        # b - double Gaussian - two overlapping sampled as one
-
-        # Randomly sample pulsar latitudes from distribution created above
-        X1 = stats.Normal(mu=0, sigma=sigma_1)
-        X2 = stats.Normal(mu=0, sigma=sigma_2)
-
-        # CHANGE WEIGHTS HERE TO REFLECT MSP VS YNG
-
-        mixture = stats.Mixture([X1, X2])
-
-        latitude = mixture.sample(shape=(1, 1)).flatten()[0]
-
-        if (energy_flux >= energy_flux_low) and (energy_flux < energy_flux_high):
-
-            return np.asarray([pivot_energy, flux_density, spectral_slope, exponential_index, exponential_factor,
-                               energy_flux, longitude, latitude])
+#     return (mean_log_Gamma, std_log_Gamma, b_values, len(pulsars), mean_log_a, std_log_a, mean_log_flux_density,
+#             std_log_flux_density, mean_log_pivot_energy, std_log_pivot_energy, pulsar_latitudes)
 
 
 def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350, extra=10):
@@ -413,7 +193,7 @@ def generate_mock_pulsar_catalog(pulsar_stats, num_pulsars=350, extra=10):
     energy_fluxes = np.fromiter((energy_flux_pulsar(x[0], x[1], x[2], x[3], x[4]) for x in parameters), np.float64)
 
     # Convert energy fluxes so ergs included in units instead of photons
-    energy_fluxes *= 1.602 * 10**(-6)
+    # energy_fluxes *= 1.602 * 10**(-6)
 
     # Select rows with valid energy fluxes
     mask = ~np.isnan(energy_fluxes)
@@ -939,19 +719,28 @@ def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
     plot_correlation_matrices(pulsars, source_type="Pulsar", directory=directory)
 
 
-def verification(simulated_agns, simulated_pulsars):
+def verification(simulated_agns, simulated_pulsars, directory="./plots/verification"):
 
     # Verify simulated data realism
+
+    # Create directory to store results
+    Path(directory).mkdir(parents=True, exist_ok=True)
+
+    # SPECTRAL PARAMETERS
+
+    # Compare the luminosity function of the simulated AGNs with that of those in the 4FGL
+    plot_agn_luminosity_function("/Volumes/T7/data/catalog/4FGL_DR4.fit", simulated_agns[:, 4],
+                                 directory=directory)
 
     # SPATIAL DISTRIBUTION
 
     # Plot simulated AGN spatial distribution
     plot_spatial_distribution(simulated_agns[:, 5], simulated_agns[:, 6], source_type='AGN',
-                              directory="./plots/analysis")
+                              directory=directory)
 
     # Plot simulated pulsar spatial distributions
     plot_spatial_distribution(simulated_pulsars[:, 6], simulated_pulsars[:, 7], source_type='Pulsar',
-                              directory="./plots/analysis")
+                              directory=directory)
 
 
 
@@ -991,6 +780,8 @@ def num_sources_to_generate(energy_fluxes_4fgl, detection_threshold):
 
 agn_rows, pulsar_rows, source_detection_threshold, fluxes_4fgl = catalog_data_preparation("/Volumes/T7/data/catalog/4FGL_DR4.fit")
 
+# print(pulsar_rows)
+
 # Analyse parameters, their distributions, and their correlations
 
 # analysis(agn_rows, pulsar_rows)
@@ -1001,19 +792,16 @@ agn_rows, pulsar_rows, source_detection_threshold, fluxes_4fgl = catalog_data_pr
 
 # Generate simulated AGN sources
 
-agns = generate_mock_agn_catalog(agn_rows.copy(), num_agns=300, detection_threshold=source_detection_threshold)
+# agns = generate_mock_agn_catalog(agn_rows.copy(), num_agns=300, detection_threshold=source_detection_threshold)
 
 # Generate simulated pulsar sources
 
 pulsars = generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows.copy()), 10, extra=5)
 
+print(pulsars)
 
 # Verify realism and correctness of generated gamma-ray sources
-verification(agns, pulsars)
-
-# print(pulsars[0])
-
-# spatial_visualisations(pulsars[:, 6], pulsars[:, 7], num_sources=len(pulsars), source_type='Pulsars')
+# verification(agns, pulsars)
 
 
 # REFERENCES

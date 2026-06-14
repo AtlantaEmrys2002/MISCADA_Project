@@ -146,6 +146,9 @@ def catalog_data_preparation(file_name: str):
     pulsar_data = pulsar_data[
         ("PLEC_Flux_Density", "Pivot_Energy", "PLEC_IndexS", "PLEC_Exp_Index", "PLEC_ExpfactorS", "GLAT")]
 
+    # Convert latitudes from degrees to radians
+    pulsar_data["GLAT"] = pulsar_data["GLAT"].to(u.rad)
+
     # Separate into AGN and pulsars
     return agn_data, pulsar_data, source_detection_threshold, energy_fluxes_4fgl
 
