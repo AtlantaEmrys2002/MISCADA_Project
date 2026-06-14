@@ -1,4 +1,6 @@
+from astropy.coordinates import SkyCoord
 from astropy.table import QTable
+from astropy import units as u
 from itertools import combinations, product
 import matplotlib.pyplot as plt
 import numpy as np
@@ -134,9 +136,7 @@ def plot_parameter_distributions(sources, source_type: str, directory: str):
         mean, sigma = np.mean(values), np.std(values, ddof=1)
         scale, s = log_normal_parameter(values)
         logistic_scale = sigma * (np.sqrt(3) / np.pi)
-        log_logistic_scale = np.log(np.std(values, ddof=1) * (np.sqrt(3) / np.pi))
-
-        # np.std(np.log(values), ddof=1) * (np.sqrt(3) / np.pi)
+        log_logistic_scale = np.std(np.log(values), ddof=1) * (np.sqrt(3) / np.pi)
 
         # Plot Gaussian using mean and standard deviation of data
         x_values = np.linspace(np.min(values), np.max(values), 1000)
@@ -152,8 +152,8 @@ def plot_parameter_distributions(sources, source_type: str, directory: str):
                      linestyle=":")
 
         # Plot log-logistic distribution using mean and standard deviation of data (I noted similarity of shapes)
-        subplot.plot(x_values, fisk.pdf(x_values, scale=np.exp(np.mean(np.log(x_values))), c=1 / log_logistic_scale), color='green',
-                     label='Log-Logistic')
+        subplot.plot(x_values, fisk.pdf(x_values, scale=np.exp(np.mean(np.log(x_values))), c=1 / log_logistic_scale),
+                     color='green', label='Log-Logistic')
 
         subplot.set_xlabel(axis_labels[values.name])
 
@@ -246,6 +246,37 @@ def plot_parameter_relationships(sources, source_type: str, directory: str):
     fig.savefig(directory + "/{}_parameter_relationships.png".format(source_type.lower()))
     fig2.savefig(directory + "/{}_logarithmic_parameter_relationships.png".format(source_type.lower()))
 
+
+def plot_spatial_distribution(galactic_longitudes, galactic_latitudes, source_type: str, directory: str):
+
+    # N.B. longitudes and latitudes should be passed to this function in radians (not in degrees)
+
+    # CALCULATE RA AND DEC
+
+    xs, ys = [], []
+
+    for k in range(galactic_latitudes.shape[0]):
+
+        ra_dec = SkyCoord(l=galactic_longitudes[k] * u.rad, b=galactic_latitudes[k] * u.rad,
+                          frame='galactic').transform_to('icrs')
+
+        xs.append(ra_dec.ra.to_value(u.degree))
+        ys.append(ra_dec.dec.to_value(u.degree))
+
+    # CREATE FIGURE
+
+    fig, ax = plt.subplots(figsize=(8, 4.2), subplot_kw=dict(projection="aitoff"))
+
+    # Plot
+    ax.scatter(xs, ys, marker='o', s=2, alpha=0.5)
+
+    # FORMATTING
+
+    ax.set_title("Spatial Distribution of Simulated " + source_type + " on the Sky", pad=20)
+    ax.grid(True)
+    fig.subplots_adjust(top=0.95, bottom=0.0)
+
+    fig.savefig(directory + "/simulated_{}_spatial_distributions.png".format(source_type.lower()))
 
 # REFERENCES
 

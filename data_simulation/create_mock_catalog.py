@@ -35,35 +35,14 @@ from sklearn.metrics import root_mean_squared_error
 # Relative imports
 from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
 from analysis.visualisation import (plot_agn_luminosity_function, plot_correlation_matrices,
-                                    plot_parameter_distributions, plot_parameter_relationships)
+                                    plot_parameter_distributions, plot_parameter_relationships,
+                                    plot_spatial_distribution)
 from read_write_functions import catalog_data_preparation
-from source_generation.agn_generator import agn_generation, generate_mock_agn_catalog
-from source_generation.agn_spectral_parameters import energy_flux_agn, agn_flux_density, agn_spectral_slope
+from source_generation.agn_generator import generate_mock_agn_catalog
 from source_generation.pulsar_spectral_parameters import energy_flux_pulsar
 from utils import split_normal
 
 # VISUALISATIONS
-
-
-# IN PROCESS OF MOVING INTO SEPARATE FILE
-def spatial_visualisations(galactic_longitudes, galactic_latitudes, num_sources, source_type):
-
-    xs, ys = [], []
-
-    for k in range(num_sources):
-
-        ra_dec = SkyCoord(l=galactic_longitudes[k] * u.rad, b=galactic_latitudes[k] * u.rad,
-                          frame='galactic').transform_to('icrs')
-
-        xs.append(ra_dec.ra.to_value(u.degree))
-        ys.append(ra_dec.dec.to_value(u.degree))
-
-    fig, ax = plt.subplots(figsize=(8, 4.2), subplot_kw=dict(projection="aitoff"))
-    ax.set_title("Distribution of Simulated " + source_type + " on the Sky", pad=20)
-    ax.grid(True)
-    ax.scatter(xs, ys, marker='o', s=2, alpha=0.3)
-    fig.subplots_adjust(top=0.95, bottom=0.0)
-    plt.show()
 
 
 def normal_func(x, mean, sigma):
@@ -960,6 +939,25 @@ def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
     plot_correlation_matrices(pulsars, source_type="Pulsar", directory=directory)
 
 
+def verification(simulated_agns, simulated_pulsars):
+
+    # Verify simulated data realism
+
+    # SPATIAL DISTRIBUTION
+
+    # Plot simulated AGN spatial distribution
+    plot_spatial_distribution(simulated_agns[:, 5], simulated_agns[:, 6], source_type='AGN',
+                              directory="./plots/analysis")
+
+    # Plot simulated pulsar spatial distributions
+    plot_spatial_distribution(simulated_pulsars[:, 6], simulated_pulsars[:, 7], source_type='Pulsar',
+                              directory="./plots/analysis")
+
+
+
+
+
+
 def num_sources_to_generate(energy_fluxes_4fgl, detection_threshold):
 
     # THIS DETERMINES THE LUMINOSITY FUNCTION OF MOCK CATALOG - NOT FINISHED YET
@@ -995,7 +993,7 @@ agn_rows, pulsar_rows, source_detection_threshold, fluxes_4fgl = catalog_data_pr
 
 # Analyse parameters, their distributions, and their correlations
 
-analysis(agn_rows, pulsar_rows)
+# analysis(agn_rows, pulsar_rows)
 
 # fitting_agn_pivot_energy_flux_density_relation(agn_rows.copy())
 
@@ -1003,17 +1001,15 @@ analysis(agn_rows, pulsar_rows)
 
 # Generate simulated AGN sources
 
-# agns = generate_mock_agn_catalog(agn_statistics(agn_rows.copy()), num_agns=100, extra=30)
-
-# agns = generate_mock_agn_catalog(agn_rows.copy(), num_agns=100, extra=30)
-
-# agns = generate_mock_agn_catalog(agn_rows.copy(), num_agns=300, detection_threshold=source_detection_threshold)
-
-# print(agns[0])
+agns = generate_mock_agn_catalog(agn_rows.copy(), num_agns=300, detection_threshold=source_detection_threshold)
 
 # Generate simulated pulsar sources
 
-# pulsars = generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows.copy()), 10, extra=5)
+pulsars = generate_mock_pulsar_catalog(pulsar_statistics(pulsar_rows.copy()), 10, extra=5)
+
+
+# Verify realism and correctness of generated gamma-ray sources
+verification(agns, pulsars)
 
 # print(pulsars[0])
 

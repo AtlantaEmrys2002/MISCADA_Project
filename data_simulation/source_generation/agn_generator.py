@@ -117,7 +117,8 @@ def generate_mock_agn_catalog(agn_data, num_agns=200, detection_threshold=np.flo
 
     parameters = np.vstack((parameters, faint_sources))
 
-    plot_agn_luminosity_function("/Volumes/T7/data/catalog/4FGL_DR4.fit", parameters[:, 4], directory="./plots/analysis")
+    plot_agn_luminosity_function("/Volumes/T7/data/catalog/4FGL_DR4.fit", parameters[:, 4],
+                                 directory="./plots/analysis")
 
     # CHECK SIMULATED FLUX DENSITIES AND PIVOT ENERGIES HAVE SAME CORRELATION AS IN 4FGL
     # plt.title('Simulated $F_0$ against $E_0$')
