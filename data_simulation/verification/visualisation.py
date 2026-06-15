@@ -6,7 +6,7 @@ import numpy as np
 import numpy.typing as npt
 
 
-def plot_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64], directory:str,
+def plot_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64], directory: str,
                                  source_type="AGN") -> None:
 
     # Data Processing
@@ -72,17 +72,8 @@ def plot_spatial_distribution(galactic_longitudes, galactic_latitudes, source_ty
 
     # N.B. longitudes and latitudes should be passed to this function in radians (not in degrees)
 
-    # CALCULATE RA AND DEC
-
-    xs, ys = [], []
-
-    for k in range(galactic_latitudes.shape[0]):
-
-        ra_dec = SkyCoord(l=galactic_longitudes[k] * u.rad, b=galactic_latitudes[k] * u.rad,
-                          frame='galactic').transform_to('icrs')
-
-        xs.append(ra_dec.ra.to_value(u.degree))
-        ys.append(ra_dec.dec.to_value(u.degree))
+    xs = galactic_longitudes
+    ys = galactic_latitudes
 
     # CREATE FIGURE
 

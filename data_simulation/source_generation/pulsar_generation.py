@@ -5,10 +5,12 @@ import numpy as np
 from . pulsar_spectral_parameters import energy_flux_pulsar
 from . utils import split_normal
 from scipy.optimize import curve_fit
-from scipy.stats import Mixture, Normal
+from scipy.stats import Mixture, Normal, cauchy
+
+import matplotlib.pyplot as plt
 
 
-def pulsar_generator(pulsar_stats, energy_flux_low, energy_flux_high, sigma_1, sigma_2):
+def pulsar_generator(pulsar_stats, energy_flux_low, energy_flux_high, cauchy_params):
 
     # sigma_1 and sigma_2 are the fitted standard deviations of Gaussian distribution
 
@@ -60,18 +62,12 @@ def pulsar_generator(pulsar_stats, energy_flux_low, energy_flux_high, sigma_1, s
             # SPATIAL PARAMETERS
 
             # l - uniform distribution assumed
-            longitude = np.random.uniform(low=0, high=2 * np.pi, size=1)[0]
+            longitude = np.random.uniform(low=- (2 * np.pi), high=2 * np.pi)
 
             # b - double Gaussian - two overlapping sampled as one
 
             # Randomly sample pulsar latitudes from distribution created above
-            X1 = Normal(mu=0, sigma=sigma_1)
-            X2 = Normal(mu=0, sigma=sigma_2)
-
-            # CHANGE WEIGHTS HERE TO REFLECT MSP VS YNG
-            mixture = Mixture([X1, X2])
-
-            latitude = mixture.sample(shape=(1, 1)).flatten()[0]
+            latitude = cauchy(loc=0, scale=np.float64(0.018077045649988577)).rvs()
 
             return np.asarray([pivot_energy, flux_density, spectral_slope, exponential_index, exponential_factor,
                                energy_flux, longitude, latitude])
@@ -160,11 +156,9 @@ def luminosity_function_pulsar(catalog: str, detection_threshold):
     return np.array([counts])[0], np.array(bin_intervals), peak
 
 
-# def generate_mock_pulsar_catalog(pulsars, num_pulsars=350):
-
 def generate_mock_pulsar_catalog(catalog: str, pulsars, detection_threshold):
 
-    # Select pivot energy values (in GeV)
+    # Select pivot energy values
     pivot_energies = pulsars['Pivot_Energy'].value
 
     # Select Gamma values and convert from masked to ordinary numpy array
@@ -209,6 +203,8 @@ def generate_mock_pulsar_catalog(catalog: str, pulsars, detection_threshold):
     # Divide by number of pulsars in 4FGL to get probabilities
     new_weights = unique_values.counts / len(b_values)
 
+    cauchy_params = cauchy.fit(pulsars['GLAT'].value, floc=0)
+
     pulsar_stats = (mean_log_Gamma_pulsars, std_log_Gamma_pulsars, mean_log_a_pulsars, std_log_a_pulsars,
      mean_log_flux_density_pulsars, std_log_flux_density_pulsars, mean_log_pivot_energy_pulsars,
      std_log_pivot_energy_pulsars, choice_values, new_weights)
@@ -216,22 +212,16 @@ def generate_mock_pulsar_catalog(catalog: str, pulsars, detection_threshold):
     # Fit split-normal distribution that describes pulsar latitudes and pass the appropriate parameters to
     # pulsar_generator()
 
-    counts, bins = np.histogram(pulsars['GLAT'].value, bins=100, density=True)
-
-    bin_width = np.abs(bins[1] - bins[0])
-
-    start_value = bins[0] + (bin_width / 2)
-
-    x_values = [start_value + (k * bin_width) for k in range(len(bins) - 1)]
-
-    popt, _ = curve_fit(f=split_normal, xdata=np.asarray(x_values), ydata=np.asarray(counts), bounds=([0, 0], [2 * np.pi, 2 * np.pi]))
-
-    parameters = []
-
-    # for x in range(num_pulsars):
-    #     new_source = pulsar_generator(pulsar_stats, energy_flux_low=0, energy_flux_high=1000, sigma_1=popt[0],
-    #                                   sigma_2=popt[1])
-    #     parameters.append(np.array(new_source))
+    # counts, bins = np.histogram(pulsars['GLAT'].value, bins=10, density=True)
+    #
+    #
+    # bin_width = np.abs(bins[1] - bins[0])
+    #
+    # start_value = bins[0] + (bin_width / 2)
+    #
+    # x_values = [start_value + (k * bin_width) for k in range(len(bins) - 1)]
+    #
+    # popt, _ = curve_fit(f=split_normal, xdata=np.asarray(x_values), ydata=np.asarray(counts), bounds=([0, 0], [2 * np.pi, 2 * np.pi]))
 
     # CREATE NEW SOURCES
 
@@ -247,13 +237,8 @@ def generate_mock_pulsar_catalog(catalog: str, pulsars, detection_threshold):
                                                                    target_counts[target_peak:])):
 
         # Due to uncomplimentary functionality - need max of intervals[:-1] - see reference to Digitize Error
-        # new_source = agn_generator((mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn),
-        #                            energy_flux_low=np.min(target_bin_intervals),
-        #                            energy_flux_high=np.max(target_bin_intervals[:-1]))
-
         new_source = pulsar_generator(pulsar_stats, energy_flux_low=np.min(target_bin_intervals),
-                                      energy_flux_high=np.max(target_bin_intervals[:-1]), sigma_1=popt[0],
-                                      sigma_2=popt[1])
+                                      energy_flux_high=np.max(target_bin_intervals[:-1]), cauchy_params=cauchy_params)
 
         idx = np.digitize(new_source[5], target_bin_intervals)
 
@@ -268,64 +253,6 @@ def generate_mock_pulsar_catalog(catalog: str, pulsars, detection_threshold):
             parameters.append(np.array(new_source))
             actual_counts[idx] += 1
 
-        print(actual_counts)
+    parameters = np.array(parameters)
 
-
-    # CUTOFF THRESHOLD AND LUMINOSITY FUNCTION CHECK
-
-    # Cut at detection threshold
-
-    # CHECK THIS AND ADD BACK IN - NEED CUT OFF THRESHOLD!!!!!!!!!!!!!!!!!!!
-    #
-    # parameters = parameters[~(parameters[:, 5] <= np.float64(1.0 * 10 ** (-12))), :]
-    #
-    # # ADD MORE SOURCES - FOLLOW LUMINOSITY FUNCTION OF 4FGL - ENSURE ENOUGH
-    #
-    # extra_sources = []
-    #
-    # for x in range(extra):
-    #
-    #     print(x + 1)
-    #
-    #     # CHANGED TO 1.0 * 10 ** -12 as recommended by 4FGL DR4 (ID22) paper for outside galactic plane
-    #
-    #     new_source = pulsar_generation(pulsar_stats, 1.0 * 10 ** (-12), 1000, sigma_1=popt[0], sigma_2=popt[1])
-    #
-    #     extra_sources.append(new_source)
-    #
-    # parameters = np.vstack((parameters, np.asarray(extra_sources)))
-    #
-    # # FAINT SOURCE FLAT EXTRAPOLATION
-    #
-    # # Flat extrapolation of AGN - assume constant below given threshold (not Gaussian)
-    #
-    # # Bin data and take average of first three
-    # bin_edges = 10 ** np.linspace(-14, -9, 50)
-    # counts, _ = np.histogram(parameters[:, 5], bins=bin_edges)
-    #
-    # # Take average number of sources of first five bins for flat extrapolation
-    # first_non_empty_bin = np.nonzero(counts)[0][0]
-    # mean_counts_per_bin, std_counts_per_bin = (np.mean(counts[first_non_empty_bin: first_non_empty_bin + 10]),
-    #                                            np.std(counts[first_non_empty_bin: first_non_empty_bin + 10], ddof=1))
-    #
-    # faint_sources = []
-    #
-    # our_threshold = np.argwhere(bin_edges >= 3.4 * 10 ** (-13))[0][0]
-    #
-    # for x in range(our_threshold, first_non_empty_bin):
-    #
-    #     # Generate number of sources in bin - approximately flat/same as bins at peak
-    #     counts_per_bin_flat_extrapolation = round(np.random.normal(loc=mean_counts_per_bin, scale=std_counts_per_bin,
-    #                                                                size=1)[0])
-    #
-    #     for k in range(counts_per_bin_flat_extrapolation):
-    #         new_source = pulsar_generation(pulsar_stats, bin_edges[x], bin_edges[x + 1], sigma_1=popt[0], sigma_2=popt[1])
-    #         faint_sources.append(new_source)
-    #
-    # faint_sources = np.asarray(faint_sources)
-    #
-    # parameters = np.vstack((parameters, faint_sources))
-
-    # CHECK LUMIN FUNCTION - NOT FINISHED!!!!!!
-
-    return np.array(parameters)
+    return parameters

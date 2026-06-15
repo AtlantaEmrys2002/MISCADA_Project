@@ -46,7 +46,7 @@ def agn_generator(agn_stats, energy_flux_low=0., energy_flux_high=1000.):
             # SPATIAL PARAMETERS
 
             # longitude
-            longitude = np.random.uniform(low=0, high=2 * np.pi)
+            longitude = np.random.uniform(low=- (2 * np.pi), high=2 * np.pi)
 
             # latitude
             sin_galactic_latitudes = np.random.uniform(low=-1, high=1)

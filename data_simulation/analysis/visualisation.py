@@ -1,7 +1,7 @@
 from itertools import combinations, product
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.stats import fisk, logistic, lognorm, norm
+from scipy.stats import cauchy, lognorm, norm
 from .utils import log_normal_parameter
 import seaborn as sns
 from sklearn.metrics import root_mean_squared_error
@@ -22,7 +22,7 @@ mathematical_notation = {"Pivot_Energy": "$E_0$", "LP_Flux_Density": "$F_0$", "L
 units = {"LP_Flux_Density": "[ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$", "Pivot_Energy": "[MeV]", "LP_Index": "",
          "LP_beta": "",
          "PLEC_IndexS": "", "PLEC_Flux_Density": "[ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$", "PLEC_Exp_Index": "",
-         "PLEC_ExpfactorS": "", "GLAT": "[$\degree$]"}
+         "PLEC_ExpfactorS": "", "GLAT": "[rad]"}
 
 
 def plot_correlation_matrices(sources, source_type, directory):
@@ -234,8 +234,8 @@ def plot_parameter_distributions(sources, source_type: str, directory: str):
         # Calculate distribution parameters of data
         mean, sigma = np.mean(values), np.std(values, ddof=1)
         scale, s = log_normal_parameter(values)
-        logistic_scale = sigma * (np.sqrt(3) / np.pi)
-        log_logistic_scale = np.std(np.log(values), ddof=1) * (np.sqrt(3) / np.pi)
+        # logistic_scale = sigma * (np.sqrt(3) / np.pi)
+        # log_logistic_scale = np.std(np.log(values), ddof=1) * (np.sqrt(3) / np.pi)
 
         # Plot Gaussian using mean and standard deviation of data
         x_values = np.linspace(np.min(values), np.max(values), 1000)
@@ -247,12 +247,16 @@ def plot_parameter_distributions(sources, source_type: str, directory: str):
                      linestyle='--')
 
         # Plot Logistic distribution using mean and standard deviation of data (I noted similarity of shapes)
-        subplot.plot(x_values, logistic.pdf(x_values, loc=mean, scale=logistic_scale), color='purple', label='Logistic',
-                     linestyle=":")
+        # subplot.plot(x_values, logistic.pdf(x_values, loc=mean, scale=logistic_scale), color='purple', label='Logistic',
+        #              linestyle=":")
 
         # Plot log-logistic distribution using mean and standard deviation of data (I noted similarity of shapes)
-        subplot.plot(x_values, fisk.pdf(x_values, scale=np.exp(np.mean(np.log(x_values))), c=1 / log_logistic_scale),
-                     color='green', label='Log-Logistic')
+        # subplot.plot(x_values, fisk.pdf(x_values, scale=np.exp(np.mean(np.log(x_values))), c=1 / log_logistic_scale),
+        #              color='green', label='Log-Logistic')
+
+        cauchy_params = cauchy.fit(values, floc=0)
+
+        subplot.plot(x_values, cauchy.pdf(x_values, *cauchy_params), label="Cauchy", color='green')
 
         # Long line
         long_line = "\n"

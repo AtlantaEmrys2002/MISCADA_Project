@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.stats import chi2, kstest, lognorm, Normal
+from scipy.stats import cauchy, chi2, kstest, lognorm, Normal
 
 
 def chi_squared_test(values, num_bins: int, distribution: str) -> None:
@@ -28,6 +28,12 @@ def chi_squared_test(values, num_bins: int, distribution: str) -> None:
             std_log = np.sqrt(np.log(1 + (std_square / mean_square)))
 
             X = lognorm(s=std_log, scale=np.exp(mean_log))
+
+        case "cauchy":
+
+            params = cauchy.fit(values, floc=0)
+
+            X = cauchy(*params)
 
         case _:
 
@@ -118,6 +124,14 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05) -> None:
             std_log = np.sqrt(np.log(1 + (std_square / mean_square)))
 
             x = lognorm(s=std_log, scale=np.exp(mean_log))
+            ks_stat, p_val = kstest(values, x.cdf)
+
+        case "cauchy":
+
+            params = cauchy.fit(values, floc=0)
+
+            x = cauchy(*params)
+
             ks_stat, p_val = kstest(values, x.cdf)
 
         case _:

@@ -112,7 +112,7 @@ def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
     print("PARAMETER DISTRIBUTION ANALYSIS")
     print('-' * 60)
 
-    prob_dist = ['normal', 'lognorm']
+    prob_dist = ['normal', 'lognorm', 'cauchy']
 
     # AGNs
 
@@ -248,7 +248,7 @@ agn_rows, pulsar_rows, source_detection_threshold, fluxes_4fgl = catalog_data_pr
 
 # Generate simulated AGN sources
 
-# agns = generate_mock_agn_catalog(file, agn_rows.copy(), detection_threshold=source_detection_threshold)
+agns = generate_mock_agn_catalog(file, agn_rows.copy(), detection_threshold=source_detection_threshold)
 
 # Generate simulated pulsar sources
 
