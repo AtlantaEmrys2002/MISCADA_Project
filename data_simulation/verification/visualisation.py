@@ -6,7 +6,7 @@ import numpy as np
 import numpy.typing as npt
 
 
-def plot_agn_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64], directory) -> None:
+def plot_agn_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64], directory:str) -> None:
 
     # Data Processing
 
@@ -27,32 +27,34 @@ def plot_agn_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.flo
     # Set plot size
     plt.rcParams["figure.figsize"] = (6.4, 4.8)
 
+    fig, ax = plt.subplots(1, 1)
+
     # Plot 4FGL data
     bin_edges = 10**np.linspace(-14, -9, 50)
     counts, bins = np.histogram(energy_fluxes_4fgl, bins=bin_edges)
-    plt.stairs(counts, bins, label='4FGL')
+    ax.stairs(counts, bins, label='4FGL')
 
     # Plot simulated data
-    bin_edges = 10**np.linspace(-15, -8, 50)
+    bin_edges = 10 ** np.linspace(-15, -8, 50)
     counts, bins = np.histogram(energy_fluxes, bins=bin_edges)
-    plt.stairs(counts, bins, label='Simulated')
+    ax.stairs(counts, bins, label='Simulated')
 
     # Formatting
 
-    plt.title('AGN Luminosity Function')
+    fig.suptitle('AGN Luminosity Function')
 
-    plt.xlabel('Energy Flux')
-    plt.ylabel('No. Sources')
+    ax.set_xlabel('Energy Flux')
+    ax.set_ylabel('No. Sources')
 
-    plt.xscale('log')
-    plt.yscale('log')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
 
-    plt.xlim(10**-14, 10**-8)
-    plt.ylim(top=10**4)
+    ax.set_xlim(10 ** -14, 10 ** -8)
+    ax.set_ylim(top=10 ** 4)
 
-    plt.legend()
+    ax.legend()
 
-    plt.savefig(directory + "/4fgl_agn_luminosity_function.png")
+    fig.savefig(directory + "/4fgl_agn_luminosity_function.png")
 
     plt.close()
 

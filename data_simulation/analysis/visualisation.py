@@ -336,10 +336,10 @@ def plot_parameter_relationships(sources, source_type: str, directory: str):
         # Subplot formatting
         for a in [ax, ax2]:
 
-            a[row, col].set_title(axis_labels[var1] + ' against ' + axis_labels[var2], fontsize=12)
+            a[row, col].set_title(mathematical_notation[var1] + ' against ' + mathematical_notation[var2], fontsize=12)
 
             a[row, col].set_xlabel("{} {}".format(mathematical_notation[var2], units[var2]))
-            a[row, col].set_ylabel("{} {}".format(mathematical_notation[var1],units[var1]))
+            a[row, col].set_ylabel("{} {}".format(mathematical_notation[var1], units[var1]))
 
             a[row, col].legend(fontsize=8, loc='upper left')
 
