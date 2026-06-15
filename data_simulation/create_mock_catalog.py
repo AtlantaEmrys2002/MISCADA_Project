@@ -23,24 +23,17 @@
 # 7. CHECK ALL UNITS - ID43
 
 # LIBRARIES
-import numpy as np
-from astropy import units as u
-import matplotlib.pyplot as plt
 from pathlib import Path
 from scipy import stats
-from sklearn.metrics import root_mean_squared_error
 
 # Relative imports
-# from analysis.correlation import fitting_agn_pivot_energy_spectral_slope_relation
-from analysis.visualisation import plot_fitting_correlated_variable_dependency
 from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
-from analysis.visualisation import (plot_correlation_matrices, plot_parameter_distributions,
-                                    plot_parameter_relationships)
-from verification.visualisation import plot_agn_luminosity_function, plot_spatial_distribution
+from analysis.visualisation import *
+from data_simulation.source_generation.utils import split_normal
 from read_write_functions import catalog_data_preparation
 from source_generation.agn_generation import generate_mock_agn_catalog
 from source_generation.pulsar_generation import generate_mock_pulsar_catalog
-from data_simulation.source_generation.utils import split_normal
+from verification.visualisation import plot_agn_luminosity_function, plot_spatial_distribution
 
 # VISUALISATIONS
 
@@ -95,180 +88,6 @@ def visualising_pulsar_latitude_distributions(sigma_1, sigma_2, x_values, counts
     plt.legend()
 
     plt.show()
-
-
-print("starting...")
-
-
-def fitting_agn_pivot_energy_flux_density_relation(agns):
-
-    # IMPORTANT
-    # N.B. Could come back to and take into account ERROR on each observation of pivot energy etc. (using uncertainty
-    # for both E_0 and F_0)
-
-    # Format data
-
-    # Remove pulsar columns
-    # agns.remove_columns(['PLEC_Flux_Density', 'PLEC_IndexS', 'PLEC_Exp_Index', 'PLEC_ExpfactorS'])
-
-    # Remove spatial column for AGNS - AGNs are known to be approximately isotropically distributed on the sky
-    # agns.remove_column('GLAT')
-
-    # Convert units
-
-    # Select pivot energy values and convert from MeV to GeV
-
-    agns['Pivot_Energy'] = agns['Pivot_Energy'].to(u.GeV)
-    agns['LP_Flux_Density'] = agns['LP_Flux_Density'].to(u.ph / (u.cm * u.cm * u.GeV * u.s))
-
-    agns = agns.to_pandas()
-
-    # Remove sources with NaN values
-    agns.dropna(inplace=True)
-
-    # Create plot
-
-    plt.rcParams["figure.figsize"] = (8, 4)
-    fig, ax = plt.subplots(1, 2)
-
-    # Plot raw data
-
-    log_pivot_energy = np.log(agns['Pivot_Energy'])
-    log_flux_density = np.log(agns['LP_Flux_Density'])
-
-    ax[0].scatter(agns['Pivot_Energy'], agns['LP_Flux_Density'], s=8, marker='+')
-    ax[1].scatter(log_pivot_energy, log_flux_density, s=8, marker='+')
-
-    # Fit relationships between AGN flux density and pivot energy
-
-    x_values = np.linspace(np.min(agns['Pivot_Energy']), np.max(agns['Pivot_Energy']), 1000)
-    log_x_values = np.linspace(np.min(log_pivot_energy), np.max(log_pivot_energy), 1000)
-
-    # Straight line
-    m, c = np.polyfit(log_pivot_energy, log_flux_density, deg=1)
-    ax[1].plot(log_x_values, m * log_x_values + c, color='red', label='Linear')
-
-    # non-logarithmic fit
-    ax[0].plot(x_values, (x_values ** m) * (np.e ** c), label='Log Linear', color='red')
-
-    # Normalised/Standardised/Studentised Residual
-    residuals_straight = log_flux_density - (m * log_pivot_energy + c)
-
-    print("RMSE of Linear Fit: {}".format(root_mean_squared_error(log_flux_density, m * log_pivot_energy + c)))
-    print('m: {} c: {}'.format(m, c))
-
-    # Quadratic
-    # x_values = np.linspace(np.min(log_pivot_energy), np.max(log_pivot_energy), 1000)
-    a, b, c = np.polyfit(log_pivot_energy, log_flux_density, deg=2)
-    ax[1].plot(np.log(x_values), (a * np.log(x_values) ** 2) + (b * np.log(x_values)) + c, color='green', label='Quadratic', linestyle='-.')
-
-    # non-logarithmic fit
-    ax[0].plot(np.e ** log_x_values, np.e ** ((a * log_x_values ** 2) + (b * log_x_values) + c), color='green', label='Log Quadratic', linestyle='-.')
-
-    residuals_quad = log_flux_density - ((a * log_pivot_energy ** 2) + (b * log_pivot_energy) + c)
-
-    print("RMSE of Quadratic Fit: {}".format(root_mean_squared_error(log_flux_density, (a * log_pivot_energy ** 2)
-                                                                     + (b * log_pivot_energy) + c)))
-    print('a: {} b: {} c: {}'.format(a, b, c))
-
-    print("No. Real Solutions: ".format((b ** 2) - (4 * a * c)))
-
-    # Cubic
-    # x_values = np.linspace(np.min(log_pivot_energy), np.max(log_pivot_energy), 1000)
-    a, b, c, d = np.polyfit(log_pivot_energy, log_flux_density, deg=3)
-    ax[1].plot(log_x_values, (a * log_x_values ** 3) + (b * log_x_values ** 2) + (c * log_x_values) + d, color='orange',
-               label='Cubic', linestyle='--')
-
-    # non-logarithmic fit
-    ax[0].plot(np.e ** np.log(x_values), np.e ** ((a * np.log(x_values) ** 3) + (b * np.log(x_values) ** 2) + (c * np.log(x_values)) + d), linestyle='--', label='Log Cubic', color='orange')
-
-    residuals_cubic = log_flux_density - ((a * log_pivot_energy ** 3) + (b * log_pivot_energy ** 2) + (c * log_pivot_energy)
-                                    + d)
-
-    print("RMSE of Cubic Fit: {}".format(root_mean_squared_error(log_flux_density, (a * log_pivot_energy ** 3) + (b * log_pivot_energy ** 2) + (c * log_pivot_energy)
-                                    + d)))
-    print('a: {} b: {} c: {} d: {}'.format(a, b, c, d))
-
-    # n^4
-
-    # x_values = np.linspace(np.min(log_pivot_energy), np.max(log_pivot_energy), 1000)
-    a, b, c, d, e = np.polyfit(log_pivot_energy, log_flux_density, deg=4)
-    ax[1].plot(log_x_values, (a * log_x_values ** 4) + (b * log_x_values ** 3) + (c * log_x_values ** 2) +
-               (d * log_x_values) + e, color='purple', label='$n^4$', linestyle=':')
-
-    # non-logarithmic fit
-    ax[0].plot(np.e ** np.log(x_values), np.e ** ((a * np.log(x_values) ** 4) + (b * np.log(x_values) ** 3) + (c * np.log(x_values) ** 2) +
-               (d * np.log(x_values)) + e), color='purple', label='Log $n^4$', linestyle=':')
-
-    residuals_4 = log_flux_density - ((a * log_pivot_energy ** 4) + (b * log_pivot_energy ** 3) + (c * log_pivot_energy ** 2) + (d * log_pivot_energy) + e)
-
-    print("RMSE of $n^4$ Fit: {}".format(root_mean_squared_error(log_flux_density, (a * log_pivot_energy ** 4) + (b * log_pivot_energy ** 3) + (c * log_pivot_energy ** 2) + (d * log_pivot_energy) + e)))
-    print('a: {} b: {} c: {} d: {} e: {}'.format(a, b, c, d, e))
-
-    # Calculate least squares fit - in case variables need to be normally distributed, we know that log of E_0 and log
-    # of F_0 are both normally distributed (log-normal distribution)
-
-    # Formatting
-
-    fig.suptitle('Fitting AGN Flux Density-Pivot Energy Relationship')
-
-    ax[0].set_xlabel('$E_0$')
-    ax[0].set_ylabel('$F_{0, AGN}$')
-    ax[0].set_title('Flux Density against Pivot Energy', fontsize=10)
-    ax[0].legend()
-
-    ax[1].set_title('Log-Log Plot of Flux Density against Pivot Energy', fontsize=10)
-    ax[1].set_xlabel('log $E_0$')
-    ax[1].set_ylabel('log $F_{0, AGN}$')
-    ax[1].legend()
-
-    # Scientific notation
-    t = ax[0].yaxis.get_offset_text()
-    t.set_x(-0.2)
-
-    fig.tight_layout()
-    fig.align_titles()
-
-    fig.show()
-
-    # Residuals
-
-    plt.rcParams["figure.figsize"] = (27, 6)
-
-    fig2, ax2 = plt.subplots(1, 4)
-
-    fig2.suptitle('Residuals')
-
-    ax2[0].scatter(log_pivot_energy, residuals_straight / (np.std(residuals_straight, ddof=1)), s=4)
-    ax2[1].scatter(log_pivot_energy, residuals_quad / np.std(residuals_quad, ddof=1), s=4)
-
-    print("Standard Deviation of Residuals for Quadratic Fit: {}".format(np.std(residuals_quad, ddof=1)))
-
-    # CHECKING SIMULATED NOISE
-    # ax2[1].scatter(log_pivot_energy, np.random.normal(loc=0, scale=np.std(residuals_quad, ddof=1), size=len(log_pivot_energy)), s=2)
-
-    # LOOKING AT MEASUREMENTS TEXTBOOK - WANT ABOUT 96% BETWEEN -2 and +2
-    print("Percentage of normalised residuals outside of [-2, 2]: {}".format(1 - np.sum(np.abs(residuals_quad / np.std(residuals_quad)) > 2)/len(residuals_quad)))
-
-    ax2[2].scatter(log_pivot_energy, residuals_cubic / np.std(residuals_cubic, ddof=1), s=4)
-    ax2[3].scatter(log_pivot_energy, residuals_4 / np.std(residuals_4, ddof=1), s=4)
-
-    ax2[0].set_title('Linear Fit to Log-Log Plot')
-    ax2[1].set_title('Quadratic Fit to Log-Log Plot')
-    ax2[2].set_title('Cubic Fit to Log-Log Plot')
-    ax2[3].set_title('$n^4$ Fit to Log-Log Plot')
-
-    ax2[0].set_xlabel('log $E_0$')
-    ax2[1].set_xlabel('log $E_0$')
-    ax2[2].set_xlabel('log $E_0$')
-    ax2[3].set_xlabel('log $E_0$')
-
-    ax2[0].set_ylabel('$y_i - \hat{y}_i$')
-    ax2[1].set_ylabel('$y_i - \hat{y}_i$')
-    ax2[2].set_ylabel('$y_i - \hat{y}_i$')
-    ax2[3].set_ylabel('$y_i - \hat{y}_i$')
-
-    fig2.show()
 
 
 def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
@@ -341,9 +160,13 @@ def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
     # CORRELATION ANALYSIS
 
     print("PARAMETER CORRELATION ANALYSIS")
-    print("\n")
+    print('-' * 60)
 
     # AGNs
+
+    print("AGNS")
+
+    print('-' * 60)
 
     # Plot parameters against one another to visualise relationships
     plot_parameter_relationships(agns, source_type="AGN", directory=directory + "/parameter_correlations")
@@ -355,17 +178,29 @@ def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
     plot_fitting_correlated_variable_dependency(agns["Pivot_Energy"], agns["LP_Index"], source_type="AGN",
                                                      directory=directory + "/parameter_correlations")
 
+    print('-' * 60)
+
     # Fit relationships to identified correlated variables - pivot energy and flux_density
     plot_fitting_correlated_variable_dependency(agns["Pivot_Energy"], agns["LP_Flux_Density"], logarithmic_fit=False,
                                                 source_type="AGN", directory=directory + "/parameter_correlations")
 
+    print('-' * 60)
+
     # Pulsars
+
+    print("Pulsars")
+
+    print('-' * 60)
 
     # Plot parameters against one another to visualise relationships
     plot_parameter_relationships(pulsars, source_type="Pulsar", directory=directory + "/parameter_correlations")
 
     # Plot pulsar parameter correlation matrices
     plot_correlation_matrices(pulsars, source_type="Pulsar", directory=directory + "/parameter_correlations")
+
+    # Fit relationships to identified correlated variables - pivot energy and flux_density
+    plot_fitting_correlated_variable_dependency(pulsars["Pivot_Energy"], pulsars["PLEC_Flux_Density"],
+                                                source_type="Pulsar", directory=directory + "/parameter_correlations")
 
 
 def verification(simulated_agns, simulated_pulsars, directory="./plots/verification"):
@@ -392,14 +227,9 @@ def verification(simulated_agns, simulated_pulsars, directory="./plots/verificat
                               directory=directory)
 
 
-
-
-
-
 def num_sources_to_generate(energy_fluxes_4fgl, detection_threshold):
 
     # THIS DETERMINES THE LUMINOSITY FUNCTION OF MOCK CATALOG - NOT FINISHED YET
-
 
     # The minimum energy flux of our generated sources is an order of magnitude less than the 4FGL
     our_threshold = detection_threshold / 10
@@ -425,31 +255,32 @@ def num_sources_to_generate(energy_fluxes_4fgl, detection_threshold):
     n_noise = np.random.uniform(low=0.8, high=1.3, size=len(bin_intervals) - peak)
 
 
+# MAIN PROGRAM
+
+print("starting catalog simulation...")
+
 # Read in catalog data
 
-agn_rows, pulsar_rows, source_detection_threshold, fluxes_4fgl = catalog_data_preparation("/Volumes/T7/data/catalog/4FGL_DR4.fit")
+file = "/Volumes/T7/data/catalog/4FGL_DR4.fit"
+
+agn_rows, pulsar_rows, source_detection_threshold, fluxes_4fgl = catalog_data_preparation(file)
 
 # Analyse parameters, their distributions, and their correlations
 
-analysis(agn_rows, pulsar_rows)
-
-# fitting_agn_pivot_energy_flux_density_relation(agn_rows.copy())
-
-# fitting_agn_pivot_energy_spectral_slope_relation(agn_rows.copy())
+# analysis(agn_rows, pulsar_rows)
 
 # Generate simulated AGN sources
 
-# agns = generate_mock_agn_catalog(agn_rows.copy(), num_agns=100, detection_threshold=source_detection_threshold)
+agns = generate_mock_agn_catalog(agn_rows.copy(), num_agns=20, detection_threshold=source_detection_threshold)
 
 # Generate simulated pulsar sources
 
-# pulsars = generate_mock_pulsar_catalog(pulsar_rows.copy(), 100)
-
-# print(pulsars[0])
+pulsars = generate_mock_pulsar_catalog(pulsar_rows.copy(), num_pulsars=200)
 
 # Verify realism and correctness of generated gamma-ray sources
-# verification(agns, pulsars)
+verification(agns, pulsars)
 
+print("catalog simulation finished")
 
 # REFERENCES
 

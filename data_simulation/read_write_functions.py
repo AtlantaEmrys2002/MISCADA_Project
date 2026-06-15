@@ -113,51 +113,47 @@ def catalog_data_preparation(file_name: str):
     catalog = QTable.read(file_name, format='fits', hdu=1)
 
     # Select relevant columns
-    columns = ('Pivot_Energy', 'LP_Flux_Density', 'PLEC_Flux_Density', 'LP_Index', 'LP_beta', 'PLEC_IndexS',
-               'PLEC_Exp_Index', 'PLEC_ExpfactorS', 'CLASS1', 'GLAT')
+    columns = ("Pivot_Energy", "LP_Flux_Density", "PLEC_Flux_Density", "LP_Index", "LP_beta", "PLEC_IndexS",
+               "PLEC_Exp_Index", "PLEC_ExpfactorS", "CLASS1", "GLAT")
 
     # Find detection threshold of sources (characterised by minimum energy flux)
-    source_detection_threshold = np.min(catalog['Energy_Flux100'].value)
+    source_detection_threshold = np.min(catalog["Energy_Flux100"].value)
 
     # Used to determine the number of sources to generate
-    energy_fluxes_4fgl = catalog['Energy_Flux100'].value
+    energy_fluxes_4fgl = catalog["Energy_Flux100"].value
 
     # Select relevant columns
     catalog = catalog[columns]
 
     # Reformat CLASS1 column - remove empty spaces and make all lower case
-    catalog['CLASS1'] = np.asarray([k.decode('utf-8').strip().lower() for k in catalog['CLASS1'].value.filled('-')])
+    catalog["CLASS1"] = np.asarray([k.decode('utf-8').strip().lower() for k in catalog["CLASS1"].value.filled('-')])
 
     # Convert pivot energy to GeV - CHECK THIS - MeV or GeV!!
-    catalog['Pivot_Energy'] = catalog['Pivot_Energy'].to(u.GeV)
+    # catalog['Pivot_Energy'] = catalog['Pivot_Energy'].to(u.GeV)
+    # catalog["Pivot_Energy"] = catalog["Pivot_Energy"].to(u.MeV)
 
     # Select all rows that describe pulsars
-    pulsar_mask = (catalog['CLASS1'] == 'psr')
+    pulsar_mask = (catalog["CLASS1"] == "psr")
 
     # Select all rows that describe AGN
-    agn_mask = np.isin(catalog['CLASS1'].data, np.array(['bcu', 'sey', 'ssrq', 'bll', 'fsrq', 'rdg', 'nlsy1', 'agn']))
+    agn_mask = np.isin(catalog["CLASS1"].data, np.array(["bcu", "sey", "ssrq", "bll", "fsrq", "rdg", "nlsy1", "agn"]))
 
     # Delete unnecessary column
-    catalog.remove_column('CLASS1')
+    catalog.remove_column("CLASS1")
 
     agn_data = catalog[agn_mask].copy()
     pulsar_data = catalog[pulsar_mask].copy()
 
     # Select relevant columns for each source type
 
+    # N.B. remove spatial column for AGNS - AGNs are known to be approximately isotropically distributed on the sky
     agn_data = agn_data["LP_Flux_Density", "Pivot_Energy", "LP_Index", "LP_beta"]
+
     pulsar_data = pulsar_data[
         ("PLEC_Flux_Density", "Pivot_Energy", "PLEC_IndexS", "PLEC_Exp_Index", "PLEC_ExpfactorS", "GLAT")]
 
     # Convert latitudes from degrees to radians
     pulsar_data["GLAT"] = pulsar_data["GLAT"].to(u.rad)
-
-    # EXPERIMENT - REMOVE THIS IF NECESSARY OR GOING FOR MeV
-    # agn_data['LP_Flux_Density'] = agn_data['LP_Flux_Density'].to(u.ph / (u.cm * u.cm * u.GeV * u.s))
-    # pulsar_data['PLEC_Flux_Density'] = pulsar_data['PLEC_Flux_Density'].to(u.ph / (u.cm * u.cm * u.GeV * u.s))
-
-
-
 
     # Separate into AGN and pulsars
     return agn_data, pulsar_data, source_detection_threshold, energy_fluxes_4fgl
@@ -169,7 +165,7 @@ def pulsar_xml_writer(sources, save_path_file: str):
 
     root = minidom.Document()
 
-    xml = root.createElement('source_library')
+    xml = root.createElement("source_library")
 
     xml.setAttribute('title', 'source library')
 

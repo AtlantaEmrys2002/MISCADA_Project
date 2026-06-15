@@ -19,7 +19,7 @@ mathematical_notation = {"Pivot_Energy": "$E_0$", "LP_Flux_Density": "$F_0$", "L
                          "PLEC_Exp_Index": "$b$", "PLEC_ExpfactorS": "$a$", "GLAT": "Latitude"}
 
 # Used for indicating units
-units = {"LP_Flux_Density": "[ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$", "Pivot_Energy": "[GeV]", "LP_Index": "",
+units = {"LP_Flux_Density": "[ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$", "Pivot_Energy": "[MeV]", "LP_Index": "",
          "LP_beta": "",
          "PLEC_IndexS": "", "PLEC_Flux_Density": "[ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$", "PLEC_Exp_Index": "",
          "PLEC_ExpfactorS": "", "GLAT": "[$\degree$]"}
@@ -58,6 +58,11 @@ def plot_correlation_matrices(sources, source_type, directory):
 
 
 def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, directory: str, logarithmic_fit=True):
+    # N.B. when calculating the least squares fit - in case variables need to be normally distributed, we know that log
+    # of E_0 and log of F_0 are both normally distributed (log-normal distribution)
+
+    print("{} - {} Relationship".format(axis_labels[var1.name], axis_labels[var2.name]))
+    print('-' * 60)
 
     plt.rcParams["figure.figsize"] = (10, 5)
 
@@ -100,10 +105,20 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
                    linestyle='-.')
         ax[1].plot(log_x_values, polynomial(log_x_values), color=colours[idx], label=labels[idx], linestyle="-.")
 
-        residuals.append(log_var2 - polynomial(log_var1))
+        polynomial_log = polynomial(log_var1)
 
         print(["{} : {}".format(chr((degree - x) + 97), polynomial.coef[x]) for x in range(degree, -1, -1)])
-        print("RMSE of {}: {}".format(labels[idx], root_mean_squared_error(log_var2, polynomial(log_var1))))
+        print("RMSE of {} Fit: {}".format(labels[idx], root_mean_squared_error(log_var2, polynomial_log)))
+
+        residuals.append(log_var2 - polynomial_log)
+        normalised_residual = (log_var2 - polynomial_log) / np.std(polynomial_log, ddof=1)
+
+        # From Measurements and Their Uncertainties - aim for 96% of normalised residuals to lie between -2 and +2
+        percentage = np.sum(np.abs(normalised_residual) > 2) / len(normalised_residual)
+
+        print("Percentage of normalised residuals in [-2, 2]: {}".format(1 - percentage))
+
+        print('-' * 60)
 
     # Logarithmic Fit
 
@@ -116,14 +131,26 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
         ax[0].plot(x_values, polynomial(log_x_values), color="black", label="Logarithmic")
         ax[1].plot(log_x_values, np.log(polynomial(log_x_values)), color="black", label="Logarithmic")
 
-        residuals.append(log_var2 - np.log(polynomial(log_var1)))
         print("a: {} b: {}".format(polynomial.coef[1], polynomial.coef[0]))
-        print("RMSE of Logarithmic Fit: {}".format(root_mean_squared_error(log_var2, np.log(polynomial(log_var1)))))
+
+        log_polynomial = np.log(polynomial(log_var1))
+
+        print("RMSE of Logarithmic Fit: {}".format(root_mean_squared_error(log_var2, log_polynomial)))
+
+        residuals.append(log_var2 - log_polynomial)
+
+        # From Measurements and Their Uncertainties - aim for 96% of normalised residuals to lie between -2 and +2
+        normalised_residual = (log_var2 - log_polynomial) / np.std(log_polynomial, ddof=1)
+        percentage = np.sum(np.abs(normalised_residual) > 2) / len(normalised_residual)
+        print("Percentage of normalised residuals in [-2, 2]: {}".format(1 - percentage))
+        print("Standard Deviation of Non-Normalised Residuals: {}".format(np.std(log_polynomial, ddof=1)))
+
+        print('-' * 60)
 
     # Formatting
 
     ax[0].set_xlabel("{} {}".format(mathematical_notation[var1.name], units[var1.name]))
-    ax[0].set_ylabel("{}".format(mathematical_notation[var2.name]))
+    ax[0].set_ylabel("{} {}".format(mathematical_notation[var2.name], units[var2.name]))
     ax[0].set_title("{} vs {}".format(axis_labels[var1.name], axis_labels[var2.name]))
     ax[0].legend()
 

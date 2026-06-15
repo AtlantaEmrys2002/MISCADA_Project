@@ -2,6 +2,8 @@ from . agn_spectral_parameters import agn_flux_density, agn_spectral_slope, ener
 from astropy import units as u
 import numpy as np
 
+import matplotlib.pyplot as plt
+
 
 # GENERATE FIXED NUMBER OF AGNS WITHIN GIVEN ENERGY FLUX RANGE FOR FLAT EXTRAPOLATION AT LOWER ENERGY FLUXES
 def agn_generator(agn_stats, energy_flux_low=0., energy_flux_high=1000.):
@@ -64,7 +66,7 @@ def generate_mock_agn_catalog(agn_data, num_agns=200, detection_threshold=np.flo
     # Select beta values and convert from masked to ordinary numpy array
     betas_agn = agn_data['LP_beta'].data.filled(np.nan)
 
-    # Select pivot energy values (in GeV)
+    # Select pivot energy values
     pivot_energies = agn_data['Pivot_Energy'].value
 
     # Calculate mean and standard deviation of log of pivot energies for random sampling
@@ -125,9 +127,9 @@ def generate_mock_agn_catalog(agn_data, num_agns=200, detection_threshold=np.flo
     #
     # # CHECK SIMULATED PIVOT ENERGIES AND SPECTRAL INDICES (ALPHAS) HAVE SAME CORRELATION AS IN 4FGL
     # plt.title('Simulated $\\alpha$ against $E_0$')
-    # plt.xlabel('log $E_0$')
-    # plt.ylabel('log $\\alpha$')
-    # plt.scatter(np.log(parameters[:, 0]), np.log(parameters[:, 2]), s=2)
+    # plt.xlabel('$E_0$')
+    # plt.ylabel('$\\alpha$')
+    # plt.scatter(parameters[:, 0], parameters[:, 2], s=2)
     # plt.show()
 
     return parameters
