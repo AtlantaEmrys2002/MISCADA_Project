@@ -1,9 +1,9 @@
 from . agn_spectral_parameters import agn_flux_density, agn_spectral_slope, energy_flux_agn
-from astropy import units as u
+from astropy.table import QTable
+from math import floor
 import numpy as np
 
 import matplotlib.pyplot as plt
-
 
 # GENERATE FIXED NUMBER OF AGNS WITHIN GIVEN ENERGY FLUX RANGE FOR FLAT EXTRAPOLATION AT LOWER ENERGY FLUXES
 def agn_generator(agn_stats, energy_flux_low=0., energy_flux_high=1000.):
@@ -56,7 +56,86 @@ def agn_generator(agn_stats, energy_flux_low=0., energy_flux_high=1000.):
             return np.array([pivot_energy, flux_density, spectral_slope, beta, energy_flux, longitude, latitude])
 
 
-def generate_mock_agn_catalog(agn_data, num_agns=200, detection_threshold=np.float64(1.0 * 10 ** (-12))):
+def luminosity_function_agn(catalog: str, detection_threshold):
+
+    # Used to build luminosity function of the simulated AGNs
+
+    # Read 4FGL Catalog
+    catalog = QTable.read(catalog, format='fits', hdu=1)['CLASS1', 'Energy_Flux100']
+
+    # Reformat columns
+    catalog['CLASS1'] = np.asarray([k.decode('utf-8').strip().lower() for k in catalog['CLASS1'].value.filled('-')])
+
+    # Select all rows that describe AGN
+    agn_mask = np.isin(catalog['CLASS1'].data, np.array(['bcu', 'sey', 'ssrq', 'bll', 'fsrq', 'rdg', 'nlsy1', 'agn']))
+    agns = catalog[agn_mask]
+
+    energy_fluxes_4fgl = agns['Energy_Flux100'].value
+
+    # Number of sources in the lowest energy flux bin
+    n_min = np.random.uniform(low=50, high=250)
+
+    # The minimum energy flux of our generated sources is an order of magnitude less than the 4FGL
+    our_threshold = detection_threshold / 10
+
+    # Following method detailed in ID8
+
+    # Bin 4FGL data
+    min_bin_val = np.log10(np.min(energy_fluxes_4fgl))
+    max_bin_val = np.log10(np.max(energy_fluxes_4fgl))
+
+    log_linspace = np.linspace(min_bin_val, max_bin_val)
+
+    bin_edges = 10 ** log_linspace
+    counts, bin_intervals = np.histogram(energy_fluxes_4fgl, bins=bin_edges)
+
+    # Calculate width of bins
+    bin_width = log_linspace[1] - log_linspace[0]
+
+    # Number of bins between current lowest energy bin and our faint source threshold
+    num_extra_bins = floor((np.log10(bin_intervals[0]) - np.log10(our_threshold)) / bin_width)
+
+    extra_intervals = [10 ** (np.log10(bin_intervals[0]) - (bin_width * x)) for x in range(num_extra_bins, 0, -1)]
+
+    # Create extra bin intervals
+
+    # Calculate number of random
+
+    # Find bin with the most AGNs
+    peak = np.argmax(counts)
+
+    # For any bin to the right of the peak that has 0 or 1 expected counts, set to 2
+    for k in range(peak, len(counts)):
+        if counts[k] == 1 or counts[k] == 0:
+            counts[k] = 2
+
+    # Generate random numbers for number of energy flux bins to the right of the peak
+    n_noise = list(np.random.uniform(low=0.8, high=1.3, size=len(bin_intervals) - 1 - peak))
+
+    # Create some noise in energy bins greater than peak
+    for k in range(peak, len(n_noise)):
+        counts[k + peak] = counts[k + peak] * n_noise[k]
+
+    bin_intervals = np.array(extra_intervals + list(bin_intervals))
+
+    # Set number of counts equal to peak for original 4FGL bins to the left of the peak
+    for k in range(0, peak):
+        counts[k] = n_min
+
+    counts = [0 for _ in range(num_extra_bins)] + list(counts)
+
+    for k in range(0, num_extra_bins):
+        counts[k] = n_min
+
+    # Convert counts to int
+    counts = [int(k) for k in counts]
+
+    peak = peak + num_extra_bins
+
+    return np.array([counts])[0], np.array(bin_intervals), peak
+
+
+def generate_mock_agn_catalog(catalog, agn_data, num_agns=200, detection_threshold=np.float64(1.0 * 10 ** (-12))):
 
     # Changed threshold from 2.0 * 10 ** -12 TO 1.0 * 10 ** -12 as threshold recommended by 4FGL DR4 (ID22) paper for
     # outside galactic plane and detection threshold has decreased since ID8 was published
@@ -76,47 +155,78 @@ def generate_mock_agn_catalog(agn_data, num_agns=200, detection_threshold=np.flo
 
     # CREATE NEW SOURCES
 
+    target_counts, target_bin_intervals, target_peak = luminosity_function_agn(catalog=catalog,
+                                                                               detection_threshold=detection_threshold)
+
+    actual_counts = np.zeros_like(target_counts)
+
     parameters = []
 
-    for x in range(num_agns):
+    while (actual_counts[0] < target_counts[0]) and np.any(np.less(actual_counts[target_peak:], target_counts[target_peak:])):
+
+        # new_source = agn_generator((mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn),
+        #                            energy_flux_low=detection_threshold, energy_flux_high=1000)
+
+        # Due to uncomplementary functionality - need max of intervals[:-1] - see reference Digitize Error
         new_source = agn_generator((mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn),
-                                    energy_flux_low=detection_threshold, energy_flux_high=1000)
-        parameters.append(np.array(new_source))
+                                   energy_flux_low=np.min(target_bin_intervals), energy_flux_high=np.max(target_bin_intervals[:-1]))
 
-    parameters = np.array(parameters)
+        idx = np.digitize(new_source[4], target_bin_intervals)
 
-    # FAINT SOURCE FLAT EXTRAPOLATION
+        if idx > 0 and idx < len(target_bin_intervals):
 
-    # Flat extrapolation of AGN - assume constant below given threshold (not Gaussian)
+            if actual_counts[idx] < target_counts[idx]:
 
-    # Bin data and take average of first three
-    bin_edges = 10 ** np.linspace(-14, -9)
-    counts, _ = np.histogram(parameters[:, 4], bins=bin_edges)
+                parameters.append(np.array(new_source))
+                actual_counts[idx] += 1
 
-    # Take average number of sources of first five bins that contain some sources for flat extrapolation
-    first_non_empty_bin = np.nonzero(counts)[0][0]
-    mean_counts_per_bin, std_counts_per_bin = (np.mean(counts[first_non_empty_bin: first_non_empty_bin + 10]),
-                                               np.std(counts[first_non_empty_bin: first_non_empty_bin + 10], ddof=1))
+        else:
 
-    faint_sources = []
+            parameters.append(np.array(new_source))
+            actual_counts[idx] += 1
 
-    # Extend to one order of magnitude less than the detection threshold of the 4FGL (similar premise to ID8)
-    our_threshold = np.argwhere(bin_edges >= detection_threshold / 10)[0][0]
 
-    for x in range(our_threshold, first_non_empty_bin):
-
-        # Generate number of sources in bin - approximately flat/same as bins at peak
-        counts_per_bin_flat_extrapolation = round(np.random.normal(loc=mean_counts_per_bin, scale=std_counts_per_bin))
-
-        for k in range(counts_per_bin_flat_extrapolation):
-            new_source = agn_generator((mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn),
-                                        bin_edges[x], bin_edges[x + 1])
-
-            faint_sources.append(new_source)
-
-    faint_sources = np.asarray(faint_sources)
-
-    parameters = np.vstack((parameters, faint_sources))
+    # parameters = []
+    #
+    # for x in range(num_agns):
+    #     new_source = agn_generator((mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn),
+    #                                 energy_flux_low=detection_threshold, energy_flux_high=1000)
+    #     parameters.append(np.array(new_source))
+    #
+    # parameters = np.array(parameters)
+    #
+    # # FAINT SOURCE FLAT EXTRAPOLATION
+    #
+    # # Flat extrapolation of AGN - assume constant below given threshold (not Gaussian)
+    #
+    # # Bin data and take average of first three
+    # bin_edges = 10 ** np.linspace(-14, -9)
+    # counts, _ = np.histogram(parameters[:, 4], bins=bin_edges)
+    #
+    # # Take average number of sources of first five bins that contain some sources for flat extrapolation
+    # first_non_empty_bin = np.nonzero(counts)[0][0]
+    # mean_counts_per_bin, std_counts_per_bin = (np.mean(counts[first_non_empty_bin: first_non_empty_bin + 10]),
+    #                                            np.std(counts[first_non_empty_bin: first_non_empty_bin + 10], ddof=1))
+    #
+    # faint_sources = []
+    #
+    # # Extend to one order of magnitude less than the detection threshold of the 4FGL (similar premise to ID8)
+    # our_threshold = np.argwhere(bin_edges >= detection_threshold / 10)[0][0]
+    #
+    # for x in range(our_threshold, first_non_empty_bin):
+    #
+    #     # Generate number of sources in bin - approximately flat/same as bins at peak
+    #     counts_per_bin_flat_extrapolation = round(np.random.normal(loc=mean_counts_per_bin, scale=std_counts_per_bin))
+    #
+    #     for k in range(counts_per_bin_flat_extrapolation):
+    #         new_source = agn_generator((mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn),
+    #                                     bin_edges[x], bin_edges[x + 1])
+    #
+    #         faint_sources.append(new_source)
+    #
+    # faint_sources = np.asarray(faint_sources)
+    #
+    # parameters = np.vstack((parameters, faint_sources))
 
     # CHECK SIMULATED FLUX DENSITIES AND PIVOT ENERGIES HAVE SAME CORRELATION AS IN 4FGL
     # plt.title('Simulated $F_0$ against $E_0$')
@@ -132,9 +242,10 @@ def generate_mock_agn_catalog(agn_data, num_agns=200, detection_threshold=np.flo
     # plt.scatter(parameters[:, 0], parameters[:, 2], s=2)
     # plt.show()
 
-    return parameters
+    return np.array(parameters)
 
 
 # REFERENCES
 
+# Digitise Error - https://stackoverflow.com/questions/4355132/numpy-digitize-returns-values-out-of-range
 # Numpy Float Handling - https://stackoverflow.com/questions/58083198/how-to-handle-both-float-and-array-input-in-python

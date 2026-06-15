@@ -228,63 +228,6 @@ def verification(simulated_agns, simulated_pulsars, directory="./plots/verificat
                               directory=directory)
 
 
-def luminosity_function_agn(energy_fluxes_4fgl, detection_threshold):
-
-    # Number of sources in lowest energy flux bin
-    n_min = np.random.uniform(low=50, high=250)
-
-    # THIS DETERMINES THE LUMINOSITY FUNCTION OF MOCK CATALOG - NOT FINISHED YET
-
-    # The minimum energy flux of our generated sources is an order of magnitude less than the 4FGL
-    our_threshold = detection_threshold / 10
-
-    # Following method detailed in ID8
-
-    # Bin 4FGL data
-    min_bin_val = np.log10(np.max(energy_fluxes_4fgl))
-    max_bin_val = np.log10(np.max(energy_fluxes_4fgl))
-
-    bin_edges = 10 ** np.linspace(min_bin_val, max_bin_val)
-    counts, bin_intervals = np.histogram(energy_fluxes_4fgl, bins=bin_edges)
-
-    # Calculate width of bins
-    bin_width = bin_intervals[1] - bin_intervals
-
-    # Number of bins between current lowest energy bin and our faint source threshold
-    num_extra_bins = floor((bin_intervals[0] - our_threshold) / bin_width)
-
-    # Create extra bin intervals
-    extra_bin_intervals = [bin_intervals[0] - (k * bin_width) for k in range(num_extra_bins - 1, -1, - 1)]
-
-    # Calculate number of random
-
-    # Find bin with the most number of AGNs
-    peak = np.argmax(counts)
-
-    # Generate random numbers for number of energy flux bins to the right of the peak
-    n_noise = np.random.uniform(low=0.8, high=1.3, size=len(bin_intervals) - peak)
-
-    # Create some noise in energy bins greater than peak
-    for k in range(peak, len(counts)):
-        counts[k] = counts[k] * n_noise[k]
-
-    bin_intervals = np.array(extra_bin_intervals + list(bin_intervals))
-
-    # Set number of counts equal to peak for original 4FGL bins to the left of the peak
-    for k in range(0, peak):
-        counts = n_min
-
-    counts = [0 for 0 in range(len(bin_intervals))] + counts
-
-    for k in range(0, len(extra_bin_intervals)):
-        counts = n_min
-        
-    # New peak
-    peak = np.argmax(counts)
-
-    return counts, bin_intervals, peak
-
-
 # MAIN PROGRAM
 
 print("starting catalog simulation...")
@@ -297,11 +240,11 @@ agn_rows, pulsar_rows, source_detection_threshold, fluxes_4fgl = catalog_data_pr
 
 # Analyse parameters, their distributions, and their correlations
 
-analysis(agn_rows, pulsar_rows)
+# analysis(agn_rows, pulsar_rows)
 
 # Generate simulated AGN sources
 
-agns = generate_mock_agn_catalog(agn_rows.copy(), num_agns=1000, detection_threshold=source_detection_threshold)
+agns = generate_mock_agn_catalog(file, agn_rows.copy(), num_agns=1000, detection_threshold=source_detection_threshold)
 
 # Generate simulated pulsar sources
 
