@@ -1,6 +1,8 @@
+from astropy.table import QTable
 from astropy import units as u
-from . pulsar_spectral_parameters import energy_flux_pulsar
+from math import floor
 import numpy as np
+from . pulsar_spectral_parameters import energy_flux_pulsar
 from . utils import split_normal
 from scipy.optimize import curve_fit
 from scipy.stats import Mixture, Normal
@@ -29,26 +31,24 @@ def pulsar_generator(pulsar_stats, energy_flux_low, energy_flux_high, sigma_1, s
 
         # Generate new pivot energies - in ID8, they randomly select pivot energies from a Gaussian distribution.
         # However, the distribution of pivot energies in the 4FGL follows log-normal more precise
-        pivot_energy = np.random.lognormal(mean=mean_log_pivot_energy_pulsars, sigma=std_log_pivot_energy_pulsars,
-                                             size=1)[0]
+        pivot_energy = np.random.lognormal(mean=mean_log_pivot_energy_pulsars, sigma=std_log_pivot_energy_pulsars)
 
         # Generate new flux densities - log-normal for flux densities
-        flux_density = np.random.lognormal(mean=mean_log_flux_density_pulsars, sigma=std_log_flux_density_pulsars,
-                                           size=1)[0]
+        flux_density = np.random.lognormal(mean=mean_log_flux_density_pulsars, sigma=std_log_flux_density_pulsars)
 
         # Gaussian recommended in ID8 - AT THE MOMENT - may change to log-normal
 
         # Generate new spectral slopes (Gammas) - CHANGED FROM GAUSSIAN TO LOG-NORMAL BASED ON CHI SQUARED GOODNESS OF FIT
         # ANALYSIS (THIS IS A CHANGE FROM ID8, WHICH RECOMMENDED GAUSSIAN)
         # spectral_slope = np.random.normal(loc=mean_Gamma_pulsars, scale=std_Gamma_pulsars, size=1)[0]
-        spectral_slope = np.random.lognormal(mean=mean_log_Gamma_pulsars, sigma=std_log_Gamma_pulsars, size=1)[0]
+        spectral_slope = np.random.lognormal(mean=mean_log_Gamma_pulsars, sigma=std_log_Gamma_pulsars)
 
         # Generate new exponential factors (as)
-        exponential_factor = np.random.lognormal(mean=mean_log_a_pulsars, sigma=std_log_a_pulsars, size=1)[0]
+        exponential_factor = np.random.lognormal(mean=mean_log_a_pulsars, sigma=std_log_a_pulsars)
 
         # Generate new exponential indices (bs) - changed to random choice instead of Gaussian (which was recommended in
         # ID8)
-        exponential_index = np.random.choice(choice_values, p=new_weights, size=1)[0]
+        exponential_index = np.random.choice(choice_values, p=new_weights)
 
         # Generate energy fluxes
         energy_flux = energy_flux_pulsar(pivot_energy, flux_density, spectral_slope, exponential_index,
@@ -77,7 +77,92 @@ def pulsar_generator(pulsar_stats, energy_flux_low, energy_flux_high, sigma_1, s
                                energy_flux, longitude, latitude])
 
 
-def generate_mock_pulsar_catalog(pulsars, num_pulsars=350):
+def luminosity_function_pulsar(catalog: str, detection_threshold):
+
+    # Used to build luminosity function of the simulated AGNs
+
+    # Read 4FGL Catalog
+    catalog = QTable.read(catalog, format='fits', hdu=1)['CLASS1', 'Energy_Flux100']
+
+    # Reformat columns
+    catalog['CLASS1'] = np.asarray([k.decode('utf-8').strip().lower() for k in catalog['CLASS1'].value.filled('-')])
+
+    # Select all rows that describe pulsars
+    pulsar_mask = (catalog["CLASS1"] == "psr")
+
+    pulsars = catalog[pulsar_mask]
+
+    energy_fluxes_4fgl = pulsars['Energy_Flux100'].value
+
+    # Number of sources in the lowest energy flux bin - different values for pulsars
+    n_min = np.random.uniform(low=15, high=25)
+
+    # The minimum energy flux of our generated sources is an order of magnitude less than the 4FGL
+    our_threshold = detection_threshold / 10
+
+    # Following method detailed in ID8
+
+    # Bin 4FGL data
+    min_bin_val = np.log10(np.min(energy_fluxes_4fgl))
+    max_bin_val = np.log10(np.max(energy_fluxes_4fgl))
+
+    # Changed number of bins here as only so many pulsars
+    log_linspace = np.linspace(min_bin_val, max_bin_val, 10)
+
+    bin_edges = 10 ** log_linspace
+    counts, bin_intervals = np.histogram(energy_fluxes_4fgl, bins=bin_edges)
+
+    # Calculate width of bins
+    bin_width = log_linspace[1] - log_linspace[0]
+
+    # FLAT EXTRAPOLATION TO FAINTER DETECTION THRESHOLD
+
+    # Extend to one order of magnitude less than the detection threshold of the 4FGL (similar premise to ID8) -
+    # assume constant below given threshold (not Gaussian)
+
+    # Number of bins between current lowest energy bin and our faint source threshold
+    num_extra_bins = floor((np.log10(bin_intervals[0]) - np.log10(our_threshold)) / bin_width)
+
+    extra_intervals = [10 ** (np.log10(bin_intervals[0]) - (bin_width * x)) for x in range(num_extra_bins, 0, -1)]
+
+    # Create extra bin intervals
+
+    # Calculate number of random
+
+    # Find bin with the most AGNs
+    peak = np.argmax(counts)
+
+    # For any bin to the right of the peak that has 0 or 1 expected counts, set to 2
+    for k in range(peak, len(counts)):
+        if counts[k] == 1 or counts[k] == 0:
+            counts[k] = 2
+
+    # Generate random numbers for number of energy flux bins to the right of the peak
+    n_noise = list(np.random.uniform(low=0.8, high=1.3, size=len(bin_intervals) - 1 - peak))
+
+    # Create some noise in energy bins greater than peak
+    for k in range(peak, len(n_noise)):
+        counts[k + peak] = counts[k + peak] * n_noise[k]
+
+    bin_intervals = np.array(extra_intervals + list(bin_intervals))
+
+    # Set number of counts equal to peak for original 4FGL bins to the left of the peak
+    for k in range(0, peak):
+        counts[k] = n_min
+
+    counts = [n_min for _ in range(num_extra_bins)] + list(counts)
+
+    # Convert counts to int
+    counts = [int(k) for k in counts]
+
+    peak = peak + num_extra_bins
+
+    return np.array([counts])[0], np.array(bin_intervals), peak
+
+
+# def generate_mock_pulsar_catalog(pulsars, num_pulsars=350):
+
+def generate_mock_pulsar_catalog(catalog: str, pulsars, detection_threshold):
 
     # Select pivot energy values (in GeV)
     pivot_energies = pulsars['Pivot_Energy'].value
@@ -94,7 +179,7 @@ def generate_mock_pulsar_catalog(pulsars, num_pulsars=350):
     a_values = pulsars['PLEC_ExpfactorS'].data
 
     # Select flux density values and convert from ph / (cm2 MeV s) to ph / (cm2 GeV s)
-    flux_densities = pulsars['PLEC_Flux_Density'].to(u.ph / (u.cm * u.cm * u.GeV * u.s)).value
+    flux_densities = pulsars['PLEC_Flux_Density'].value  # .to(u.ph / (u.cm * u.cm * u.GeV * u.s)).value
     log_flux_densities = np.log(flux_densities)
 
     # Log-normal for Gamma even though says Gaussian in ID8
@@ -143,11 +228,47 @@ def generate_mock_pulsar_catalog(pulsars, num_pulsars=350):
 
     parameters = []
 
-    for x in range(num_pulsars):
-        new_source = pulsar_generator(pulsar_stats, energy_flux_low=0, energy_flux_high=1000, sigma_1=popt[0],
-                                      sigma_2=popt[1])
-        parameters.append(np.array(new_source))
+    # for x in range(num_pulsars):
+    #     new_source = pulsar_generator(pulsar_stats, energy_flux_low=0, energy_flux_high=1000, sigma_1=popt[0],
+    #                                   sigma_2=popt[1])
+    #     parameters.append(np.array(new_source))
 
+    # CREATE NEW SOURCES
+
+    # Determine how many AGNs to generate based on 4FGL luminosity function
+    target_counts, target_bin_intervals, target_peak = luminosity_function_pulsar(catalog=catalog,
+                                                                               detection_threshold=detection_threshold)
+
+    actual_counts = np.zeros_like(target_counts)
+
+    parameters = []
+
+    while (actual_counts[0] < target_counts[0]) and np.any(np.less(actual_counts[target_peak:],
+                                                                   target_counts[target_peak:])):
+
+        # Due to uncomplimentary functionality - need max of intervals[:-1] - see reference to Digitize Error
+        # new_source = agn_generator((mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn),
+        #                            energy_flux_low=np.min(target_bin_intervals),
+        #                            energy_flux_high=np.max(target_bin_intervals[:-1]))
+
+        new_source = pulsar_generator(pulsar_stats, energy_flux_low=np.min(target_bin_intervals),
+                                      energy_flux_high=np.max(target_bin_intervals[:-1]), sigma_1=popt[0],
+                                      sigma_2=popt[1])
+
+        idx = np.digitize(new_source[5], target_bin_intervals)
+
+        if 0 < idx < len(target_bin_intervals):
+
+            if actual_counts[idx] < target_counts[idx]:
+                parameters.append(np.array(new_source))
+                actual_counts[idx] += 1
+
+        else:
+
+            parameters.append(np.array(new_source))
+            actual_counts[idx] += 1
+
+        print(actual_counts)
 
 
     # CUTOFF THRESHOLD AND LUMINOSITY FUNCTION CHECK

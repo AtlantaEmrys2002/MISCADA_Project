@@ -3,7 +3,6 @@ from astropy.table import QTable
 from math import floor
 import numpy as np
 
-import matplotlib.pyplot as plt
 
 # GENERATE FIXED NUMBER OF AGNS WITHIN GIVEN ENERGY FLUX RANGE FOR FLAT EXTRAPOLATION AT LOWER ENERGY FLUXES
 def agn_generator(agn_stats, energy_flux_low=0., energy_flux_high=1000.):
@@ -92,6 +91,11 @@ def luminosity_function_agn(catalog: str, detection_threshold):
     # Calculate width of bins
     bin_width = log_linspace[1] - log_linspace[0]
 
+    # FLAT EXTRAPOLATION TO FAINTER DETECTION THRESHOLD
+
+    # Extend to one order of magnitude less than the detection threshold of the 4FGL (similar premise to ID8) -
+    # assume constant below given threshold (not Gaussian)
+
     # Number of bins between current lowest energy bin and our faint source threshold
     num_extra_bins = floor((np.log10(bin_intervals[0]) - np.log10(our_threshold)) / bin_width)
 
@@ -122,10 +126,7 @@ def luminosity_function_agn(catalog: str, detection_threshold):
     for k in range(0, peak):
         counts[k] = n_min
 
-    counts = [0 for _ in range(num_extra_bins)] + list(counts)
-
-    for k in range(0, num_extra_bins):
-        counts[k] = n_min
+    counts = [n_min for _ in range(num_extra_bins)] + list(counts)
 
     # Convert counts to int
     counts = [int(k) for k in counts]
@@ -135,7 +136,7 @@ def luminosity_function_agn(catalog: str, detection_threshold):
     return np.array([counts])[0], np.array(bin_intervals), peak
 
 
-def generate_mock_agn_catalog(catalog, agn_data, num_agns=200, detection_threshold=np.float64(1.0 * 10 ** (-12))):
+def generate_mock_agn_catalog(catalog, agn_data, detection_threshold=np.float64(1.0 * 10 ** (-12))):
 
     # Changed threshold from 2.0 * 10 ** -12 TO 1.0 * 10 ** -12 as threshold recommended by 4FGL DR4 (ID22) paper for
     # outside galactic plane and detection threshold has decreased since ID8 was published
@@ -155,6 +156,7 @@ def generate_mock_agn_catalog(catalog, agn_data, num_agns=200, detection_thresho
 
     # CREATE NEW SOURCES
 
+    # Determine how many AGNs to generate based on 4FGL luminosity function
     target_counts, target_bin_intervals, target_peak = luminosity_function_agn(catalog=catalog,
                                                                                detection_threshold=detection_threshold)
 
@@ -162,18 +164,17 @@ def generate_mock_agn_catalog(catalog, agn_data, num_agns=200, detection_thresho
 
     parameters = []
 
-    while (actual_counts[0] < target_counts[0]) and np.any(np.less(actual_counts[target_peak:], target_counts[target_peak:])):
+    while (actual_counts[0] < target_counts[0]) and np.any(np.less(actual_counts[target_peak:],
+                                                                   target_counts[target_peak:])):
 
-        # new_source = agn_generator((mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn),
-        #                            energy_flux_low=detection_threshold, energy_flux_high=1000)
-
-        # Due to uncomplementary functionality - need max of intervals[:-1] - see reference Digitize Error
+        # Due to uncomplimentary functionality - need max of intervals[:-1] - see reference to Digitize Error
         new_source = agn_generator((mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn),
-                                   energy_flux_low=np.min(target_bin_intervals), energy_flux_high=np.max(target_bin_intervals[:-1]))
+                                   energy_flux_low=np.min(target_bin_intervals),
+                                   energy_flux_high=np.max(target_bin_intervals[:-1]))
 
         idx = np.digitize(new_source[4], target_bin_intervals)
 
-        if idx > 0 and idx < len(target_bin_intervals):
+        if 0 < idx < len(target_bin_intervals):
 
             if actual_counts[idx] < target_counts[idx]:
 
@@ -184,49 +185,6 @@ def generate_mock_agn_catalog(catalog, agn_data, num_agns=200, detection_thresho
 
             parameters.append(np.array(new_source))
             actual_counts[idx] += 1
-
-
-    # parameters = []
-    #
-    # for x in range(num_agns):
-    #     new_source = agn_generator((mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn),
-    #                                 energy_flux_low=detection_threshold, energy_flux_high=1000)
-    #     parameters.append(np.array(new_source))
-    #
-    # parameters = np.array(parameters)
-    #
-    # # FAINT SOURCE FLAT EXTRAPOLATION
-    #
-    # # Flat extrapolation of AGN - assume constant below given threshold (not Gaussian)
-    #
-    # # Bin data and take average of first three
-    # bin_edges = 10 ** np.linspace(-14, -9)
-    # counts, _ = np.histogram(parameters[:, 4], bins=bin_edges)
-    #
-    # # Take average number of sources of first five bins that contain some sources for flat extrapolation
-    # first_non_empty_bin = np.nonzero(counts)[0][0]
-    # mean_counts_per_bin, std_counts_per_bin = (np.mean(counts[first_non_empty_bin: first_non_empty_bin + 10]),
-    #                                            np.std(counts[first_non_empty_bin: first_non_empty_bin + 10], ddof=1))
-    #
-    # faint_sources = []
-    #
-    # # Extend to one order of magnitude less than the detection threshold of the 4FGL (similar premise to ID8)
-    # our_threshold = np.argwhere(bin_edges >= detection_threshold / 10)[0][0]
-    #
-    # for x in range(our_threshold, first_non_empty_bin):
-    #
-    #     # Generate number of sources in bin - approximately flat/same as bins at peak
-    #     counts_per_bin_flat_extrapolation = round(np.random.normal(loc=mean_counts_per_bin, scale=std_counts_per_bin))
-    #
-    #     for k in range(counts_per_bin_flat_extrapolation):
-    #         new_source = agn_generator((mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn),
-    #                                     bin_edges[x], bin_edges[x + 1])
-    #
-    #         faint_sources.append(new_source)
-    #
-    # faint_sources = np.asarray(faint_sources)
-    #
-    # parameters = np.vstack((parameters, faint_sources))
 
     # CHECK SIMULATED FLUX DENSITIES AND PIVOT ENERGIES HAVE SAME CORRELATION AS IN 4FGL
     # plt.title('Simulated $F_0$ against $E_0$')

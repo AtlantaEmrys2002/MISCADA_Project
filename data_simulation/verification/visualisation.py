@@ -6,7 +6,8 @@ import numpy as np
 import numpy.typing as npt
 
 
-def plot_agn_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64], directory:str) -> None:
+def plot_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64], directory:str,
+                                 source_type="AGN") -> None:
 
     # Data Processing
 
@@ -16,11 +17,19 @@ def plot_agn_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.flo
     # Reformat columns
     catalog['CLASS1'] = np.asarray([k.decode('utf-8').strip().lower() for k in catalog['CLASS1'].value.filled('-')])
 
-    # Select all rows that describe AGN
-    agn_mask = np.isin(catalog['CLASS1'].data, np.array(['bcu', 'sey', 'ssrq', 'bll', 'fsrq', 'rdg', 'nlsy1', 'agn']))
-    agns = catalog[agn_mask]
+    if source_type == "AGN":
 
-    energy_fluxes_4fgl = agns['Energy_Flux100'].value
+        # Select all rows that describe AGN
+        agn_mask = np.isin(catalog['CLASS1'].data, np.array(['bcu', 'sey', 'ssrq', 'bll', 'fsrq', 'rdg', 'nlsy1', 'agn']))
+        sources = catalog[agn_mask]
+
+    else:
+
+        # Select all rows that describe pulsars
+        pulsar_mask = (catalog["CLASS1"] == "psr")
+        sources = catalog[pulsar_mask]
+
+    energy_fluxes_4fgl = sources['Energy_Flux100'].value
 
     # Plotting
 
@@ -41,7 +50,7 @@ def plot_agn_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.flo
 
     # Formatting
 
-    fig.suptitle('AGN Luminosity Function')
+    fig.suptitle("{} Luminosity Function".format(source_type))
 
     ax.set_xlabel('Energy Flux')
     ax.set_ylabel('No. Sources')
@@ -54,7 +63,7 @@ def plot_agn_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.flo
 
     ax.legend()
 
-    fig.savefig(directory + "/4fgl_agn_luminosity_function.png")
+    fig.savefig(directory + "/4fgl_{}_luminosity_function.png".format(source_type.lower()))
 
     plt.close()
 

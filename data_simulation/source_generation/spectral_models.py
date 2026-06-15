@@ -15,10 +15,21 @@ def agn_spectral_model(E, E_0, F_0, alpha, beta):
     return E * dF_dE
 
 
+# def pulsar_spectral_model(E, F_0, E_0, Gamma, a, b):
+#
+#     exponent = a * (np.power(E_0, b) - np.power(E, b))
+#
+#     dF_dE = F_0 * np.power((E/E_0), -Gamma) * np.exp(exponent)
+#
+#     return E * dF_dE
+
+
 def pulsar_spectral_model(E, F_0, E_0, Gamma, a, b):
+
+    division = E / E_0
 
     exponent = a * (np.power(E_0, b) - np.power(E, b))
 
-    dF_dE = F_0 * np.power((E/E_0), -Gamma) * np.exp(exponent)
+    dF_dE = F_0 * np.power(division, -Gamma) * np.exp(exponent)
 
     return E * dF_dE

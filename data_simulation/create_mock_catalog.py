@@ -34,7 +34,7 @@ from data_simulation.source_generation.utils import split_normal
 from read_write_functions import catalog_data_preparation
 from source_generation.agn_generation import generate_mock_agn_catalog
 from source_generation.pulsar_generation import generate_mock_pulsar_catalog
-from verification.visualisation import plot_agn_luminosity_function, plot_spatial_distribution
+from verification.visualisation import plot_luminosity_function, plot_spatial_distribution
 
 # VISUALISATIONS
 
@@ -214,8 +214,12 @@ def verification(simulated_agns, simulated_pulsars, directory="./plots/verificat
     # SPECTRAL PARAMETERS
 
     # Compare the luminosity function of the simulated AGNs with that of those in the 4FGL
-    plot_agn_luminosity_function("/Volumes/T7/data/catalog/4FGL_DR4.fit", simulated_agns[:, 4],
-                                 directory=directory)
+    plot_luminosity_function("/Volumes/T7/data/catalog/4FGL_DR4.fit", simulated_agns[:, 4],
+                                 directory=directory, source_type="AGN")
+
+    # Compare the luminosity function of the simulated pulsars with that of those in the 4FGL
+    plot_luminosity_function("/Volumes/T7/data/catalog/4FGL_DR4.fit", simulated_pulsars[:, 5],
+                             directory=directory, source_type="Pulsar")
 
     # SPATIAL DISTRIBUTION
 
@@ -244,14 +248,14 @@ agn_rows, pulsar_rows, source_detection_threshold, fluxes_4fgl = catalog_data_pr
 
 # Generate simulated AGN sources
 
-agns = generate_mock_agn_catalog(file, agn_rows.copy(), num_agns=1000, detection_threshold=source_detection_threshold)
+# agns = generate_mock_agn_catalog(file, agn_rows.copy(), detection_threshold=source_detection_threshold)
 
 # Generate simulated pulsar sources
 
-pulsars = generate_mock_pulsar_catalog(pulsar_rows.copy(), num_pulsars=200)
+pulsars = generate_mock_pulsar_catalog(file, pulsar_rows.copy(), detection_threshold=source_detection_threshold)
 
 # Verify realism and correctness of generated gamma-ray sources
-verification(agns, pulsars)
+verification(np.array([[1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1]]), pulsars)
 
 print("catalog simulation finished")
 
