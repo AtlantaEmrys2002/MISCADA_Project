@@ -4,12 +4,25 @@ import numpy as np
 from scipy.stats import fisk, logistic, lognorm, norm
 from .utils import log_normal_parameter
 import seaborn as sns
+from sklearn.metrics import root_mean_squared_error
 
+# Used to label axes
+axis_labels = {"LP_Flux_Density": "Differential Flux Density",
+               "Pivot_Energy": "Pivot Energy", "LP_Index": "Spectral Slope",
+               "LP_beta": "Spectral Curvature", "PLEC_IndexS": "Spectral Slope",
+               "PLEC_Flux_Density": "Differential Flux Density", "PLEC_Exp_Index": "Exponential Index",
+               "PLEC_ExpfactorS": "Exponential Factor", "GLAT": "Latitude"}
 
-# Used for labelling axes and titles - gives mathematical notation equivalent to variable
+# Used for mathematical descriptions - gives mathematical notation equivalent to variable
 mathematical_notation = {"Pivot_Energy": "$E_0$", "LP_Flux_Density": "$F_0$", "LP_Index": "$\\alpha$",
                          "LP_beta": "$\\beta$", "PLEC_Flux_Density": "$F_0$", "PLEC_IndexS": "$\Gamma$",
                          "PLEC_Exp_Index": "$b$", "PLEC_ExpfactorS": "$a$", "GLAT": "Latitude"}
+
+# Used for indicating units
+units = {"LP_Flux_Density": "[ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$", "Pivot_Energy": "[GeV]", "LP_Index": "",
+         "LP_beta": "",
+         "PLEC_IndexS": "", "PLEC_Flux_Density": "[ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$", "PLEC_Exp_Index": "",
+         "PLEC_ExpfactorS": "", "GLAT": "[$\degree$]"}
 
 
 def plot_correlation_matrices(sources, source_type, directory):
@@ -44,15 +57,125 @@ def plot_correlation_matrices(sources, source_type, directory):
     plt.close()
 
 
-def plot_parameter_distributions(sources, source_type: str, directory: str):
+def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, directory: str, logarithmic_fit=True):
 
-    # Used to label axes
-    axis_labels = {"LP_Flux_Density": "Differential Flux Density, $F_0$ \n [ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$",
-                   "Pivot_Energy": "Pivot Energy, $E_0$ [GeV]", "LP_Index": "Spectral Slope, $\\alpha$",
-                   "LP_beta": "Spectral Curvature, $\\beta$", "PLEC_IndexS": "Spectral Slope, $\\Gamma$",
-                   "PLEC_Flux_Density": "Differential Flux Density, $F_0$ \n [ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$",
-                   "PLEC_Exp_Index": "Exponential Index, $b$", "PLEC_ExpfactorS": "Exponential Factor, $a$",
-                   "GLAT": "Latitude [$\degree$]"}
+    plt.rcParams["figure.figsize"] = (10, 5)
+
+    log_var1, log_var2 = np.log(var1), np.log(var2)
+
+    # Create plot
+
+    fig, ax = plt.subplots(1, 2)
+
+    # Plot data
+
+    ax[0].scatter(var1, var2, s=4, marker='+')
+    ax[1].scatter(log_var1, log_var2, s=4, marker="+")
+
+    # Fitting
+
+    x_values = np.linspace(np.min(var1), np.max(var1), 1000)
+    log_x_values = np.log(x_values)
+
+    # Formatting information
+    if logarithmic_fit is True:
+
+        labels = ["Linear", "Quadratic", "Cubic", "Quartic", "Logarithmic"]
+
+    else:
+
+        labels = ["Linear", "Quadratic", "Cubic", "Quartic"]
+
+    colours = ["red", "green", "orange", "purple"]
+
+    residuals = []
+
+    for degree in range(1, 5):
+
+        idx = degree - 1
+
+        polynomial = np.polynomial.Polynomial.fit(log_var1, log_var2, deg=degree)
+
+        ax[0].plot(x_values, np.exp(polynomial(log_x_values)), color=colours[idx], label="Log {}".format(labels[idx]),
+                   linestyle='-.')
+        ax[1].plot(log_x_values, polynomial(log_x_values), color=colours[idx], label=labels[idx], linestyle="-.")
+
+        residuals.append(log_var2 - polynomial(log_var1))
+
+        print(["{} : {}".format(chr((degree - x) + 97), polynomial.coef[x]) for x in range(degree, -1, -1)])
+        print("RMSE of {}: {}".format(labels[idx], root_mean_squared_error(log_var2, polynomial(log_var1))))
+
+    # Logarithmic Fit
+
+    if logarithmic_fit is True:
+
+        # This paper states that the spectral index depends linearly on ln E - https://journals-aps-org.ezphost.dur.ac.uk/
+        # prd/abstract/10.1103/k5dp-5str
+
+        polynomial = np.polynomial.Polynomial.fit(log_var1, var2, deg=1)
+        ax[0].plot(x_values, polynomial(log_x_values), color="black", label="Logarithmic")
+        ax[1].plot(log_x_values, np.log(polynomial(log_x_values)), color="black", label="Logarithmic")
+
+        residuals.append(log_var2 - np.log(polynomial(log_var1)))
+        print("a: {} b: {}".format(polynomial.coef[1], polynomial.coef[0]))
+        print("RMSE of Logarithmic Fit: {}".format(root_mean_squared_error(log_var2, np.log(polynomial(log_var1)))))
+
+    # Formatting
+
+    ax[0].set_xlabel("{} {}".format(mathematical_notation[var1.name], units[var1.name]))
+    ax[0].set_ylabel("{}".format(mathematical_notation[var2.name]))
+    ax[0].set_title("{} vs {}".format(axis_labels[var1.name], axis_labels[var2.name]))
+    ax[0].legend()
+
+    ax[1].set_xlabel("log {}".format(mathematical_notation[var1.name]))
+    ax[1].set_ylabel("log {}".format(mathematical_notation[var2.name]))
+    ax[1].set_title("Log-Log Plot of {} vs {}".format(axis_labels[var1.name], axis_labels[var2.name]))
+    ax[1].legend()
+
+    fig.suptitle("Fitting {} {} - {} Dependency".format(source_type, mathematical_notation[var1.name], mathematical_notation[var2.name]))
+
+    fig.tight_layout()
+
+    fig.savefig(directory + "/fitted_{}_{}_{}_relationship.png".
+                format(source_type.lower(), axis_labels[var1.name].lower().replace(" ", "_"),
+                       axis_labels[var2.name].lower().replace(" ", "_")))
+
+    plt.close()
+
+    # Plot residuals
+
+    plt.rcParams["figure.figsize"] = (25, 5)
+
+    fig2, ax2 = plt.subplots(1, len(labels))
+
+    for a in range(len(residuals)):
+
+        residuals_std = np.std(residuals[a], ddof=1)
+
+        normalised_residuals = residuals[a] / residuals_std
+
+        ax2[a].scatter(log_var1, normalised_residuals, s=4, label="$\sigma =$ {0:.3f}".format(residuals_std))
+
+        # Formatting
+        ax2[a].set_title("{} Fit to Log-Log Plot".format(labels[a]))
+        ax2[a].set_xlabel("log {}".format(mathematical_notation[var1.name]))
+        ax2[a].set_ylabel("$y_i - \hat{y}_i$")
+        ax2[a].legend()
+
+    # FORMATTING
+
+    fig2.suptitle('Residuals')
+
+    fig2.tight_layout()
+
+    fig2.savefig(directory + "/fitted_{}_{}_{}_relationship_residuals.png".
+                format(source_type.lower(), axis_labels[var1.name].lower().replace(" ", "_"),
+                       axis_labels[var2.name].lower().replace(" ", "_")))
+
+    plt.close()
+
+
+def plot_parameter_distributions(sources, source_type: str, directory: str):
 
     num_parameters = sources.shape[1]
 
@@ -104,7 +227,13 @@ def plot_parameter_distributions(sources, source_type: str, directory: str):
         subplot.plot(x_values, fisk.pdf(x_values, scale=np.exp(np.mean(np.log(x_values))), c=1 / log_logistic_scale),
                      color='green', label='Log-Logistic')
 
-        subplot.set_xlabel(axis_labels[values.name])
+        # Long line
+        long_line = "\n"
+
+        if len(axis_labels[values.name]) < 20:
+            long_line = ""
+
+        subplot.set_xlabel("{} {}{}".format(axis_labels[values.name], long_line, units[values.name]))
 
     # FORMATTING
 
@@ -180,11 +309,12 @@ def plot_parameter_relationships(sources, source_type: str, directory: str):
         # Subplot formatting
         for a in [ax, ax2]:
 
-            a[row, col].set_title(mathematical_notation[var1] + ' against ' + mathematical_notation[var2], fontsize=12)
-            ax2[row, col].set_xlabel(mathematical_notation[var2])
-            ax2[row, col].set_ylabel(mathematical_notation[var1])
+            a[row, col].set_title(axis_labels[var1] + ' against ' + axis_labels[var2], fontsize=12)
 
-            ax2[row, col].legend(fontsize=8, loc='upper left')
+            a[row, col].set_xlabel("{} {}".format(mathematical_notation[var2], units[var2]))
+            a[row, col].set_ylabel("{} {}".format(mathematical_notation[var1],units[var1]))
+
+            a[row, col].legend(fontsize=8, loc='upper left')
 
     # Figure formatting
 
@@ -205,7 +335,10 @@ def plot_parameter_relationships(sources, source_type: str, directory: str):
 # Astropy Documentation - https://docs.astropy.org/en/stable/index_user_docs.html
 # Log-Normals - https://stackoverflow.com/questions/68361048/how-to-generate-lognormal-distribution-with-specific-mean-
 # and-std-in-python
+# Normalised/Studentised Residual - https://stats.stackexchange.com/questions/22653/raw-residuals-versus-standardised-
+# residuals-versus-studentised-residuals-what
 # Numpy Documentation - https://numpy.org/doc/stable/index.html
 # Numpy Typing - https://stackoverflow.com/questions/35673895/type-hinting-annotation-pep-484-for-numpy-ndarray
 # Pandas Documentation - https://pandas.pydata.org/docs/index.html
 # Scipy Documentation - https://docs.scipy.org/doc/scipy/index.html
+# Seaborn Heatmaps - https://stackoverflow.com/questions/50947776/plot-two-seaborn-heatmap-graphs-side-by-side

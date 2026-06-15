@@ -152,6 +152,13 @@ def catalog_data_preparation(file_name: str):
     # Convert latitudes from degrees to radians
     pulsar_data["GLAT"] = pulsar_data["GLAT"].to(u.rad)
 
+    # EXPERIMENT - REMOVE THIS IF NECESSARY OR GOING FOR MeV
+    # agn_data['LP_Flux_Density'] = agn_data['LP_Flux_Density'].to(u.ph / (u.cm * u.cm * u.GeV * u.s))
+    # pulsar_data['PLEC_Flux_Density'] = pulsar_data['PLEC_Flux_Density'].to(u.ph / (u.cm * u.cm * u.GeV * u.s))
+
+
+
+
     # Separate into AGN and pulsars
     return agn_data, pulsar_data, source_detection_threshold, energy_fluxes_4fgl
 

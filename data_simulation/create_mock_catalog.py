@@ -31,7 +31,8 @@ from scipy import stats
 from sklearn.metrics import root_mean_squared_error
 
 # Relative imports
-from analysis.correlation import fitting_agn_pivot_energy_spectral_slope_relation
+# from analysis.correlation import fitting_agn_pivot_energy_spectral_slope_relation
+from analysis.visualisation import plot_fitting_correlated_variable_dependency
 from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
 from analysis.visualisation import (plot_correlation_matrices, plot_parameter_distributions,
                                     plot_parameter_relationships)
@@ -108,10 +109,10 @@ def fitting_agn_pivot_energy_flux_density_relation(agns):
     # Format data
 
     # Remove pulsar columns
-    agns.remove_columns(['PLEC_Flux_Density', 'PLEC_IndexS', 'PLEC_Exp_Index', 'PLEC_ExpfactorS'])
+    # agns.remove_columns(['PLEC_Flux_Density', 'PLEC_IndexS', 'PLEC_Exp_Index', 'PLEC_ExpfactorS'])
 
     # Remove spatial column for AGNS - AGNs are known to be approximately isotropically distributed on the sky
-    agns.remove_column('GLAT')
+    # agns.remove_column('GLAT')
 
     # Convert units
 
@@ -150,7 +151,7 @@ def fitting_agn_pivot_energy_flux_density_relation(agns):
     # non-logarithmic fit
     ax[0].plot(x_values, (x_values ** m) * (np.e ** c), label='Log Linear', color='red')
 
-    # Normalised/Standardised/Studentised Residual https://stats.stackexchange.com/questions/22653/raw-residuals-versus-standardised-residuals-versus-studentised-residuals-what
+    # Normalised/Standardised/Studentised Residual
     residuals_straight = log_flux_density - (m * log_pivot_energy + c)
 
     print("RMSE of Linear Fit: {}".format(root_mean_squared_error(log_flux_density, m * log_pivot_energy + c)))
@@ -273,7 +274,8 @@ def fitting_agn_pivot_energy_flux_density_relation(agns):
 def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
 
     # Create directory to store results
-    Path(directory).mkdir(parents=True, exist_ok=True)
+    Path(directory + "/parameter_distributions").mkdir(parents=True, exist_ok=True)
+    Path(directory + "/parameter_correlations").mkdir(parents=True, exist_ok=True)
 
     # PREPARE DATA
 
@@ -288,7 +290,7 @@ def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
     # PARAMETER DISTRIBUTIONS
 
     print("PARAMETER DISTRIBUTION ANALYSIS")
-    print("\n")
+    print('-' * 60)
 
     prob_dist = ['normal', 'lognorm']
 
@@ -313,8 +315,7 @@ def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
             kolmogorov_smirnov_test(values=values, distribution=dist)
 
     # Plot AGN parameter distributions
-    # plot_parameter_distributions(agn_rows.copy(), source_type='AGN', directory=directory)
-    plot_parameter_distributions(agns, source_type='AGN', directory=directory)
+    plot_parameter_distributions(agns, source_type='AGN', directory=directory + "/parameter_distributions")
 
     # Pulsars
 
@@ -335,8 +336,7 @@ def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
             kolmogorov_smirnov_test(values=values, distribution=dist)
 
     # Plot pulsar parameter distributions
-    # plot_parameter_distributions(pulsar_rows.copy(), source_type='Pulsars', directory=directory)
-    plot_parameter_distributions(pulsars, source_type='Pulsars', directory=directory)
+    plot_parameter_distributions(pulsars, source_type='Pulsars', directory=directory + "/parameter_distributions")
 
     # CORRELATION ANALYSIS
 
@@ -346,21 +346,26 @@ def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
     # AGNs
 
     # Plot parameters against one another to visualise relationships
-    plot_parameter_relationships(agns, source_type="AGN", directory=directory)
+    plot_parameter_relationships(agns, source_type="AGN", directory=directory + "/parameter_correlations")
 
     # Plot AGN parameter correlation matrices
-    plot_correlation_matrices(agns, source_type="AGN", directory=directory)
+    plot_correlation_matrices(agns, source_type="AGN", directory=directory + "/parameter_correlations")
 
     # Fit relationships to identified correlated variables - pivot energy and spectral slope (alpha)
-    fitting_agn_pivot_energy_spectral_slope_relation(agns["Pivot_Energy"], agns["LP_Index"])
+    plot_fitting_correlated_variable_dependency(agns["Pivot_Energy"], agns["LP_Index"], source_type="AGN",
+                                                     directory=directory + "/parameter_correlations")
+
+    # Fit relationships to identified correlated variables - pivot energy and flux_density
+    plot_fitting_correlated_variable_dependency(agns["Pivot_Energy"], agns["LP_Flux_Density"], logarithmic_fit=False,
+                                                source_type="AGN", directory=directory + "/parameter_correlations")
 
     # Pulsars
 
     # Plot parameters against one another to visualise relationships
-    plot_parameter_relationships(pulsars, source_type="Pulsar", directory=directory)
+    plot_parameter_relationships(pulsars, source_type="Pulsar", directory=directory + "/parameter_correlations")
 
     # Plot pulsar parameter correlation matrices
-    plot_correlation_matrices(pulsars, source_type="Pulsar", directory=directory)
+    plot_correlation_matrices(pulsars, source_type="Pulsar", directory=directory + "/parameter_correlations")
 
 
 def verification(simulated_agns, simulated_pulsars, directory="./plots/verification"):
@@ -423,8 +428,6 @@ def num_sources_to_generate(energy_fluxes_4fgl, detection_threshold):
 # Read in catalog data
 
 agn_rows, pulsar_rows, source_detection_threshold, fluxes_4fgl = catalog_data_preparation("/Volumes/T7/data/catalog/4FGL_DR4.fit")
-
-# print(pulsar_rows)
 
 # Analyse parameters, their distributions, and their correlations
 
