@@ -128,10 +128,6 @@ def catalog_data_preparation(file_name: str):
     # Reformat CLASS1 column - remove empty spaces and make all lower case
     catalog["CLASS1"] = np.asarray([k.decode('utf-8').strip().lower() for k in catalog["CLASS1"].value.filled('-')])
 
-    # Convert pivot energy to GeV - CHECK THIS - MeV or GeV!!
-    # catalog['Pivot_Energy'] = catalog['Pivot_Energy'].to(u.GeV)
-    # catalog["Pivot_Energy"] = catalog["Pivot_Energy"].to(u.MeV)
-
     # Select all rows that describe pulsars
     pulsar_mask = (catalog["CLASS1"] == "psr")
 

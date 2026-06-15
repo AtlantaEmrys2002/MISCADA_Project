@@ -30,65 +30,10 @@ from math import floor
 # Relative imports
 from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
 from analysis.visualisation import *
-from data_simulation.source_generation.utils import split_normal
 from read_write_functions import catalog_data_preparation
 from source_generation.agn_generation import generate_mock_agn_catalog
 from source_generation.pulsar_generation import generate_mock_pulsar_catalog
 from verification.visualisation import plot_luminosity_function, plot_spatial_distribution
-
-# VISUALISATIONS
-
-
-def normal_func(x, mean, sigma):
-
-    var = sigma**2
-
-    return (1 / np.sqrt(2 * np.pi * var)) * np.exp(-(((x - mean) ** 2) / (2 * var)))
-
-
-def visualising_pulsar_latitude_distributions(sigma_1, sigma_2, x_values, counts):
-
-    # sigma_1 and sigma_2 are the fitted standard distributions of the two overlapping Gaussians of the 4FGL data
-    # x_values and counts are the binned 4FGL data (latitude values and number of sources within that latitude range
-
-    plt.bar(x_values, counts, alpha=0.7, label='4FGL Distribution')
-
-    # Rounded standard deviations - not used except in plots
-    std_1, std_2 = str(round(sigma_1, 2)), str(round(sigma_2, 2))
-
-    latitude_range = np.linspace(-30, 30, 1000)
-
-    plt.plot(latitude_range, split_normal(latitude_range, sigma_1=sigma_1, sigma_2=sigma_2), color='red',
-             label='Mixture Gaussian $\mu=0$, \n $\sigma_1=$' + std_1 + "$, \sigma_2 = $" + std_2)
-
-    plt.plot(latitude_range, normal_func(latitude_range, mean=0, sigma=sigma_1), color='green',
-             linestyle='--', label='Gaussian: $\mu = 0$, $\sigma_1 = ' + std_1 + '$')
-
-    plt.plot(latitude_range, normal_func(latitude_range, mean=0, sigma=sigma_2), color='orange',
-             linestyle='-.', label='Gaussian: $\mu = 0$, $\sigma_2 = ' + std_2 + '$')
-
-    plt.plot(latitude_range, split_normal(latitude_range, sigma_1=1.39, sigma_2=19.2), color='purple',
-             label='Recommended by ID8')
-
-    # Randomly sample pulsar latitudes from distribution created above
-    X1 = stats.Normal(mu=0, sigma=sigma_1)
-    X2 = stats.Normal(mu=0, sigma=sigma_2)
-
-    # CHANGE WEIGHTS HERE TO REFLECT MSP VS YNG
-
-    mixture = stats.Mixture([X1, X2])
-
-    samples = mixture.sample(shape=(10000, 1))
-
-    plt.hist(samples.flatten(), density=True, bins=40, label='Randomly Generated', color='pink', alpha=0.6)
-
-    # Formatting
-    plt.title('Distribution of Pulsar Latitudes')
-    plt.xlabel('Latitude ($\degree$)')
-    plt.ylabel('Source Density')
-    plt.legend()
-
-    plt.show()
 
 
 def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
@@ -244,7 +189,7 @@ agn_rows, pulsar_rows, source_detection_threshold, fluxes_4fgl = catalog_data_pr
 
 # Analyse parameters, their distributions, and their correlations
 
-# analysis(agn_rows, pulsar_rows)
+analysis(agn_rows, pulsar_rows)
 
 # Generate simulated AGN sources
 
@@ -255,7 +200,7 @@ agns = generate_mock_agn_catalog(file, agn_rows.copy(), detection_threshold=sour
 pulsars = generate_mock_pulsar_catalog(file, pulsar_rows.copy(), detection_threshold=source_detection_threshold)
 
 # Verify realism and correctness of generated gamma-ray sources
-verification(np.array([[1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1]]), pulsars)
+verification(agns, pulsars)
 
 print("catalog simulation finished")
 
@@ -273,6 +218,3 @@ print("catalog simulation finished")
 # Scipy Documentation - https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.quad.html#scipy.integrate.
 # quad
 # String Formatting - https://stackoverflow.com/questions/12018992/print-combining-strings-and-numbers
-
-# N.B. Useful conversion:
-# flux_densities = agns['LP_Flux_Density'].to(u.ph / (u.cm * u.cm * u.GeV * u.s)).value.filled(np.nan)
