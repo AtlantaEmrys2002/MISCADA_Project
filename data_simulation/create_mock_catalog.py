@@ -24,8 +24,6 @@
 
 # LIBRARIES
 from pathlib import Path
-from scipy import stats
-from math import floor
 
 # Relative imports
 from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
