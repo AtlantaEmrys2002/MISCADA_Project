@@ -1,3 +1,11 @@
+# N.B. Cauchy distribution was suggested in ID25, but for exponential index b AND
+# not latitude (which definitely does not make sense given our plots).
+# I came to very different conclusions than ID25 and do not examine correlation at
+# all in ID25. They do suggest a Gumbel for beta - look into fitting that.
+# Basically, can compare ID25's suggestions with ID8s, but there is no justification
+# for their choice and their choices do not make sense given my analysis
+
+
 from astropy.table import QTable
 from astropy import units as u
 from math import floor
@@ -8,7 +16,6 @@ from scipy.optimize import curve_fit
 from scipy.stats import Mixture, Normal, cauchy
 
 import matplotlib.pyplot as plt
-
 
 def pulsar_generator(pulsar_stats, energy_flux_low, energy_flux_high, cauchy_params):
 
@@ -211,17 +218,6 @@ def generate_mock_pulsar_catalog(catalog: str, pulsars, detection_threshold):
 
     # Fit split-normal distribution that describes pulsar latitudes and pass the appropriate parameters to
     # pulsar_generator()
-
-    # counts, bins = np.histogram(pulsars['GLAT'].value, bins=10, density=True)
-    #
-    #
-    # bin_width = np.abs(bins[1] - bins[0])
-    #
-    # start_value = bins[0] + (bin_width / 2)
-    #
-    # x_values = [start_value + (k * bin_width) for k in range(len(bins) - 1)]
-    #
-    # popt, _ = curve_fit(f=split_normal, xdata=np.asarray(x_values), ydata=np.asarray(counts), bounds=([0, 0], [2 * np.pi, 2 * np.pi]))
 
     # CREATE NEW SOURCES
 

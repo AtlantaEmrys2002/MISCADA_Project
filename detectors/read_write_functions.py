@@ -12,7 +12,6 @@ import os
 from astropy.coordinates import SkyCoord
 
 import numpy as np
-import healpy as hp
 import matplotlib.pyplot as plt
 import matplotlib
 import math as mt

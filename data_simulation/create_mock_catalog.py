@@ -28,7 +28,7 @@ from pathlib import Path
 # Relative imports
 from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
 from analysis.visualisation import *
-from read_write_functions import catalog_data_preparation
+from read_write_functions import agn_xml_writer, catalog_data_preparation, pulsar_xml_writer
 from source_generation.agn_generation import generate_mock_agn_catalog
 from source_generation.pulsar_generation import generate_mock_pulsar_catalog
 from verification.visualisation import plot_luminosity_function, plot_spatial_distribution
@@ -187,7 +187,7 @@ agn_rows, pulsar_rows, source_detection_threshold, fluxes_4fgl = catalog_data_pr
 
 # Analyse parameters, their distributions, and their correlations
 
-analysis(agn_rows, pulsar_rows)
+# analysis(agn_rows, pulsar_rows)
 
 # Generate simulated AGN sources
 
@@ -198,7 +198,13 @@ agns = generate_mock_agn_catalog(file, agn_rows.copy(), detection_threshold=sour
 pulsars = generate_mock_pulsar_catalog(file, pulsar_rows.copy(), detection_threshold=source_detection_threshold)
 
 # Verify realism and correctness of generated gamma-ray sources
-verification(agns, pulsars)
+
+# verification(agns, pulsars)
+
+# Save simulated sources to files
+agn_xml_writer(agns, "./simulated_data/agns.xml")
+pulsar_xml_writer(pulsars, "./simulated_data/pulsars.xml")
+
 
 print("catalog simulation finished")
 

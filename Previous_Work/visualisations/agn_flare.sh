@@ -11,7 +11,7 @@ OUTFILE=./agn_flare_2/agn.fits
 OUTFILEGTI=./agn_flare_2/agn_gti.fits
 SPACECRAFTFILE=./agn_flare_2/L2605221114164D7EA5AE60_SC00.fits
 
-conda init
+conda init bash
 
 conda activate fermi
 
