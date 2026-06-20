@@ -4,8 +4,9 @@
 
 # Define files
 #SOURCEMAP=/Volumes/T7/data/sky_map_creation_data/srcMaps.fit
-#AGNS=./simulated_data/agns.xml
-#PULSARS=./simulated_data/pulsars.xml
+AGNS=./simulated_data/agns.xml
+PULSARS=./simulated_data/pulsars.xml
+BACKGROUND=./simulated_data/background.xml
 #
 #EXPCUBE=/Volumes/T7/data/exposure_cube.fits
 #BINEXPCUBE=/Volumes/T7/data/binned_exposure_cube.fits
@@ -17,6 +18,13 @@ FERMIDATACUT=/Volumes/T7/data/sky_map_creation_data/fermi_filtered.fits
 FERMIDATACUTGTI=/Volumes/T7/data/sky_map_creation_data/fermi_filtered_gti.fits
 LTCUBE=/Volumes/T7/data/sky_map_creation_data/fermi_filtered_ltcube.fits
 EXPMAP=/Volumes/T7/data/sky_map_creation_data/fermi_filtered_exposure_map.fits
+SRCMAP=/Volumes/T7/data/sky_map_creation_data/fermi_filtered_convolved.fits
+ASIMOV=/Volumes/T7/data/sky_map_creation_data/fermi_asimov.fits
+
+FERMIBACKGROUND=/Volumes/T7/data/background_models/gll_iem_v07.fits
+FERMIBACKGROUNDFILTERED=/Volumes/T7/data/sky_map_creation_data/fermi_background_filtered.fits
+FERMIBACKGROUNDFILTEREDGTI=/Volumes/T7/data/sky_map_creation_data/fermi_background_filtered_gti.fits
+FERMIBACKGROUNDCMAP=/Volumes/T7/data/sky_map_creation_data/fermi_background_filtered_gti_cmap.fits
 
 # Using P8R3_ULTRACLEANVETO_V3 as I am doing an analysis that involves most of the sky - see Fermi recommendations
 #IRF=
@@ -32,8 +40,11 @@ conda activate fermi
 # Read all xml files into one
 touch ./simulated_data/sources.xml
 
-cat "$AGNS" > ./simulated_data/sources.xml
-cat "$PULSARS" >> ./simulated_data/sources.xml
+#cat "$BACKGROUND" > ./simulated_data/sources.xml
+#cat "$AGNS" >> ./simulated_data/sources.xml
+#cat "$PULSARS" >> ./simulated_data/sources.xml
+
+SOURCEXML=./simulated_data/sources.xml
 
 # Select relevant Fermi data
 #ls /Volumes/T7/data/weekly/photon/*.fits > /Volumes/T7/data/weekly/photon/events.txt
@@ -58,15 +69,16 @@ cat "$PULSARS" >> ./simulated_data/sources.xml
 # Choice of IRF is based on recommendations in Fermi documentation - working on all-sky analysis
 # gtexpcube2 evtype=3 binsz=1 infile=$LTCUBE cmap=none outfile=$EXPMAP irfs=P8R3_ULTRACLEANVETO_V3 nxpix=360 nypix=180 xref=0 yref=0 axisrot=0 coordsys=GAL proj=AIT emin=300 emax=200000 enumbins=6
 
+# Create count map involving Fermi data (only used as count map and my sources will be fit - CHECK THIS WITH ANTHONY)
+# Picked order of 8 (256). Need for count map
+# gtbin evfile=$FERMIDATACUTGTI scfile=NONE outfile=$FERMIBACKGROUNDCMAP algorithm=HEALPIX ebinalg=LOG emin=300 emax=200000 enumbins=6 nxpix=360 nypix=180 binsz=1 hpx_ordering_scheme=RING hpx_order=8 xref=0 axisrot=0 proj=AIT yref=0
+
 # Convolve source maps with instrument response
+# gtsrcmaps cmap=$FERMIBACKGROUNDCMAP scfile=/Volumes/T7/data/lat_spacecraft_merged.fits srcmdl=$SOURCEXML expcube=$LTCUBE bexpmap=$EXPMAP ptsrc=yes outfile=$SRCMAP irfs=P8R3_ULTRACLEANVETO_V3
 
-# DID NOT RUN THE FUNCTION BELOW BUT DID RUN ALL ABOVE - NEED TO INCLUDE BACKGROUND MODELS FIRST BEFORE RUNNING BELOW FUNCTION
+# DID NOT RUN BELOW COMMAND
 
-# gtsrcmaps scfile=/Volumes/T7/data/lat_spacecraft_merged.fits expcube=$EXPMAP cmap=none srcmdl=@./simulated_data/sources.xml
-
-
-
-
+gtmodel srcmaps=$SRCMAP srcmdl=$SOURCEXML outfile=$ASIMOV irfs=P8R3_ULTRACLEANVETO_V3 expcube=$LTCUBE bexpmap=$EXPMAP
 
 
 
@@ -89,8 +101,10 @@ cat "$PULSARS" >> ./simulated_data/sources.xml
 
 #gtexpcube2
 
+# cmap=/Volumes/T7/data/sky_map_creation_data/empty_cmap.fits
+
 # Convolve source models with IRF - also generates source maps for point sources
-# gtsrcmaps scfile=$EXPCUBESPACECRAFT expcube=$EXPCUBE cmap=none srcmdl=sources.xml bexpmap=$BINEXPCUBE outfile=$SOURCEMAP irfs=P8R3_ULTRACLEANVETO_V3 ptsrc=yes
+# gtsrcmaps scfile=$EXPCUBESPACECRAFT expcube=$EXPCUBE srcmdl=./simulated_data/sources.xml bexpmap=$BINEXPCUBE outfile=$SOURCEMAP irfs=P8R3_ULTRACLEANVETO_V3 ptsrc=yes
 
 # Create model counts map based on fit parameters (here are fit parameters are randomly generated)
 # CHECK IF I SHOULD CHANGE evtype to 3 (AS THIS IS LAST STEP CAN I Just SET TO EV 3 EVEN THOUGH IRF HAS evtype 1024
@@ -103,4 +117,5 @@ conda deactivate
 
 # Conda Init Error - https://stackoverflow.com/questions/77901825/unable-to-activate-environment-conda-prompted-to-run-
 # conda-init-before-cond
+# Fermitools Documentation - https://fermi.gsfc.nasa.gov/ssc/data/analysis/scitools/overview.html
 # IRF Justification - https://fermi.gsfc.nasa.gov/ssc/data/analysis/scitools/lat_data_selection.html
