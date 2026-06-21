@@ -24,7 +24,6 @@
 
 # LIBRARIES
 from pathlib import Path
-# from xml.dom import minidom, Node
 
 # Relative imports
 from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
@@ -176,63 +175,6 @@ def verification(simulated_agns, simulated_pulsars, directory="./plots/verificat
                               directory=directory)
 
 
-# # THIS RECURSIVE FUNCTION COMES FROM HERE - https://stackoverflow.com/questions/10034747/python-issue-using-xml-dom
-# # -minidom-document-extra-empty-lines-between-child-ele
-# def cleanEmptyTextNodes(node):
-#
-#     print('hi')
-#
-#     for child in node.childNodes:
-#
-#         if child.nodeType == Node.TEXT_NODE:
-#             child.data = ''
-#
-#         elif child.nodeType == Node.ELEMENT_NODE:
-#
-#             cleanEmptyTextNodes(child)
-#
-#             # print(child)
-#
-#     node.normalize()
-
-
-# def save_results(simulated_agns, simulated_pulsars, file_name="./simulated_data/sources.xml"):
-#
-#     # CREATE DOCUMENT
-#
-#     root = minidom.Document()
-#
-#     xml = root.createElement('source_library')
-#
-#     xml.setAttribute('title', 'source library')
-#
-#     root.appendChild(xml)
-#
-#     # BACKGROUND SOURCES
-#     background_models = minidom.parse("./simulated_data/background.xml").getElementsByTagName('source')
-#
-#     for model in background_models:
-#
-#         cleanEmptyTextNodes(model)
-#
-#         xml.appendChild(model)
-#
-#     # XML for AGN sources
-#     agn_xml_writer(simulated_agns, root=root, xml=xml)
-#
-#     # XML for pulsar sources
-#     pulsar_xml_writer(simulated_pulsars, root=root, xml=xml)
-#
-#     # FORMAT
-#
-#     xml_str = root.toprettyxml(indent="\t")
-#
-#     # SAVE
-#
-#     with open(file_name, "w") as f:
-#         f.write(xml_str)
-
-
 # MAIN PROGRAM
 
 print("starting catalog simulation...")
@@ -245,27 +187,22 @@ agn_rows, pulsar_rows, source_detection_threshold, fluxes_4fgl = catalog_data_pr
 
 # Analyse parameters, their distributions, and their correlations
 
-# analysis(agn_rows, pulsar_rows)
+analysis(agn_rows, pulsar_rows)
 
 # Generate simulated AGN sources
 
-# agns = generate_mock_agn_catalog(file, agn_rows.copy(), detection_threshold=source_detection_threshold)
+agns = generate_mock_agn_catalog(file, agn_rows.copy(), detection_threshold=source_detection_threshold)
 
 # Generate simulated pulsar sources
 
-# pulsars = generate_mock_pulsar_catalog(file, pulsar_rows.copy(), detection_threshold=source_detection_threshold)
+pulsars = generate_mock_pulsar_catalog(file, pulsar_rows.copy(), detection_threshold=source_detection_threshold)
 
 # Verify realism and correctness of generated gamma-ray sources
 
-# verification(agns, pulsars)
+verification(agns, pulsars)
 
-# Save simulated sources to files
-
-agns = np.array([[1, 1, 1, 1, 1, 1], [2, 2, 2, 2, 2, 2]])
-pulsars = np.array([[1, 1, 1, 1, 1, 1, 1, 1], [2, 2, 2, 2, 2, 2, 2, 2]])
-
-save_results(agns, pulsars, file_name="./simulated_data/test.xml")
-
+# Save simulated sources to XML files
+save_results(agns, pulsars)
 
 print("catalog simulation finished")
 
