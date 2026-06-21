@@ -209,6 +209,8 @@ print("catalog simulation finished")
 # REFERENCES
 
 # Astropy Documentation - https://docs.astropy.org/en/stable/
+# Creating Path to Directories - https://stackoverflow.com/questions/273192/how-do-i-create-a-directory-and-any-missing-
+# parent-directories
 # ID8 Paper - Identification of point sources in gamma rays using U-shaped convolutional neural networks and a data
 # challenge
 # Log-Normal Distribution - https://en.wikipedia.org/wiki/Log-normal_distribution
@@ -220,3 +222,5 @@ print("catalog simulation finished")
 # Scipy Documentation - https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.quad.html#scipy.integrate.
 # quad
 # String Formatting - https://stackoverflow.com/questions/12018992/print-combining-strings-and-numbers
+# Type Hinting - https://www.reddit.com/r/learnpython/comments/wme6p5/type_hinting_functions_with_multipe_return_types/
+# 4FGL Parameter Overview - https://heasarc.gsfc.nasa.gov/W3Browse/fermi/fermilpsc.html

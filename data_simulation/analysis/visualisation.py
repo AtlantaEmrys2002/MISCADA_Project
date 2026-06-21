@@ -364,8 +364,15 @@ def plot_parameter_relationships(sources, source_type: str, directory: str):
 # REFERENCES
 
 # Astropy Documentation - https://docs.astropy.org/en/stable/index_user_docs.html
+# Cauchy Distribution - https://en.wikipedia.org/wiki/Cauchy_distribution
+# Correlation Analysis - https://en.wikipedia.org/wiki/Covariance#Examples
+# Figure Sizing - https://stackoverflow.com/questions/332289/how-do-i-change-the-size-of-figures-drawn-with-matplotlib
+# Fitting Recommendations - https://dataviz.shef.ac.uk/docs/18/03/2021/LearningPath-Statistical-Modeling-1
+# Gaussian Fitting Sharp Peak - https://stackoverflow.com/questions/74146895/gaussian-fitting-of-a-sharply-peaked-curve
+# Gaussian Mixture - https://scikit-learn.org/stable/modules/generated/sklearn.mixture.GaussianMixture.html
 # Log-Normals - https://stackoverflow.com/questions/68361048/how-to-generate-lognormal-distribution-with-specific-mean-
 # and-std-in-python
+# Normalising Histograms - https://stackoverflow.com/questions/35482543/normalizing-histograms
 # Normalised/Studentised Residual - https://stats.stackexchange.com/questions/22653/raw-residuals-versus-standardised-
 # residuals-versus-studentised-residuals-what
 # Numpy Documentation - https://numpy.org/doc/stable/index.html
@@ -373,3 +380,5 @@ def plot_parameter_relationships(sources, source_type: str, directory: str):
 # Pandas Documentation - https://pandas.pydata.org/docs/index.html
 # Scipy Documentation - https://docs.scipy.org/doc/scipy/index.html
 # Seaborn Heatmaps - https://stackoverflow.com/questions/50947776/plot-two-seaborn-heatmap-graphs-side-by-side
+# Shot Noise - https://en.wikipedia.org/wiki/Shot_noise
+# Split-Normal Distributions - https://en.wikipedia.org/wiki/Split_normal_distribution

@@ -206,4 +206,6 @@ def generate_mock_agn_catalog(catalog, agn_data, detection_threshold=np.float64(
 # REFERENCES
 
 # Digitise Error - https://stackoverflow.com/questions/4355132/numpy-digitize-returns-values-out-of-range
+# Exclude NaNs - https://stackoverflow.com/questions/17126543/numpy-array-get-the-subset-slice-of-an-array-which-is-not
+# -nan
 # Numpy Float Handling - https://stackoverflow.com/questions/58083198/how-to-handle-both-float-and-array-input-in-python

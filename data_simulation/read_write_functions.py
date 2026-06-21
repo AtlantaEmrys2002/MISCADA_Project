@@ -303,3 +303,12 @@ def save_results(simulated_agns, simulated_pulsars, file_name="./simulated_data/
 # REFERENCES
 
 # Astropy Documentation - https://docs.astropy.org/en/stable/
+# Converting Coordinates - https://cloudlessnights.com/project/python-for-astronomy/convert-galactic-coordinates-to-ra-
+# dec-and-alt-az-with-astropy/
+# Converting Binary Strings - https://stackoverflow.com/questions/17615414/how-to-convert-binary-string-to-normal-string
+# -in-python3
+# Creating XML Documents - https://www.geeksforgeeks.org/python/create-xml-documents-using-python/
+# Example Fermitools XML Files - https://fermi.gsfc.nasa.gov/ssc/data/analysis/scitools/xml_model_defs.html#logParabola
+# Fermi Documention on XML Formatting - https://fermi.gsfc.nasa.gov/ssc/data/access/lat/BackgroundModels.html
+# LAT IRF - https://fermi.gsfc.nasa.gov/ssc/data/analysis/lat_irfs/irf_overview.html
+# RA-Dec Units - https://www.reddit.com/r/Astronomy/comments/1fkv3nv/how_do_i_convert_from_hhmmss_to_degrees/

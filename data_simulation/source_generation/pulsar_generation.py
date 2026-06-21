@@ -252,3 +252,9 @@ def generate_mock_pulsar_catalog(catalog: str, pulsars, detection_threshold):
     parameters = np.array(parameters)
 
     return parameters
+
+
+# REFERENCES
+
+# Exclude NaNs - https://stackoverflow.com/questions/17126543/numpy-array-get-the-subset-slice-of-an-array-which-is-not
+# -nan

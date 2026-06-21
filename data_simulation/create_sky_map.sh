@@ -79,3 +79,4 @@ conda deactivate
 # conda-init-before-cond
 # Fermitools Documentation - https://fermi.gsfc.nasa.gov/ssc/data/analysis/scitools/overview.html
 # IRF Justification - https://fermi.gsfc.nasa.gov/ssc/data/analysis/scitools/lat_data_selection.html
+# Selection Recommendations - https://fermi.gsfc.nasa.gov/ssc/data/analysis/scitools/lat_data_selection.html

@@ -174,15 +174,23 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05) -> None:
 # Chi-Squared Test - https://en.wikipedia.org/wiki/Chi-squared_test
 # Chi-Squred with Zero Expected Counts - https://stats.stackexchange.com/questions/78101/chi-squared-test-with-0-
 # expected-values
+# Fitting Distributions - https://cseweb.ucsd.edu/~dasgupta/291w22/distributions-handout.pdf
 # Goodness of Fit - https://www.lboro.ac.uk/media/media/schoolanddepartments/mlsc/downloads/HELM%20Workbook%2042%20
 # Goodness%20of%20Fit%20and%20Contingency%20Tables.pdf
+# Hypothesis Testing - https://stats.stackexchange.com/questions/421156/how-do-you-decide-what-an-acceptable-p-value-is-
+# for-a-k-s-test
 # Kolmogorov-Smirnov Statistic - https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test
 # K-S Table - https://real-statistics.com/statistics-tables/kolmogorov-smirnov-table/
+# K-S Test Tutorial - https://www.geeksforgeeks.org/machine-learning/kolmogorov-smirnov-test-ks-test/
+# K-S Test Unexpected Values - https://stackoverflow.com/questions/51902996/scipy-kstest-used-on-scipy-lognormal-
+# distrubtion
 # K-S Tutorial - https://www.geeksforgeeks.org/machine-learning/kolmogorov-smirnov-test-ks-test/
 # Log-Normals - https://stackoverflow.com/questions/8747761/scipy-lognormal-distribution-parameters
 # Log-Normals - https://www.reddit.com/r/AskStatistics/comments/110rprt/scale_location_and_shape_of_a_lognormal/
 # Log-Normals - https://statisticsbyjim.com/probability/lognormal-distribution/
 # Match in Python - https://www.w3schools.com/python/python_match.asp
+# Normality Testing - https://numiqo.com/tutorial/test-of-normality
+# Normality Testing - https://www.graphpad.com/support/faq/testing-data-for-normal-distrbution/
 # Numpy Documentation - https://numpy.org/doc/stable/index.html
 # Python Documentation - https://docs.python.org/3/index.html
 # Reduced Chi-Squared - https://en.wikipedia.org/wiki/Reduced_chi-squared_statistic
