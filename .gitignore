@@ -6,3 +6,4 @@
 *.fits
 *DS_Store*
 *.xml
+*.par

@@ -26,9 +26,6 @@ FERMIBACKGROUNDFILTERED=/Volumes/T7/data/sky_map_creation_data/fermi_background_
 FERMIBACKGROUNDFILTEREDGTI=/Volumes/T7/data/sky_map_creation_data/fermi_background_filtered_gti.fits
 FERMIBACKGROUNDCMAP=/Volumes/T7/data/sky_map_creation_data/fermi_background_filtered_gti_cmap.fits
 
-# Using P8R3_ULTRACLEANVETO_V3 as I am doing an analysis that involves most of the sky - see Fermi recommendations
-#IRF=
-
 # NEED TO CHANGE FOR USER
 source /Users/milli/miniconda3/bin/activate
 
@@ -46,69 +43,32 @@ touch ./simulated_data/sources.xml
 
 SOURCEXML=./simulated_data/sources.xml
 
-# Select relevant Fermi data
-#ls /Volumes/T7/data/weekly/photon/*.fits > /Volumes/T7/data/weekly/photon/events.txt
-#
-#cat /Volumes/T7/data/weekly/photon/events.txt
-
 # RAN BELOW LINE
 
 # Select front and back events (ID8) with energy between 300 MeV and 200 GeV (recommended by ID8) and zenith cut is 100 degrees
-# gtselect evclass=128 evtype=3 infile=@/Volumes/T7/data/weekly/photon/events.txt outfile=$FERMIDATACUT ra=INDEF dec=INDEF rad=INDEF tmin=INDEF tmax=INDEF emin=300 emax=200000 zmax=100
+gtselect evclass=128 evtype=3 infile=@/Volumes/T7/data/weekly/photon/events.txt outfile=$FERMIDATACUT ra=INDEF dec=INDEF rad=INDEF tmin=INDEF tmax=INDEF emin=300 emax=200000 zmax=100
 
 # Select corresponding good time intervals associated with this above selection - data filter is from ID8
 # Do NOT perform zenith cut at this stage - as we are working on the whole sky.
-# gtmktime scfile=@/Volumes/T7/data/lat_spacecraft_merged.fits evfile=$FERMIDATACUT outfile=$FERMIDATACUTGTI filter="(DATA_QUAL == 1) && (LAT_CONFIG == 1) && (IN_SAA != T)" roicut=no
+gtmktime scfile=@/Volumes/T7/data/lat_spacecraft_merged.fits evfile=$FERMIDATACUT outfile=$FERMIDATACUTGTI filter="(DATA_QUAL == 1) && (LAT_CONFIG == 1) && (IN_SAA != T)" roicut=no
 
 # Construct livetime cube - setting zenith cut (based on recommendations of 100) here instead of gtmktime because
 # a lot of data would be lost otherwise when performing the operation on the whole sky
 # https://fermi.gsfc.nasa.gov/ssc/data/analysis/scitools/data_preparation.html
-# gtltcube evfile=$FERMIDATACUTGTI scfile=/Volumes/T7/data/lat_spacecraft_merged.fits outfile=$LTCUBE zmax=100 dcostheta=0.025 binsz=1
+gtltcube evfile=$FERMIDATACUTGTI scfile=/Volumes/T7/data/lat_spacecraft_merged.fits outfile=$LTCUBE zmax=100 dcostheta=0.025 binsz=1
 
-# Construct set of exposure maps for different energies - followed example 2 in documention for the whole sky
+# Construct set of binned exposure maps for different energies - followed example 2 in documention for the whole sky
 # Choice of IRF is based on recommendations in Fermi documentation - working on all-sky analysis
-# gtexpcube2 evtype=3 binsz=1 infile=$LTCUBE cmap=none outfile=$EXPMAP irfs=P8R3_ULTRACLEANVETO_V3 nxpix=360 nypix=180 xref=0 yref=0 axisrot=0 coordsys=GAL proj=AIT emin=300 emax=200000 enumbins=6
+gtexpcube2 evtype=3 binsz=1 infile=$LTCUBE cmap=none outfile=$EXPMAP irfs=P8R3_ULTRACLEANVETO_V3 nxpix=360 nypix=180 xref=0 yref=0 axisrot=0 coordsys=GAL proj=AIT emin=300 emax=200000 enumbins=6
 
 # Create count map involving Fermi data (only used as count map and my sources will be fit - CHECK THIS WITH ANTHONY)
 # Picked order of 8 (256). Need for count map
-# gtbin evfile=$FERMIDATACUTGTI scfile=NONE outfile=$FERMIBACKGROUNDCMAP algorithm=HEALPIX ebinalg=LOG emin=300 emax=200000 enumbins=6 nxpix=360 nypix=180 binsz=1 hpx_ordering_scheme=RING hpx_order=8 xref=0 axisrot=0 proj=AIT yref=0
+gtbin evfile=$FERMIDATACUTGTI scfile=NONE outfile=$FERMIBACKGROUNDCMAP algorithm=HEALPIX ebinalg=LOG emin=300 emax=200000 enumbins=6 nxpix=360 nypix=180 binsz=1 hpx_ordering_scheme=RING hpx_order=8 xref=0 axisrot=0 proj=AIT yref=0
 
 # Convolve source maps with instrument response
-# gtsrcmaps cmap=$FERMIBACKGROUNDCMAP scfile=/Volumes/T7/data/lat_spacecraft_merged.fits srcmdl=$SOURCEXML expcube=$LTCUBE bexpmap=$EXPMAP ptsrc=yes outfile=$SRCMAP irfs=P8R3_ULTRACLEANVETO_V3
-
-# DID NOT RUN BELOW COMMAND
+gtsrcmaps cmap=$FERMIBACKGROUNDCMAP scfile=/Volumes/T7/data/lat_spacecraft_merged.fits srcmdl=$SOURCEXML expcube=$LTCUBE bexpmap=$EXPMAP ptsrc=yes outfile=$SRCMAP irfs=P8R3_ULTRACLEANVETO_V3
 
 gtmodel srcmaps=$SRCMAP srcmdl=$SOURCEXML outfile=$ASIMOV irfs=P8R3_ULTRACLEANVETO_V3 expcube=$LTCUBE bexpmap=$EXPMAP
-
-
-
-# INCLUDE THE BACKGROUND AND ISOTROPIC BACKGROUND HERE
-
-# THEN gtsrcmaps
-
-# THEN gtmodel
-
-
-
-
-
-
-
-# Create binned exposure from real Fermi data
-
-# THINK I ALREADY HAVE gtlcube file - JUST ADD IN CODE USED TO GENERATE IT FROM OTHER FILES - JUST FOLLOW TUTORIALS TO GET TO THIS POINT
-# Followed example 2 in the documentation
-
-#gtexpcube2
-
-# cmap=/Volumes/T7/data/sky_map_creation_data/empty_cmap.fits
-
-# Convolve source models with IRF - also generates source maps for point sources
-# gtsrcmaps scfile=$EXPCUBESPACECRAFT expcube=$EXPCUBE srcmdl=./simulated_data/sources.xml bexpmap=$BINEXPCUBE outfile=$SOURCEMAP irfs=P8R3_ULTRACLEANVETO_V3 ptsrc=yes
-
-# Create model counts map based on fit parameters (here are fit parameters are randomly generated)
-# CHECK IF I SHOULD CHANGE evtype to 3 (AS THIS IS LAST STEP CAN I Just SET TO EV 3 EVEN THOUGH IRF HAS evtype 1024
-# gtmodel srcmaps=$SOURCEMAP srcmdl=./simulated_data/sources.xml outfile=$COUNTSMAP irfs=P8R3_ULTRACLEANVETO_V3 expcube=EXPCUBE bexpmap=BINEXPCUBE
 
 # Deactivate environment
 conda deactivate
