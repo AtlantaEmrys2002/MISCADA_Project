@@ -55,6 +55,25 @@ gtmktime scfile=@/Volumes/T7/data/lat_spacecraft_merged.fits evfile=$FERMIDATACU
 # Construct livetime cube - setting zenith cut (based on recommendations of 100) here instead of gtmktime because
 # a lot of data would be lost otherwise when performing the operation on the whole sky
 # https://fermi.gsfc.nasa.gov/ssc/data/analysis/scitools/data_preparation.html
+
+
+# FROM BELOW - NEED TO CHANGE ENERGY BINS SO 5 (OTHERWISE AUTOSOURCEID WILL NOT WORK!!!!!)
+# VERY VERY IMPortANT
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 gtltcube evfile=$FERMIDATACUTGTI scfile=/Volumes/T7/data/lat_spacecraft_merged.fits outfile=$LTCUBE zmax=100 dcostheta=0.025 binsz=1
 
 # Construct set of binned exposure maps for different energies - followed example 2 in documention for the whole sky
