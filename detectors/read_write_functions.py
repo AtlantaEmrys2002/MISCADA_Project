@@ -18,6 +18,8 @@ import math as mt
 
 from bisect import bisect
 
+import healpy as hp
+
 import re
 from scipy.integrate import quad
 
@@ -427,8 +429,8 @@ def create_dataset(folder, file="training.csv", prefix="test", n=50, faint="F0",
         print("AGN catalogue xml: ", path_to_agn_test_cat_xml)
         print("PSR catalogue xml: ", path_to_psr_test_cat_xml)
 
-        print("AGN calalogue fits: ", path_to_agn_test_cat_fits)
-        print("AGN calalogue fits: ", path_to_psr_test_cat_fits)
+        print("AGN catalogue fits: ", path_to_agn_test_cat_fits)
+        print("AGN catalogue fits: ", path_to_psr_test_cat_fits)
 
         print("Patches: %d of %d" % (patches, n))
 
@@ -546,7 +548,6 @@ def create_dataset(folder, file="training.csv", prefix="test", n=50, faint="F0",
                 ymax = ymax // 2
 
                 # generation of the masks
-                # print("agn: ", nagn, xmin,xmax,ymin,ymax)
                 grid2D_psf, grid2D_bck = psf_bck_mask(y // 2, x // 2, radius_64, grid2D_psf)
 
                 source_lines.append(f"{out_fn},{int(xmin)},{int(xmax)},{int(ymin)},{int(ymax)}," +
@@ -600,13 +601,19 @@ def create_dataset(folder, file="training.csv", prefix="test", n=50, faint="F0",
 # given AGN, PSR and Background fits file, generate 768 patches per sky instance
 
 # path to repo
-path_to_data = '/home/bapanes/Research-Now/Gamma-Ray-Point-Source-Detector'
+# path_to_data = '/home/bapanes/Research-Now/Gamma-Ray-Point-Source-Detector'
+
+# BASED ON THE BELOW PATH, I THINK MY VERSION MIGHT ACTUALLY BE RIGHT!!!
 
 # path to backgroud B1
-path_to_background_fits = f"{path_to_data}/data-raw/lat_alldata_9.5years_4fgl_P8R3_ULTRACLEANVETO_V2_FRONT_zmax105_gti_HEALPIX_256_IEM_V07_IGRB_P8R3_ULTRACLEANVETO_V2_FRONT+BACK.fits"
+# path_to_background_fits = f"{path_to_data}/data-raw/lat_alldata_9.5years_4fgl_P8R3_ULTRACLEANVETO_V2_FRONT_zmax105_gti_HEALPIX_256_IEM_V07_IGRB_P8R3_ULTRACLEANVETO_V2_FRONT+BACK.fits"
+
+path_to_background_fits = "/Volumes/T7/data/sky_map_creation_data/fermi_asimov.fits"
 
 # path to output data
-test_folder = f"{path_to_data}/../local/dm-local/data-test/data-768-F0-B1"
+# test_folder = f"{path_to_data}/../local/dm-local/data-test/data-768-F0-B1"
+
+test_folder = "./maps/version_1"
 
 # Gulli's approach to generate a more uniform coverage of the sky
 longitude, latitude = hp.pix2ang(8, np.arange(hp.nside2npix(8)), lonlat=True)
