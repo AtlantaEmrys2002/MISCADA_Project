@@ -6,6 +6,8 @@ from sklearn.cluster import KMeans
 
 def k_means_clustering(binary_segments):
 
+    # IMPLEMENTED FOLLOWING PSEUDOCODE IN ID8 (MY OWN IMPLEMENTATION)
+
     source_centres_in_each_image = []
 
     for segment in binary_segments:
