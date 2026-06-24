@@ -1,7 +1,27 @@
 import copy
+import cv2
 from itertools import product
 import numpy as np
 from sklearn.cluster import KMeans
+
+
+def blob_detection(binary_segments):
+
+    detector = cv2.SimpleBlobDetector()
+
+    for segment in binary_segments:
+
+        D = segment[0].detach().numpy()
+
+        keypoints = detector.detect(D)
+
+        print(keypoints)
+
+        # CHECK THIS WORKS THEN ALSO IMPLEMENT LoG - call versions UNEK, UNEB (UNET + Blob), and UNELOG (U-Net + LoG)
+        # - STATE WHICH PAPERS THEY ARE FROM AND COMBINE WITH UNET - CHECK THEY WORK THEN FIND A FEW MORE ALGORITHMS
+        # FOR DETECTION AND USE AS YOUR BENCHMARKS
+
+
 
 
 def k_means_clustering(binary_segments):

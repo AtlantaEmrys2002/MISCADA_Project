@@ -1,11 +1,12 @@
 from . components.clustering_algorithms import k_means_clustering
 from . components.segmentation_algorithms import UNET, unet_train
 import numpy as np
+import shutil
 import torch
 
 
 def unek_algorithm(training_data, validation_data, testing_data, use_pretrained=False,
-                   pretrained_model_file="unet.pt"):
+                   pretrained_model_file="./benchmarks/pre_trained_models/unet.pt"):
 
     # SEMANTIC SEGMENTATION
 
@@ -19,6 +20,7 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained=
 
         # Save model
         torch.save(model.state_dict(), pretrained_model_file)
+        # shutil.move(pretrained_model_file, "./benchmarks/")
 
     else:
 
