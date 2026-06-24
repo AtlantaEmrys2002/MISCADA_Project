@@ -1,6 +1,5 @@
 import copy
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.cluster import KMeans
 
@@ -12,6 +11,7 @@ import torch
 from torch import nn
 from torchvision.transforms.functional import center_crop
 from torch.utils.data import DataLoader, Subset
+from benchmarks.clustering_algorithms import k_means_clustering
 
 # for k in test_images[0]:
 #     tmp = plt.imshow(k)
@@ -369,90 +369,6 @@ def unek_segmentation(train_data, test_data, training_epochs=50):
     return unet
 
 
-def k_means_clustering(binary_segments):
-
-    source_centres_in_each_image = []
-
-    num_segments_done = 0
-
-    for segment in binary_segments:
-
-        print("Segment: {}".format(num_segments_done + 1))
-
-        D = segment[0].detach().numpy()
-
-        l_sth = 0.2
-        l_snn = -10
-        R = 5
-        diameter = R * 2
-
-        # As we have used SoftMax, our image isn't exactly binary - this will make it so
-        V_D = np.argwhere(D > l_sth)
-
-        # Best score so far
-        s_k_max = 0
-
-        # Best number of sources so far
-        k_best = 0
-
-        # Centre of each cluster determined by k_best
-        best_centres = []
-
-        # Determine the number of sources/clusters present in the image
-        for k in range(1, 50):
-
-            D_tmp = copy.deepcopy(D)
-
-            s_k = 0
-
-            k_centroids = KMeans(n_clusters=k, random_state=0, n_init="auto").fit(V_D)
-
-            for c in k_centroids.cluster_centers_:
-
-                # find pixels of D inside R
-
-                x_centre = round(c[0])
-                y_centre = round(c[1])
-
-                x_range = np.clip(np.arange(x_centre - diameter, x_centre + diameter), a_min=0, a_max=63)
-                y_range = np.clip(np.arange(y_centre - diameter, y_centre + diameter), a_min=0, a_max=63)
-
-                potential_coords = np.unique(np.array([(x_val, y_val) for x_val in x_range for y_val in y_range]),
-                                             axis=0)
-
-                distances_from_centre_coord = np.linalg.norm(potential_coords - c, ord=2, axis=1)
-
-                p_c = potential_coords[(distances_from_centre_coord < R)]
-
-                # Update s_k
-                s_k += np.sum(D_tmp[p_c[:, 0], p_c[:, 1]])
-
-                # Redefine scores such that if the points are included in another cluster, the score is penalised
-                for p_c_coord in p_c:
-                    D_tmp[p_c_coord[0], p_c_coord[1]] = l_snn
-
-            if s_k > s_k_max:
-
-                k_best = k
-                s_k_max = s_k
-                best_centres = k_centroids.cluster_centers_
-
-        source_centres_in_each_image.append(best_centres)
-
-        num_segments_done += 1
-
-    return source_centres_in_each_image
-
-
-
-
-
-
-
-
-
-
-
 # RANDOM SPLIT OF INDICES AT THE MOMENT - 80% vs 20% split
 train_indices = np.random.choice(256, size=204, replace=False)
 
@@ -481,8 +397,7 @@ test_batches = DataLoader(test_split, batch_size=128)
 # Create sources and their centres
 # k_means_clustering(unet_outputs)
 
-k_means_clustering(test_segments)
-
+proposed_sources = k_means_clustering(test_segments)
 
 
 
