@@ -3,9 +3,10 @@ from torch import nn
 from torchvision.transforms.functional import center_crop
 
 # Consulted this tutorial when building the U-Net class -  https://medium.com/@alessandromondin/semantic-segmentation-
-# with-pytorch-u-net-from-scratch-502d6565910a. Adjusted the implementation such that it was compatible with the
-# dataset I have created (and the one created by ID8) and processed inputs with layer sizes and pooling identical to
-# that outlined in ID8.
+# with-pytorch-u-net-from-scratch-502d6565910a. Also consulted the author's GitHub implementation -
+# https://github.com/AlessandroMondin/U-NET. Adjusted the implementation such that it was compatible with the dataset I
+# have created (and the one created by ID8) and processed inputs with layer sizes and pooling identical to that outlined
+# in ID8.
 
 
 class CNNBlock(nn.Module):
@@ -213,6 +214,8 @@ def unet_train(train_data, test_data, training_epochs=50):
 
 
 # REFERENCES
+# Pytorch Documentation - https://pytorch.org/get-started/locally/
 # Training Loop - https://docs.pytorch.org/tutorials/beginner/introyt/trainingyt.html
+# Tutorial GitHub - https://github.com/AlessandroMondin/U-NET/blob/main/dataset.py
 # U-Net Tutorial - https://medium.com/@alessandromondin/semantic-segmentation-with-pytorch-u-net-from-
 # scratch-502d6565910a

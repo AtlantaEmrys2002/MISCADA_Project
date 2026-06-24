@@ -68,3 +68,9 @@ def k_means_clustering(binary_segments):
         source_centres_in_each_image.append(best_centres)
 
     return source_centres_in_each_image
+
+
+# REFERENCES
+
+# Indexing with array of indices - https://stackoverflow.com/questions/19821425/how-can-i-filter-numpy-array-by-list-of-
+# indices

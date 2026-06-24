@@ -52,3 +52,8 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained=
 
     # Return the segmented images returned by U-Net and locations of source centres returned by K-means
     return unet_predictions, source_locations
+
+
+# REFERENCES
+
+# ID8 - followed their theory/mathematical definition to implement my own version
