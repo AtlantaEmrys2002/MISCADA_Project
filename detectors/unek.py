@@ -1,10 +1,12 @@
+import copy
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from sklearn.cluster import KMeans
 
 #TODO
 # Use this answer https://stackoverflow.com/questions/50544730/how-do-i-split-a-custom-dataset-into-training-and-test-datasets
-# to do train-test split of data
+# to do train-test-validation split of data. Validation used to calculate loss in U-Net training
 
 import torch
 from torch import nn
@@ -209,8 +211,51 @@ test_images = torch.rand((n, 5, 64, 64))
 # REMEMBER - WILL NOT BE BINNED - SO JUST NEED 100 64 x 64 IMAGES
 # test_segments = np.random.choice(a=np.array([0.0, 1.0]), size=(n, 1, 64, 64))
 
-test_segments = torch.rand((n, 1, 64, 64))
-test_segments = (test_segments > 0.5).float()
+# test_segments = torch.rand((n, 1, 64, 64))
+# test_segments = (test_segments > 0.5).float()
+
+test_segments = []
+segment_centres = []
+
+for x in range(n):
+
+    # Create tmp mask
+    tmp_msk = np.zeros(shape=(64, 64))
+
+    tmp_centres = []
+
+    # Choose to simulate between 0 and 5 point source (circles)
+    for x in range(np.random.choice(5)):
+
+        # Assume sources with centres too close to the edge would be discounted
+        centre_coord = np.random.choice(a=np.arange(5, 59), size=2)
+
+        tmp_centres.append(centre_coord)
+
+        for k in range(64):
+            for j in range(64):
+                dist = np.sqrt(((centre_coord[0] - k) ** 2) + ((centre_coord[1] - j) ** 2))
+                if dist <= 2.5:
+                    # 2.5 from paper
+                    tmp_msk[k, j] = 1
+
+    # Add some random noise - reflects what U-Net will likely predict
+    noise = np.random.choice(a=[0, 1], size=tmp_msk.shape, p=[0.9, 0.1])
+    tmp_msk = np.maximum(tmp_msk, noise)
+
+    tmp_msk = [tmp_msk]
+    segment_centres.append(tmp_centres)
+
+    test_segments.append(tmp_msk)
+
+test_segments = np.array(test_segments)
+
+test_segments = torch.from_numpy(test_segments)
+
+# print(test_segments.shape)
+#
+# tmp = plt.imshow(test_segments[2][0], cmap='gray')
+# plt.show()
 
 
 
@@ -224,6 +269,8 @@ test_segments = (test_segments > 0.5).float()
 #
 #     idx = p.multinomial(num_samples=n, replacement=replace)
 #     test_segments = a[idx]
+
+
 
 
 
@@ -322,6 +369,90 @@ def unek_segmentation(train_data, test_data, training_epochs=50):
     return unet
 
 
+def k_means_clustering(binary_segments):
+
+    source_centres_in_each_image = []
+
+    num_segments_done = 0
+
+    for segment in binary_segments:
+
+        print("Segment: {}".format(num_segments_done + 1))
+
+        D = segment[0].detach().numpy()
+
+        l_sth = 0.2
+        l_snn = -10
+        R = 5
+        diameter = R * 2
+
+        # As we have used SoftMax, our image isn't exactly binary - this will make it so
+        V_D = np.argwhere(D > l_sth)
+
+        # Best score so far
+        s_k_max = 0
+
+        # Best number of sources so far
+        k_best = 0
+
+        # Centre of each cluster determined by k_best
+        best_centres = []
+
+        # Determine the number of sources/clusters present in the image
+        for k in range(1, 50):
+
+            D_tmp = copy.deepcopy(D)
+
+            s_k = 0
+
+            k_centroids = KMeans(n_clusters=k, random_state=0, n_init="auto").fit(V_D)
+
+            for c in k_centroids.cluster_centers_:
+
+                # find pixels of D inside R
+
+                x_centre = round(c[0])
+                y_centre = round(c[1])
+
+                x_range = np.clip(np.arange(x_centre - diameter, x_centre + diameter), a_min=0, a_max=63)
+                y_range = np.clip(np.arange(y_centre - diameter, y_centre + diameter), a_min=0, a_max=63)
+
+                potential_coords = np.unique(np.array([(x_val, y_val) for x_val in x_range for y_val in y_range]),
+                                             axis=0)
+
+                distances_from_centre_coord = np.linalg.norm(potential_coords - c, ord=2, axis=1)
+
+                p_c = potential_coords[(distances_from_centre_coord < R)]
+
+                # Update s_k
+                s_k += np.sum(D_tmp[p_c[:, 0], p_c[:, 1]])
+
+                # Redefine scores such that if the points are included in another cluster, the score is penalised
+                for p_c_coord in p_c:
+                    D_tmp[p_c_coord[0], p_c_coord[1]] = l_snn
+
+            if s_k > s_k_max:
+
+                k_best = k
+                s_k_max = s_k
+                best_centres = k_centroids.cluster_centers_
+
+        source_centres_in_each_image.append(best_centres)
+
+        num_segments_done += 1
+
+    return source_centres_in_each_image
+
+
+
+
+
+
+
+
+
+
+
 # RANDOM SPLIT OF INDICES AT THE MOMENT - 80% vs 20% split
 train_indices = np.random.choice(256, size=204, replace=False)
 
@@ -339,7 +470,19 @@ test_split = Subset(test_data, test_indices)
 train_batches = DataLoader(train_split, batch_size=128, shuffle=True)
 test_batches = DataLoader(test_split, batch_size=128)
 
-unek_segmentation(train_batches, test_batches)
+# Binary segmentation of image
+
+# Train U-Net
+# trained_model = unek_segmentation(train_batches, test_batches)
+
+# Test outputs
+# unet_outputs = trained_model(test_batches)
+
+# Create sources and their centres
+# k_means_clustering(unet_outputs)
+
+k_means_clustering(test_segments)
+
 
 
 
@@ -359,6 +502,8 @@ unek_segmentation(train_batches, test_batches)
 
 # REFERENCES
 # ID8 - followed their theory/mathematical definition to implement my own version
+# Indexing with array of indices - https://stackoverflow.com/questions/19821425/how-can-i-filter-numpy-array-by-list-of-
+# indices
 # Pytorch Documentation - https://pytorch.org/get-started/locally/
 # Tutorial - https://medium.com/@alessandromondin/semantic-segmentation-with-pytorch-u-net-from-scratch-502d6565910a
 # Tutorial GitHub - https://github.com/AlessandroMondin/U-NET/blob/main/dataset.py
