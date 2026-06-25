@@ -1,10 +1,10 @@
-from . components.clustering_algorithms import k_means_clustering
+from . components.clustering_algorithms import blob_detection
 from . components.segmentation_algorithms import UNET, unet_train
 import numpy as np
 import torch
 
 
-def unek_algorithm(training_data, validation_data, testing_data, use_pretrained=False,
+def uneb_algorithm(training_data, validation_data, testing_data, use_pretrained=False,
                    pretrained_model_file="./benchmarks/pre_trained_models/unet.pt"):
 
     # SEMANTIC SEGMENTATION
@@ -19,7 +19,6 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained=
 
         # Save model
         torch.save(model.state_dict(), pretrained_model_file)
-        # shutil.move(pretrained_model_file, "./benchmarks/")
 
     else:
 
@@ -42,17 +41,17 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained=
 
         unet_predictions = np.array([model(i) for i in testing_inputs][0])
 
-    # CLUSTERING (SOURCE LOCALISATION)
+    # CLUSTERING
 
     unet_predictions = torch.from_numpy(unet_predictions)
 
     # Determine the number of sources present within each U-Net segmented image and return the location of their centres
-    source_locations = k_means_clustering(unet_predictions)
+    source_locations = blob_detection(unet_predictions)
 
     # Return the segmented images returned by U-Net and locations of source centres returned by K-means
     return unet_predictions, source_locations
 
-
 # REFERENCES
 
-# ID8 - followed their theory/mathematical definition to implement my own version
+# ID25 - followed their theory/mathematical definition to implement my own version
+

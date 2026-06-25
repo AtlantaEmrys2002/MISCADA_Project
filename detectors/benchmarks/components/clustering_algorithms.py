@@ -5,21 +5,71 @@ import numpy as np
 from sklearn.cluster import KMeans
 
 
+def pixels_in_radius(coordinate, R):
+
+    # SELECTS ALL INDICES AROUND A GIVEN COORDINATE THAT LIE WITHIN A DISK OF RADIUS R
+
+    # Creates box around centre coordinate - we then look at circle with radius equal to half the len of the
+    # box's width
+    x_range = np.clip(np.arange(coordinate[0] - R, coordinate[0] + R), a_min=0, a_max=63)
+    y_range = np.clip(np.arange(coordinate[1] - R, coordinate[1] + R), a_min=0, a_max=63)
+
+    potential_coords = np.unique(np.array(list(product(x_range, y_range))), axis=0)
+
+    distances_from_centre_coord = np.linalg.norm(potential_coords - coordinate, ord=2, axis=1)
+
+    p_c = potential_coords[(distances_from_centre_coord < R)].astype(int)
+
+    return p_c
+
+
 def blob_detection(binary_segments):
 
-    detector = cv2.SimpleBlobDetector()
+    params = cv2.SimpleBlobDetector_Params()
+
+    params.minThreshold = 30
+    # Set to 78 as that is the maximum value a pixel could hold
+    params.maxThreshold = 78
+    params.filterByArea = True
+    # 5 pixels recommended by paper
+    params.minArea = 5
+    params.filterByCircularity = False
+    params.filterByConvexity = False
+    params.filterByInertia = False
+    params.thresholdStep = 10
+
+    detector = cv2.SimpleBlobDetector_create(params)
+
+    source_centres_in_each_image = []
 
     for segment in binary_segments:
 
-        D = segment[0].detach().numpy()
+        # PREPARE DATA
 
-        keypoints = detector.detect(D)
+        D = segment[0].detach().numpy().astype(np.uint8)
 
-        print(keypoints)
+        # Threshold image (target is 0s and 1s)
+        D = np.where(D > 0.5, 1, 0)
+
+        # Closeness to disk centre grading
+        grade = np.zeros_like(D)
+
+        # Pass kernel over images to sum all pixels within a given disk
+        for i in range(64):
+            for j in range(64):
+                pixels_to_sum = pixels_in_radius(np.array([i, j]), R=5)
+                grade[i, j] = np.sum([D[c[0], c[1]] for c in pixels_to_sum])
+
+        keypoints = detector.detect(grade.astype(np.uint8))
+
+        source_centres_in_each_image.append(keypoints)
 
         # CHECK THIS WORKS THEN ALSO IMPLEMENT LoG - call versions UNEK, UNEB (UNET + Blob), and UNELOG (U-Net + LoG)
         # - STATE WHICH PAPERS THEY ARE FROM AND COMBINE WITH UNET - CHECK THEY WORK THEN FIND A FEW MORE ALGORITHMS
         # FOR DETECTION AND USE AS YOUR BENCHMARKS
+
+    return source_centres_in_each_image
+
 
 
 
@@ -92,5 +142,9 @@ def k_means_clustering(binary_segments):
 
 # REFERENCES
 
+# Blob Detection Thresholds - https://opencv.org/blob-detection-using-opencv/#h-filtering-blobs
+# ID8 and ID25 - see references
 # Indexing with array of indices - https://stackoverflow.com/questions/19821425/how-can-i-filter-numpy-array-by-list-of-
 # indices
+# Numpy Thresholding - https://bobbyhadz.com/blog/python-convert-numpy-array-to-0-or-1-based-on-threshold
+# Setting Blob Detection Thresholds - https://stackoverflow.com/questions/32973537/what-is-the-use-of-minrepeatability-parameter-of-simpleblobdetector-in-opencv
