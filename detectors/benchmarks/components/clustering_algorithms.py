@@ -49,7 +49,11 @@ def blob_detection(binary_segments):
         D = segment[0].detach().numpy().astype(np.uint8)
 
         # Threshold image (target is 0s and 1s)
-        D = np.where(D > 0.5, 1, 0)
+        # D = np.where(D > 0.5, 1, 0)
+
+        # This is important - need to "invert" image https://stackoverflow.com/questions/53064534/simple-blob-detector-
+        # does-not-detect-blobs
+        D = np.where(D < 0.5, 1, 0)
 
         # Closeness to disk centre grading
         grade = np.zeros_like(D)
@@ -60,7 +64,9 @@ def blob_detection(binary_segments):
                 pixels_to_sum = pixels_in_radius(np.array([i, j]), R=5)
                 grade[i, j] = np.sum([D[c[0], c[1]] for c in pixels_to_sum])
 
-        keypoints = detector.detect(grade.astype(np.uint8))
+        grade = grade.astype(np.uint8)
+
+        keypoints = detector.detect(grade)
 
         source_centres_in_each_image.append(keypoints)
 
