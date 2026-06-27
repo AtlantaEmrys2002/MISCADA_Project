@@ -26,21 +26,10 @@ def classification_confusion_matrix(ground_truth, predicted, classifier_name, di
     plt.close()
 
 
+# REFERENCES
 
-
-# import numpy as np
-#
-# test_class = np.random.choice(["AGN", "Pulsar", "FAKE"], size=15)
-# test_truth = np.random.choice(["AGN", "Pulsar", "FAKE"], size=15)
-#
-# print(test_class)
-# print(test_truth)
-#
-# classification_confusion_matrix(test_truth, test_class, classifier_name="Random", directory="../plots")
-
-
-
-# REFERNECES
-
+# Annotating Seaborn - https://stackoverflow.com/questions/32723798/how-do-i-add-a-title-and-axis-labels-to-seaborn-
+# heatmap
+# Plotting Confusion Matrix - https://stackoverflow.com/questions/35572000/how-can-i-plot-a-confusion-matrix
 # Scikit-Learn Documentation - https://scikit-learn.org/stable/modules/generated/sklearn.metrics.confusion_matrix.html
 # Seaborn Documentation - https://matplotlib.org/stable/users/explain/colors/colormaps.html

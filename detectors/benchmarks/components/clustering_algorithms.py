@@ -6,7 +6,6 @@ from sklearn.cluster import KMeans
 
 
 def pixels_in_radius(coordinate, R):
-
     # SELECTS ALL INDICES AROUND A GIVEN COORDINATE THAT LIE WITHIN A DISK OF RADIUS R
 
     # Creates box around centre coordinate - we then look at circle with radius equal to half the len of the
@@ -154,9 +153,20 @@ def k_means_clustering(binary_segments):
 
 # REFERENCES
 
+# Blob Detector Error - https://stackoverflow.com/questions/53064534/simple-blob-detector-does-not-detect-blobs
+# Blob Detection OpenCV - https://pythonpathfinders.medium.com/blob-detection-in-images-using-python-computer-vision-
+# 30ec881f71de
+# Blob Detector Params - https://stackoverflow.com/questions/8076889/how-to-use-opencv-simpleblobdetector
 # Blob Detection Thresholds - https://opencv.org/blob-detection-using-opencv/#h-filtering-blobs
+# Blob Detection Tutorials - https://opencv.org/blob-detection-using-opencv/
+# Extracting Cartesian Coordinates from OpenCV - https://stackoverflow.com/questions/35884409/how-to-extract-x-y-
+# coordinates-from-opencv-cv2-keypoint-object
 # ID8 and ID25 - see references
 # Indexing with array of indices - https://stackoverflow.com/questions/19821425/how-can-i-filter-numpy-array-by-list-of-
 # indices
+# Numpy and OpenCV Datatypes - https://stackoverflow.com/questions/7587490/converting-numpy-array-to-opencv-array
+# Numpy and OpenCV Datatypes - https://stackoverflow.com/questions/54446621/why-wont-opencv-show-an-image-stored-in-a-
+# numpy-array-python?rq=3
 # Numpy Thresholding - https://bobbyhadz.com/blog/python-convert-numpy-array-to-0-or-1-based-on-threshold
-# Setting Blob Detection Thresholds - https://stackoverflow.com/questions/32973537/what-is-the-use-of-minrepeatability-parameter-of-simpleblobdetector-in-opencv
+# Setting Blob Detection Thresholds - https://stackoverflow.com/questions/32973537/what-is-the-use-of-minrepeatability-
+# parameter-of-simpleblobdetector-in-opencv

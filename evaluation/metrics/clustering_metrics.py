@@ -1,9 +1,6 @@
 import numpy as np
 from scipy.spatial.distance import cdist
 
-test_ground = np.array([[0, 2], [64, 7], [9, 31], [6, 8], [23, 18]])
-test_predicted = np.array([[61, 3], [0, 5], [2, 2], [48, 1], [19, 55]])
-
 
 def chamfer_distance(predicted_source_centres, true_source_centres):
 

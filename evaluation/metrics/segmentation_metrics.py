@@ -1,6 +1,26 @@
 import numpy as np
 
 
+def binary_balanced_accuracy(actual_segmentation, predicted_segmentation):
+
+    # Expect two binary arrays
+
+    true_positives = np.sum(np.logical_and(actual_segmentation == 1, predicted_segmentation == 1))
+
+    true_negatives = np.sum(np.logical_and(actual_segmentation == 0, predicted_segmentation == 0))
+
+    false_positives = np.sum(np.logical_and(actual_segmentation == 0, predicted_segmentation == 1))
+
+    false_negatives = np.sum(np.logical_and(actual_segmentation == 1, predicted_segmentation == 0))
+
+    first_term = true_positives / (true_positives + false_negatives)
+    second_term = true_negatives / (true_negatives + false_positives)
+
+    balanced_accuracy = (first_term + second_term)/2
+
+    return balanced_accuracy
+
+
 def dice_coefficient(actual_segmentation, predicted_segmentation, threshold=0.5, binary=True):
 
     # See ID27 and ID29.
@@ -27,6 +47,26 @@ def dice_coefficient(actual_segmentation, predicted_segmentation, threshold=0.5,
     dice = numerator / denominator
 
     return dice
+
+
+def segmentation_precision(actual_segmentation, predicted_segmentation):
+
+    true_positives = np.sum(np.logical_and(actual_segmentation == 1, predicted_segmentation == 1))
+
+    false_positives = np.sum(np.logical_and(actual_segmentation == 0, predicted_segmentation == 1))
+
+    precision = true_positives / (true_positives / false_positives)
+
+    return precision
+
+
+def segmentation_recall(actual_segmentation, predicted_segmentation):
+
+    true_positives = np.sum(np.logical_and(actual_segmentation == 1, predicted_segmentation == 1))
+
+    false_negatives = np.sum(np.logical_and(actual_segmentation == 1, predicted_segmentation == 0))
+
+    return true_positives / (true_positives + false_negatives)
 
 
 # REFERENCES
