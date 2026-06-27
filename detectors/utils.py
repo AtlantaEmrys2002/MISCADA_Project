@@ -33,7 +33,7 @@ def random_data(n=256):
                         tmp_msk[k, j] = 1
 
         # Add some random noise - reflects what U-Net will likely predict
-        noise = np.random.choice(a=[0, 1], size=tmp_msk.shape, p=[0.9, 0.1])
+        noise = np.random.choice(a=[0, 1], size=tmp_msk.shape, p=[0.99, 0.01])
         tmp_msk = np.maximum(tmp_msk, noise)
 
         tmp_msk = [tmp_msk]

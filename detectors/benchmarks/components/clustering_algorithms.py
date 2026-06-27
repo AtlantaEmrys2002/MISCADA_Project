@@ -25,6 +25,8 @@ def pixels_in_radius(coordinate, R):
 
 def blob_detection(binary_segments):
 
+    # ID25
+
     params = cv2.SimpleBlobDetector_Params()
 
     params.minThreshold = 30
@@ -49,10 +51,9 @@ def blob_detection(binary_segments):
         D = segment[0].detach().numpy().astype(np.uint8)
 
         # Threshold image (target is 0s and 1s)
-        # D = np.where(D > 0.5, 1, 0)
 
         # This is important - need to "invert" image https://stackoverflow.com/questions/53064534/simple-blob-detector-
-        # does-not-detect-blobs
+        # does-not-detect-blobs.
         D = np.where(D < 0.5, 1, 0)
 
         # Closeness to disk centre grading
@@ -70,14 +71,17 @@ def blob_detection(binary_segments):
 
         source_centres_in_each_image.append(keypoints)
 
-        # CHECK THIS WORKS THEN ALSO IMPLEMENT LoG - call versions UNEK, UNEB (UNET + Blob), and UNELOG (U-Net + LoG)
-        # - STATE WHICH PAPERS THEY ARE FROM AND COMBINE WITH UNET - CHECK THEY WORK THEN FIND A FEW MORE ALGORITHMS
-        # FOR DETECTION AND USE AS YOUR BENCHMARKS
+    # Format centres - directly call x and y otherwise coordinates are formatted as (y, x)
 
-    return source_centres_in_each_image
+    centres = []
 
+    # N.B. we index 1 then 0, as coordinates are returned from p.pt in (y, x) format (rather than x, y)
+    for k in range(len(source_centres_in_each_image)):
+        centres.append(
+            np.round((np.array([np.array([p.pt[1], p.pt[0]]) for p in source_centres_in_each_image[k]]))).astype(
+                np.uint8))
 
-
+    return centres
 
 
 def k_means_clustering(binary_segments):
@@ -116,6 +120,8 @@ def k_means_clustering(binary_segments):
             cluster_centres = np.round(k_centroids.cluster_centers_)
 
             for c in cluster_centres:
+
+                # REPLACE THIS WITH PIXELS IN RADIUS FUNCTION
 
                 # find pixels of D inside R
 
