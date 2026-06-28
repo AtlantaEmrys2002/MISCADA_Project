@@ -315,3 +315,4 @@ def save_results(simulated_agns, simulated_pulsars, file_name="./simulated_data/
 # -frame
 # Pandas Documentation - https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.corr.html
 # RA-Dec Units - https://www.reddit.com/r/Astronomy/comments/1fkv3nv/how_do_i_convert_from_hhmmss_to_degrees/
+# Strip Function - https://stackoverflow.com/questions/8270092/remove-all-whitespace-in-a-string

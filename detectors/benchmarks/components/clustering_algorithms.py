@@ -164,6 +164,7 @@ def k_means_clustering(binary_segments):
 # ID8 and ID25 - see references
 # Indexing with array of indices - https://stackoverflow.com/questions/19821425/how-can-i-filter-numpy-array-by-list-of-
 # indices
+# Itertools - https://stackoverflow.com/questions/33282369/convert-itertools-array-into-numpy-array
 # Numpy Array Size - https://stackoverflow.com/questions/11295609/how-can-i-check-whether-a-numpy-array-is-empty-or-not
 # Numpy Documentation - https://numpy.org/devdocs/reference/generated/numpy.array_equal.html
 # Numpy and OpenCV Datatypes - https://stackoverflow.com/questions/7587490/converting-numpy-array-to-opencv-array

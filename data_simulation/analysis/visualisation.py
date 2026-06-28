@@ -369,15 +369,20 @@ def plot_parameter_relationships(sources, source_type: str, directory: str):
 # Correlation Analysis - https://en.wikipedia.org/wiki/Covariance#Examples
 # Covariance - https://en.wikipedia.org/wiki/Covariance_matrix
 # Figure Sizing - https://stackoverflow.com/questions/332289/how-do-i-change-the-size-of-figures-drawn-with-matplotlib
-# Fitting Lognormals - https://stackoverflow.com/questions/18534562/scipy-lognormal-fitting
+# Fitting Log-normals - https://stackoverflow.com/questions/18534562/scipy-lognormal-fitting
 # Fitting Recommendations - https://dataviz.shef.ac.uk/docs/18/03/2021/LearningPath-Statistical-Modeling-1
 # Gaussian Fitting Sharp Peak - https://stackoverflow.com/questions/74146895/gaussian-fitting-of-a-sharply-peaked-curve
 # Gaussian Mixture - https://scikit-learn.org/stable/modules/generated/sklearn.mixture.GaussianMixture.html
 # Kendall Rank Correlation - https://en.wikipedia.org/wiki/Kendall_rank_correlation_coefficient
 # Logistic Distribution - https://stackoverflow.com/questions/78113609/how-to-fit-a-logistic-distribution-use-a-fixed-
 # location-parameter
+# Logistic Distribution Fitting - https://stackoverflow.com/questions/78113609/how-to-fit-a-logistic-distribution-use-a-
+# fixed-location-parameter
 # Log-Normals - https://stackoverflow.com/questions/68361048/how-to-generate-lognormal-distribution-with-specific-mean-
 # and-std-in-python
+# Log-Normal Error - https://stackoverflow.com/questions/65302332/scipy-stats-lognorm-expect-returning-an-odd-result
+# Log-Normal from Measurements - https://deltares.github.io/GEOLib-Plus/latest/community/probabilistic_macrostability/
+# Tutorial_1_Fit_Lognormal_Distribution.html
 # Log-Log Plot Fits - https://stackoverflow.com/questions/47226600/plot-straight-line-of-best-fit-on-log-log-plot
 # Normalising Histograms - https://stackoverflow.com/questions/35482543/normalizing-histograms
 # Normalised/Studentised Residual - https://stats.stackexchange.com/questions/22653/raw-residuals-versus-standardised-
