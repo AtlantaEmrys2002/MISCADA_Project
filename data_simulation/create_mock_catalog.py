@@ -219,6 +219,7 @@ print("catalog simulation finished")
 # Numpy Documentation - https://numpy.org/doc/stable/user/index.html
 # Pandas Documentation - https://pandas.pydata.org/docs/index.html
 # Python Documentation - https://docs.python.org/3/
+# Radians to Degrees - https://stackoverflow.com/questions/9875964/how-can-i-convert-radians-to-degrees-with-python
 # Scipy Documentation - https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.quad.html#scipy.integrate.
 # quad
 # String Formatting - https://stackoverflow.com/questions/12018992/print-combining-strings-and-numbers

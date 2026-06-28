@@ -164,9 +164,13 @@ def k_means_clustering(binary_segments):
 # ID8 and ID25 - see references
 # Indexing with array of indices - https://stackoverflow.com/questions/19821425/how-can-i-filter-numpy-array-by-list-of-
 # indices
+# Numpy Array Size - https://stackoverflow.com/questions/11295609/how-can-i-check-whether-a-numpy-array-is-empty-or-not
+# Numpy Documentation - https://numpy.org/devdocs/reference/generated/numpy.array_equal.html
 # Numpy and OpenCV Datatypes - https://stackoverflow.com/questions/7587490/converting-numpy-array-to-opencv-array
 # Numpy and OpenCV Datatypes - https://stackoverflow.com/questions/54446621/why-wont-opencv-show-an-image-stored-in-a-
 # numpy-array-python?rq=3
 # Numpy Thresholding - https://bobbyhadz.com/blog/python-convert-numpy-array-to-0-or-1-based-on-threshold
+# Permutations - https://stackoverflow.com/questions/1953194/permutations-of-two-lists-in-python
 # Setting Blob Detection Thresholds - https://stackoverflow.com/questions/32973537/what-is-the-use-of-minrepeatability-
 # parameter-of-simpleblobdetector-in-opencv
+# sklearn Documentation - https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html
