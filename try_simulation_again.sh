@@ -38,7 +38,7 @@ conda activate fermi
 
 # Select corresponding good time intervals (GTI) - we do not apply a zenith cut here, as we will loose all our data
 # - therefore, we apply the zenith cut when running the gtltcube function
-gtmktime scfile=$SPACECRAFTFILE evfile=$FERMIDATACUT outfile=$FERMIDATACUTGTI filter="(DATA_QUAL == 1) && (LAT_CONFIG == 1) && (IN_SAA != T)" roicut=no
+# gtmktime scfile=$SPACECRAFTFILE evfile=$FERMIDATACUT outfile=$FERMIDATACUTGTI filter="(DATA_QUAL == 1) && (LAT_CONFIG == 1) && (IN_SAA != T)" roicut=no
 
 # Generate live time cube and apply zenith cut to data here - kept the default values for the spatial grid and
 # inclination angle
@@ -48,21 +48,11 @@ gtmktime scfile=$SPACECRAFTFILE evfile=$FERMIDATACUT outfile=$FERMIDATACUTGTI fi
 # easy 2D arrays) - this is a major flaw in the Fermitools with no documentation. YOU MAY HAVE TO CLICK ENTER TO SAY ALL-SKY AND type yes for energy binning
 # gtbin evfile=$FERMIDATACUTGTI scfile=NONE outfile=$FERMIBINNED algorithm=HEALPIX coordsys=GAL ebinalg=LOG emin=300 emax=200000 enumbins=5 nxpix=360 nypix=180 binsz=0.23 hpx_ordering_scheme=RING hpx_order=8 xref=0 axisrot=0 proj=AIT yref=0
 
-
-
-
-# HAVENT RUN BIN OR BELOW
-
-
 # Generate exposure maps - N.B. chose to use latitude, as this is consistent with the "robust neural ..." paper. bins`
 # came from the introductory paragraph of section 2 of the "robust neural..." paper. Used AIT projection, but it may be
-# Cartesian
+# Cartesian. Pass FERMIBINNED to ensure it is is in Healpix format
 
-
-
-
-
-#gtexpcube2 infile=$FERMILIVETIMECUBE cmap=none outfile=$FERMIEXPMAP irfs=P8R3_ULTRACLEANVETO_V3  nxpix=360 nypix=180 xref=0 yref=0 axisrot=0 proj=AIT coordsys=GAL enumbins=5 emin=300 emax=200000 binsz=0.5 evtype=3
+# gtexpcube2 infile=$FERMILIVETIMECUBE cmap=$FERMIBINNED outfile=$FERMIEXPMAP irfs=P8R3_ULTRACLEANVETO_V3 enumbins=5 emin=300 emax=200000 binsz=0.23 evtype=3
 
 
 
@@ -82,3 +72,7 @@ gtmktime scfile=$SPACECRAFTFILE evfile=$FERMIDATACUT outfile=$FERMIDATACUTGTI fi
 
 # Deactivate Fermi environment
 conda deactivate
+
+# REFERENCES
+
+# gtbin command - #gtexpcube2 infile=$FERMILIVETIMECUBE cmap=none outfile=$FERMIEXPMAP irfs=P8R3_ULTRACLEANVETO_V3  nxpix=360 nypix=180 xref=0 yref=0 axisrot=0 proj=AIT coordsys=GAL enumbins=5 emin=300 emax=200000 binsz=0.5 evtype=3
