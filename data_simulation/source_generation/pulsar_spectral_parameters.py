@@ -4,13 +4,19 @@ from scipy.integrate import quad
 import warnings
 
 
-def energy_flux_pulsar(pivot_energy, flux_density, spectral_slope, exponential_index, exponential_factor):
+# def energy_flux_pulsar(pivot_energy, flux_density, spectral_slope, exponential_index, exponential_factor):
+
+def energy_flux_pulsar(pivot_energy, flux_density, spectral_slope, exponential_index, exponential_factor,
+                       min_energy=100.0, max_energy=100000.0):
 
     # Integrate over 0.1 - 100 GeV
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         # Integrate over 0.1 - 100 GeV (100 - 100000 MeV)
-        energy = quad(pulsar_spectral_model, 100, 100000, args=(flux_density, pivot_energy, spectral_slope,
+        # energy = quad(pulsar_spectral_model, 100, 100000, args=(flux_density, pivot_energy, spectral_slope,
+        #                                                         exponential_factor, exponential_index))[0]
+
+        energy = quad(pulsar_spectral_model, min_energy, max_energy, args=(flux_density, pivot_energy, spectral_slope,
                                                                 exponential_factor, exponential_index))[0]
 
     # Convert energy fluxes so ergs included in units instead of photons - see ID43

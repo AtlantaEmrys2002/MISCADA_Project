@@ -8,12 +8,15 @@ import warnings
 # poly = np.polynomial.Polynomial([-21.159501476671274, -2.8553356136745753, 0.10975452653160912])
 poly = np.polynomial.Polynomial([-30.484182252126633, -6.779223799814874, 0.7112492265517346])
 
-def energy_flux_agn(pivot_energy, flux_density, spectral_slope, curvature):
+
+# def energy_flux_agn(pivot_energy, flux_density, spectral_slope, curvature):
+def energy_flux_agn(pivot_energy, flux_density, spectral_slope, curvature, min_energy=100.0, max_energy=100000.0):
 
     # Integrate over 0.1 - 100 GeV
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        energy = quad(agn_spectral_model, 100, 100000, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
+        # energy = quad(agn_spectral_model, 100, 100000, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
+        energy = quad(agn_spectral_model, min_energy, max_energy, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
 
     # Convert energy fluxes so ergs included in units instead of photons - see ID43
     return energy * 1.602 * 10 ** (-6)
@@ -47,8 +50,6 @@ def agn_flux_density(pivot_energies, noise_std=0.9181233644485474):
     return flux_densities
 
 
-# def agn_spectral_slope(pivot_energies, m=-0.3454412867553224, c=2.369026429991104, noise_std=0.1005791425704956):
-# def agn_spectral_slope(pivot_energies, m=-0.879374590105285, c=2.0664361463117515, noise_std=0.1005791425704956):
 def agn_spectral_slope(pivot_energies, m=-0.879374590105285, c=2.0664361463117515, noise_std=0.13347913702284359):
 
     # Based on correlation analysis of pivot energies and flux densities and spectral slopes,
