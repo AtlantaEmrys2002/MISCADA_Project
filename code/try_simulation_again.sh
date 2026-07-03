@@ -56,7 +56,7 @@ conda activate fermi
 
 # Generate the PSF for handling pointlike sources - want at l = 90 degrees, b = 40 degrees - converted to RA DEC J2000
 # which produces 252.131996, 41.585827°
-gtpsf expcube=$FERMILIVETIMECUBE outfile=$POINTSOURCEPSF irfs=P8R3_ULTRACLEANVETO_V3 ra=252.131996 dec=41.585827 emin=300 emax=200000 nenergies=5 thetamax=30 ntheta=300 evtype=3
+gtpsf expcube=$FERMILIVETIMECUBE outfile=$POINTSOURCEPSF irfs=P8R3_ULTRACLEANVETO_V3 ra=252.131996 dec=41.585827 emin=300 emax=200000 nenergies=5 thetamax=50 ntheta=300 evtype=3
 
 
 # Deactivate Fermi environment

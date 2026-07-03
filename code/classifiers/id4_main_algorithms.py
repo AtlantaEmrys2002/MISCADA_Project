@@ -3,12 +3,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.feature_selection import SequentialFeatureSelector
 from sklearn.pipeline import make_pipeline
-from sklearn.metrics import confusion_matrix, accuracy_score, roc_auc_score, f1_score, make_scorer
-from sklearn.ensemble import RandomForestClassifier, VotingClassifier
+from sklearn.metrics import confusion_matrix, accuracy_score, f1_score
+from sklearn.ensemble import VotingClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import KFold, cross_val_score
 import pandas as pd
-import numpy as np
 # Found this implementation of LogitBoost
 import LogitBoost
 from sklearn.svm import SVC
@@ -191,7 +189,7 @@ def boosted_lr(training_features, training_target, testing_features, testing_tar
 # AGN vs PULSARS CLASSIFICATION
 
 # Read data
-agn_v_pulsars = pd.read_csv('./datasets/agn_and_pulsars.csv')
+agn_v_pulsars = pd.read_csv('datasets/agn_and_pulsars.csv')
 
 # TRAIN-TEST SPLIT
 

@@ -69,12 +69,15 @@ def pulsar_generator(pulsar_stats, energy_flux_low, energy_flux_high, cauchy_par
             # SPATIAL PARAMETERS
 
             # l - uniform distribution assumed
-            longitude = np.random.uniform(low=- (2 * np.pi), high=2 * np.pi)
+            longitude = np.random.uniform(low=-(2 * np.pi), high=2 * np.pi)
 
             # b - double Gaussian - two overlapping sampled as one
 
             # Randomly sample pulsar latitudes from distribution created above
             latitude = cauchy(loc=0, scale=np.float64(0.018077045649988577)).rvs()
+
+            # Clip to correct range
+            latitude = np.clip(latitude, a_min=-np.pi / 2, a_max=np.pi / 2)
 
             return np.asarray([pivot_energy, flux_density, spectral_slope, exponential_index, exponential_factor,
                                energy_flux, longitude, latitude])
@@ -223,7 +226,7 @@ def generate_mock_pulsar_catalog(catalog: str, pulsars, detection_threshold):
 
     # Determine how many AGNs to generate based on 4FGL luminosity function
     target_counts, target_bin_intervals, target_peak = luminosity_function_pulsar(catalog=catalog,
-                                                                               detection_threshold=detection_threshold)
+                                                                                  detection_threshold=detection_threshold)
 
     actual_counts = np.zeros_like(target_counts)
 

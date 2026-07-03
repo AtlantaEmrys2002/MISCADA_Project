@@ -259,7 +259,7 @@ agn_and_pulsars.drop(indices, inplace=True)
 agn_and_pulsars.drop(columns=["CLASS1", "ASSOC1", "Source_Name", "GLAT", "Conf_95_PosAng", "agnness"], inplace=True)
 
 # Save dataset
-os.makedirs("./datasets", exist_ok=True)
+os.makedirs("datasets", exist_ok=True)
 agn_and_pulsars.to_csv("./datasets/agn_and_pulsars.csv", index=False)
 
 # DATASET 2 - PULSARS
@@ -291,7 +291,7 @@ pulsars.remove_columns(['P0', 'CLASS1', 'Source_Name', 'PSR_coords', 'agnness'])
 pulsars = pulsars.to_pandas()
 
 # Save dataset
-os.makedirs("./datasets", exist_ok=True)
+os.makedirs("datasets", exist_ok=True)
 pulsars.to_csv("./datasets/pulsars.csv", index=False)
 
 # REFERENCES

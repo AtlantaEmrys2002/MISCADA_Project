@@ -7,8 +7,7 @@ import numpy.typing as npt
 
 
 def plot_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64], directory: str,
-                                 source_type="AGN") -> None:
-
+                             source_type="AGN") -> None:
     # Data Processing
 
     # Read 4FGL Catalog
@@ -39,7 +38,7 @@ def plot_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64
     fig, ax = plt.subplots(1, 1)
 
     # Plot 4FGL data
-    bin_edges = 10**np.linspace(-14, -9, 50)
+    bin_edges = 10 ** np.linspace(-14, -9, 50)
     counts, bins = np.histogram(energy_fluxes_4fgl, bins=bin_edges)
     ax.stairs(counts, bins, label='4FGL')
 

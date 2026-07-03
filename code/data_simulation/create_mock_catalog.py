@@ -20,7 +20,6 @@
 # 2. Simulate other source types, e.g. SN, differentiate between AGN types
 # 4. DON'T FORGET TO ADD IN DIFFUSE BACKGROUND (GALACTIC AND INTERGALACTIC TO XML FILES)
 # 6. Think you include the background files during gtmodel - but check!!!
-# 7. CHECK ALL UNITS - ID43
 
 # LIBRARIES
 from pathlib import Path
@@ -187,7 +186,7 @@ agn_rows, pulsar_rows, source_detection_threshold, fluxes_4fgl = catalog_data_pr
 
 # Analyse parameters, their distributions, and their correlations
 
-analysis(agn_rows, pulsar_rows)
+# analysis(agn_rows, pulsar_rows)
 
 # Generate simulated AGN sources
 
@@ -197,9 +196,16 @@ agns = generate_mock_agn_catalog(file, agn_rows.copy(), detection_threshold=sour
 
 pulsars = generate_mock_pulsar_catalog(file, pulsar_rows.copy(), detection_threshold=source_detection_threshold)
 
+# print(np.max(pulsars[:, 6]))
+# print(np.max(pulsars[:, 7]))
+# print(np.min(pulsars[:, 6]))
+# print(np.min(pulsars[:, 7]))
+#
+# print(np.sum(np.abs(pulsars[:, 7]) > (np.pi / 4)))
+
 # Verify realism and correctness of generated gamma-ray sources
 
-verification(agns, pulsars)
+# verification(agns, pulsars)
 
 # Save simulated sources to XML files
 save_results(agns, pulsars)

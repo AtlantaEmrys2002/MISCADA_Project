@@ -38,7 +38,8 @@ def agn_xml_writer(sources, root, xml):
             param.setAttribute("name", agn_parameters[x])
 
             if x % 2 != 0:
-                param.setAttribute("scale", "-1.0")
+                # CHANGED THIS LINE HERE - FROM -1.0 to 1.0
+                param.setAttribute("scale", "1.0")
                 if x == 1:
                     param.setAttribute("value", str(sources[k][2]))
                 else:
@@ -255,7 +256,9 @@ def pulsar_xml_writer(sources, root, xml):
 
         # ra_dec = SkyCoord(l=sources[k][6] * u.rad, b=sources[k][7] * u.deg, frame='galactic').transform_to('icrs')
 
-        ra_dec = SkyCoord(l=sources[k][6] * u.rad, b=sources[k][7] * u.rad, frame='galactic').transform_to('icrs')
+        # ra_dec = SkyCoord(l=sources[k][6] * u.rad, b=sources[k][7] * u.deg, frame='galactic').transform_to('icrs')
+
+        ra_dec = SkyCoord(l=sources[k][-2] * u.rad, b=sources[k][-1] * u.rad, frame='galactic').transform_to('icrs')
 
         ra.setAttribute("value", str(ra_dec.ra.to_value(u.degree)))
         dec.setAttribute("value", str(ra_dec.dec.to_value(u.degree)))
@@ -279,7 +282,7 @@ def save_results(simulated_agns, simulated_pulsars, file_name="./simulated_data/
     root.appendChild(xml)
 
     # BACKGROUND SOURCES
-    background_models = minidom.parse("./simulated_data/background.xml").getElementsByTagName('source')
+    background_models = minidom.parse("simulated_data/background.xml").getElementsByTagName('source')
 
     for model in background_models:
 
