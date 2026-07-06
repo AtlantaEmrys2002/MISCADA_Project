@@ -1,299 +1,117 @@
-from astropy import units as u
-from astropy.coordinates import SkyCoord
 from astropy.io import fits
-import healpy as hp
-from healpy.newvisufunc import projview
-import matplotlib.pyplot as plt
+# import healpy as hp
 import numpy as np
-from pathlib import Path
-from source_generation.agn_spectral_parameters import energy_flux_agn
-from source_generation.pulsar_spectral_parameters import energy_flux_pulsar
-import xml.dom.minidom
-
 
 from map_generation.visualisation import plot_all_sky_map
-from map_generation.healpix_maps import create_exposure_map
-
-
-# def format_scientific_notation_label(numbers):
-#     # Formats numbers into scientific notation for inclusion on graphs
-#
-#     labels = []
-#
-#     for number in numbers:
-#
-#         scientific = str(np.format_float_scientific(number, precision=2, trim='0'))
-#
-#         base, exponent = scientific.split('e')
-#
-#         if exponent[0] == "+":
-#             sign = ""
-#         else:
-#             sign = "-"
-#
-#         label = base + "$\\times 10^{" + sign + str(int(exponent[1:])) + "}$"
-#
-#         labels.append(label)
-#
-#     return labels
-
-
-def get_nside(healpix_exposure_map):
-
-    # Healpix parameter nside can be calculated with this function
-
-    nside = hp.pixelfunc.get_nside(healpix_exposure_map)
-
-    return nside
-
-
-# def plot_all_sky_map(healpix_maps, energy_bins, title: str, directory: str, logarithmic=False):
-#
-#     # Create directory to store results
-#     Path(directory).mkdir(parents=True, exist_ok=True)
-#
-#     # Format energy bins
-#     energy_bin_labels = format_scientific_notation_label(energy_bins)
-#
-#     # Plot either raw or log of data
-#     if logarithmic is True:
-#         data = np.log(healpix_maps)
-#     else:
-#         data = healpix_maps
-#
-#     # Formatting
-#     if len(title) > 10:
-#         new_line = "\n"
-#     else:
-#         new_line = ""
-#
-#     for b in range(len(healpix_maps)):
-#
-#         label = "{} Map for {}{} - {} MeV".format(title, new_line, energy_bin_labels[b], energy_bin_labels[b + 1])
-#
-#         projview(
-#             data[b],
-#             coord=["G"],
-#             graticule=True,
-#             graticule_labels=True,
-#             xlabel="Galactic Longitude [$\degree$]",
-#             ylabel="Galactic Latitude [$\degree$]",
-#             cb_orientation="vertical",
-#             projection_type="aitoff",
-#             title=label,
-#             cbar=False,
-#             sub=(3, 2, b + 1),
-#         )
-#
-#     plt.tight_layout()
-#
-#     plt.savefig(directory + title.lower().replace(" ", "_") + "_map.png")
-#
-#     plt.close()
+from map_generation.healpix_maps import create_expected_counts_map, create_exposure_map, create_infinite_statistics_map
+from map_generation.utils import angle_to_healpix_pixels, get_nside, dual_function
+from read_write_functions import xml_parser
 
+from scipy.optimize import curve_fit
+import matplotlib.pyplot as plt
 
-def angle_to_healpix_pixels(coordinates, nside: int):
 
-    # Transform shape from num_sources x 2 to 2 x num_sources
-    coordinates = coordinates.T
+def fit_point_source_psf(file_name):
+    function_params = []
 
-    # Extract two lists - one of galactic latitudes and one of galactic longitudes
-    latitudes = coordinates[0]
-    longitudes = coordinates[1]
+    # These values were derived in https://iopscience.iop.org/article/10.1088/0004-637X/765/1/54/pdf
+    c_0 = 3.5
+    c_1 = 0.15
+    beta = 0.8
 
-    pixels = hp.pixelfunc.ang2pix(nside=nside, theta=latitudes, phi=longitudes, lonlat=True)
+    with fits.open(file_name) as hdul:
 
-    return pixels
+        thetas = np.array([k[0] for k in hdul["THETA"].data])
 
+        num_bins = len(hdul["PSF"].data)
 
-def xml_parser(energy_bins, xml_file: str):
+        for b in range(num_bins):
+            # Lowest energy (MeV) of this bin
+            energy_value = hdul["PSF"].data[b][0]
 
-    # Read XML files to get latitude and longitude of each source (separate into AGN, pulsars, and background - if they
-    # are in the same file)
+            # PSF values dP/dOmega - probability to find event in solid angle dOmega at offset r from point source
+            psf_values = np.array(hdul["PSF"].data[b][2])
 
-    docs = xml.dom.minidom.parse(xml_file)
+            # REFERENCES FOR THIS NORMALISATION AND WHY WE ARE MULTIPLYING PSF VALUES
+            # BY 2, pi, thetas:
+            # https://gamma-astro-data-formats.readthedocs.io/en/v0.1/irfs/psf/index.html#psf-pdf
+            # https://gamma-astro-data-formats.readthedocs.io/en/v0.1/irfs/psf/psf_gtpsf/
+            # Robust Neural paper
+            # How to normalise - https://math.stackexchange.com/questions/4806473/forcing-a-function-to-integrate-to-1
 
-    sources = docs.getElementsByTagName("source")
+            # Energy scale factor
+            scale_factor = np.sqrt(((c_0 * (energy_value / 100) ** (-beta)) ** 2) + c_1)
 
-    num_bins = energy_bins.shape[0]
+            psf_values /= scale_factor
 
-    coordinates = []
-    fluxes = []
+            probs = ((2 * np.pi * thetas) ** 2) * psf_values
 
-    # Remove diffuse sources - only processing point sources with this function
-    sources = [sources[k] for k in range(len(sources)) if sources[k].getAttribute("type") != "DiffuseSource"]
+            # Integrate over probs
+            approx_integral = np.sum(np.array(
+                [((probs[k + 1] + probs[k]) / 2) * (thetas[k + 1] - thetas[k]) for k in range(len(psf_values) - 1)]))
 
-    # Parse XML
-    for source in sources:
+            # Normalise such that the integral is 1
+            probs /= approx_integral
 
-        source_type = source.getAttribute("name")[:3]
+            plt.plot(thetas, probs, label="{}".format(energy_value))
 
-        # PARSE SPATIAL PARAMETERS
+            # Fit King function (Moffat distribution to values to create a probability density function)
+            popt, _ = curve_fit(dual_function, thetas, probs, maxfev=10000)
 
-        spatial_model = source.getElementsByTagName("spatialModel")[0]
+            function_params.append(popt)
 
-        parameters = spatial_model.getElementsByTagName("parameter")
+    return np.array(function_params)
 
-        coordinate = [0, 0]
-
-        for param in parameters:
-            name = param.getAttribute("name")
-
-            if name == "RA":
-                coordinate[0] = float(param.getAttribute("value"))
-            else:
-                coordinate[1] = float(param.getAttribute("value"))
-
-        coordinates.append(coordinate)
-
-        # PARSE SPECTRAL FEATURES AND CALCULATE FLUX
-
-        spectral_model = source.getElementsByTagName("spectrum")[0]
-
-        spectral_parameter_dictionary = dict()
-
-        # Get spectral parameters
-
-        parameters = spectral_model.getElementsByTagName("parameter")
-
-        for param in parameters:
-            name = param.getAttribute("name")
-
-            scale = float(param.getAttribute("scale"))
-
-            value = float(param.getAttribute("value"))
-
-            actual_value = scale * value
-
-            spectral_parameter_dictionary[name] = actual_value
-
-        binned_fluxes = []
-
-        if source_type == "AGN":
-
-            # Parse spectral parameters
-
-            # For each energy interval, calculate corresponding flux
-            for f in range(num_bins - 1):
-
-                flux = energy_flux_agn(pivot_energy=spectral_parameter_dictionary["Eb"],
-                                       flux_density=spectral_parameter_dictionary["norm"],
-                                       spectral_slope=spectral_parameter_dictionary["alpha"],
-                                       curvature=spectral_parameter_dictionary["beta"], min_energy=energy_bins[f],
-                                       max_energy=energy_bins[f + 1])
-
-                binned_fluxes.append(flux)
-
-        elif source_type == "PSR":
-
-            # For each energy interval, calculate corresponding flux
-            for f in range(num_bins - 1):
-
-                flux = energy_flux_pulsar(pivot_energy=spectral_parameter_dictionary["Scale"],
-                                          flux_density=spectral_parameter_dictionary["Prefactor"],
-                                          spectral_slope=spectral_parameter_dictionary["Index1"],
-                                          exponential_index=spectral_parameter_dictionary["Index2"],
-                                          exponential_factor=spectral_parameter_dictionary["Expfactor"],
-                                          min_energy=energy_bins[f], max_energy=energy_bins[f + 1])
-
-                binned_fluxes.append(flux)
-
-        else:
-
-            # Unrecognised point source type - allows for debugging when adding in new source types to simulation
-            raise TypeError("Cannot recognise source type {}".format(source_type))
-
-        fluxes.append(binned_fluxes)
-
-    # Have coordinates in format [RA, DEC] - need to convert them to Lat-lon
-
-    coordinates = [SkyCoord(ra=c[0] * u.degree, dec=c[1] * u.degree, frame='icrs').galactic for c in coordinates]
-
-    # Get coordinates into numpy array then separate into list of lats and lons
-    coordinates = np.array([[c.l.value, c.b.value] for c in coordinates])
-
-    # Convert fluxes to numpy
-    fluxes = np.array(fluxes)
-
-    return coordinates, fluxes
-
-
-def create_infinite_statistics_map(exposure_maps, fluxes, pixels):
-
-    # Pixel x corresponds to location of source x in the sky with flux x
-
-    binned_infinite_statistics = []
-
-    num_bins = len(exposure_maps)
-
-    for b in range(num_bins):
-
-        healpix_exposure_map = exposure_maps[b]
-
-        # Copy for infinite statistics
-        infinite_statistics_counts = np.zeros_like(healpix_exposure_map)
-
-        # Calculate infinite statistics realisation of sky (c bar)
-        for x in range(len(pixels)):
-            pixel = pixels[x]
-
-            # Important to add - Poisson value is additive
-            infinite_statistics_counts[pixel] += healpix_exposure_map[pixel] * fluxes[x, b]
-
-        # Add infinite statistics bin to list
-        binned_infinite_statistics.append(infinite_statistics_counts)
-
-    return binned_infinite_statistics
-
-
-def create_expected_counts_map(infinite_counts_map):
-
-    binned_count_maps = []
-
-    num_bins = len(infinite_counts_map)
-
-    for b in range(num_bins):
-
-        # Poisson sample each pixel in the infinite statistics count map to get a count map c
-        sampled_counts = np.random.poisson(lam=infinite_counts_map[b])
-
-        binned_count_maps.append(sampled_counts)
-
-    return binned_count_maps
+            # plt.plot(thetas, dual_function(thetas, sigma_core=popt[0], gamma_core=popt[1], sigma_tail=popt[2],
+            #                                gamma_tail=popt[3], f_core=popt[4]))
+            #
+            # plt.xlabel("$\\theta\ [\degree]$")
+            # plt.ylabel("$\\frac{dP}{d\Omega(r)}$")
+            #
+            # plt.legend()
+            #
+            # plt.xlim(0, 4)
+            #
+            # plt.show()
+            #
+            # plt.close()
 
 
 # MAIN PROGRAM
 
-# Prepare exposure maps
-exposure_maps, energy_bins = create_exposure_map(
-    exposure_file="/Volumes/T7/project_data/real_data/fermi_filtered_gti_exposure_map.fits")
+# # Prepare exposure maps
+# exposure_maps, energy_bins = create_exposure_map(
+#     exposure_file="/Volumes/T7/project_data/real_data/fermi_filtered_gti_exposure_map.fits")
 
-# Get NSIDE parameter from exposure map
-nside = get_nside(exposure_maps[0])
+# # Get NSIDE parameter from exposure map
+# nside = get_nside(exposure_maps[0])
+#
+# # Plot exposure maps to verify correctness
+# plot_all_sky_map(healpix_maps=exposure_maps, energy_bins=energy_bins, title="Exposure",
+#                  directory="./plots/all_sky_maps/")
+#
+# coordinates, binned_fluxes = xml_parser(energy_bins=energy_bins, xml_file="./simulated_data/sources.xml")
+#
+# pixels = angle_to_healpix_pixels(coordinates, nside=nside)
+#
+# # Calculated source locations in lon-lat, the pixels in which they are situated in the healpix map, the binned exposure
+# # maps of the sky, and their fluxes
+# infinite_statistics_maps = create_infinite_statistics_map(exposure_maps, binned_fluxes, pixels)
+#
+# # Plot infinite counts maps
+# plot_all_sky_map(healpix_maps=infinite_statistics_maps, energy_bins=energy_bins, title="Infinite Counts",
+#                  directory="./plots/all_sky_maps/", logarithmic=True)
+#
+# # Sample infinite statistics maps to create expected counts maps
+# count_maps = create_expected_counts_map(infinite_counts_map=infinite_statistics_maps)
+#
+# plot_all_sky_map(healpix_maps=count_maps, energy_bins=energy_bins, title="Expected Counts",
+#                  directory="./plots/all_sky_maps/", logarithmic=True)
 
-# Plot exposure maps to verify correctness
-plot_all_sky_map(healpix_maps=exposure_maps, energy_bins=energy_bins, title="Exposure",
-                 directory="./plots/all_sky_maps/")
+# Create and fit point spread function
+binned_function_parameters = fit_point_source_psf(file_name="/Volumes/T7/project_data/real_data/pointsource_psf.fits")
 
-coordinates, binned_fluxes = xml_parser(energy_bins=energy_bins, xml_file="./simulated_data/sources.xml")
-
-pixels = angle_to_healpix_pixels(coordinates, nside=nside)
-
-# Calculated source locations in lon-lat, the pixels in which they are situated in the healpix map, the binned exposure
-# maps of the sky, and their fluxes
-infinite_statistics_maps = create_infinite_statistics_map(exposure_maps, binned_fluxes, pixels)
-
-# Plot infinite counts maps
-plot_all_sky_map(healpix_maps=infinite_statistics_maps, energy_bins=energy_bins, title="Infinite Counts",
-                 directory="./plots/all_sky_maps/", logarithmic=True)
-
-# Sample infinite statistics maps to create expected counts maps
-count_maps = create_expected_counts_map(infinite_counts_map=infinite_statistics_maps)
-
-plot_all_sky_map(healpix_maps=count_maps, energy_bins=energy_bins, title="Expected Counts",
-                 directory="./plots/all_sky_maps/", logarithmic=True)
-
-
+print(binned_function_parameters)
 
 
 # N.B. Do celestial (RA/Dec coords for PSF) - https://iopscience.iop.org/article/10.1088/0067-0049/203/1/4/pdf

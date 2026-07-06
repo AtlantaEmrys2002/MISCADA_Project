@@ -2,6 +2,8 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.table import QTable
 import numpy as np
+from source_generation.agn_spectral_parameters import energy_flux_agn
+from source_generation.pulsar_spectral_parameters import energy_flux_pulsar
 from xml.dom import minidom, Node
 
 
@@ -305,6 +307,118 @@ def save_results(simulated_agns, simulated_pulsars, file_name="./simulated_data/
 
     with open(file_name, "w") as f:
         f.write(xml_str)
+
+
+def xml_parser(energy_bins, xml_file: str):
+
+    # Read XML files to get latitude and longitude of each source (separate into AGN, pulsars, and background - if they
+    # are in the same file), as well as the flux of the source
+
+    docs = minidom.parse(xml_file)
+
+    sources = docs.getElementsByTagName("source")
+
+    num_bins = energy_bins.shape[0]
+
+    coordinates = []
+    fluxes = []
+
+    # Remove diffuse sources - only processing point sources with this function
+    sources = [sources[k] for k in range(len(sources)) if sources[k].getAttribute("type") != "DiffuseSource"]
+
+    # Parse XML
+    for source in sources:
+
+        source_type = source.getAttribute("name")[:3]
+
+        # PARSE SPATIAL PARAMETERS
+
+        spatial_model = source.getElementsByTagName("spatialModel")[0]
+
+        parameters = spatial_model.getElementsByTagName("parameter")
+
+        coordinate = [0, 0]
+
+        for param in parameters:
+            name = param.getAttribute("name")
+
+            if name == "RA":
+                coordinate[0] = float(param.getAttribute("value"))
+            else:
+                coordinate[1] = float(param.getAttribute("value"))
+
+        coordinates.append(coordinate)
+
+        # PARSE SPECTRAL FEATURES AND CALCULATE FLUX
+
+        spectral_model = source.getElementsByTagName("spectrum")[0]
+
+        spectral_parameter_dictionary = dict()
+
+        # Get spectral parameters
+
+        parameters = spectral_model.getElementsByTagName("parameter")
+
+        for param in parameters:
+            name = param.getAttribute("name")
+
+            scale = float(param.getAttribute("scale"))
+
+            value = float(param.getAttribute("value"))
+
+            actual_value = scale * value
+
+            spectral_parameter_dictionary[name] = actual_value
+
+        binned_fluxes = []
+
+        if source_type == "AGN":
+
+            # Parse spectral parameters
+
+            # For each energy interval, calculate corresponding flux
+            for f in range(num_bins - 1):
+
+                flux = energy_flux_agn(pivot_energy=spectral_parameter_dictionary["Eb"],
+                                       flux_density=spectral_parameter_dictionary["norm"],
+                                       spectral_slope=spectral_parameter_dictionary["alpha"],
+                                       curvature=spectral_parameter_dictionary["beta"], min_energy=energy_bins[f],
+                                       max_energy=energy_bins[f + 1])
+
+                binned_fluxes.append(flux)
+
+        elif source_type == "PSR":
+
+            # For each energy interval, calculate corresponding flux
+            for f in range(num_bins - 1):
+
+                flux = energy_flux_pulsar(pivot_energy=spectral_parameter_dictionary["Scale"],
+                                          flux_density=spectral_parameter_dictionary["Prefactor"],
+                                          spectral_slope=spectral_parameter_dictionary["Index1"],
+                                          exponential_index=spectral_parameter_dictionary["Index2"],
+                                          exponential_factor=spectral_parameter_dictionary["Expfactor"],
+                                          min_energy=energy_bins[f], max_energy=energy_bins[f + 1])
+
+                binned_fluxes.append(flux)
+
+        else:
+
+            # Unrecognised point source type - allows for debugging when adding in new source types to simulation
+            raise TypeError("Cannot recognise source type {}".format(source_type))
+
+        fluxes.append(binned_fluxes)
+
+    # Have coordinates in format [RA, DEC] - need to convert them to Lat-lon
+
+    coordinates = [SkyCoord(ra=c[0] * u.degree, dec=c[1] * u.degree, frame='icrs').galactic for c in coordinates]
+
+    # Get coordinates into numpy array then separate into list of lats and lons
+    coordinates = np.array([[c.l.value, c.b.value] for c in coordinates])
+
+    # Convert fluxes to numpy
+    fluxes = np.array(fluxes)
+
+    return coordinates, fluxes
 
 
 # REFERENCES
