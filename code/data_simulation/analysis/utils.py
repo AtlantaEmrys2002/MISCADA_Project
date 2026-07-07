@@ -14,3 +14,4 @@ def log_normal_parameter(values):
     std_log = np.sqrt(np.log(1 + (std_square / mean_square)))
 
     return np.exp(mean_log), std_log
+
