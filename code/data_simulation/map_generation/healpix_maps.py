@@ -68,7 +68,7 @@ def create_infinite_statistics_map(exposure_maps, fluxes, pixels):
 
 def new_position(ra, dec, radius, angle):
 
-    # N.B. Convert to celestial (RA/Dec coords for PSF) -
+    # N.B. Convert to celestial (RA/Dec coords for PSF) before passing to this function -
     # https://iopscience.iop.org/article/10.1088/0067-0049/203/1/4/pdf
 
     # Make sure you have converted lat, lon to ra, dec before passing to this function
@@ -85,13 +85,17 @@ def new_position(ra, dec, radius, angle):
     new_ra = (ra + (radius * np.cos(angle))) % 360  # % 360 to ensure wrap-around
     new_dec = (((dec + (radius * np.sin(angle))) + 90) % 180) - 90  # ensure wrap-around
 
+    # COORDINATES ALSO RETURNED IN RA DEC FORMAT - REMEMBER TO CONVERT
+
     # Convert back to galactic latitude and longitude
 
-    coordinates = SkyCoord(ra=new_ra * u.degree, dec=new_dec * u.degree, frame='icrs').galactic
+    # coordinates = SkyCoord(ra=new_ra * u.degree, dec=new_dec * u.degree, frame='icrs').galactic
+    #
+    # new_position = [coordinates.l.value, coordinates.b.value]
 
-    new_position = [coordinates.l.value, coordinates.b.value]
+    # return new_position
 
-    return new_position
+    return np.array([new_ra, new_dec])
 
 
 def coordinates_galactic_to_celestial(coordinates):
@@ -105,6 +109,21 @@ def coordinates_galactic_to_celestial(coordinates):
         celestial = SkyCoord(l=c[0] * u.degree, b=c[1] * u.degree, frame='galactic').icrs
 
         new_coordinates.append([celestial.ra.value, celestial.dec.value])
+
+    return np.array(new_coordinates)
+
+
+def coordinates_celestial_to_galactic(coordinates):
+
+    # Converts list of coordinates in ra, dec format to l, b format - ALL IN DEGREES
+
+    new_coordinates = []
+
+    for c in coordinates:
+
+        coordinates = SkyCoord(ra=c[0] * u.degree, dec=c[1] * u.degree, frame='icrs').galactic
+
+        new_coordinates.append([coordinates.l.value, coordinates.b.value])
 
     return np.array(new_coordinates)
 
@@ -132,6 +151,8 @@ def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, 
 
         print("BIN {}".format(b))
 
+        start_prep = time.time()
+
         bin_fluxes = fluxes.T[b]
         exposure_map = exposure_maps[b]
         point_source_map = np.zeros_like(exposure_map)
@@ -146,15 +167,9 @@ def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, 
         # expected counts
         cs = np.random.poisson(lam=infinite_cs)
 
-        for source in range(source_num):
+        print("PREP TIME: {} s". format(time.time() - start_prep))
 
-            # pix = original_pixels[source]
-            #
-            # # infinite counts
-            # infinite_c = exposure_map[pix] * bin_fluxes[source]
-            #
-            # # expected counts
-            # c = np.random.poisson(lam=infinite_c)
+        for source in range(source_num):
 
             c = cs[source]
 
@@ -168,10 +183,20 @@ def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, 
 
                 # Calculate new origins
 
-                new_positions = np.array([new_position(ra=celestial_coordinates[source][0], dec=celestial_coordinates[source][1],
-                             radius=radial_angle_displacements[photon], angle=angles[photon]) for photon in range(c)])
+                # new_positions = np.array([new_position(ra=celestial_coordinates[source][0],
+                #                                        dec=celestial_coordinates[source][1],
+                #                                        radius=radial_angle_displacements[photon],
+                #                                        angle=angles[photon]) for photon in range(c)])
 
-                new_pixels = angle_to_healpix_pixels(new_positions, nside=nside)
+                new_positions = new_position(ra=celestial_coordinates[source][0], dec=celestial_coordinates[source][1],
+                                             radius=radial_angle_displacements, angle=angles)
+
+                new_positions = new_positions.T
+
+                # Convert to longitude-latitude
+                new_positions_galactic = coordinates_celestial_to_galactic(new_positions)
+
+                new_pixels = angle_to_healpix_pixels(new_positions_galactic, nside=nside)
 
                 for p in new_pixels:
 
