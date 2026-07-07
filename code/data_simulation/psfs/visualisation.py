@@ -114,6 +114,4 @@ def plot_fitted_point_source_psf(psf_file: str, function_parameters, directory: 
 
     fig.savefig(directory + "/fitted_point_source_psf.png")
 
-    plt.show()
-
     plt.close()

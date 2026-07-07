@@ -1,6 +1,10 @@
+from astropy.coordinates import SkyCoord
 from astropy.io import fits
+import astropy.units as u
 import healpy as hp
+from map_generation.utils import angle_to_healpix_pixels
 import numpy as np
+from psfs.utils import dual_function, monte_carlo_sampler
 
 
 def create_expected_counts_map(infinite_counts_map):
@@ -60,3 +64,126 @@ def create_infinite_statistics_map(exposure_maps, fluxes, pixels):
         binned_infinite_statistics.append(infinite_statistics_counts)
 
     return binned_infinite_statistics
+
+
+def new_position(ra, dec, radius, angle):
+
+    # N.B. Convert to celestial (RA/Dec coords for PSF) -
+    # https://iopscience.iop.org/article/10.1088/0067-0049/203/1/4/pdf
+
+    # Make sure you have converted lat, lon to ra, dec before passing to this function
+
+    # coordinates = SkyCoord(l=lat * u.degree, b=lon * u.degree, frame='galactic').icrs
+
+    # ra = coordinates.ra.value
+    # dec = coordinates.dec.value
+
+    # Calculate new position using equations from here https://math.stackexchange.com/questions/143932/calculate-point-
+    # given-x-y-angle-and-distance/3534251#3534251
+
+    # Angle must be in radians
+    new_ra = (ra + (radius * np.cos(angle))) % 360  # % 360 to ensure wrap-around
+    new_dec = (((dec + (radius * np.sin(angle))) + 90) % 180) - 90  # ensure wrap-around
+
+    # Convert back to galactic latitude and longitude
+
+    coordinates = SkyCoord(ra=new_ra * u.degree, dec=new_dec * u.degree, frame='icrs').galactic
+
+    new_position = [coordinates.l.value, coordinates.b.value]
+
+    return new_position
+
+
+def coordinates_galactic_to_celestial(coordinates):
+
+    # Converts list of coordinates in l,b format to ra, dec format - ALL IN DEGREES
+
+    new_coordinates = []
+
+    for c in coordinates:
+
+        celestial = SkyCoord(l=c[0] * u.degree, b=c[1] * u.degree, frame='galactic').icrs
+
+        new_coordinates.append([celestial.ra.value, celestial.dec.value])
+
+    return np.array(new_coordinates)
+
+
+import time
+
+
+def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, nside):
+
+    num_bins = len(exposure_maps)
+    source_num = len(coordinates)
+
+    # new_position(lat=coordinates[0][0], lon=coordinates[0][1], radius=100, angle=np.pi)
+
+    original_pixels = angle_to_healpix_pixels(coordinates, nside=nside)
+
+    point_source_maps = []
+
+    # Convert all galactic coordinates to celestial
+    celestial_coordinates = coordinates_galactic_to_celestial(coordinates)
+
+    for b in range(num_bins):
+
+        start = time.time()
+
+        print("BIN {}".format(b))
+
+        bin_fluxes = fluxes.T[b]
+        exposure_map = exposure_maps[b]
+        point_source_map = np.zeros_like(exposure_map)
+
+        # Calculate the number of photons to sample for each pixel
+
+        # BELOW ARE 2 NEW LINES
+
+        # infinite counts
+        infinite_cs = [exposure_map[original_pixels[source]] * bin_fluxes[source] for source in range(source_num)]
+
+        # expected counts
+        cs = np.random.poisson(lam=infinite_cs)
+
+        for source in range(source_num):
+
+            # pix = original_pixels[source]
+            #
+            # # infinite counts
+            # infinite_c = exposure_map[pix] * bin_fluxes[source]
+            #
+            # # expected counts
+            # c = np.random.poisson(lam=infinite_c)
+
+            c = cs[source]
+
+            if c > 0:
+
+                # SAMPLE DISPLACEMENT PARAMETERS
+
+                radial_angle_displacements = monte_carlo_sampler(dual_function, parameters=psf_parameters[b],
+                                                                 num_samples=c)
+                angles = np.random.uniform(low=0, high=2*np.pi, size=c)
+
+                # Calculate new origins
+
+                new_positions = np.array([new_position(ra=celestial_coordinates[source][0], dec=celestial_coordinates[source][1],
+                             radius=radial_angle_displacements[photon], angle=angles[photon]) for photon in range(c)])
+
+                new_pixels = angle_to_healpix_pixels(new_positions, nside=nside)
+
+                for p in new_pixels:
+
+                    point_source_map[p] += 1
+
+        point_source_maps.append(point_source_map)
+
+        print("TIME: {}".format(time.time() - start))
+
+    return point_source_maps
+
+
+
+
+
