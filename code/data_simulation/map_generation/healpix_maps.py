@@ -104,28 +104,46 @@ def coordinates_galactic_to_celestial(coordinates):
 
     new_coordinates = []
 
-    for c in coordinates:
+    ls = coordinates.T[0]
+    bs = coordinates.T[1]
 
-        celestial = SkyCoord(l=c[0] * u.degree, b=c[1] * u.degree, frame='galactic').icrs
+    celestial = SkyCoord(l=ls * u.degree, b=bs * u.degree, frame='galactic').icrs
 
-        new_coordinates.append([celestial.ra.value, celestial.dec.value])
+    new_coordinates = np.array([celestial.ra.value, celestial.dec.value]).T
 
-    return np.array(new_coordinates)
+    return new_coordinates
+
+    # for c in coordinates:
+    #
+    #     celestial = SkyCoord(l=c[0] * u.degree, b=c[1] * u.degree, frame='galactic').icrs
+    #
+    #     new_coordinates.append([celestial.ra.value, celestial.dec.value])
+
+    # return np.array(new_coordinates)
 
 
 def coordinates_celestial_to_galactic(coordinates):
 
     # Converts list of coordinates in ra, dec format to l, b format - ALL IN DEGREES
 
-    new_coordinates = []
+    # new_coordinates = []
 
-    for c in coordinates:
+    ras = coordinates.T[0]
+    decs = coordinates.T[1]
 
-        coordinates = SkyCoord(ra=c[0] * u.degree, dec=c[1] * u.degree, frame='icrs').galactic
+    coordinates = SkyCoord(ra=ras * u.degree, dec=decs * u.degree, frame='icrs').galactic
 
-        new_coordinates.append([coordinates.l.value, coordinates.b.value])
+    new_coordinates = np.array([coordinates.l.value, coordinates.b.value]).T
 
-    return np.array(new_coordinates)
+    return new_coordinates
+
+    # for c in coordinates:
+    #
+    #     coordinates = SkyCoord(ra=c[0] * u.degree, dec=c[1] * u.degree, frame='icrs').galactic
+    #
+    #     new_coordinates.append([coordinates.l.value, coordinates.b.value])
+    #
+    # return np.array(new_coordinates)
 
 
 import time
@@ -175,6 +193,9 @@ def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, 
 
             if c > 0:
 
+                if b == 4:
+                    start_main = time.time()
+
                 # SAMPLE DISPLACEMENT PARAMETERS
 
                 radial_angle_displacements = monte_carlo_sampler(dual_function, parameters=psf_parameters[b],
@@ -183,18 +204,15 @@ def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, 
 
                 # Calculate new origins
 
-                # new_positions = np.array([new_position(ra=celestial_coordinates[source][0],
-                #                                        dec=celestial_coordinates[source][1],
-                #                                        radius=radial_angle_displacements[photon],
-                #                                        angle=angles[photon]) for photon in range(c)])
-
                 new_positions = new_position(ra=celestial_coordinates[source][0], dec=celestial_coordinates[source][1],
-                                             radius=radial_angle_displacements, angle=angles)
+                                             radius=radial_angle_displacements, angle=angles).T
 
-                new_positions = new_positions.T
+                start_fraction = time.time()
 
                 # Convert to longitude-latitude
                 new_positions_galactic = coordinates_celestial_to_galactic(new_positions)
+
+                end_fraction = time.time()
 
                 new_pixels = angle_to_healpix_pixels(new_positions_galactic, nside=nside)
 
@@ -202,13 +220,18 @@ def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, 
 
                     point_source_map[p] += 1
 
+                if b == 4:
+                    print("FRACTION OF TIME: {}".format( (end_fraction - start_fraction) / (time.time() - start_main) ))
+
         point_source_maps.append(point_source_map)
 
         print("TIME: {}".format(time.time() - start))
 
     return point_source_maps
 
+# REFERENCES
 
+# Skycoords and Arrays - https://stackoverflow.com/questions/36146183/astropy-skycoord-extremely-slow-how-to-resovle-it
 
 
 
