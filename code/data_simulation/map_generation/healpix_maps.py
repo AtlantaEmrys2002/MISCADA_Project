@@ -102,8 +102,6 @@ def coordinates_galactic_to_celestial(coordinates):
 
     # Converts list of coordinates in l,b format to ra, dec format - ALL IN DEGREES
 
-    new_coordinates = []
-
     ls = coordinates.T[0]
     bs = coordinates.T[1]
 
@@ -113,20 +111,10 @@ def coordinates_galactic_to_celestial(coordinates):
 
     return new_coordinates
 
-    # for c in coordinates:
-    #
-    #     celestial = SkyCoord(l=c[0] * u.degree, b=c[1] * u.degree, frame='galactic').icrs
-    #
-    #     new_coordinates.append([celestial.ra.value, celestial.dec.value])
-
-    # return np.array(new_coordinates)
-
 
 def coordinates_celestial_to_galactic(coordinates):
 
     # Converts list of coordinates in ra, dec format to l, b format - ALL IN DEGREES
-
-    # new_coordinates = []
 
     ras = coordinates.T[0]
     decs = coordinates.T[1]
@@ -137,14 +125,6 @@ def coordinates_celestial_to_galactic(coordinates):
 
     return new_coordinates
 
-    # for c in coordinates:
-    #
-    #     coordinates = SkyCoord(ra=c[0] * u.degree, dec=c[1] * u.degree, frame='icrs').galactic
-    #
-    #     new_coordinates.append([coordinates.l.value, coordinates.b.value])
-    #
-    # return np.array(new_coordinates)
-
 
 import time
 
@@ -153,8 +133,6 @@ def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, 
 
     num_bins = len(exposure_maps)
     source_num = len(coordinates)
-
-    # new_position(lat=coordinates[0][0], lon=coordinates[0][1], radius=100, angle=np.pi)
 
     original_pixels = angle_to_healpix_pixels(coordinates, nside=nside)
 
@@ -169,8 +147,6 @@ def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, 
 
         print("BIN {}".format(b))
 
-        start_prep = time.time()
-
         bin_fluxes = fluxes.T[b]
         exposure_map = exposure_maps[b]
         point_source_map = np.zeros_like(exposure_map)
@@ -180,21 +156,18 @@ def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, 
         # BELOW ARE 2 NEW LINES
 
         # infinite counts
-        infinite_cs = [exposure_map[original_pixels[source]] * bin_fluxes[source] for source in range(source_num)]
+        infinite_cs = np.array([exposure_map[original_pixels[source]] * bin_fluxes[source] for source in range(source_num)])
 
         # expected counts
         cs = np.random.poisson(lam=infinite_cs)
 
-        print("PREP TIME: {} s". format(time.time() - start_prep))
-
         for source in range(source_num):
+
+            print(source)
 
             c = cs[source]
 
             if c > 0:
-
-                if b == 4:
-                    start_main = time.time()
 
                 # SAMPLE DISPLACEMENT PARAMETERS
 
@@ -207,12 +180,8 @@ def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, 
                 new_positions = new_position(ra=celestial_coordinates[source][0], dec=celestial_coordinates[source][1],
                                              radius=radial_angle_displacements, angle=angles).T
 
-                start_fraction = time.time()
-
                 # Convert to longitude-latitude
                 new_positions_galactic = coordinates_celestial_to_galactic(new_positions)
-
-                end_fraction = time.time()
 
                 new_pixels = angle_to_healpix_pixels(new_positions_galactic, nside=nside)
 
@@ -220,14 +189,11 @@ def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, 
 
                     point_source_map[p] += 1
 
-                if b == 4:
-                    print("FRACTION OF TIME: {}".format( (end_fraction - start_fraction) / (time.time() - start_main) ))
-
         point_source_maps.append(point_source_map)
 
         print("TIME: {}".format(time.time() - start))
 
-    return point_source_maps
+    return np.array(point_source_maps)
 
 # REFERENCES
 
