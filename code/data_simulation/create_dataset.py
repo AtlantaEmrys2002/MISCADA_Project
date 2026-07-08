@@ -2,7 +2,7 @@ from map_generation.visualisation import plot_all_sky_map
 from map_generation.healpix_maps import (create_expected_counts_map, create_exposure_map, create_infinite_statistics_map,
                                          create_point_source_map)
 from map_generation.utils import angle_to_healpix_pixels, get_nside
-from read_write_functions import xml_parser
+from read_write_functions import save_count_maps, xml_parser
 from psfs.fit_psf import fit_point_source_psf
 from psfs.visualisation import plot_fitted_point_source_psf
 
@@ -58,10 +58,33 @@ import numpy as np
 # np.save("tmp.npy", point_source_maps)
 
 point_source_maps = np.load("tmp.npy")
-print(point_source_maps.shape)
 
 plot_all_sky_map(healpix_maps=point_source_maps, energy_bins=energy_bins, title="Point Source",
                  directory="./plots/all_sky_maps/", logarithmic=True)
+
+# Save results
+# save_count_maps(count_maps=point_source_maps, directory="./plots/count_maps/", catalog_id=1)
+
+
+
+
+
+import healpy as hp
+
+# point_source_read_in = []
+
+# for x in range(5):
+#
+#     read_in = hp.fitsfunc.read_map("./plots/count_maps/map1/count_map_bin_{}.png".format(x))
+#
+#     point_source_read_in.append(read_in)
+#
+# point_source_read_in = np.array(point_source_read_in)
+#
+# print(point_source_read_in.shape)
+#
+# plot_all_sky_map(healpix_maps=point_source_read_in, energy_bins=[300, 400, 500, 600, 700, 800], title="TEST READ",
+#                  directory="./tmp/", logarithmic=True)
 
 # WHEN REFERRING TO PDFs - USE THE TERM LIKELIHOOD INSTEAD OF PROBABILITY WHEN REFERRING TO THE Y-AXIS
 

@@ -2,6 +2,7 @@ from healpy.newvisufunc import projview
 import matplotlib.pyplot as plt
 import numpy as np
 from pathlib import Path
+import warnings
 
 
 def format_scientific_notation_label(numbers):
@@ -37,7 +38,15 @@ def plot_all_sky_map(healpix_maps, energy_bins, title: str, directory: str, loga
 
     # Plot either raw or log of data
     if logarithmic is True:
-        data = np.log(healpix_maps)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            data = np.log(healpix_maps)
+
+            # Replace all log0 NaNs with 0
+            data = np.where(healpix_maps > 0, data, 0)
+
     else:
         data = healpix_maps
 

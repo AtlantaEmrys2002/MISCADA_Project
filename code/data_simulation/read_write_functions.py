@@ -1,7 +1,9 @@
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.table import QTable
+import healpy as hp
 import numpy as np
+from pathlib import Path
 from source_generation.agn_spectral_parameters import energy_flux_agn
 from source_generation.pulsar_spectral_parameters import energy_flux_pulsar
 from xml.dom import minidom, Node
@@ -269,6 +271,29 @@ def pulsar_xml_writer(sources, root, xml):
         spatial.appendChild(dec)
 
         source.appendChild(spatial)
+
+
+def save_count_maps(count_maps, directory, catalog_id):
+
+    num_bins = len(count_maps)
+
+    path = directory + "map{}/".format(catalog_id)
+
+    # Create directory if it does not already exist
+    Path(path).mkdir(parents=True, exist_ok=True)
+
+    for c in range(num_bins):
+
+        filename = "count_map_bin_{}.png".format(c)
+
+        count_map = count_maps[c]
+
+        hp.fitsfunc.write_map(filename=path + filename, m=count_map, nest=False, coord="G", dtype=np.float64,
+                              overwrite=True)
+
+
+    # NOT FINISHED
+
 
 
 def save_results(simulated_agns, simulated_pulsars, file_name="./simulated_data/sources.xml"):
