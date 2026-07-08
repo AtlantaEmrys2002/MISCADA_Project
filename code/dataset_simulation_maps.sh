@@ -60,3 +60,7 @@ conda deactivate
 
 # REFERENCES
 
+# Fermitools Likelihood Tutorial - https://fermi.gsfc.nasa.gov/ssc/data/analysis/scitools/binned_likelihood_tutorial.
+# html
+# Preparing Fermi Data - http://cta.irap.omp.eu/ctools/users/tutorials/howto/fermi/howto_fermi_prepare.html
+

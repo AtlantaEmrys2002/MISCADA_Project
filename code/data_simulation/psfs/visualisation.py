@@ -115,3 +115,8 @@ def plot_fitted_point_source_psf(psf_file: str, function_parameters, directory: 
     fig.savefig(directory + "/fitted_point_source_psf.png")
 
     plt.close()
+
+
+# REFERENCES
+
+# Deleting Subplot - https://stackoverflow.com/questions/14694501/delete-a-subplot

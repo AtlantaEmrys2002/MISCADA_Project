@@ -66,13 +66,13 @@ exposure_maps, energy_bins = create_exposure_map(
 # DIFFUSE SOURCE MAPS
 
 # Create model backgrounds
-# create_isotropic_background(isotropic_background_file="/Volumes/T7/data/background_models/iso_P8R3_SOURCE_V3_v1.txt")
+create_isotropic_background(isotropic_background_file="/Volumes/T7/data/background_models/iso_P8R3_SOURCE_V3_v1.txt")
 
 # diffuse_psf = fit_diffuse_source_psf(roi_count_map="/Volumes/T7/project_data/real_data/diffuse_psf_roi/count_map.fits")
 #
 # background = create_background_counts_map(6, 7)
 
-create_diffuse_background(diffuse_background_file="/Volumes/T7/data/background_models/gll_iem_v07.fits")
+# create_diffuse_background(diffuse_background_file="/Volumes/T7/data/background_models/gll_iem_v07.fits")
 
 
 

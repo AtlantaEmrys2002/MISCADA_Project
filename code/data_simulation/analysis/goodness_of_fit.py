@@ -168,7 +168,6 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05) -> None:
 # Adding Noise to Simulated Data - https://medium.com/@ms_somanna/guide-to-adding-noise-to-your-data-using-python-
 # and-numpy-c8be815df524
 # Appending Integers - https://stackoverflow.com/questions/17911091/append-integer-to-beginning-of-list-in-python
-# Astropy Documentation - https://docs.astropy.org/en/stable/index_user_docs.html
 # Chi-Squared Critical Value - https://www.statology.org/chi-square-critical-value-python/
 # Chi-Squared Goodness of Fit - http://www.stat.yale.edu/Courses/1997-98/101/chigf.htm
 # Chi-Squared Polyfit - https://stackoverflow.com/questions/5477359/chi-square-numpy-polyfit-numpy
@@ -192,11 +191,9 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05) -> None:
 # Log-Normals - https://www.reddit.com/r/AskStatistics/comments/110rprt/scale_location_and_shape_of_a_lognormal/
 # Log-Normals - https://statisticsbyjim.com/probability/lognormal-distribution/
 # Log-Normals - https://medium.com/data-bistrot/log-normal-distribution-with-python-7b8e384e939e
+# Log-Normals - https://towardsdatascience.com/log-normal-distribution-a-simple-explanation-7605864fb67c/
 # Match in Python - https://www.w3schools.com/python/python_match.asp
 # Normality Testing - https://numiqo.com/tutorial/test-of-normality
 # Normality Testing - https://www.graphpad.com/support/faq/testing-data-for-normal-distrbution/
-# Numpy Documentation - https://numpy.org/doc/stable/index.html
-# Python Documentation - https://docs.python.org/3/index.html
 # Reduced Chi-Squared - https://en.wikipedia.org/wiki/Reduced_chi-squared_statistic
 # Rounding in Format - https://stackoverflow.com/questions/1598579/rounding-decimals-with-new-python-format-function
-# Scipy Documentation - https://docs.scipy.org/doc/scipy/index.html

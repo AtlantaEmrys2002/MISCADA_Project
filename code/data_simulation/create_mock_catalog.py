@@ -1,7 +1,6 @@
 # This method is adapted from ID8. All code is my own (except where indicated), but Python
 # implementation provided by the authors to *access* (not generate) data can be found in ID8 footnotes. Reasons for
 # implementing are as follows:
-# 1) I wanted to find out how to simulate Fermi data and the description in the paper provided a step-by-step method.
 # 2) I hoped to improve upon their implementation performance-wise - by implementing from scratch, I am familiar with
 # the code and can improve it more easily.
 # 3) I wanted to understand the method so that I could reimplement the code in C/C++ to make use of parallel processing
@@ -17,9 +16,6 @@
 #TODO
 # 1. Luminosity Function - use 3FGL (and cite the paper in notes so can cite in final report) to generate sources
 # according to luminosity function - see graph in paper.
-# 2. Simulate other source types, e.g. SN, differentiate between AGN types
-# 4. DON'T FORGET TO ADD IN DIFFUSE BACKGROUND (GALACTIC AND INTERGALACTIC TO XML FILES)
-# 6. Think you include the background files during gtmodel - but check!!!
 
 # LIBRARIES
 from pathlib import Path

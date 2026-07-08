@@ -142,4 +142,16 @@ def scale_psf(psf_values, energy_bin, c_0=3.5, c_1=0.15, beta=0.8):
 
 # REFERENCES
 
+# Adjusting Curve Fit Iterations - https://stackoverflow.com/questions/15831763/scipy-curvefit-runtimeerroroptimal-
+# parameters-not-found-number-of-calls-to-fun
+# Custom PDFs - https://math.stackexchange.com/questions/3614107/how-do-you-create-a-custom-probability-density-function
+# -from-a-discrete-distribu
+# Function Fits - https://stackoverflow.com/questions/68523795/fit-a-custom-function-in-python
+# FWHM - https://stackoverflow.com/questions/8914491/finding-the-nearest-value-and-return-the-index-of-array-in-python
+# FWHM 2 - https://en.wikipedia.org/wiki/Full_width_at_half_maximum
 # Normalising Functions - https://math.stackexchange.com/questions/4806473/forcing-a-function-to-integrate-to-1
+# PDF > 1 - https://math.stackexchange.com/questions/1720053/how-can-a-probability-density-function-pdf-be-greater-
+# than-1
+# PDF from Data - https://math.stackexchange.com/questions/2325565/is-it-possible-to-calculate-probability-density-
+# function-from-a-data-set
+# Radial Profiles - https://cxc.cfa.harvard.edu/ciao/why/radial_profile_correction.html

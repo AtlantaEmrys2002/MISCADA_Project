@@ -79,3 +79,9 @@ def plot_all_sky_map(healpix_maps, energy_bins, title: str, directory: str, loga
     plt.savefig(directory + title.lower().replace(" ", "_") + "_map.png")
 
     plt.close()
+
+
+# REFERENCES
+
+# Scientific Notation in Plots - https://stackoverflow.com/questions/46735745/how-to-control-scientific-notation-in-
+# matplotlib

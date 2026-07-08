@@ -23,3 +23,8 @@ def get_nside(healpix_exposure_map):
 
     return nside
 
+
+# REFERENCES
+
+# New Position - https://math.stackexchange.com/questions/143932/calculate-point-given-x-y-angle-and-distance/
+# 3534251#3534251

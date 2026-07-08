@@ -9,7 +9,9 @@ formatting the telescope data, as well as when simulating the data. Whilst these
 the ``fermitools`` software must be pre-installed. The instructions for installing the software can be found
 [here](https://fermi.gsfc.nasa.gov/ssc/data/analysis/software/) and this author would recommend using miniconda to
 manage the ``fermitools`` installation (``miniconda`` also requires installation - instructions can be found
-[here](https://www.anaconda.com/docs/getting-started/miniconda/main)).
+[here](https://www.anaconda.com/docs/getting-started/miniconda/main)). Fermitools documentation can be found 
+[here](https://fermi.gsfc.nasa.gov/ssc/data/analysis/scitools/overview.html) - this documentation has been consulted 
+heavily throughout the course of this project.
 
 ### Package Dependencies
 
@@ -26,7 +28,8 @@ pip install -r ./requirements.txt
 Within each file, I have noted any links or materials that I consulted whilst developing specfic functions included in 
 that file. However, the documentation for certain Python packages, e.g. scipy, was utilised heavily throughout this 
 entire project and, therefore, is listed below (along with a description of its functionality). I would recommend 
-consulting this documentation when studying the code.
+consulting this documentation when studying the code. *N.B. I have also consulted the official 
+[Python documentation](https://docs.python.org/3/library/xml.dom.minidom.html#module-xml.dom.minidom)*.
 
 - [Astropy Documentation](https://www.astropy.org) - package for functionality relating to astronomical analysis, 
 calculations, and conversions (the efficient conversion of celestial/equatorial to galactic coordinates and vice 

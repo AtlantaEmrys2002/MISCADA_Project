@@ -448,11 +448,13 @@ def xml_parser(energy_bins, xml_file: str):
 
 # REFERENCES
 
+# Accessing XML Tags - https://stackoverflow.com/questions/32387528/getting-list-of-tags-from-python-minidom-xml
 # Astropy Documentation - https://docs.astropy.org/en/stable/
 # Converting Coordinates - https://cloudlessnights.com/project/python-for-astronomy/convert-galactic-coordinates-to-ra-
 # dec-and-alt-az-with-astropy/
 # Converting Binary Strings - https://stackoverflow.com/questions/17615414/how-to-convert-binary-string-to-normal-string
 # -in-python3
+# Creating Dictionaries - https://stackoverflow.com/questions/8424942/creating-a-new-dictionary-in-python
 # Creating XML Documents - https://www.geeksforgeeks.org/python/create-xml-documents-using-python/
 # Example Fermitools XML Files - https://fermi.gsfc.nasa.gov/ssc/data/analysis/scitools/xml_model_defs.html#logParabola
 # Fermi Documention on XML Formatting - https://fermi.gsfc.nasa.gov/ssc/data/access/lat/BackgroundModels.html
@@ -460,5 +462,8 @@ def xml_parser(energy_bins, xml_file: str):
 # Pandas Columns - https://stackoverflow.com/questions/20297332/how-do-i-retrieve-the-number-of-columns-in-a-pandas-data
 # -frame
 # Pandas Documentation - https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.corr.html
+# Parsing XML - https://www.geeksforgeeks.org/python/parse-xml-using-minidom-in-python/
+# Parsing XML 2 - https://blog.pythonlibrary.org/2010/11/12/python-parsing-xml-with-minidom/
 # RA-Dec Units - https://www.reddit.com/r/Astronomy/comments/1fkv3nv/how_do_i_convert_from_hhmmss_to_degrees/
+# Source Descriptions - https://fermi.gsfc.nasa.gov/ssc/data/analysis/scitools/source_models.html#LogParabola
 # Strip Function - https://stackoverflow.com/questions/8270092/remove-all-whitespace-in-a-string
