@@ -61,7 +61,7 @@ exposure_maps, energy_bins = create_exposure_map(
 #                  directory="./plots/all_sky_maps/", logarithmic=True)
 
 # Save results
-# save_count_maps(count_maps=point_source_maps, directory="./plots/count_maps/", catalog_id=1)
+# save_count_maps(count_maps=point_source_maps, directory="./simulated_data/count_maps/", catalog_id=1)
 
 # DIFFUSE SOURCE MAPS
 

@@ -58,3 +58,9 @@ def monte_carlo_sampler(func, parameters, num_samples):
             samples.append(candidate_x)
 
     return samples
+
+
+# REFERENCES
+
+# Moffat Distribution - https://en.wikipedia.org/wiki/Moffat_distribution
+# Ratio of Uniforms - https://en.wikipedia.org/wiki/Ratio_of_uniforms

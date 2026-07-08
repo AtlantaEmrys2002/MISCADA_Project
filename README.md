@@ -20,3 +20,25 @@ directory:
 ```bash
 pip install -r ./requirements.txt
 ```
+
+## References
+
+Within each file, I have noted any links or materials that I consulted whilst developing specfic functions included in 
+that file. However, the documentation for certain Python packages, e.g. scipy, was utilised heavily throughout this 
+entire project and, therefore, is listed below (along with a description of its functionality). I would recommend 
+consulting this documentation when studying the code.
+
+- [Astropy Documentation](https://www.astropy.org) - package for functionality relating to astronomical analysis, 
+calculations, and conversions (the efficient conversion of celestial/equatorial to galactic coordinates and vice 
+versa has proved invaluable).
+- [Healpy Documentation](https://healpy.readthedocs.io/en/latest/index.html) - HEALPix is a data format for efficiently 
+and logically storing large-scale maps (as well as other astronomical data). The access, manipulation, and visualisation 
+of data in this format is achieved through ``healpy``.
+- [Matplotlib Documentation](https://matplotlib.org) - used to create visual illustrations of scientific data, e.g. 
+luminosity function histograms of 4FGL data.
+- [Numpy Documentation](https://numpy.org/doc/) - well-known Python package for manipulating and performing calculations
+on arrays and matrices of data.
+- [Scipy Documentation](https://docs.scipy.org/doc/scipy/) - well-known package for performing complex scientific and 
+mathematical calculations in a computationally efficient manner. This project has primarily made use of the ``stats``
+submodule for analysing 4FGL data, the ``optimize`` submodule for fitting functions to data, the ``spatial`` submodule
+for calculating metrics, and the ``integrate`` submodule for performing calculus.

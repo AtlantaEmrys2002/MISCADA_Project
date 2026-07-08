@@ -138,3 +138,8 @@ def scale_psf(psf_values, energy_bin, c_0=3.5, c_1=0.15, beta=0.8):
     psf_values /= scale_factor
 
     return psf_values
+
+
+# REFERENCES
+
+# Normalising Functions - https://math.stackexchange.com/questions/4806473/forcing-a-function-to-integrate-to-1
