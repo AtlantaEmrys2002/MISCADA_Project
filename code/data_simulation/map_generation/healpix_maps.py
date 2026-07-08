@@ -45,6 +45,31 @@ def create_background_counts_map(expected_counts_isotropic_background, expected_
     return background_realisation
 
 
+def create_diffuse_background(diffuse_background_file):
+
+    with fits.open(diffuse_background_file) as hdul:
+
+        # print(hdul.info())
+        #
+        # print(hdul[0].header)
+
+        # In MeV
+        energy_intervals = hdul[1].data
+
+        num_bins = len(energy_intervals)
+
+        import matplotlib.pyplot as plt
+
+        for k in range(num_bins):
+            # print(hdul[0].data[k].shape)
+
+            if k == 0:
+
+                plt.imshow(hdul[0].data[k])
+
+                plt.show()
+
+
 def create_exposure_map(exposure_file: str):
 
     # Read and plot binned exposure files
@@ -99,18 +124,20 @@ def create_isotropic_background(isotropic_background_file):
 
     central_energies = lines[0]
     differential_flux = lines[1]
-    uncertainties = lines[2]
 
-    # NEED TO INTEGRATE OUT SOLID ANGLE (GO FROM DIRECTIONAL FLUX TO FLUX_
+    # NEED TO INTEGRATE OUT SOLID ANGLE (GO FROM DIRECTIONAL FLUX TO FLUX - DIFFUSE SOURCES HAVE sr^-1 ASPECT)
     # NEED TO INTEGRATE OUT ENERGY DEPENDENCY BY INTEGRATING OVER BIN
 
-    # print(central_energies.shape)
 
-    # import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt
 
-    # plt.plot(np.log(central_energies), np.log(differential_flux))
-    #
-    # plt.show()
+    plt.plot(central_energies, differential_flux)
+
+    plt.xscale("log")
+
+    plt.show()
+
+    # NOT FINISHED YET
 
 
 def new_coordinate(ra, dec, radius, angle):
@@ -133,14 +160,6 @@ def new_coordinate(ra, dec, radius, angle):
     new_dec = (((dec + (radius * np.sin(angle))) + 90) % 180) - 90  # ensure wrap-around
 
     # COORDINATES ALSO RETURNED IN RA DEC FORMAT - REMEMBER TO CONVERT
-
-    # Convert back to galactic latitude and longitude
-
-    # coordinates = SkyCoord(ra=new_ra * u.degree, dec=new_dec * u.degree, frame='icrs').galactic
-    #
-    # new_position = [coordinates.l.value, coordinates.b.value]
-
-    # return new_position
 
     return np.array([new_ra, new_dec])
 
@@ -173,9 +192,6 @@ def coordinates_celestial_to_galactic(coordinates):
     return new_coordinates
 
 
-import time
-
-
 def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, nside):
 
     num_bins = len(exposure_maps)
@@ -189,10 +205,6 @@ def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, 
     celestial_coordinates = coordinates_galactic_to_celestial(coordinates)
 
     for b in range(num_bins):
-
-        start = time.time()
-
-        print("BIN {}".format(b))
 
         bin_fluxes = fluxes.T[b]
         exposure_map = exposure_maps[b]
@@ -237,8 +249,6 @@ def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, 
                     point_source_map[p] += 1
 
         point_source_maps.append(point_source_map)
-
-        print("TIME: {}".format(time.time() - start))
 
     return np.array(point_source_maps)
 
