@@ -1,20 +1,23 @@
 from map_generation.visualisation import plot_all_sky_map
-from map_generation.healpix_maps import (create_expected_counts_map, create_exposure_map, create_infinite_statistics_map,
+from map_generation.healpix_maps import (create_background_counts_map, create_expected_counts_map, create_exposure_map,
+                                         create_infinite_statistics_map, create_isotropic_background,
                                          create_point_source_map)
 from map_generation.utils import angle_to_healpix_pixels, get_nside
 from read_write_functions import save_count_maps, xml_parser
-from psfs.fit_psf import fit_point_source_psf
+from psfs.fit_psf import fit_diffuse_source_psf, fit_point_source_psf
 from psfs.visualisation import plot_fitted_point_source_psf
 
 
 # MAIN PROGRAM
 
+# POINT SOURCE MAPS
+
 # Prepare exposure maps
-exposure_maps, energy_bins = create_exposure_map(
-    exposure_file="/Volumes/T7/project_data/real_data/fermi_filtered_gti_exposure_map.fits")
+# exposure_maps, energy_bins = create_exposure_map(
+#     exposure_file="/Volumes/T7/project_data/real_data/fermi_filtered_gti_exposure_map.fits")
 
 # Get NSIDE parameter from exposure map
-nside = get_nside(exposure_maps[0])
+# nside = get_nside(exposure_maps[0])
 
 # Plot exposure maps to verify correctness
 # plot_all_sky_map(healpix_maps=exposure_maps, energy_bins=energy_bins, title="Exposure",
@@ -48,27 +51,39 @@ nside = get_nside(exposure_maps[0])
 # plot_fitted_point_source_psf(psf_file="/Volumes/T7/project_data/real_data/pointsource_psf.fits",
 #                              function_parameters=binned_function_parameters, directory="./plots/verification")
 
-import numpy as np
-
 # Convolve each PSF with our fitted LAT PSF - i.e. calculate new positions for each gamma ray to originate from - can do
 # this directly from each infinite statistics count map
 # point_source_maps = create_point_source_map(coordinates=coordinates, exposure_maps=exposure_maps,
 #                                            psf_parameters=binned_function_parameters, fluxes=binned_fluxes, nside=nside)
-#
-# np.save("tmp.npy", point_source_maps)
 
-point_source_maps = np.load("tmp.npy")
 
-plot_all_sky_map(healpix_maps=point_source_maps, energy_bins=energy_bins, title="Point Source",
-                 directory="./plots/all_sky_maps/", logarithmic=True)
+# plot_all_sky_map(healpix_maps=point_source_maps, energy_bins=energy_bins, title="Point Source",
+#                  directory="./plots/all_sky_maps/", logarithmic=True)
 
 # Save results
 # save_count_maps(count_maps=point_source_maps, directory="./plots/count_maps/", catalog_id=1)
 
+# DIFFUSE SOURCE MAPS
+
+# Create model backgrounds
+create_isotropic_background(isotropic_background_file="/Volumes/T7/data/background_models/iso_P8R3_SOURCE_V3_v1.txt")
+
+# diffuse_psf = fit_diffuse_source_psf(roi_count_map="/Volumes/T7/project_data/real_data/diffuse_psf_roi/count_map.fits")
+#
+# background = create_background_counts_map(6, 7)
 
 
 
 
+
+
+
+
+
+
+
+
+# TEST CODE BELOW - DELETE
 import healpy as hp
 
 # point_source_read_in = []

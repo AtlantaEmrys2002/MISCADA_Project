@@ -1,42 +1,73 @@
 from astropy.io import fits
+import healpy as hp
 import numpy as np
 from scipy.optimize import curve_fit
 from . utils import dual_function
 
 
-def scale_psf(psf_values, energy_bin, c_0=3.5, c_1=0.15, beta=0.8):
+def fit_diffuse_source_psf(roi_count_map, nside=512):
 
-    # The constants included as arguments above were derived in
-    # https://iopscience.iop.org/article/10.1088/0004-637X/765/1/54/pdf
+    # Creating PSF for diffuse sources
+    # N.B. nside does not have to match the final count map nside
 
-    # Calculate energy scale factor
-    scale_factor = np.sqrt(((c_0 * (energy_bin / 100) ** (-beta)) ** 2) + c_1)
+    # Change to NSIDE OF convolved diffuse (see https://arxiv.org/html/2410.12951v2)
 
-    # Scale PSF values
-    psf_values /= scale_factor
+    with fits.open(roi_count_map) as hdul:
+        lmax = 3 * nside  # chose 3 based on above paper
 
-    return psf_values
+        # Can plot below with plt.imshow(counts
+        counts = hdul[0].data
 
+        midpoint = counts.shape[0] // 2
 
-def normalise_psf(thetas, psf_values):
+        x_axis = counts[midpoint]
+        y_axis = counts[:, midpoint]
 
-    # How to normalise a function -
-    # https://math.stackexchange.com/questions/4806473/forcing-a-function-to-integrate-to-1
-    # How to integrate over solid angle for this specfic PSF -
-    # https://gamma-astro-data-formats.readthedocs.io/en/v0.1/irfs/psf/index.html#psf-pdf
+        # x and y axis to form a cross
+        values = (x_axis + y_axis) / 2
 
-    # Apply this function AFTER energy scaling
+        max_value = np.max(values)
 
-    probs = ((2 * np.pi * thetas) ** 2) * psf_values
+        # Closest value to half the intensity - https://stackoverflow.com/questions/8914491/finding-the-nearest-value-and-return-the-index-of-array-in-python
+        half_intensity = (np.abs(values - (max_value // 2))).argmin()
 
-    # Integrate over probs
-    approx_integral = np.sum(np.array(
-        [((probs[k + 1] + probs[k]) / 2) * (thetas[k + 1] - thetas[k]) for k in range(len(psf_values) - 1)]))
+        # FWHM
 
-    # Normalise such that the integral is 1
-    probs /= approx_integral
+        # Find the difference between half way along the axis and centre - 0.05 degrees represented by 1 pixel. Multiply by two as it goes across the mean
 
-    return probs
+        # Approximation from CMB Estimation Paper - https://arxiv.org/html/2410.12951v2 - resolution how many degrees
+        # does side cover approximately
+        side_length_pixel = np.sqrt((4 * np.pi) / (12 * nside ** 2))
+
+        degrees_difference = np.abs(midpoint - half_intensity) * side_length_pixel * 2
+
+        # Convert to arcmin FROM degrees - NEW DOCUMENTATION SAYS RADIANS (PREVIOUS SAYS ARCMIN)
+        degrees_difference *= (np.pi / 180)
+
+        beam = hp.sphtfunc.gauss_beam(fwhm=degrees_difference, lmax=lmax)
+
+        # print(beam)
+
+        # thetas = np.linspace(0, lmax, num=len(values)//2) * side_length_pixel
+
+        import matplotlib.pyplot as plt
+
+        # to_integrate = (2 * np.pi * beam * thetas)
+        #
+        # theta_diff = thetas[1:] - thetas[:-1]
+        # func_diff = (to_integrate[1: ] + to_integrate[:-1])/2
+        #
+        # integral = np.sum(theta_diff * func_diff)
+
+        # plt.plot(thetas, values[midpoint:] / (np.pi * thetas ** 2))
+
+        # print(thetas)
+
+        # plt.yscale("log")
+
+        # plt.show()
+
+        return beam
 
 
 def fit_point_source_psf(file_name):
@@ -72,3 +103,38 @@ def fit_point_source_psf(file_name):
             function_params.append(popt)
 
     return np.array(function_params)
+
+
+def normalise_psf(thetas, psf_values):
+
+    # How to normalise a function -
+    # https://math.stackexchange.com/questions/4806473/forcing-a-function-to-integrate-to-1
+    # How to integrate over solid angle for this specfic PSF -
+    # https://gamma-astro-data-formats.readthedocs.io/en/v0.1/irfs/psf/index.html#psf-pdf
+
+    # Apply this function AFTER energy scaling
+
+    probs = ((2 * np.pi * thetas) ** 2) * psf_values
+
+    # Integrate over probs
+    approx_integral = np.sum(np.array(
+        [((probs[k + 1] + probs[k]) / 2) * (thetas[k + 1] - thetas[k]) for k in range(len(psf_values) - 1)]))
+
+    # Normalise such that the integral is 1
+    probs /= approx_integral
+
+    return probs
+
+
+def scale_psf(psf_values, energy_bin, c_0=3.5, c_1=0.15, beta=0.8):
+
+    # The constants included as arguments above were derived in
+    # https://iopscience.iop.org/article/10.1088/0004-637X/765/1/54/pdf
+
+    # Calculate energy scale factor
+    scale_factor = np.sqrt(((c_0 * (energy_bin / 100) ** (-beta)) ** 2) + c_1)
+
+    # Scale PSF values
+    psf_values /= scale_factor
+
+    return psf_values

@@ -5,6 +5,7 @@ import healpy as hp
 from map_generation.utils import angle_to_healpix_pixels
 import numpy as np
 from psfs.utils import dual_function, monte_carlo_sampler
+from scipy.stats import loguniform
 
 
 def create_expected_counts_map(infinite_counts_map):
@@ -21,6 +22,27 @@ def create_expected_counts_map(infinite_counts_map):
         binned_count_maps.append(sampled_counts)
 
     return binned_count_maps
+
+
+def create_background_counts_map(expected_counts_isotropic_background, expected_counts_diffuse_background):
+
+    # MAPS PASSED IN HEALPIX FORMAT - EXPECTED COUntS SMOOTHED BY PSF
+
+    # Sample random normalisation coefficients - random brightness of background components
+    a_diff = loguniform.rvs(a=0.1, b=2)
+    a_iso = loguniform.rvs(a=0.1, b=2)
+
+    # Normalise expected count maps
+    expected_counts_isotropic_background *= a_iso
+    expected_counts_diffuse_background *= a_diff
+
+    # Mean background
+    background = expected_counts_diffuse_background + expected_counts_isotropic_background
+
+    # Poisson sample expected counts to get realisation
+    background_realisation = np.random.poisson(lam=background)
+
+    return background_realisation
 
 
 def create_exposure_map(exposure_file: str):
@@ -66,7 +88,32 @@ def create_infinite_statistics_map(exposure_maps, fluxes, pixels):
     return binned_infinite_statistics
 
 
-def new_position(ra, dec, radius, angle):
+def create_isotropic_background(isotropic_background_file):
+
+    with open(isotropic_background_file) as f:
+
+        lines = f.readlines()
+
+    # Format
+    lines = np.array([line.strip("\n").split(" ") for line in lines]).astype(np.float64).T
+
+    central_energies = lines[0]
+    differential_flux = lines[1]
+    uncertainties = lines[2]
+
+    # NEED TO INTEGRATE OUT SOLID ANGLE (GO FROM DIRECTIONAL FLUX TO FLUX_
+    # NEED TO INTEGRATE OUT ENERGY DEPENDENCY BY INTEGRATING OVER BIN
+
+    # print(central_energies.shape)
+
+    # import matplotlib.pyplot as plt
+
+    # plt.plot(np.log(central_energies), np.log(differential_flux))
+    #
+    # plt.show()
+
+
+def new_coordinate(ra, dec, radius, angle):
 
     # N.B. Convert to celestial (RA/Dec coords for PSF) before passing to this function -
     # https://iopscience.iop.org/article/10.1088/0067-0049/203/1/4/pdf
@@ -177,7 +224,7 @@ def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, 
 
                 # Calculate new origins
 
-                new_positions = new_position(ra=celestial_coordinates[source][0], dec=celestial_coordinates[source][1],
+                new_positions = new_coordinate(ra=celestial_coordinates[source][0], dec=celestial_coordinates[source][1],
                                              radius=radial_angle_displacements, angle=angles).T
 
                 # Convert to longitude-latitude
