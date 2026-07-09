@@ -75,11 +75,15 @@ nside = get_nside(exposure_maps[0])
 # plot_all_sky_map(healpix_maps=isotropic_backgrounds, energy_bins=energy_bins, title="Isotropic Background",
 #                  directory="./plots/all_sky_maps/", logarithmic=True)
 
-galactic_diffuse_backgrounds = create_diffuse_background(diffuse_background_file="/Volumes/T7/data/background_models/gll_iem_v07.fits", nside=nside)
+galactic_diffuse_backgrounds, energy_intervals_diffuse = create_diffuse_background(
+    diffuse_background_file="/Volumes/T7/data/background_models/gll_iem_v07.fits", nside=nside)
+
+# BELOW PLOT IS NOT CORRECT - JSUT NEED TO VERFIY SHAPE
+plot_all_sky_map(healpix_maps=galactic_diffuse_backgrounds[:5], energy_bins=energy_bins, title="Diffuse Background",
+                 directory="./plots/all_sky_maps/", logarithmic=True)
+
 
 import matplotlib.pyplot as plt
-
-plt.imshow(galactic_diffuse_backgrounds[0])
 
 plt.show()
 
@@ -122,3 +126,4 @@ import healpy as hp
 # REFERENCES
 
 # FITS Format of gtpsf Output - https://gamma-astro-data-formats.readthedocs.io/en/v0.1/irfs/psf/psf_gtpsf/
+

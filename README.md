@@ -1,4 +1,7 @@
-# MISCADA_Project
+# MISCADA Project
+
+This software package was constructed for my final research project undertaken during a Master's in Scientific Computing
+and Data Analysis (Astrophysics) course.
 
 ## Set-Up
 
@@ -41,9 +44,14 @@ of data in this format is achieved through ``healpy``.
 luminosity function histograms of 4FGL data.
 - [Numpy Documentation](https://numpy.org/doc/) - well-known Python package for manipulating and performing calculations
 on arrays and matrices of data.
+- [Reproject Documentation](https://reproject.readthedocs.io/en/stable/) - this package is utilised to convert data 
+stored in ``.fits`` files from one world coordinate system (see ``astropy`` documentation) to another (especially useful
+when reading in background emission models provided by Fermi LAT Collaboration).
 - [Scipy Documentation](https://docs.scipy.org/doc/scipy/) - well-known package for performing complex scientific and 
 mathematical calculations in a computationally efficient manner. This project has primarily made use of the ``stats``
 submodule for analysing 4FGL data, the ``optimize`` submodule for fitting functions to data, the ``spatial`` submodule
 for calculating metrics, and the ``integrate`` submodule for performing calculus.
 - [skLearn Documentation](https://scikit-learn.org/stable/index.html) - includes machine learning and statistics 
 functionality.
+
+&copy; Millicent Riordan, 2026 

@@ -1,6 +1,7 @@
 from astropy.coordinates import SkyCoord
 from astropy.io import fits
 import astropy.units as u
+from astropy.wcs import WCS
 import healpy as hp
 from map_generation.utils import angle_to_healpix_pixels
 import numpy as np
@@ -58,17 +59,27 @@ def create_diffuse_background(diffuse_background_file, nside):
 
         maps = []
 
-        print(hdul[0].header)
-
         for k in range(num_bins):
 
             data = hdul[0].data[k]
 
-            data = reproject_to_healpix((data, hdul[0].header), coord_system_out='galactic', nested=False, nside=nside)
+            new_header = hdul[0].header
+
+            # new_header["NAXIS"] = 2
+
+            new_header = WCS(new_header).sub(2)
+
+            data, _ = reproject_to_healpix((data, new_header), 'galactic', nside=nside)
+
+            # N.B. May have to do the same thing for galactic diffuse background - PSF IS NOT DONE THE SAME WAY AS IN THE ABOVE
+            # PAPER SO IT IS NOT IN sr^-1 and EXPOSURE IS IN cm2s
+            n_pix = (12 * nside ** 2)
+
+            data *= (4 * np.pi / n_pix)
 
             maps.append(data)
 
-    return np.array(maps)
+    return np.array(maps), energy_intervals
 
 
 def create_exposure_map(exposure_file: str):
@@ -307,6 +318,10 @@ def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, 
 
 # REFERENCES
 
+# Astropy Affiliated - https://www.astropy.org/affiliated/
+# Map Cube Formats - https://fermi.gsfc.nasa.gov/ssc/data/analysis/scitools/other_sources.html
+# Reproject Suggestion - https://stackoverflow.com/questions/54715123/converting-a-map-in-cartesian-projection-with-
+# spherical-coordinate-to-healix-p
 # Skycoords and Arrays - https://stackoverflow.com/questions/36146183/astropy-skycoord-extremely-slow-how-to-resovle-it
 
 
