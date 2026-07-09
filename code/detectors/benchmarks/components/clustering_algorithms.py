@@ -159,7 +159,9 @@ def k_means_clustering(binary_segments):
 # Blob Detector Params - https://stackoverflow.com/questions/8076889/how-to-use-opencv-simpleblobdetector
 # Blob Detection Thresholds - https://opencv.org/blob-detection-using-opencv/#h-filtering-blobs
 # Blob Detection Tutorials - https://opencv.org/blob-detection-using-opencv/
+# Copy - https://stackoverflow.com/questions/37593013/deep-copy-of-a-np-array-of-np-array
 # Extracting Cartesian Coordinates from OpenCV - https://stackoverflow.com/questions/35884409/how-to-extract-x-y-
+# Filter Numpy - https://stackoverflow.com/questions/19821425/how-can-i-filter-numpy-array-by-list-of-indices
 # coordinates-from-opencv-cv2-keypoint-object
 # ID8 and ID25 - see references
 # Indexing with array of indices - https://stackoverflow.com/questions/19821425/how-can-i-filter-numpy-array-by-list-of-
@@ -172,6 +174,6 @@ def k_means_clustering(binary_segments):
 # numpy-array-python?rq=3
 # Numpy Thresholding - https://bobbyhadz.com/blog/python-convert-numpy-array-to-0-or-1-based-on-threshold
 # Permutations - https://stackoverflow.com/questions/1953194/permutations-of-two-lists-in-python
+# Row Selection - https://stackoverflow.com/questions/58079075/numpy-select-rows-based-on-condition
 # Setting Blob Detection Thresholds - https://stackoverflow.com/questions/32973537/what-is-the-use-of-minrepeatability-
 # parameter-of-simpleblobdetector-in-opencv
-# sklearn Documentation - https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html

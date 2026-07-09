@@ -69,5 +69,6 @@ def random_data(n=256):
 # REFERENCES
 
 # Pytorch Random Choice - https://discuss.pytorch.org/t/torch-equivalent-of-numpy-random-choice/16146/14
+# Torch Random Numbers - https://discuss.pytorch.org/t/torch-equivalent-of-numpy-random-choice/16146/6
 # Train/Test/Validation Split - https://stackoverflow.com/questions/50544730/how-do-i-split-a-custom-dataset-into-
 # training-and-test-datasets

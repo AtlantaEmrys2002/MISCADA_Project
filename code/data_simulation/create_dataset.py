@@ -8,7 +8,6 @@ from read_write_functions import save_count_maps, xml_parser
 from psfs.fit_psf import fit_diffuse_source_psf, fit_point_source_psf
 from psfs.visualisation import plot_fitted_point_source_psf
 
-
 # MAIN PROGRAM
 
 # POINT SOURCE MAPS
@@ -18,7 +17,7 @@ exposure_maps, energy_bins = create_exposure_map(
     exposure_file="/Volumes/T7/project_data/real_data/fermi_filtered_gti_exposure_map.fits")
 
 # Get NSIDE parameter from exposure map
-# nside = get_nside(exposure_maps[0])
+nside = get_nside(exposure_maps[0])
 
 # Plot exposure maps to verify correctness
 # plot_all_sky_map(healpix_maps=exposure_maps, energy_bins=energy_bins, title="Exposure",
@@ -65,15 +64,30 @@ exposure_maps, energy_bins = create_exposure_map(
 
 # DIFFUSE SOURCE MAPS
 
-# Create model backgrounds
-create_isotropic_background(isotropic_background_file="/Volumes/T7/data/background_models/iso_P8R3_SOURCE_V3_v1.txt")
+# NEED TO CHECK CORRECTNESS OF INTEGRATING ISOTROPIC ENERGY SPECTRUM - I THINK IT REMOVES ENERGY DEPENDENCE
+
+# Create backgrounds models
+# isotropic_backgrounds = create_isotropic_background(isotropic_background_file=
+#                                                     "/Volumes/T7/data/background_models/iso_P8R3_SOURCE_V3_v1.txt",
+#                                                     nside=nside,
+#                                                     exposure_map=exposure_maps, energy_bins=energy_bins)
+
+# plot_all_sky_map(healpix_maps=isotropic_backgrounds, energy_bins=energy_bins, title="Isotropic Background",
+#                  directory="./plots/all_sky_maps/", logarithmic=True)
+
+galactic_diffuse_backgrounds = create_diffuse_background(diffuse_background_file="/Volumes/T7/data/background_models/gll_iem_v07.fits", nside=nside)
+
+import matplotlib.pyplot as plt
+
+plt.imshow(galactic_diffuse_backgrounds[0])
+
+plt.show()
+
+
 
 # diffuse_psf = fit_diffuse_source_psf(roi_count_map="/Volumes/T7/project_data/real_data/diffuse_psf_roi/count_map.fits")
 #
 # background = create_background_counts_map(6, 7)
-
-# create_diffuse_background(diffuse_background_file="/Volumes/T7/data/background_models/gll_iem_v07.fits")
-
 
 
 

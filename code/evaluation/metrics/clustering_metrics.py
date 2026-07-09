@@ -25,4 +25,8 @@ def chamfer_distance(predicted_source_centres, true_source_centres):
 # REFERENCES
 
 # Chamfer Distance - https://medium.com/@sim30217/chamfer-distance-4207955e8612
-# Scipy Documentation - https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html#scipy.spatial.distance.cdist
+# Distance Calculations - https://stackoverflow.com/questions/1401712/how-can-the-euclidean-distance-be-calculated-with-
+# numpy
+# Meshgrids - https://www.geeksforgeeks.org/python/numpy-meshgrid-function/
+# Scipy Documentation - https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html#scipy.
+# spatial.distance.cdist

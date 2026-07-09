@@ -5,7 +5,9 @@ import healpy as hp
 from map_generation.utils import angle_to_healpix_pixels
 import numpy as np
 from psfs.utils import dual_function, monte_carlo_sampler
+from reproject import reproject_to_healpix
 from scipy.stats import loguniform
+from scipy.integrate import quad
 
 
 def create_expected_counts_map(infinite_counts_map):
@@ -45,29 +47,28 @@ def create_background_counts_map(expected_counts_isotropic_background, expected_
     return background_realisation
 
 
-def create_diffuse_background(diffuse_background_file):
+def create_diffuse_background(diffuse_background_file, nside):
 
     with fits.open(diffuse_background_file) as hdul:
-
-        # print(hdul.info())
-        #
-        # print(hdul[0].header)
 
         # In MeV
         energy_intervals = hdul[1].data
 
         num_bins = len(energy_intervals)
 
-        import matplotlib.pyplot as plt
+        maps = []
+
+        print(hdul[0].header)
 
         for k in range(num_bins):
-            # print(hdul[0].data[k].shape)
 
-            if k == 0:
+            data = hdul[0].data[k]
 
-                plt.imshow(hdul[0].data[k])
+            data = reproject_to_healpix((data, hdul[0].header), coord_system_out='galactic', nested=False, nside=nside)
 
-                plt.show()
+            maps.append(data)
+
+    return np.array(maps)
 
 
 def create_exposure_map(exposure_file: str):
@@ -113,7 +114,16 @@ def create_infinite_statistics_map(exposure_maps, fluxes, pixels):
     return binned_infinite_statistics
 
 
-def create_isotropic_background(isotropic_background_file):
+def isotropic_func(energy, m_val, c_val):
+
+    return (energy ** m_val) * (np.e ** c_val)
+
+
+def create_isotropic_background(isotropic_background_file: str, nside: int, exposure_map, energy_bins):
+
+    num_bins = len(energy_bins) - 1
+
+    # Shape tells you length of numpy array representing healpix maps - every pixel will be the same
 
     with open(isotropic_background_file) as f:
 
@@ -125,17 +135,60 @@ def create_isotropic_background(isotropic_background_file):
     central_energies = lines[0]
     differential_flux = lines[1]
 
-    # NEED TO INTEGRATE OUT SOLID ANGLE (GO FROM DIRECTIONAL FLUX TO FLUX - DIFFUSE SOURCES HAVE sr^-1 ASPECT)
+    # Convert differential fluxes from per steradian to per pixel - https://arxiv.org/html/2302.01947v2
+
+    # N.B. May have to do the same thing for galactic diffuse background - PSF IS NOT DONE THE SAME WAY AS IN THE ABOVE
+    # PAPER SO IT IS NOT IN sr^-1 and EXPOSURE IS IN cm2s
+    n_pix = (12 * nside ** 2)
+
+    differential_flux *= (4 * np.pi / n_pix)
+
+    # Fit line to log-log plot of isotropic background spectrum
+    m, c = np.polyfit(np.log(central_energies), np.log(differential_flux), deg=1)
+
+    # Integrate energy spectrum of isotropic background
+
+    isotropic_values = []
+
+    for b in range(num_bins):
+
+        # integrate energy spectrum over energy range - CHECK THIS WITH ANTHONY
+        isotropic_constant = quad(func=isotropic_func, a=energy_bins[b], b=energy_bins[b + 1], args=(m, c))[0]
+
+        isotropic_values.append(isotropic_constant)
+
+    print(isotropic_values)
+
+    isotropic_maps = []
+
+    for e_map in range(num_bins):
+
+        isotropic_maps.append(isotropic_values[e_map] * exposure_map[e_map])
+
+    return np.array(isotropic_maps)
+
+
+
+
+
+    # THINK I'VE SOLVED THIS ONE - NEED TO INTEGRATE OUT SOLID ANGLE (GO FROM DIRECTIONAL FLUX TO FLUX - DIFFUSE SOURCES HAVE sr^-1 ASPECT)
     # NEED TO INTEGRATE OUT ENERGY DEPENDENCY BY INTEGRATING OVER BIN
-
-
-    import matplotlib.pyplot as plt
-
-    plt.plot(central_energies, differential_flux)
-
-    plt.xscale("log")
-
-    plt.show()
+    #
+    # import matplotlib.pyplot as plt
+    #
+    # plt.plot(np.log(central_energies), np.log(differential_flux))
+    #
+    # plt.plot(np.log(central_energies), (m * np.log(central_energies)) + c)
+    #
+    # plt.xscale("log")
+    #
+    # plt.show()
+    #
+    # plt.plot(central_energies, differential_flux)
+    #
+    # plt.plot(central_energies, (central_energies ** m) * (np.e ** c))
+    #
+    # plt.show()
 
     # NOT FINISHED YET
 

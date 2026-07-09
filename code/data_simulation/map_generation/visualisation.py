@@ -70,7 +70,7 @@ def plot_all_sky_map(healpix_maps, energy_bins, title: str, directory: str, loga
             cb_orientation="vertical",
             projection_type="aitoff",
             title=label,
-            cbar=False,
+            cbar=True,
             sub=(3, 2, b + 1),
         )
 
@@ -83,5 +83,6 @@ def plot_all_sky_map(healpix_maps, energy_bins, title: str, directory: str, loga
 
 # REFERENCES
 
+# Odd Number Subplots - https://stackoverflow.com/questions/28738836/how-to-create-an-odd-number-of-subplots
 # Scientific Notation in Plots - https://stackoverflow.com/questions/46735745/how-to-control-scientific-notation-in-
 # matplotlib

@@ -18,3 +18,8 @@ def evaluate_detection():
 
 # FOR s90 - figure out the number of degrees (suggested is 0.3 degrees) before reject as true source reperesntation and
 # convert to pixels on image
+
+# REFERENCES
+
+# Cartesian Products - https://stackoverflow.com/questions/11144513/cartesian-product-of-x-and-y-array-points-into-
+# single-array-of-2d-points

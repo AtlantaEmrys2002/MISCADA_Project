@@ -462,6 +462,8 @@ def xml_parser(energy_bins, xml_file: str):
 # Pandas Columns - https://stackoverflow.com/questions/20297332/how-do-i-retrieve-the-number-of-columns-in-a-pandas-data
 # -frame
 # Pandas Documentation - https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.corr.html
+# Pandas Iteration of Columns - https://stackoverflow.com/questions/28218698/how-to-iterate-over-columns-of-a-pandas-
+# dataframe
 # Parsing XML - https://www.geeksforgeeks.org/python/parse-xml-using-minidom-in-python/
 # Parsing XML 2 - https://blog.pythonlibrary.org/2010/11/12/python-parsing-xml-with-minidom/
 # RA-Dec Units - https://www.reddit.com/r/Astronomy/comments/1fkv3nv/how_do_i_convert_from_hhmmss_to_degrees/

@@ -214,8 +214,13 @@ def unet_train(train_data, test_data, training_epochs=50):
 
 
 # REFERENCES
+# Convolutional Layers - https://en.wikipedia.org/wiki/Convolutional_layer
 # Pytorch Documentation - https://pytorch.org/get-started/locally/
+# Torch Types - https://stackoverflow.com/questions/70267810/pytorch-runtimeerror-expected-floating-point-type-for-
+# target-with-class-proba
 # Training Loop - https://docs.pytorch.org/tutorials/beginner/introyt/trainingyt.html
 # Tutorial GitHub - https://github.com/AlessandroMondin/U-NET/blob/main/dataset.py
+# Tutorial GitHub - https://github.com/aladdinpersson/Machine-Learning-Collection/blob/master/ML/Pytorch/image_
+# segmentation/semantic_segmentation_unet/model.py
 # U-Net Tutorial - https://medium.com/@alessandromondin/semantic-segmentation-with-pytorch-u-net-from-
 # scratch-502d6565910a
