@@ -9,6 +9,7 @@ from psfs.utils import dual_function, monte_carlo_sampler
 from reproject import reproject_to_healpix
 from scipy.stats import loguniform
 from scipy.integrate import quad
+from . utils import integrate_over_energy
 
 
 def create_expected_counts_map(infinite_counts_map):
@@ -48,7 +49,7 @@ def create_background_counts_map(expected_counts_isotropic_background, expected_
     return background_realisation
 
 
-def create_diffuse_background(diffuse_background_file, nside):
+def create_diffuse_background(diffuse_background_file, exposure_map, nside):
 
     with fits.open(diffuse_background_file) as hdul:
 
@@ -57,15 +58,18 @@ def create_diffuse_background(diffuse_background_file, nside):
 
         num_bins = len(energy_intervals)
 
+
+        healpix_data = []
+
         maps = []
 
-        for k in range(num_bins):
+        for b in range(num_bins):
 
-            data = hdul[0].data[k]
+            data = hdul[0].data[b]
+
+            # REFORMAT USING REPROJECT
 
             new_header = hdul[0].header
-
-            # new_header["NAXIS"] = 2
 
             new_header = WCS(new_header).sub(2)
 
@@ -77,12 +81,30 @@ def create_diffuse_background(diffuse_background_file, nside):
 
             data *= (4 * np.pi / n_pix)
 
-            maps.append(data)
+            healpix_data.append(data)
+
+        import matplotlib.pyplot as plt
+
+        # ax = plt.figure().add_subplot(projection='3d')
+        #
+        # for b in range(num_bins):
+        #     ax.plot(xs=range(len(data)), ys=data, zs=energy_intervals[b])
+
+        # plt.show()
+
+        # for b in range(num_bins):
+
+            # NEED TO INTEGRATE OVER ENERGY FOR THE SPECTRUM
+
+            #
+            # maps.append(integrated_data * exposure_map[b])
 
     return np.array(maps), energy_intervals
 
 
-def create_exposure_map(exposure_file: str):
+def create_exposure_map(exposure_file: str, num_bins=5):
+
+    # Num bins is the number of energy bins that to create (here, we want 5)
 
     # Read and plot binned exposure files
 
@@ -92,7 +114,53 @@ def create_exposure_map(exposure_file: str):
 
         energy_bins = np.array([k[0] for k in hdul[2].data])
 
-        exposure_maps = [hp.read_map(exposure_file, hdu="HPXEXPOSURES", field=b) for b in range(num_bins)]
+        exposure_maps = np.array([hp.read_map(exposure_file, hdu="HPXEXPOSURES", field=b) for b in range(num_bins)])
+
+        # EXPERIMENTATION BELOW
+
+        # Integrate over
+        exposure_maps, energy_bins = integrate_over_energy(maps=exposure_maps, energy_bins=energy_bins, num_bins=5,
+                                                           energy_weighted=True)
+
+        # import matplotlib.pyplot as plt
+        #
+        # varying = []
+        #
+        # for k in range(len(exposure_maps)):
+        #     varying.append(exposure_maps[k][45])
+        #
+        # plt.scatter(np.log(energy_bins[:-1]), np.log(varying))
+        #
+        # plt.show()
+        #
+        # varying = []
+        #
+        # for k in range(len(exposure_maps)):
+        #     varying.append(exposure_maps[k][14800])
+        #
+        # plt.scatter(np.log(energy_bins[:-1]), np.log(varying), color='green')
+        #
+        # plt.show()
+        #
+        # varying = []
+        #
+        # for k in range(len(exposure_maps)):
+        #     varying.append(exposure_maps[k][26500])
+        #
+        # plt.scatter(np.log(energy_bins[:-1]), np.log(varying), color='red')
+        #
+        # plt.show()
+        #
+        # varying = []
+        #
+        # for k in range(len(exposure_maps)):
+        #     varying.append(exposure_maps[k][37800])
+        #
+        # plt.scatter(np.log(energy_bins[:-1]), np.log(varying), color='orange')
+        #
+        # plt.show()
+
+
 
     return exposure_maps, energy_bins
 

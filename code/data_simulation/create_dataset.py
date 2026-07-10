@@ -7,6 +7,7 @@ from map_generation.utils import angle_to_healpix_pixels, get_nside
 from read_write_functions import save_count_maps, xml_parser
 from psfs.fit_psf import fit_diffuse_source_psf, fit_point_source_psf
 from psfs.visualisation import plot_fitted_point_source_psf
+from read_write_functions import xml_parser
 
 # MAIN PROGRAM
 
@@ -14,16 +15,18 @@ from psfs.visualisation import plot_fitted_point_source_psf
 
 # Prepare exposure maps
 exposure_maps, energy_bins = create_exposure_map(
-    exposure_file="/Volumes/T7/project_data/real_data/fermi_filtered_gti_exposure_map.fits")
+    exposure_file="/Volumes/T7/project_data/real_data/fermi_filtered_gti_exposure_map.fits", num_bins=5)
 
 # Get NSIDE parameter from exposure map
-nside = get_nside(exposure_maps[0])
-
-# Plot exposure maps to verify correctness
+# nside = get_nside(exposure_maps[0])
+#
+# # Plot exposure maps to verify correctness
 # plot_all_sky_map(healpix_maps=exposure_maps, energy_bins=energy_bins, title="Exposure",
 #                  directory="./plots/all_sky_maps/")
 
 # THIS IS WHERE TO START THE LOOP OVER THE DIFFERENT MOCK SOURCE CATALOGS
+
+# coordinates, binned_fluxes = xml_parser(energy_bins, xml_file="./simulated_data/sources.xml")
 
 #
 # pixels = angle_to_healpix_pixels(coordinates, nside=nside)
@@ -54,8 +57,8 @@ nside = get_nside(exposure_maps[0])
 # this directly from each infinite statistics count map
 # point_source_maps = create_point_source_map(coordinates=coordinates, exposure_maps=exposure_maps,
 #                                            psf_parameters=binned_function_parameters, fluxes=binned_fluxes, nside=nside)
-
-
+#
+#
 # plot_all_sky_map(healpix_maps=point_source_maps, energy_bins=energy_bins, title="Point Source",
 #                  directory="./plots/all_sky_maps/", logarithmic=True)
 
@@ -75,12 +78,13 @@ nside = get_nside(exposure_maps[0])
 # plot_all_sky_map(healpix_maps=isotropic_backgrounds, energy_bins=energy_bins, title="Isotropic Background",
 #                  directory="./plots/all_sky_maps/", logarithmic=True)
 
-galactic_diffuse_backgrounds, energy_intervals_diffuse = create_diffuse_background(
-    diffuse_background_file="/Volumes/T7/data/background_models/gll_iem_v07.fits", nside=nside)
-
-# BELOW PLOT IS NOT CORRECT - JSUT NEED TO VERFIY SHAPE
-plot_all_sky_map(healpix_maps=galactic_diffuse_backgrounds[:5], energy_bins=energy_bins, title="Diffuse Background",
-                 directory="./plots/all_sky_maps/", logarithmic=True)
+# galactic_diffuse_backgrounds, energy_intervals_diffuse = create_diffuse_background(
+#     diffuse_background_file="/Volumes/T7/data/background_models/gll_iem_v07.fits", exposure_map=exposure_maps,
+#     nside=nside)
+#
+# # BELOW PLOT IS NOT CORRECT - JSUT NEED TO VERFIY SHAPE
+# plot_all_sky_map(healpix_maps=galactic_diffuse_backgrounds[:5], energy_bins=energy_bins, title="Diffuse Background",
+#                  directory="./plots/all_sky_maps/", logarithmic=True)
 
 
 import matplotlib.pyplot as plt
