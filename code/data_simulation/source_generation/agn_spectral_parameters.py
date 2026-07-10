@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.integrate import quad
-from . spectral_models import agn_spectral_model
+from . spectral_models import agn_spectral_model, agn_photon_flux
 import warnings
 
 # polynomial with degree 2 relating pivot energies and flux densities (coefficients below are c, b, a) such that
@@ -20,6 +20,16 @@ def energy_flux_agn(pivot_energy, flux_density, spectral_slope, curvature, min_e
 
     # Convert energy fluxes so ergs included in units instead of photons - see ID43
     return energy * 1.602 * 10 ** (-6)
+
+
+def integral_photon_flux_agn(pivot_energy, flux_density, spectral_slope, curvature, min_energy=100.0, max_energy=100000.0):
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        # energy = quad(agn_spectral_model, 100, 100000, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
+        energy = quad(agn_photon_flux, min_energy, max_energy, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
+
+    return energy
 
 
 def agn_flux_density(pivot_energies, noise_std=0.9181233644485474):

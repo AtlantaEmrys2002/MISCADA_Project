@@ -25,7 +25,7 @@ def create_expected_counts_map(infinite_counts_map):
 
         binned_count_maps.append(sampled_counts)
 
-    return binned_count_maps
+    return np.array(binned_count_maps)
 
 
 def create_background_counts_map(expected_counts_isotropic_background, expected_counts_diffuse_background):
@@ -46,7 +46,7 @@ def create_background_counts_map(expected_counts_isotropic_background, expected_
     # Poisson sample expected counts to get realisation
     background_realisation = np.random.poisson(lam=background)
 
-    return background_realisation
+    return np.array(background_realisation)
 
 
 def create_diffuse_background(diffuse_background_file, exposure_map, nside):
@@ -102,7 +102,7 @@ def create_diffuse_background(diffuse_background_file, exposure_map, nside):
     return np.array(maps), energy_intervals
 
 
-def create_exposure_map(exposure_file: str, num_bins=5):
+def create_exposure_map(exposure_file: str, num_bins_to_create=5):
 
     # Num bins is the number of energy bins that to create (here, we want 5)
 
@@ -119,7 +119,7 @@ def create_exposure_map(exposure_file: str, num_bins=5):
         # EXPERIMENTATION BELOW
 
         # Integrate over
-        exposure_maps, energy_bins = integrate_over_energy(maps=exposure_maps, energy_bins=energy_bins, num_bins=5,
+        exposure_maps, energy_bins = integrate_over_energy(maps=exposure_maps, energy_bins=energy_bins, num_bins=num_bins_to_create,
                                                            energy_weighted=True)
 
         # import matplotlib.pyplot as plt
@@ -161,7 +161,6 @@ def create_exposure_map(exposure_file: str, num_bins=5):
         # plt.show()
 
 
-
     return exposure_maps, energy_bins
 
 
@@ -190,7 +189,7 @@ def create_infinite_statistics_map(exposure_maps, fluxes, pixels):
         # Add infinite statistics bin to list
         binned_infinite_statistics.append(infinite_statistics_counts)
 
-    return binned_infinite_statistics
+    return np.array(binned_infinite_statistics)
 
 
 def isotropic_func(energy, m_val, c_val):

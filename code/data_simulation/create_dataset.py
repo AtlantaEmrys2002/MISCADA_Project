@@ -15,27 +15,27 @@ from read_write_functions import xml_parser
 
 # Prepare exposure maps
 exposure_maps, energy_bins = create_exposure_map(
-    exposure_file="/Volumes/T7/project_data/real_data/fermi_filtered_gti_exposure_map.fits", num_bins=5)
+    exposure_file="/Volumes/T7/project_data/real_data/fermi_filtered_gti_exposure_map.fits", num_bins_to_create=5)
 
 # Get NSIDE parameter from exposure map
-# nside = get_nside(exposure_maps[0])
-#
-# # Plot exposure maps to verify correctness
-# plot_all_sky_map(healpix_maps=exposure_maps, energy_bins=energy_bins, title="Exposure",
-#                  directory="./plots/all_sky_maps/")
+nside = get_nside(exposure_maps[0])
+
+# Plot exposure maps to verify correctness
+plot_all_sky_map(healpix_maps=exposure_maps, energy_bins=energy_bins, title="Exposure",
+                 directory="./plots/all_sky_maps/")
 
 # THIS IS WHERE TO START THE LOOP OVER THE DIFFERENT MOCK SOURCE CATALOGS
 
-# coordinates, binned_fluxes = xml_parser(energy_bins, xml_file="./simulated_data/sources.xml")
+coordinates, binned_fluxes = xml_parser(energy_bins, xml_file="./simulated_data/sources.xml")
 
 #
-# pixels = angle_to_healpix_pixels(coordinates, nside=nside)
+pixels = angle_to_healpix_pixels(coordinates, nside=nside)
 
 # Calculated source locations in lon-lat, the pixels in which they are situated in the healpix map, the binned exposure
 # maps of the sky, and their fluxes
 # infinite_statistics_maps = create_infinite_statistics_map(exposure_maps, binned_fluxes, pixels)
-
-# Plot infinite counts maps
+#
+# # Plot infinite counts maps
 # plot_all_sky_map(healpix_maps=infinite_statistics_maps, energy_bins=energy_bins, title="Infinite Counts",
 #                  directory="./plots/all_sky_maps/", logarithmic=True)
 
@@ -47,7 +47,7 @@ exposure_maps, energy_bins = create_exposure_map(
 #                  directory="./plots/all_sky_maps/", logarithmic=True)
 
 # Create and fit point spread function
-# binned_function_parameters = fit_point_source_psf(file_name="/Volumes/T7/project_data/real_data/pointsource_psf.fits")
+binned_function_parameters = fit_point_source_psf(file_name="/Volumes/T7/project_data/real_data/pointsource_psf.fits")
 
 # Plot PSF fit
 # plot_fitted_point_source_psf(psf_file="/Volumes/T7/project_data/real_data/pointsource_psf.fits",
@@ -55,15 +55,20 @@ exposure_maps, energy_bins = create_exposure_map(
 
 # Convolve each PSF with our fitted LAT PSF - i.e. calculate new positions for each gamma ray to originate from - can do
 # this directly from each infinite statistics count map
-# point_source_maps = create_point_source_map(coordinates=coordinates, exposure_maps=exposure_maps,
-#                                            psf_parameters=binned_function_parameters, fluxes=binned_fluxes, nside=nside)
+point_source_maps = create_point_source_map(coordinates=coordinates, exposure_maps=exposure_maps,
+                                           psf_parameters=binned_function_parameters, fluxes=binned_fluxes, nside=nside)
+
 #
 #
-# plot_all_sky_map(healpix_maps=point_source_maps, energy_bins=energy_bins, title="Point Source",
-#                  directory="./plots/all_sky_maps/", logarithmic=True)
+plot_all_sky_map(healpix_maps=point_source_maps, energy_bins=energy_bins, title="Point Source",
+                 directory="./plots/all_sky_maps/", logarithmic=True)
+
+import numpy as np
+
+np.save("point_source_tmp.npy", point_source_maps)
 
 # Save results
-# save_count_maps(count_maps=point_source_maps, directory="./simulated_data/count_maps/", catalog_id=1)
+save_count_maps(count_maps=point_source_maps, directory="./simulated_data/count_maps/", catalog_id=1)
 
 # DIFFUSE SOURCE MAPS
 

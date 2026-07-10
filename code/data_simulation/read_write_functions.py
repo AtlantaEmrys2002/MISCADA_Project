@@ -4,8 +4,8 @@ from astropy.table import QTable
 import healpy as hp
 import numpy as np
 from pathlib import Path
-from source_generation.agn_spectral_parameters import energy_flux_agn
-from source_generation.pulsar_spectral_parameters import energy_flux_pulsar
+from source_generation.agn_spectral_parameters import integral_photon_flux_agn, energy_flux_agn
+from source_generation.pulsar_spectral_parameters import integral_photon_flux_pulsar, energy_flux_pulsar
 from xml.dom import minidom, Node
 
 
@@ -404,7 +404,13 @@ def xml_parser(energy_bins, xml_file: str):
             # For each energy interval, calculate corresponding flux
             for f in range(num_bins - 1):
 
-                flux = energy_flux_agn(pivot_energy=spectral_parameter_dictionary["Eb"],
+                # flux = energy_flux_agn(pivot_energy=spectral_parameter_dictionary["Eb"],
+                #                        flux_density=spectral_parameter_dictionary["norm"],
+                #                        spectral_slope=spectral_parameter_dictionary["alpha"],
+                #                        curvature=spectral_parameter_dictionary["beta"], min_energy=energy_bins[f],
+                #                        max_energy=energy_bins[f + 1])
+
+                flux = integral_photon_flux_agn(pivot_energy=spectral_parameter_dictionary["Eb"],
                                        flux_density=spectral_parameter_dictionary["norm"],
                                        spectral_slope=spectral_parameter_dictionary["alpha"],
                                        curvature=spectral_parameter_dictionary["beta"], min_energy=energy_bins[f],
@@ -417,7 +423,14 @@ def xml_parser(energy_bins, xml_file: str):
             # For each energy interval, calculate corresponding flux
             for f in range(num_bins - 1):
 
-                flux = energy_flux_pulsar(pivot_energy=spectral_parameter_dictionary["Scale"],
+                # flux = energy_flux_pulsar(pivot_energy=spectral_parameter_dictionary["Scale"],
+                #                           flux_density=spectral_parameter_dictionary["Prefactor"],
+                #                           spectral_slope=spectral_parameter_dictionary["Index1"],
+                #                           exponential_index=spectral_parameter_dictionary["Index2"],
+                #                           exponential_factor=spectral_parameter_dictionary["Expfactor"],
+                #                           min_energy=energy_bins[f], max_energy=energy_bins[f + 1])
+
+                flux = integral_photon_flux_pulsar(pivot_energy=spectral_parameter_dictionary["Scale"],
                                           flux_density=spectral_parameter_dictionary["Prefactor"],
                                           spectral_slope=spectral_parameter_dictionary["Index1"],
                                           exponential_index=spectral_parameter_dictionary["Index2"],
