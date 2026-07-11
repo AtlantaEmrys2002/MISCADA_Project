@@ -17,3 +17,8 @@ def split_normal(x, sigma_1, sigma_2):
     mask = np.abs(x - mu) < 10
 
     return np.where(mask, A * np.exp(upper / (2 * (sigma_1 ** 2))), A * np.exp(upper / 2 * (sigma_2 ** 2)))
+
+
+# REFERENCES
+
+# Trapezoidal Rule - https://en.wikipedia.org/wiki/Trapezoidal_rule

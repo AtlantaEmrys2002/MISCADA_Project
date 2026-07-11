@@ -49,19 +49,18 @@ def create_background_counts_map(expected_counts_isotropic_background, expected_
     return np.array(background_realisation)
 
 
-def create_diffuse_background(diffuse_background_file, exposure_map, nside):
+def create_diffuse_background(diffuse_background_file, exposure_map, nside, to_create_num_bins=5):
 
     with fits.open(diffuse_background_file) as hdul:
 
         # In MeV
         energy_intervals = hdul[1].data
 
+        energy_intervals = np.array([k[0] for k in energy_intervals])
+
         num_bins = len(energy_intervals)
 
-
         healpix_data = []
-
-        maps = []
 
         for b in range(num_bins):
 
@@ -83,23 +82,16 @@ def create_diffuse_background(diffuse_background_file, exposure_map, nside):
 
             healpix_data.append(data)
 
-        import matplotlib.pyplot as plt
+        # Integrate over energy spectrum
+        diffuse_backgrounds, new_energy_bins = integrate_over_energy(maps=np.array(healpix_data),
+                                                                     energy_bins=energy_intervals,
+                                                                     num_bins=to_create_num_bins, predefined=True)
 
-        # ax = plt.figure().add_subplot(projection='3d')
-        #
-        # for b in range(num_bins):
-        #     ax.plot(xs=range(len(data)), ys=data, zs=energy_intervals[b])
+        # Multiply by ENERGY-AVERAGED exposure
+        for k in range(len(exposure_map)):
+            diffuse_backgrounds[k] *= exposure_map[k]
 
-        # plt.show()
-
-        # for b in range(num_bins):
-
-            # NEED TO INTEGRATE OVER ENERGY FOR THE SPECTRUM
-
-            #
-            # maps.append(integrated_data * exposure_map[b])
-
-    return np.array(maps), energy_intervals
+    return np.array(diffuse_backgrounds)
 
 
 def create_exposure_map(exposure_file: str, num_bins_to_create=5):
@@ -118,48 +110,9 @@ def create_exposure_map(exposure_file: str, num_bins_to_create=5):
 
         # EXPERIMENTATION BELOW
 
-        # Integrate over
+        # Integrate over energy - see robust paper and arxiv paper as well
         exposure_maps, energy_bins = integrate_over_energy(maps=exposure_maps, energy_bins=energy_bins, num_bins=num_bins_to_create,
                                                            energy_weighted=True)
-
-        # import matplotlib.pyplot as plt
-        #
-        # varying = []
-        #
-        # for k in range(len(exposure_maps)):
-        #     varying.append(exposure_maps[k][45])
-        #
-        # plt.scatter(np.log(energy_bins[:-1]), np.log(varying))
-        #
-        # plt.show()
-        #
-        # varying = []
-        #
-        # for k in range(len(exposure_maps)):
-        #     varying.append(exposure_maps[k][14800])
-        #
-        # plt.scatter(np.log(energy_bins[:-1]), np.log(varying), color='green')
-        #
-        # plt.show()
-        #
-        # varying = []
-        #
-        # for k in range(len(exposure_maps)):
-        #     varying.append(exposure_maps[k][26500])
-        #
-        # plt.scatter(np.log(energy_bins[:-1]), np.log(varying), color='red')
-        #
-        # plt.show()
-        #
-        # varying = []
-        #
-        # for k in range(len(exposure_maps)):
-        #     varying.append(exposure_maps[k][37800])
-        #
-        # plt.scatter(np.log(energy_bins[:-1]), np.log(varying), color='orange')
-        #
-        # plt.show()
-
 
     return exposure_maps, energy_bins
 

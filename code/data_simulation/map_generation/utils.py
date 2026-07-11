@@ -29,8 +29,136 @@ def get_nside(healpix_exposure_map):
 def exponential_func(energy):
     return energy ** -2.4
 
+# BELOW WORKS FOR EXPOSURE MAPS
 
-def integrate_over_energy(maps, energy_bins, num_bins, energy_weighted=False):
+# def integrate_over_energy(maps, energy_bins, num_bins, energy_weighted=False, predefined=False, min_e=300,
+#                           max_e=200000):
+#
+#     # if energy_weighted is true, then we use a weighting factor when integrating over the energy range
+#     # This is used when integrating over exposure maps
+#     if energy_weighted is True:
+#
+#         for k in range(len(maps)):
+#
+#             maps[k] *= (energy_bins[k] ** -2.4)
+#
+#     # Use the trapezium rule for numerical integration here
+#
+#     if predefined is False:
+#
+#         # Always create num_bins + 1 (to get num bins you want - these are the boundaries
+#         new_energy_bins = np.logspace(np.log(energy_bins[0]), np.log(energy_bins[-1]), num=num_bins + 1, base=np.e)
+#
+#     else:
+#
+#         new_energy_bins = np.logspace(np.log(min_e), np.log(max_e), num=num_bins + 1, base=np.e)
+#
+#     # Find the interval in the previous energy_bins in which the new energy bin sits, then calculate the exposure at
+#     # that energy bin
+#     new_maps = []
+#
+#     for n in range(0, num_bins):
+#
+#         new_energy_value = new_energy_bins[n]
+#
+#         # Check to see if new energy bin value already in previous energy bins
+#         already_calculated = np.isclose(energy_bins, new_energy_value)
+#
+#         if np.any(already_calculated):
+#
+#             energy_bin = np.argwhere(already_calculated)[0, 0]
+#
+#             new_maps.append(maps[energy_bin])
+#
+#         else:
+#
+#             pos = np.searchsorted(energy_bins, new_energy_value, side="left")
+#
+#             # Fit straight line between points at energy bins surrounding new energy value
+#             m = (maps[pos] - maps[pos - 1]) / (energy_bins[pos] - energy_bins[pos - 1])
+#             c = maps[pos - 1] - (m * energy_bins[pos - 1])
+#
+#             new_map = (m * new_energy_value) + c
+#
+#             new_maps.append(new_map)
+#
+#     integrated_maps = []
+#
+#     for n in range(0, num_bins):
+#
+#         lower_new_energy_value = new_energy_bins[n]
+#
+#         # Check to see if new energy bin value already in previous energy bins
+#         already_calculated = np.isclose(energy_bins, lower_new_energy_value)
+#
+#         if np.any(already_calculated):
+#
+#             lower_addition = np.zeros_like(maps[0])
+#
+#         else:
+#
+#             pos = np.searchsorted(energy_bins, lower_new_energy_value, side="left")
+#
+#             lower_addition = (maps[pos] + new_maps[n]) * (energy_bins[pos] - lower_new_energy_value) / 2
+#
+#         upper_new_energy_value = new_energy_bins[n + 1]
+#
+#         # Check to see if new energy bin value already in previous energy bins
+#         already_calculated = np.isclose(energy_bins, upper_new_energy_value)
+#
+#         if np.any(already_calculated):
+#
+#             upper_addition = 0
+#
+#         else:
+#
+#             pos = np.searchsorted(energy_bins, upper_new_energy_value, side="left")
+#
+#             upper_addition = (new_maps[n + 1] + maps[pos - 1]) * (upper_new_energy_value - energy_bins[pos - 1]) / 2
+#
+#         upper_pos = np.searchsorted(energy_bins, upper_new_energy_value, side="left") - 1  # THIS IS VERY IMPORTANT - THE -1
+#         lower_pos = np.searchsorted(energy_bins, lower_new_energy_value, side="left")
+#
+#         middle_addition = np.zeros_like(maps[0])
+#
+#         for k in range(lower_pos + 1, upper_pos + 1):
+#
+#             middle_addition += ((maps[k] + maps[k - 1]) * (energy_bins[k] - energy_bins[k - 1])) / 2
+#
+#         integrated_map = lower_addition + middle_addition + upper_addition
+#
+#         integrated_maps.append(integrated_map)
+#
+#     integrated_maps = np.array(integrated_maps)
+#
+#     if energy_weighted is True:
+#
+#         integrated_energies = [quad(exponential_func, new_energy_bins[k], new_energy_bins[k + 1])[0] for k in range(num_bins)]
+#
+#         for x in range(num_bins):
+#
+#             integrated_maps[x] /= integrated_energies[x]
+#
+#     return integrated_maps, new_energy_bins
+
+
+def integrate_over_energy(maps, energy_bins, num_bins, energy_weighted=False, predefined=False, min_e=300,
+                          max_e=200000):
+
+    # EXPERIMENT FOR the m, c and append lines, as well as conversion
+
+    # Add an additional map to the end - straight line extrapolation
+
+    m = ((maps[-1] - maps[-2]) /
+         (energy_bins[-1] - energy_bins[-2]))
+
+    c = maps[-1] - (m * energy_bins[-1])
+
+    maps = list(maps)
+
+    maps.append((m * energy_bins[-1]) + c)
+
+    maps = np.array(maps)
 
     # if energy_weighted is true, then we use a weighting factor when integrating over the energy range
     # This is used when integrating over exposure maps
@@ -42,86 +170,133 @@ def integrate_over_energy(maps, energy_bins, num_bins, energy_weighted=False):
 
     # Use the trapezium rule for numerical integration here
 
-    # Always create num_bins + 1 (to get num bins you want - these are the boundaries
-    new_energy_bins = np.logspace(np.log(energy_bins[0]), np.log(energy_bins[-1]), num=num_bins + 1, base=np.e)
+    # if don't have upper and lower boundaries of energy values, take them from the original energy bins fed to function
+    # always create num_bins + 1 - this creates the boundaries (need 6 boundaries to create 5 bins)
+    if predefined is False:
+        min_e, max_e = energy_bins[0], energy_bins[-1]
 
-    # Find the interval in the previous energy_bins in which the new energy bin sits, then calculate the exposure at
-    # that energy bin
+    new_energy_bins = np.logspace(np.log(min_e), np.log(max_e), num=num_bins + 1, base=np.e)
+
     new_maps = []
 
-    for n in range(0, num_bins):
+    # Calculate new maps at each of the new energy bin boundaries
+    for n in range(num_bins):
 
-        new_energy_value = new_energy_bins[n]
+        new_energy_boundary = new_energy_bins[n]
 
         # Check to see if new energy bin value already in previous energy bins
-        already_calculated = np.isclose(energy_bins, new_energy_value)
+        already_calculated = np.isclose(energy_bins, new_energy_boundary)
 
         if np.any(already_calculated):
 
-            energy_bin = np.argwhere(already_calculated)[0, 0]
-
-            new_maps.append(maps[energy_bin])
+            new_maps.append(maps[np.argwhere(already_calculated)[0, 0]])
 
         else:
 
-            pos = np.searchsorted(energy_bins, new_energy_value, side="left")
+            # pos indicates where new_energy boundary exists such that energy_bin[pos - 1] <= new_energy_boundary <
+            # energy_bins[pos]
+            pos = np.searchsorted(energy_bins, new_energy_boundary)
+
+            left_boundary = pos - 1
+            right_boundary = pos
 
             # Fit straight line between points at energy bins surrounding new energy value
-            m = (maps[pos] - maps[pos - 1]) / (energy_bins[pos] - energy_bins[pos - 1])
-            c = maps[pos - 1] - (m * energy_bins[pos - 1])
+            m = ((maps[right_boundary] - maps[left_boundary]) /
+                 (energy_bins[right_boundary] - energy_bins[left_boundary]))
 
-            new_map = (m * new_energy_value) + c
+            c = maps[left_boundary] - (m * energy_bins[left_boundary])
 
-            new_maps.append(new_map)
+            new_maps.append((m * new_energy_boundary) + c)
+
+            if n == num_bins - 1:
+
+                # Create an additional map for upper boundary extrapolating even further with the straight line - this
+                # is in cases when a passed energy bin does not match the upper energy boundary and as such upper_additi
+                # on must be included
+
+                new_maps.append((m * new_energy_bins[n + 1]) + c)
 
     integrated_maps = []
 
-    for n in range(0, num_bins):
+    # Calculate numerical integrals
+    for n in range(num_bins):
 
-        lower_new_energy_value = new_energy_bins[n]
+        lower_energy_boundary = new_energy_bins[n]
+        upper_energy_boundary = new_energy_bins[n + 1]
 
-        # Check to see if new energy bin value already in previous energy bins
-        already_calculated = np.isclose(energy_bins, lower_new_energy_value)
+        # Closest energy bin to lower_energy_boundary that has a greater value than lower energy value
+        pos_lower = np.searchsorted(energy_bins, lower_energy_boundary)
 
-        if np.any(already_calculated):
+        # Closest energy bin to upper_energy_boundary that has a lesser value than upper energy value
+        pos_upper = np.searchsorted(energy_bins, upper_energy_boundary, side="right") - 1
+
+        # print(lower_energy_boundary, energy_bins[pos_lower], energy_bins[pos_upper], upper_energy_boundary)
+
+        # Calculate the lower part of the integral between the new energy bin and the closest energy bin in the passed
+        # maps
+        if np.isclose(lower_energy_boundary, energy_bins[pos_lower]):
 
             lower_addition = np.zeros_like(maps[0])
 
         else:
 
-            pos = np.searchsorted(energy_bins, lower_new_energy_value, side="left")
+            # print('lower')
+            # print(lower_energy_boundary, energy_bins[pos_lower])
 
-            lower_addition = (maps[pos] + new_maps[n]) * (energy_bins[pos] - lower_new_energy_value) / 2
+            lower_addition = (maps[pos_lower] + new_maps[n]) * (energy_bins[pos_lower] - lower_energy_boundary) / 2
 
-        upper_new_energy_value = new_energy_bins[n + 1]
+        # Calculate the upper part of the integral between the new energy bin (upper) and the closest energy bin the
+        # passed maps
 
-        # Check to see if new energy bin value already in previous energy bins
-        already_calculated = np.isclose(energy_bins, upper_new_energy_value)
+        # print("TEST: {} {}".format(upper_energy_boundary, energy_bins[pos_upper]))
 
-        if np.any(already_calculated):
+        # print(energy_bins[pos_upper], upper_energy_boundary)
 
-            upper_addition = 0
+        upper_addition = np.zeros_like(maps[0])
+
+        if np.isclose(upper_energy_boundary, energy_bins[pos_upper]):
+
+            # print("HI")
+
+            # upper_addition = np.zeros_like(maps[0])
+
+            upper_addition = np.zeros_like(maps[0])
 
         else:
 
-            pos = np.searchsorted(energy_bins, upper_new_energy_value, side="left")
+            # print('upper')
+            # print(energy_bins[pos_upper], upper_energy_boundary)
 
-            upper_addition = (new_maps[n + 1] + maps[pos - 1]) * (upper_new_energy_value - energy_bins[pos - 1]) / 2
+            # upper_addition = (maps[pos_upper] + new_maps[n + 1]) * (upper_energy_boundary - energy_bins[pos_upper]) / 2
+            upper_addition = (maps[pos_upper] + new_maps[n + 1]) / (upper_energy_boundary - energy_bins[pos_upper]) / 2
 
-        upper_pos = np.searchsorted(energy_bins, upper_new_energy_value, side="left") - 1  # THIS IS VERY IMPORTANT - THE -1
-        lower_pos = np.searchsorted(energy_bins, lower_new_energy_value, side="left")
 
+        # print(np.sum(upper_addition))
+
+        # Calculate the middle section of the interval
         middle_addition = np.zeros_like(maps[0])
 
-        for k in range(lower_pos + 1, upper_pos + 1):
+        # print('\n')
 
-            middle_addition += ((maps[k] + maps[k - 1]) * (energy_bins[k] - energy_bins[k - 1])) / 2
+        for m in range(pos_lower, pos_upper):
+
+            # print('middle')
+            # print(energy_bins[m], energy_bins[m + 1])
+
+            sub_integral = (maps[m] + maps[m + 1]) * (energy_bins[m + 1] - energy_bins[m]) / 2
+
+            middle_addition += sub_integral
 
         integrated_map = lower_addition + middle_addition + upper_addition
+
+        print(np.sum(lower_addition), np.sum(middle_addition), np.sum(upper_addition))
 
         integrated_maps.append(integrated_map)
 
     integrated_maps = np.array(integrated_maps)
+
+    # print(len(integrated_maps))
+    # print(np.argwhere(integrated_maps[-1] > 0))
 
     if energy_weighted is True:
 
@@ -131,9 +306,96 @@ def integrate_over_energy(maps, energy_bins, num_bins, energy_weighted=False):
 
             integrated_maps[x] /= integrated_energies[x]
 
-    # print(integrated_m)
-
     return integrated_maps, new_energy_bins
+
+
+    # # Find the interval in the previous energy_bins in which the new energy bin sits, then calculate the exposure at
+    # # that energy bin
+    # new_maps = []
+    #
+    # for n in range(0, num_bins):
+    #
+    #     new_energy_value = new_energy_bins[n]
+    #
+    #     # Check to see if new energy bin value already in previous energy bins
+    #     already_calculated = np.isclose(energy_bins, new_energy_value)
+    #
+    #     if np.any(already_calculated):
+    #
+    #         energy_bin = np.argwhere(already_calculated)[0, 0]
+    #
+    #         new_maps.append(maps[energy_bin])
+    #
+    #     else:
+    #
+    #         pos = np.searchsorted(energy_bins, new_energy_value, side="left")
+    #
+    #         # Fit straight line between points at energy bins surrounding new energy value
+    #         m = (maps[pos] - maps[pos - 1]) / (energy_bins[pos] - energy_bins[pos - 1])
+    #         c = maps[pos - 1] - (m * energy_bins[pos - 1])
+    #
+    #         new_map = (m * new_energy_value) + c
+    #
+    #         new_maps.append(new_map)
+    #
+    # integrated_maps = []
+    #
+    # for n in range(0, num_bins):
+    #
+    #     lower_new_energy_value = new_energy_bins[n]
+    #
+    #     # Check to see if new energy bin value already in previous energy bins
+    #     already_calculated = np.isclose(energy_bins, lower_new_energy_value)
+    #
+    #     if np.any(already_calculated):
+    #
+    #         lower_addition = np.zeros_like(maps[0])
+    #
+    #     else:
+    #
+    #         pos = np.searchsorted(energy_bins, lower_new_energy_value, side="left")
+    #
+    #         lower_addition = (maps[pos] + new_maps[n]) * (energy_bins[pos] - lower_new_energy_value) / 2
+    #
+    #     upper_new_energy_value = new_energy_bins[n + 1]
+    #
+    #     # Check to see if new energy bin value already in previous energy bins
+    #     already_calculated = np.isclose(energy_bins, upper_new_energy_value)
+    #
+    #     if np.any(already_calculated):
+    #
+    #         upper_addition = 0
+    #
+    #     else:
+    #
+    #         pos = np.searchsorted(energy_bins, upper_new_energy_value, side="left")
+    #
+    #         upper_addition = (new_maps[n + 1] + maps[pos - 1]) * (upper_new_energy_value - energy_bins[pos - 1]) / 2
+    #
+    #     upper_pos = np.searchsorted(energy_bins, upper_new_energy_value, side="left") - 1  # THIS IS VERY IMPORTANT - THE -1
+    #     lower_pos = np.searchsorted(energy_bins, lower_new_energy_value, side="left")
+    #
+    #     middle_addition = np.zeros_like(maps[0])
+    #
+    #     for k in range(lower_pos + 1, upper_pos + 1):
+    #
+    #         middle_addition += ((maps[k] + maps[k - 1]) * (energy_bins[k] - energy_bins[k - 1])) / 2
+    #
+    #     integrated_map = lower_addition + middle_addition + upper_addition
+    #
+    #     integrated_maps.append(integrated_map)
+    #
+    # integrated_maps = np.array(integrated_maps)
+    #
+    # if energy_weighted is True:
+    #
+    #     integrated_energies = [quad(exponential_func, new_energy_bins[k], new_energy_bins[k + 1])[0] for k in range(num_bins)]
+    #
+    #     for x in range(num_bins):
+    #
+    #         integrated_maps[x] /= integrated_energies[x]
+    #
+    # return integrated_maps, new_energy_bins
 
 
 

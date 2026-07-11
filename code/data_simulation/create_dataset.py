@@ -13,6 +13,8 @@ from read_write_functions import xml_parser
 
 # POINT SOURCE MAPS
 
+print("EXPOSURE")
+
 # Prepare exposure maps
 exposure_maps, energy_bins = create_exposure_map(
     exposure_file="/Volumes/T7/project_data/real_data/fermi_filtered_gti_exposure_map.fits", num_bins_to_create=5)
@@ -26,10 +28,10 @@ plot_all_sky_map(healpix_maps=exposure_maps, energy_bins=energy_bins, title="Exp
 
 # THIS IS WHERE TO START THE LOOP OVER THE DIFFERENT MOCK SOURCE CATALOGS
 
-coordinates, binned_fluxes = xml_parser(energy_bins, xml_file="./simulated_data/sources.xml")
-
+# coordinates, binned_fluxes = xml_parser(energy_bins, xml_file="./simulated_data/sources.xml")
 #
-pixels = angle_to_healpix_pixels(coordinates, nside=nside)
+# #
+# pixels = angle_to_healpix_pixels(coordinates, nside=nside)
 
 # Calculated source locations in lon-lat, the pixels in which they are situated in the healpix map, the binned exposure
 # maps of the sky, and their fluxes
@@ -47,7 +49,7 @@ pixels = angle_to_healpix_pixels(coordinates, nside=nside)
 #                  directory="./plots/all_sky_maps/", logarithmic=True)
 
 # Create and fit point spread function
-binned_function_parameters = fit_point_source_psf(file_name="/Volumes/T7/project_data/real_data/pointsource_psf.fits")
+# binned_function_parameters = fit_point_source_psf(file_name="/Volumes/T7/project_data/real_data/pointsource_psf.fits")
 
 # Plot PSF fit
 # plot_fitted_point_source_psf(psf_file="/Volumes/T7/project_data/real_data/pointsource_psf.fits",
@@ -55,20 +57,20 @@ binned_function_parameters = fit_point_source_psf(file_name="/Volumes/T7/project
 
 # Convolve each PSF with our fitted LAT PSF - i.e. calculate new positions for each gamma ray to originate from - can do
 # this directly from each infinite statistics count map
-point_source_maps = create_point_source_map(coordinates=coordinates, exposure_maps=exposure_maps,
-                                           psf_parameters=binned_function_parameters, fluxes=binned_fluxes, nside=nside)
+# point_source_maps = create_point_source_map(coordinates=coordinates, exposure_maps=exposure_maps,
+#                                            psf_parameters=binned_function_parameters, fluxes=binned_fluxes, nside=nside)
 
 #
 #
-plot_all_sky_map(healpix_maps=point_source_maps, energy_bins=energy_bins, title="Point Source",
-                 directory="./plots/all_sky_maps/", logarithmic=True)
+# plot_all_sky_map(healpix_maps=point_source_maps, energy_bins=energy_bins, title="Point Source",
+#                  directory="./plots/all_sky_maps/", logarithmic=True)
 
-import numpy as np
+# import numpy as np
+#
+# np.save("point_source_tmp.npy", point_source_maps)
 
-np.save("point_source_tmp.npy", point_source_maps)
-
-# Save results
-save_count_maps(count_maps=point_source_maps, directory="./simulated_data/count_maps/", catalog_id=1)
+# # Save results
+# save_count_maps(count_maps=point_source_maps, directory="./simulated_data/count_maps/", catalog_id=1)
 
 # DIFFUSE SOURCE MAPS
 
@@ -83,18 +85,18 @@ save_count_maps(count_maps=point_source_maps, directory="./simulated_data/count_
 # plot_all_sky_map(healpix_maps=isotropic_backgrounds, energy_bins=energy_bins, title="Isotropic Background",
 #                  directory="./plots/all_sky_maps/", logarithmic=True)
 
-# galactic_diffuse_backgrounds, energy_intervals_diffuse = create_diffuse_background(
-#     diffuse_background_file="/Volumes/T7/data/background_models/gll_iem_v07.fits", exposure_map=exposure_maps,
-#     nside=nside)
-#
-# # BELOW PLOT IS NOT CORRECT - JSUT NEED TO VERFIY SHAPE
-# plot_all_sky_map(healpix_maps=galactic_diffuse_backgrounds[:5], energy_bins=energy_bins, title="Diffuse Background",
-#                  directory="./plots/all_sky_maps/", logarithmic=True)
+print("DIFFUSE")
 
+# BELOW IS INFINITE STATISTICS MAP!!!!
+galactic_diffuse_backgrounds = create_diffuse_background(
+    diffuse_background_file="/Volumes/T7/data/background_models/gll_iem_v07.fits", exposure_map=exposure_maps,
+    nside=nside)
 
-import matplotlib.pyplot as plt
+print(len(galactic_diffuse_backgrounds))
+print(len(galactic_diffuse_backgrounds[0]))
 
-plt.show()
+plot_all_sky_map(healpix_maps=galactic_diffuse_backgrounds, energy_bins=energy_bins, title="Diffuse Background",
+                 directory="./plots/all_sky_maps/", logarithmic=True)
 
 
 
