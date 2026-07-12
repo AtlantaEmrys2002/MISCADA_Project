@@ -13,18 +13,16 @@ from read_write_functions import xml_parser
 
 # POINT SOURCE MAPS
 
-print("EXPOSURE")
-
 # Prepare exposure maps
-exposure_maps, energy_bins = create_exposure_map(
-    exposure_file="/Volumes/T7/project_data/real_data/fermi_filtered_gti_exposure_map.fits", num_bins_to_create=5)
+# exposure_maps, energy_bins = create_exposure_map(
+#     exposure_file="/Volumes/T7/project_data/real_data/fermi_filtered_gti_exposure_map.fits", num_bins_to_create=5)
 
 # Get NSIDE parameter from exposure map
-nside = get_nside(exposure_maps[0])
+# nside = get_nside(exposure_maps[0])
 
 # Plot exposure maps to verify correctness
-plot_all_sky_map(healpix_maps=exposure_maps, energy_bins=energy_bins, title="Exposure",
-                 directory="./plots/all_sky_maps/")
+# plot_all_sky_map(healpix_maps=exposure_maps, energy_bins=energy_bins, title="Exposure",
+#                  directory="./plots/all_sky_maps/")
 
 # THIS IS WHERE TO START THE LOOP OVER THE DIFFERENT MOCK SOURCE CATALOGS
 
@@ -85,22 +83,17 @@ plot_all_sky_map(healpix_maps=exposure_maps, energy_bins=energy_bins, title="Exp
 # plot_all_sky_map(healpix_maps=isotropic_backgrounds, energy_bins=energy_bins, title="Isotropic Background",
 #                  directory="./plots/all_sky_maps/", logarithmic=True)
 
-print("DIFFUSE")
-
 # BELOW IS INFINITE STATISTICS MAP!!!!
-galactic_diffuse_backgrounds = create_diffuse_background(
-    diffuse_background_file="/Volumes/T7/data/background_models/gll_iem_v07.fits", exposure_map=exposure_maps,
-    nside=nside)
-
-print(len(galactic_diffuse_backgrounds))
-print(len(galactic_diffuse_backgrounds[0]))
-
-plot_all_sky_map(healpix_maps=galactic_diffuse_backgrounds, energy_bins=energy_bins, title="Diffuse Background",
-                 directory="./plots/all_sky_maps/", logarithmic=True)
+# galactic_diffuse_backgrounds = create_diffuse_background(
+#     diffuse_background_file="/Volumes/T7/data/background_models/gll_iem_v07.fits", exposure_map=exposure_maps,
+#     nside=nside)
+#
+# plot_all_sky_map(healpix_maps=galactic_diffuse_backgrounds, energy_bins=energy_bins, title="Diffuse Background",
+#                  directory="./plots/all_sky_maps/", logarithmic=True)
 
 
 
-# diffuse_psf = fit_diffuse_source_psf(roi_count_map="/Volumes/T7/project_data/real_data/diffuse_psf_roi/count_map.fits")
+diffuse_psf = fit_diffuse_source_psf(roi_count_map="/Volumes/T7/project_data/real_data/diffuse_psf_roi/count_map.fits")
 #
 # background = create_background_counts_map(6, 7)
 

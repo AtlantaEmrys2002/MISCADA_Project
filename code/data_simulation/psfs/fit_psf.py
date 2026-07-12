@@ -12,62 +12,94 @@ def fit_diffuse_source_psf(roi_count_map, nside=512):
 
     # Change to NSIDE OF convolved diffuse (see https://arxiv.org/html/2410.12951v2)
 
+    # with fits.open("/Volumes/T7/project_data/real_data/diffuse_psf_roi/roi_filted_source_map.fits") as hdul:
+    #
+    #     print(hdul.info())
+
+
+
+
     with fits.open(roi_count_map) as hdul:
-        lmax = 3 * nside  # chose 3 based on above paper
 
-        # Can plot below with plt.imshow(counts
+        print(hdul.info())
+        #
+        # print(hdul[1].columns)
+        #
+        # print(hdul[2].header)
+
         counts = hdul[0].data
-
         midpoint = counts.shape[0] // 2
 
-        x_axis = counts[midpoint]
-        y_axis = counts[:, midpoint]
+        x_axis = counts[midpoint][midpoint:]
+        y_axis = counts[:, midpoint][midpoint:]
 
-        # x and y axis to form a cross
         values = (x_axis + y_axis) / 2
-
-        max_value = np.max(values)
-
-        # Closest value to half the intensity - https://stackoverflow.com/questions/8914491/finding-the-nearest-value-and-return-the-index-of-array-in-python
-        half_intensity = (np.abs(values - (max_value // 2))).argmin()
-
-        # FWHM
-
-        # Find the difference between half way along the axis and centre - 0.05 degrees represented by 1 pixel. Multiply by two as it goes across the mean
-
-        # Approximation from CMB Estimation Paper - https://arxiv.org/html/2410.12951v2 - resolution how many degrees
-        # does side cover approximately
-        side_length_pixel = np.sqrt((4 * np.pi) / (12 * nside ** 2))
-
-        degrees_difference = np.abs(midpoint - half_intensity) * side_length_pixel * 2
-
-        # Convert to arcmin FROM degrees - NEW DOCUMENTATION SAYS RADIANS (PREVIOUS SAYS ARCMIN)
-        degrees_difference *= (np.pi / 180)
-
-        beam = hp.sphtfunc.gauss_beam(fwhm=degrees_difference, lmax=lmax)
-
-        # print(beam)
-
-        # thetas = np.linspace(0, lmax, num=len(values)//2) * side_length_pixel
 
         import matplotlib.pyplot as plt
 
-        # to_integrate = (2 * np.pi * beam * thetas)
+        plt.plot(range(0, len(x_axis)),values)
+
+        plt.xlim(0, 50)
+        plt.ylim(0, 2000)
+
+        plt.show()
+
+
+        # lmax = 3 * nside  # chose 3 based on above paper
         #
-        # theta_diff = thetas[1:] - thetas[:-1]
-        # func_diff = (to_integrate[1: ] + to_integrate[:-1])/2
+        # # Can plot below with plt.imshow(counts
+        # counts = hdul[0].data
         #
-        # integral = np.sum(theta_diff * func_diff)
+        # midpoint = counts.shape[0] // 2
+        #
+        # x_axis = counts[midpoint]
+        # y_axis = counts[:, midpoint]
+        #
+        # # x and y axis to form a cross
+        # values = (x_axis + y_axis) / 2
+        #
+        # max_value = np.max(values)
+        #
+        # # Closest value to half the intensity - https://stackoverflow.com/questions/8914491/finding-the-nearest-value-and-return-the-index-of-array-in-python
+        # half_intensity = (np.abs(values - (max_value // 2))).argmin()
+        #
+        # # FWHM
+        #
+        # # Find the difference between half way along the axis and centre - 0.05 degrees represented by 1 pixel. Multiply by two as it goes across the mean
+        #
+        # # Approximation from CMB Estimation Paper - https://arxiv.org/html/2410.12951v2 - resolution how many degrees
+        # # does side cover approximately
+        # side_length_pixel = np.sqrt((4 * np.pi) / (12 * nside ** 2))
+        #
+        # degrees_difference = np.abs(midpoint - half_intensity) * side_length_pixel * 2
+        #
+        # # Convert to arcmin FROM degrees - NEW DOCUMENTATION SAYS RADIANS (PREVIOUS SAYS ARCMIN)
+        # degrees_difference *= (np.pi / 180)
+        #
+        # beam = hp.sphtfunc.gauss_beam(fwhm=degrees_difference, lmax=lmax)
+        #
+        # # print(beam)
+        #
+        # # thetas = np.linspace(0, lmax, num=len(values)//2) * side_length_pixel
+        #
+        # import matplotlib.pyplot as plt
+        #
+        # # to_integrate = (2 * np.pi * beam * thetas)
+        # #
+        # # theta_diff = thetas[1:] - thetas[:-1]
+        # # func_diff = (to_integrate[1: ] + to_integrate[:-1])/2
+        # #
+        # # integral = np.sum(theta_diff * func_diff)
+        #
+        # # plt.plot(thetas, values[midpoint:] / (np.pi * thetas ** 2))
+        #
+        # # print(thetas)
+        #
+        # # plt.yscale("log")
+        #
+        # # plt.show()
 
-        # plt.plot(thetas, values[midpoint:] / (np.pi * thetas ** 2))
-
-        # print(thetas)
-
-        # plt.yscale("log")
-
-        # plt.show()
-
-        return beam
+        # return beam
 
 
 def fit_point_source_psf(file_name):
