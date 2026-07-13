@@ -50,11 +50,6 @@ def create_diffuse_source_map(expected_counts_isotropic_background, expected_cou
     expected_counts_isotropic_background *= a_iso
     expected_counts_diffuse_background *= a_diff
 
-
-    print("DIFFUSE")
-    print(np.argwhere(expected_counts_diffuse_background <= 0))
-
-
     # Mean background
     background = expected_counts_diffuse_background + expected_counts_isotropic_background
 

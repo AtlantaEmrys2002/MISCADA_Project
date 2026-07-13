@@ -73,16 +73,6 @@ def fit_diffuse_source_psf(roi_count_map, nside=512):
             # TO RADIANS
             radius *= (np.pi / 180)
 
-
-
-            # IS ABOVE RIGHT WITH -600 TO 600 OR SHOULD I HAVE STUCK WITH 0 TO 600 FOR WINDOW FUNCTION???????
-            # DO I NEED TO INTEGRATE TO ENERGY AVERAGE OVER BIN?
-
-
-
-            # NEED TO FIGURE OUT IF WE SHOULD HAVE WINDOW FUNCTION AS A COMPLETE BElL CURVE WITH
-            # THETA FROM -x to x CENTRED AT ZERO OR JUST FROM 0 TO RADIUS
-
             beam = hp.sphtfunc.bl2beam(bl=values, theta=radius)
 
             # NORMALISE FUNCTION BY MAXIMUM ATTAINED VALUE
