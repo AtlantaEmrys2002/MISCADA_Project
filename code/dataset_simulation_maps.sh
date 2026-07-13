@@ -54,9 +54,6 @@ conda activate fermi
 # ABOVE IS ORIGINAL AND WORKS - BELOW IS TO SEE IF I CAN PRODUCE A BETTER FUNCTION
 gtexpcube2 infile=$FERMILIVETIMECUBE cmap=$FERMIBINNED outfile=$FERMIEXPMAP irfs=P8R3_ULTRACLEANVETO_V3 enumbins=16 emin=300 emax=200000 binsz=0.23 evtype=3
 
-
-
-
 # Generate the PSF for handling pointlike sources - want at l = 90 degrees, b = 40 degrees - converted to RA DEC J2000
 # which produces 252.131996, 41.585827°
 # gtpsf expcube=$FERMILIVETIMECUBE outfile=$POINTSOURCEPSF irfs=P8R3_ULTRACLEANVETO_V3 ra=252.131996 dec=41.585827 emin=300 emax=200000 nenergies=5 thetamax=50 ntheta=300 evtype=3

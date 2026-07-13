@@ -13,24 +13,21 @@
 # 6) IT WILL BE USEFUL - TRAIN MODELS, BENCHMARK DETECTION SCHEMES, HAVE EXACT POSITIONS OF SOURCES SO CAN ALSO
 # EVALUATE SENSITIVITY AND LOCALISATION
 
-#TODO
-# 1. Luminosity Function - use 3FGL (and cite the paper in notes so can cite in final report) to generate sources
-# according to luminosity function - see graph in paper.
-
 # LIBRARIES
+import argparse
 from pathlib import Path
 
 # Relative imports
 from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
 from analysis.visualisation import *
-from read_write_functions import catalog_data_preparation, save_results
+from read_write_functions import catalog_data_preparation, save_catalog
 from source_generation.agn_generation import generate_mock_agn_catalog
 from source_generation.pulsar_generation import generate_mock_pulsar_catalog
+import time
 from verification.visualisation import plot_luminosity_function, plot_spatial_distribution
 
 
 def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
-
     # Create directory to store results
     Path(directory + "/parameter_distributions").mkdir(parents=True, exist_ok=True)
     Path(directory + "/parameter_correlations").mkdir(parents=True, exist_ok=True)
@@ -65,7 +62,6 @@ def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
 
         # Iterate over candidate distributions and fit each to parameters
         for dist in prob_dist:
-
             # Perform chi_squared goodness of fit test
             chi_squared_test(values, num_bins=100, distribution=dist)
 
@@ -115,7 +111,7 @@ def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
 
     # Fit relationships to identified correlated variables - pivot energy and spectral slope (alpha)
     plot_fitting_correlated_variable_dependency(agns["Pivot_Energy"], agns["LP_Index"], source_type="AGN",
-                                                     directory=directory + "/parameter_correlations")
+                                                directory=directory + "/parameter_correlations")
 
     print('-' * 60)
 
@@ -142,9 +138,34 @@ def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
                                                 source_type="Pulsar", directory=directory + "/parameter_correlations")
 
 
-def verification(simulated_agns, simulated_pulsars, directory="./plots/verification"):
+def create_catalog(fermi_catalog: str, data_4fgl: tuple, threshold, verify: bool = False):
+    start = time.time()
 
-    # Verify simulated data realism
+    # N.B. This makes a single simulated catalog of mock AGN and pulsars
+
+    lat_agn, lat_pulsar = data_4fgl[0], data_4fgl[1]
+
+    # Generate simulated AGN sources
+
+    simulated_agn = generate_mock_agn_catalog(fermi_catalog, lat_agn, detection_threshold=threshold)
+
+    # Generate simulated pulsar sources
+
+    simulated_pulsar = generate_mock_pulsar_catalog(fermi_catalog, lat_pulsar, detection_threshold=threshold)
+
+    end = time.time()
+
+    simulation_time = end - start
+
+    if verify:
+        # Verify realism and correctness of generated gamma-ray sources
+        verification(simulated_agn, simulated_pulsar)
+
+    return simulated_agn, simulated_pulsar, simulation_time
+
+
+def verification(simulated_agns, simulated_pulsars, directory="./plots/verification"):
+    # Verify simulated data realism and correctness
 
     # Create directory to store results
     Path(directory).mkdir(parents=True, exist_ok=True)
@@ -153,7 +174,7 @@ def verification(simulated_agns, simulated_pulsars, directory="./plots/verificat
 
     # Compare the luminosity function of the simulated AGNs with that of those in the 4FGL
     plot_luminosity_function("/Volumes/T7/data/catalog/4FGL_DR4.fit", simulated_agns[:, 4],
-                                 directory=directory, source_type="AGN")
+                             directory=directory, source_type="AGN")
 
     # Compare the luminosity function of the simulated pulsars with that of those in the 4FGL
     plot_luminosity_function("/Volumes/T7/data/catalog/4FGL_DR4.fit", simulated_pulsars[:, 5],
@@ -172,38 +193,100 @@ def verification(simulated_agns, simulated_pulsars, directory="./plots/verificat
 
 # MAIN PROGRAM
 
-print("starting catalog simulation...")
+if __name__ == "__main__":
 
-# Read in catalog data
+    # INPUT PARAMETER PARSING
 
-file = "/Volumes/T7/data/catalog/4FGL_DR4.fit"
+    parser = argparse.ArgumentParser(description="Generates a series of catalogs of simulated gamma-ray sources (AGNs"
+                                                 "and pulsars) with spectral and spatial parameter distributions "
+                                                 "identical to that of a specified catalog (e.g. 4FGL) and stores them "
+                                                 "in a fermitools-compatible XML format.")
 
-agn_rows, pulsar_rows, source_detection_threshold, fluxes_4fgl = catalog_data_preparation(file)
+    parser.add_argument("--catalog", required=True, type=str, help="File path to catalog in fits format of"
+                                                                   " gamma-ray sources with parameter distributions the"
+                                                                   " simulated sources should follow.",
+                        default="/Volumes/T7/data/catalog/4FGL_DR4.fit")
 
-# Analyse parameters, their distributions, and their correlations
+    parser.add_argument("--number", required=True, type=int, help="The number of catalogs of simulated "
+                                                                  "gamma-ray sources to generate.")
 
-analysis(agn_rows, pulsar_rows)
+    parser.add_argument("--analyse", required=True, choices=["yes", "no"], help="Indicate whether a "
+                                                                                "statistical analysis of the input "
+                                                                                "catalog's parameters should be "
+                                                                                "conducted.", default="no")
 
-# Generate simulated AGN sources
+    parser.add_argument("--verify", required=True, choices=["yes", "no", "first"], help="Indicate whether"
+                                                                                        "the distributions and "
+                                                                                        "correlations of the simulated"
+                                                                                        "catalogs' parameters should be"
+                                                                                        "verified. 'yes' will conduct a"
+                                                                                        "verification for each catalog,"
+                                                                                        " 'no' will conduct no "
+                                                                                        "verification and 'first' will "
+                                                                                        "verify the first catalog "
+                                                                                        "simulated.", default="no")
 
-agns = generate_mock_agn_catalog(file, agn_rows.copy(), detection_threshold=source_detection_threshold)
+    args = parser.parse_args()
 
-# Generate simulated pulsar sources
+    file = args.catalog
+    num_catalogs = args.number
+    conduct_analysis = args.analyse
+    conduct_verification = args.verify
 
-pulsars = generate_mock_pulsar_catalog(file, pulsar_rows.copy(), detection_threshold=source_detection_threshold)
+    print("starting catalog simulation...")
+    print("READ DATA: ", end='')
 
-# Verify realism and correctness of generated gamma-ray sources
+    # Read in catalog data
+    agn_4fgl, pulsar_4fgl, source_detection_threshold, fluxes_4fgl = catalog_data_preparation(file)
 
-verification(agns, pulsars)
+    print("DONE")
 
-# Save simulated sources to XML files
-save_results(agns, pulsars)
+    print("GENERATE CATALOGS")
 
-print("catalog simulation finished")
+    # Run analysis if instructed
+    if conduct_analysis == "yes":
+        print("ANALYSIS: ", end='')
+
+        # Analyse parameters, their distributions, and their correlations
+        analysis(agn_4fgl, pulsar_4fgl)
+
+        print("DONE")
+
+    total_time = 0
+
+    # Generate the specified number of catalogs of AGN and pulsars
+    for c in range(num_catalogs):
+
+        print("Catalog {}: ".format(c + 1), end='')
+
+        if conduct_verification == "yes":
+            run_verify = True
+        elif conduct_verification == "no":
+            run_verify = False
+        else:
+            if c == 0:
+                run_verify = True
+            else:
+                run_verify = False
+
+        new_agns, new_pulsars, generation_time = create_catalog(fermi_catalog=file, data_4fgl=(agn_4fgl, pulsar_4fgl),
+                                                                threshold=source_detection_threshold, verify=run_verify)
+
+        total_time += generation_time
+
+        # Save simulated sources to XML files
+        save_catalog(simulated_agns=new_agns, simulated_pulsars=new_pulsars, file_name="./simulated_data/catalogs"
+                                                                                       "/catalog_{}/".format(c + 1))
+
+        print("DONE")
+
+    print("catalog simulation finished")
+
+    print("Total Time: {} s".format(total_time))
+    print("Average Catalog Simulation Time: {} s".format(total_time / num_catalogs))
 
 # REFERENCES
 
-# Astropy Documentation - https://docs.astropy.org/en/stable/
 # Creating Path to Directories - https://stackoverflow.com/questions/273192/how-do-i-create-a-directory-and-any-missing-
 # parent-directories
 # ID8 Paper - Identification of point sources in gamma rays using U-shaped convolutional neural networks and a data
@@ -211,12 +294,8 @@ print("catalog simulation finished")
 # Log-Normal Distribution - https://en.wikipedia.org/wiki/Log-normal_distribution
 # Masked to Ordinary Numpy Array - https://www.w3resource.com/python-exercises/numpy/convert-masked-numpy-array-to-regul
 # ar-array-with-nan.php
-# Numpy Documentation - https://numpy.org/doc/stable/user/index.html
 # Pandas Documentation - https://pandas.pydata.org/docs/index.html
-# Python Documentation - https://docs.python.org/3/
 # Radians to Degrees - https://stackoverflow.com/questions/9875964/how-can-i-convert-radians-to-degrees-with-python
-# Scipy Documentation - https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.quad.html#scipy.integrate.
-# quad
 # String Formatting - https://stackoverflow.com/questions/12018992/print-combining-strings-and-numbers
 # Type Hinting - https://www.reddit.com/r/learnpython/comments/wme6p5/type_hinting_functions_with_multipe_return_types/
 # 4FGL Parameter Overview - https://heasarc.gsfc.nasa.gov/W3Browse/fermi/fermilpsc.html

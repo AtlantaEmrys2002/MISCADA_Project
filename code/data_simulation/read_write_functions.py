@@ -296,43 +296,48 @@ def save_count_maps(count_maps, directory, catalog_id):
 
 
 
-def save_results(simulated_agns, simulated_pulsars, file_name="./simulated_data/sources.xml"):
+def save_catalog(simulated_agns, simulated_pulsars, file_name: str):
 
-    # CREATE DOCUMENT
+    # XML FOR AGN
 
-    root = minidom.Document()
+    root_agn = minidom.Document()
 
-    xml = root.createElement('source_library')
+    xml_agn = root_agn.createElement('source_library')
 
-    xml.setAttribute('title', 'source library')
+    xml_agn.setAttribute('title', 'source library')
 
-    root.appendChild(xml)
+    root_agn.appendChild(xml_agn)
 
-    # BACKGROUND SOURCES
-    background_models = minidom.parse(
-        "simulated_data/to_delete_when_no_longer_needed_as_backup/background.xml").getElementsByTagName('source')
+    agn_xml_writer(simulated_agns, root=root_agn, xml=xml_agn)
 
-    for model in background_models:
+    # XML FOR PULSARS
 
-        # Remove random text nodes
-        cleanEmptyTextNodes(model)
+    root_pulsar = minidom.Document()
 
-        xml.appendChild(model)
+    xml_pulsar = root_pulsar.createElement('source_library')
 
-    # XML for AGN sources
-    agn_xml_writer(simulated_agns, root=root, xml=xml)
+    xml_pulsar.setAttribute('title', 'source library')
 
-    # XML for pulsar sources
-    pulsar_xml_writer(simulated_pulsars, root=root, xml=xml)
+    root_pulsar.appendChild(xml_pulsar)
+
+    pulsar_xml_writer(simulated_pulsars, root=root_pulsar, xml=xml_pulsar)
 
     # FORMAT
 
-    xml_str = root.toprettyxml()
+    agn_xml_str = root_agn.toprettyxml()
+
+    pulsar_xml_str = root_pulsar.toprettyxml()
 
     # SAVE
 
-    with open(file_name, "w") as f:
-        f.write(xml_str)
+    # Create directory if it does not already exist
+    Path(file_name).mkdir(parents=True, exist_ok=True)
+
+    with open(file_name + "agns.xml", "w") as f:
+        f.write(agn_xml_str)
+
+    with open(file_name + "pulsars.xml", "w") as f:
+        f.write(pulsar_xml_str)
 
 
 def xml_parser(energy_bins, xml_file: str):

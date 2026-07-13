@@ -7,7 +7,7 @@ import numpy.typing as npt
 
 
 def plot_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64], directory: str,
-                             source_type="AGN") -> None:
+                             source_type: str) -> None:
     # Data Processing
 
     # Read 4FGL Catalog
