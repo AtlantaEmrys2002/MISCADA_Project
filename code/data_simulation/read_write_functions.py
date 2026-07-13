@@ -309,7 +309,8 @@ def save_results(simulated_agns, simulated_pulsars, file_name="./simulated_data/
     root.appendChild(xml)
 
     # BACKGROUND SOURCES
-    background_models = minidom.parse("simulated_data/background.xml").getElementsByTagName('source')
+    background_models = minidom.parse(
+        "simulated_data/to_delete_when_no_longer_needed_as_backup/background.xml").getElementsByTagName('source')
 
     for model in background_models:
 
