@@ -26,6 +26,18 @@ directory:
 pip install -r ./requirements.txt
 ```
 
+### Accessing Fermi-LAT Data
+
+**NEED TO FILL IN**
+
+## Create Simulation Environment and Dataset
+
+**NEED TO FILL IN**
+
+
+
+
+
 ## References
 
 Within each file, I have noted any links or materials that I consulted whilst developing specfic functions included in 

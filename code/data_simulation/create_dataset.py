@@ -16,8 +16,8 @@ from read_write_functions import xml_parser
 # Prepare exposure maps
 # exposure_maps, energy_bins = create_exposure_map(
 #     exposure_file="/Volumes/T7/project_data/real_data/fermi_filtered_gti_exposure_map.fits", num_bins_to_create=5)
-
-# Get NSIDE parameter from exposure map
+#
+# # Get NSIDE parameter from exposure map
 # nside = get_nside(exposure_maps[0])
 
 # Plot exposure maps to verify correctness

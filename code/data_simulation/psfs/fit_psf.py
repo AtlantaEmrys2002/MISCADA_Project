@@ -7,6 +7,12 @@ from . utils import dual_function
 
 def fit_diffuse_source_psf(roi_count_map, nside=512):
 
+    # N.B. The energy bounds returned by gtmodel are in KeV and not in eV or MeV
+    # As we are integrating over them it does not matter.
+
+    # CHECK UNDERSTANDING - I think you don't have to integrate as already over energy
+    # ranges I want and don't have to "energy average"
+
     # Creating PSF for diffuse sources
     # N.B. nside does not have to match the final count map nside
 
@@ -16,33 +22,100 @@ def fit_diffuse_source_psf(roi_count_map, nside=512):
     #
     #     print(hdul.info())
 
-
-
+    import matplotlib.pyplot as plt
 
     with fits.open(roi_count_map) as hdul:
 
-        print(hdul.info())
+        # FOR LABELLING ONLY - CONVERT FROM KeV to MeV
+        energy_bins = [np.float64(k[1]) / 1000 for k in np.array(hdul[2].data)]
+
+        energy_bins.append(hdul[2].data[-1][2])
+
+        energy_bins = [np.round(k) for k in energy_bins]
+
+        # Centre of data
+        midpoint = hdul[0].data[0].shape[0] // 2
+
+        # lmax = 3 * nside
+
+        num_bins = hdul[0].data.shape[0]
+
+        psfs = []
+
+        for b in range(num_bins):
+
+            counts = hdul[0].data[b]
+
+            # Average x and y axis through point
+            x_axis = counts[midpoint][midpoint:]
+            y_axis = counts[:, midpoint][midpoint:]
+
+            values = (x_axis + y_axis) / 2
+
+            # NORMALISE BY MAXIMUM ATTAINED VALUE
+            values /= np.max(values)
+
+            # CONVERT FROM PIXELS TO RADIANS FROM CENTRE
+            side_length_pixel = np.sqrt((4 * np.pi) / (12 * nside ** 2))
+
+            # IN DEGREES
+            radius = side_length_pixel * np.array(list(range(len(x_axis))))
+
+            minus_included = list(range(-len(x_axis), len(x_axis)))
+
+            # TO RADIANS
+            radius *= (np.pi / 180)
+
+
+
+
+
+
+
+            # NEED TO FIGURE OUT IF WE SHOULD HAVE WINDOW FUNCTION AS A COMPLETE BElL CURVE WITH
+            # THETA FROM -x to x CENTRED AT ZERO OR JUST FROM 0 TO RADIUS
+
+
+            beam = hp.sphtfunc.bl2beam(bl=values, theta=radius)
+
+            psfs.append(beam)
+
+            # CHECK BY APPLYING BEAM TO IMAGE WITH SINGLE PIXEL AT CENTER EQUAL TO MAXIMUM VALUE (BEFORE NORMALISATION)
+            # AT THAT INTERVAL
+
+            npix = np.array([x for x in range(hp.pixelfunc.nside2npix(nside=nside))])
+
+            pix = hp.pixelfunc.ang2pix(nside, theta=90, phi=40, lonlat=True)
+
+            test = np.zeros_like(npix)
+
+            test[pix] = (energy_bins[b] + energy_bins[b + 1]) / 2
+
+            test_smoothed = hp.sphtfunc.smoothing(map_in=test, beam_window=beam)
+
+            hp.visufunc.mollview(map=test_smoothed)
+
+            plt.show()
+
+            plt.close()
+
+    return psfs
+
+            # plt.plot(range(0, len(x_axis)), values, linestyle='--', label="{}-{} MeV".format(energy_bins[b], energy_bins[b + 1]))
+
+
+
+        # plt.xlabel("\\theta [pixels]")
+        # plt.ylabel("PSF(\\theta) [per pixel]")
         #
-        # print(hdul[1].columns)
+        # plt.xlim(0, 30)
+        # # plt.ylim(0, 600)
         #
-        # print(hdul[2].header)
+        # plt.legend()
+        #
+        # plt.show()
 
-        counts = hdul[0].data
-        midpoint = counts.shape[0] // 2
 
-        x_axis = counts[midpoint][midpoint:]
-        y_axis = counts[:, midpoint][midpoint:]
-
-        values = (x_axis + y_axis) / 2
-
-        import matplotlib.pyplot as plt
-
-        plt.plot(range(0, len(x_axis)),values)
-
-        plt.xlim(0, 50)
-        plt.ylim(0, 2000)
-
-        plt.show()
 
 
         # lmax = 3 * nside  # chose 3 based on above paper

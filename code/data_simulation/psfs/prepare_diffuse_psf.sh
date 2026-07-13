@@ -35,26 +35,8 @@ conda activate fermi
 
 # ORIGINAL
 
-# Create binned count map - this is different from the main function - we want this to be in a non-healpix format
-gtbin evfile=$FERMIDATACUTGTI scfile=NONE outfile=$FERMIDATABINNED algorithm=CCUBE coordsys=GAL ebinalg=LOG proj=AIT nxpix=1200 nypix=1200 emin=300 emax=200000 enumbins=16 binsz=0.05 xref=90 axisrot=0 yref=40
-
-# Create exposure map
-gtexpcube2 infile=$FERMIDATALIVETIMECUBE cmap=$FERMIDATABINNED outfile=$FERMIEXPMAP irfs=P8R3_ULTRACLEANVETO_V3 nxpix=1200 nypix=1200 xref=90 yref=40 axisrot=0 proj=AIT coordsys=GAL enumbins=16 emin=300 emax=200000 binsz=0.05 evtype=3
-
-# Convolve source model components with instrument response
-gtsrcmaps scfile=$SPACECRAFTFILE expcube=$FERMIDATALIVETIMECUBE cmap=$FERMIDATABINNED bexp=$FERMIEXPMAP emapbnds=no outfile=$FERMISOURCEMAP irfs=P8R3_ULTRACLEANVETO_V3 srcmdl=$MODELS
-
-# Model - it does not matter what the pivot energy and flux density of the point source is - as we are looking at spatial parameters
-gtmodel srcmaps=$FERMISOURCEMAP srcmdl=$MODELS outfile=$FERMICOUNTMAP irfs=P8R3_ULTRACLEANVETO_V3 expcube=$FERMIDATALIVETIMECUBE bexp=$FERMIEXPMAP outtype=ccube
-
-# EXPERIMENTAL
-
-#punlearn gtbin
-
-# ORDER SHOULD BE 9 AND HPXREGION = "" AND YES TO ENERGY BINNING
-
-# Create binned count map - this is different from the main function - we want this to be in a non-healpix format
-#gtbin evfile=$FERMIDATACUTGTI scfile=NONE outfile=$FERMIDATABINNED algorithm=HEALPIX coordsys=GAL ebinalg=LOG proj=AIT nxpix=1200 nypix=1200 emin=300 emax=200000 enumbins=16 binsz=0.05 xref=90 axisrot=0 yref=40
+## Create binned count map - this is different from the main function - we want this to be in a non-healpix format
+#gtbin evfile=$FERMIDATACUTGTI scfile=NONE outfile=$FERMIDATABINNED algorithm=CCUBE coordsys=GAL ebinalg=LOG proj=AIT nxpix=1200 nypix=1200 emin=300 emax=200000 enumbins=16 binsz=0.05 xref=90 axisrot=0 yref=40
 #
 ## Create exposure map
 #gtexpcube2 infile=$FERMIDATALIVETIMECUBE cmap=$FERMIDATABINNED outfile=$FERMIEXPMAP irfs=P8R3_ULTRACLEANVETO_V3 nxpix=1200 nypix=1200 xref=90 yref=40 axisrot=0 proj=AIT coordsys=GAL enumbins=16 emin=300 emax=200000 binsz=0.05 evtype=3
@@ -63,10 +45,21 @@ gtmodel srcmaps=$FERMISOURCEMAP srcmdl=$MODELS outfile=$FERMICOUNTMAP irfs=P8R3_
 #gtsrcmaps scfile=$SPACECRAFTFILE expcube=$FERMIDATALIVETIMECUBE cmap=$FERMIDATABINNED bexp=$FERMIEXPMAP emapbnds=no outfile=$FERMISOURCEMAP irfs=P8R3_ULTRACLEANVETO_V3 srcmdl=$MODELS
 #
 ## Model - it does not matter what the pivot energy and flux density of the point source is - as we are looking at spatial parameters
-#gtmodel srcmaps=$FERMISOURCEMAP srcmdl=$MODELS outfile=$FERMICOUNTMAP irfs=P8R3_ULTRACLEANVETO_V3 expcube=$FERMIDATALIVETIMECUBE bexp=$FERMIEXPMAP
+#gtmodel srcmaps=$FERMISOURCEMAP srcmdl=$MODELS outfile=$FERMICOUNTMAP irfs=P8R3_ULTRACLEANVETO_V3 expcube=$FERMIDATALIVETIMECUBE bexp=$FERMIEXPMAP outtype=ccube
 
+# EXPERIMENTAL
 
+# Create binned count map - this is different from the main function - we want this to be in a non-healpix format
+gtbin evfile=$FERMIDATACUTGTI scfile=NONE outfile=$FERMIDATABINNED algorithm=CCUBE coordsys=GAL ebinalg=LOG proj=AIT nxpix=1200 nypix=1200 emin=300 emax=200000 enumbins=5 binsz=0.05 xref=90 axisrot=0 yref=40
 
+# Create exposure map
+gtexpcube2 infile=$FERMIDATALIVETIMECUBE cmap=$FERMIDATABINNED outfile=$FERMIEXPMAP irfs=P8R3_ULTRACLEANVETO_V3 nxpix=1200 nypix=1200 xref=90 yref=40 axisrot=0 proj=AIT coordsys=GAL enumbins=5 emin=300 emax=200000 binsz=0.05 evtype=3
+
+# Convolve source model components with instrument response
+gtsrcmaps scfile=$SPACECRAFTFILE expcube=$FERMIDATALIVETIMECUBE cmap=$FERMIDATABINNED bexp=$FERMIEXPMAP emapbnds=no outfile=$FERMISOURCEMAP irfs=P8R3_ULTRACLEANVETO_V3 srcmdl=$MODELS
+
+# Model - it does not matter what the pivot energy and flux density of the point source is - as we are looking at spatial parameters
+gtmodel srcmaps=$FERMISOURCEMAP srcmdl=$MODELS outfile=$FERMICOUNTMAP irfs=P8R3_ULTRACLEANVETO_V3 expcube=$FERMIDATALIVETIMECUBE bexp=$FERMIEXPMAP outtype=ccube
 
 
 
