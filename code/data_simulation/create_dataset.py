@@ -1,5 +1,5 @@
 from map_generation.visualisation import plot_all_sky_map
-from map_generation.healpix_maps import (create_background_counts_map, create_diffuse_background,
+from map_generation.healpix_maps import (create_diffuse_source_map, create_diffuse_background,
                                          create_expected_counts_map, create_exposure_map,
                                          create_infinite_statistics_map, create_isotropic_background,
                                          create_point_source_map)
@@ -14,11 +14,11 @@ from read_write_functions import xml_parser
 # POINT SOURCE MAPS
 
 # Prepare exposure maps
-# exposure_maps, energy_bins = create_exposure_map(
-#     exposure_file="/Volumes/T7/project_data/real_data/fermi_filtered_gti_exposure_map.fits", num_bins_to_create=5)
-#
+exposure_maps, energy_bins = create_exposure_map(
+    exposure_file="/Volumes/T7/project_data/real_data/fermi_filtered_gti_exposure_map.fits", num_bins_to_create=5)
+
 # # Get NSIDE parameter from exposure map
-# nside = get_nside(exposure_maps[0])
+nside = get_nside(exposure_maps[0])
 
 # Plot exposure maps to verify correctness
 # plot_all_sky_map(healpix_maps=exposure_maps, energy_bins=energy_bins, title="Exposure",
@@ -75,27 +75,33 @@ from read_write_functions import xml_parser
 # NEED TO CHECK CORRECTNESS OF INTEGRATING ISOTROPIC ENERGY SPECTRUM - I THINK IT REMOVES ENERGY DEPENDENCE
 
 # Create backgrounds models
-# isotropic_backgrounds = create_isotropic_background(isotropic_background_file=
-#                                                     "/Volumes/T7/data/background_models/iso_P8R3_SOURCE_V3_v1.txt",
-#                                                     nside=nside,
-#                                                     exposure_map=exposure_maps, energy_bins=energy_bins)
+isotropic_backgrounds = create_isotropic_background(isotropic_background_file=
+                                                    "/Volumes/T7/data/background_models/iso_P8R3_SOURCE_V3_v1.txt",
+                                                    nside=nside,
+                                                    exposure_map=exposure_maps, energy_bins=energy_bins)
 
 # plot_all_sky_map(healpix_maps=isotropic_backgrounds, energy_bins=energy_bins, title="Isotropic Background",
 #                  directory="./plots/all_sky_maps/", logarithmic=True)
 
-# BELOW IS INFINITE STATISTICS MAP!!!!
-# galactic_diffuse_backgrounds = create_diffuse_background(
-#     diffuse_background_file="/Volumes/T7/data/background_models/gll_iem_v07.fits", exposure_map=exposure_maps,
-#     nside=nside)
-#
-# plot_all_sky_map(healpix_maps=galactic_diffuse_backgrounds, energy_bins=energy_bins, title="Diffuse Background",
+# Create infinite statistics map of diffuse background
+galactic_diffuse_backgrounds = create_diffuse_background(
+    diffuse_background_file="/Volumes/T7/data/background_models/gll_iem_v07.fits", exposure_map=exposure_maps,
+    nside=nside)
+
+# plot_all_sky_map(healpix_maps=galactic_diffuse_backgrounds, energy_bins=energy_bins, title="Expected Diffuse Background",
 #                  directory="./plots/all_sky_maps/", logarithmic=True)
 
-
+# Fit PSF for diffuse background
 
 diffuse_psf = fit_diffuse_source_psf(roi_count_map="/Volumes/T7/project_data/real_data/diffuse_psf_roi/count_map.fits")
-#
-# background = create_background_counts_map(6, 7)
+
+# CONVOLVE GALACTIC AND ISOTROPIC BACKGROUND MAPS WITH PSF IN BELOW FUNC - ADD IN ARGUMENT TO PASS THE PSFS
+
+diffuse_source_background = create_diffuse_source_map(expected_counts_diffuse_background=galactic_diffuse_backgrounds,
+                                       expected_counts_isotropic_background=isotropic_backgrounds, psfs=diffuse_psf)
+
+plot_all_sky_map(healpix_maps=diffuse_source_background, energy_bins=energy_bins, title="Diffuse Source Background",
+                 directory="./plots/all_sky_maps/", logarithmic=True)
 
 
 

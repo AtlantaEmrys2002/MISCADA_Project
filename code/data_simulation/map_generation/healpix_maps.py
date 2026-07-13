@@ -28,9 +28,19 @@ def create_expected_counts_map(infinite_counts_map):
     return np.array(binned_count_maps)
 
 
-def create_background_counts_map(expected_counts_isotropic_background, expected_counts_diffuse_background):
+def create_diffuse_source_map(expected_counts_isotropic_background, expected_counts_diffuse_background, psfs):
 
-    # MAPS PASSED IN HEALPIX FORMAT - EXPECTED COUntS SMOOTHED BY PSF
+    # MAPS PASSED IN HEALPIX FORMAT -
+
+    # EXPECTED COUntS SMOOTHED BY PSF:
+
+    for k in range(len(expected_counts_diffuse_background)):
+
+        expected_counts_isotropic_background[k] = hp.sphtfunc.smoothing(map_in=expected_counts_isotropic_background[k],
+                                                                     beam_window=psfs[k])
+
+        expected_counts_diffuse_background[k] = hp.sphtfunc.smoothing(map_in=expected_counts_diffuse_background[k],
+                                                                     beam_window=psfs[k])
 
     # Sample random normalisation coefficients - random brightness of background components
     a_diff = loguniform.rvs(a=0.1, b=2)
@@ -39,6 +49,11 @@ def create_background_counts_map(expected_counts_isotropic_background, expected_
     # Normalise expected count maps
     expected_counts_isotropic_background *= a_iso
     expected_counts_diffuse_background *= a_diff
+
+
+    print("DIFFUSE")
+    print(np.argwhere(expected_counts_diffuse_background <= 0))
+
 
     # Mean background
     background = expected_counts_diffuse_background + expected_counts_isotropic_background
@@ -188,7 +203,7 @@ def create_isotropic_background(isotropic_background_file: str, nside: int, expo
 
         isotropic_values.append(isotropic_constant)
 
-    print(isotropic_values)
+    # print(isotropic_values)
 
     isotropic_maps = []
 

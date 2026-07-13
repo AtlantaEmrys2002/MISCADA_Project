@@ -47,36 +47,52 @@ def fit_diffuse_source_psf(roi_count_map, nside=512):
             counts = hdul[0].data[b]
 
             # Average x and y axis through point
-            x_axis = counts[midpoint][midpoint:]
-            y_axis = counts[:, midpoint][midpoint:]
+            # x_axis = counts[midpoint][midpoint:]
+            # y_axis = counts[:, midpoint][midpoint:]
+
+            x_axis = counts[midpoint]
+            y_axis = counts[:, midpoint]
+
+            minus_included = np.array(list(range(-len(x_axis), len(x_axis))))
 
             values = (x_axis + y_axis) / 2
 
-            # NORMALISE BY MAXIMUM ATTAINED VALUE
-            values /= np.max(values)
+            # # NORMALISE BY MAXIMUM ATTAINED VALUE
+            # values /= np.max(values)
 
             # CONVERT FROM PIXELS TO RADIANS FROM CENTRE
             side_length_pixel = np.sqrt((4 * np.pi) / (12 * nside ** 2))
 
-            # IN DEGREES
-            radius = side_length_pixel * np.array(list(range(len(x_axis))))
+            # pixel_ids = np.array(list(range(len(x_axis))))
 
-            minus_included = list(range(-len(x_axis), len(x_axis)))
+            # IN DEGREES
+            # radius = side_length_pixel * pixel_ids
+
+            radius = side_length_pixel * minus_included
 
             # TO RADIANS
             radius *= (np.pi / 180)
 
 
 
-
+            # IS ABOVE RIGHT WITH -600 TO 600 OR SHOULD I HAVE STUCK WITH 0 TO 600 FOR WINDOW FUNCTION???????
+            # DO I NEED TO INTEGRATE TO ENERGY AVERAGE OVER BIN?
 
 
 
             # NEED TO FIGURE OUT IF WE SHOULD HAVE WINDOW FUNCTION AS A COMPLETE BElL CURVE WITH
             # THETA FROM -x to x CENTRED AT ZERO OR JUST FROM 0 TO RADIUS
 
-
             beam = hp.sphtfunc.bl2beam(bl=values, theta=radius)
+
+            # NORMALISE FUNCTION BY MAXIMUM ATTAINED VALUE
+            beam /= np.max(beam)
+
+            # Clip < 0 values to 0
+            beam = np.clip(beam, a_min=0, a_max=np.max(beam))
+
+            print("PSF TEST")
+            print(np.argwhere(beam < 0))
 
             psfs.append(beam)
 
@@ -260,3 +276,5 @@ def scale_psf(psf_values, energy_bin, c_0=3.5, c_1=0.15, beta=0.8):
 # PDF from Data - https://math.stackexchange.com/questions/2325565/is-it-possible-to-calculate-probability-density-
 # function-from-a-data-set
 # Radial Profiles - https://cxc.cfa.harvard.edu/ciao/why/radial_profile_correction.html
+# Window Function - https://en.wikipedia.org/wiki/Window_function
+
