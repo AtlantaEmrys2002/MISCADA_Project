@@ -664,6 +664,7 @@ def xml_parser(energy_bins, xml_file: str):
 
 # REFERENCES
 
+# Accessing Numpy Columns - https://stackoverflow.com/questions/8386675/extracting-specific-columns-in-numpy-array
 # Accessing XML Tags - https://stackoverflow.com/questions/32387528/getting-list-of-tags-from-python-minidom-xml
 # Astropy Documentation - https://docs.astropy.org/en/stable/
 # Converting Coordinates - https://cloudlessnights.com/project/python-for-astronomy/convert-galactic-coordinates-to-ra-
