@@ -6,6 +6,86 @@ import numpy as np
 import numpy.typing as npt
 
 
+axis_labels = {"LP_Flux_Density": "Differential Flux Density",
+               "Pivot_Energy": "Pivot Energy", "LP_Index": "Spectral Slope",
+               "LP_beta": "Spectral Curvature", "PLEC_IndexS": "Spectral Slope",
+               "PLEC_Flux_Density": "Differential Flux Density", "PLEC_Exp_Index": "Exponential Index",
+               "PLEC_ExpfactorS": "Exponential Factor", "GLAT": "Latitude"}
+
+# Used for mathematical descriptions - gives mathematical notation equivalent to variable
+mathematical_notation = {"Pivot_Energy": "$E_0$", "LP_Flux_Density": "$F_0$", "LP_Index": "$\\alpha$",
+                         "LP_beta": "$\\beta$", "PLEC_Flux_Density": "$F_0$", "PLEC_IndexS": "$\Gamma$",
+                         "PLEC_Exp_Index": "$b$", "PLEC_ExpfactorS": "$a$", "GLAT": "Latitude"}
+
+# Used for indicating units
+units = {"LP_Flux_Density": "[ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$", "Pivot_Energy": "[MeV]", "LP_Index": "",
+         "LP_beta": "",
+         "PLEC_IndexS": "", "PLEC_Flux_Density": "[ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$", "PLEC_Exp_Index": "",
+         "PLEC_ExpfactorS": "", "GLAT": "[rad]"}
+
+
+def plot_correlation(catalog_4fgl: str, var1_name: str, var2_name: str, simulated_var1, simulated_var2,
+                     source_type: str, directory: str) -> None:
+
+    # VERIFY THAT THE SIMULATED CATALOG'S PARAMETERS HAVE SIMILAR CORRELATION TO THE ORIGINAL CATALOG
+
+    # Read 4FGL Catalog
+    catalog = QTable.read(catalog_4fgl, format='fits', hdu=1)["CLASS1", var1_name, var2_name]
+
+    # Reformat columns
+    catalog['CLASS1'] = np.asarray([k.decode('utf-8').strip().lower() for k in catalog['CLASS1'].value.filled('-')])
+
+    if source_type == "AGN":
+
+        # Select all rows that describe AGN
+        agn_mask = np.isin(catalog['CLASS1'].data, np.array(['bcu', 'sey', 'ssrq', 'bll', 'fsrq', 'rdg', 'nlsy1', 'agn']))
+        sources_4fgl = catalog[agn_mask]
+
+    else:
+
+        # Select all rows that describe pulsars
+        pulsar_mask = (catalog["CLASS1"] == "psr")
+        sources_4fgl = catalog[pulsar_mask]
+
+    plt.rcParams["figure.figsize"] = (16, 8)
+
+    fig, ax = plt.subplots(1, 2)
+
+    # Plot original correlation
+
+    original_var1, original_var2 = sources_4fgl[var1_name].value, sources_4fgl[var2_name].value
+
+    ax[0].scatter(original_var1, original_var2, label="4FGL", color='blue', alpha=0.6)
+    ax[1].scatter(np.log(original_var1), np.log(original_var2), label="4FGL", color='blue', alpha=0.6)
+
+    # Plot simulated data's correlation
+
+    ax[0].scatter(simulated_var1, simulated_var2, color='orange', alpha=0.6)
+    ax[1].scatter(np.log(simulated_var1), np.log(simulated_var2), color='orange', alpha=0.6)
+
+    # Formatting
+
+    fig.suptitle("Comparison of Correlation between 4FGL and Simulated {} {} and {}".format(source_type,
+                                                                                            axis_labels[var2_name],
+                                                                                            axis_labels[var1_name]))
+
+    ax[0].set_title("{} against {}".format(mathematical_notation[var2_name], mathematical_notation[var1_name]))
+    ax[1].set_title("log {} against log {}".format(mathematical_notation[var2_name], mathematical_notation[var1_name]))
+
+    ax[0].set_xlabel("{} {}".format(mathematical_notation[var1_name], units[var1_name]))
+    ax[0].set_ylabel("{} {}".format(mathematical_notation[var2_name], units[var2_name]))
+
+    ax[1].set_xlabel("log {}".format(mathematical_notation[var1_name]))
+    ax[1].set_ylabel("log {}".format(mathematical_notation[var2_name]))
+
+    ax[0].legend()
+    ax[1].legend()
+
+    fig.savefig(directory + "/correlation_between_{}_{}_and_{}.png".format(source_type.lower(), var1_name, var2_name))
+
+    plt.close()
+
+
 def plot_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64], directory: str,
                              source_type: str) -> None:
     # Data Processing

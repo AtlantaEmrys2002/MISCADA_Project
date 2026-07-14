@@ -99,6 +99,8 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
 
         idx = degree - 1
 
+        # polynomial = np.polynomial.Polynomial.fit(log_var1, log_var2, deg=degree)
+
         polynomial = np.polynomial.Polynomial.fit(log_var1, log_var2, deg=degree)
 
         ax[0].plot(x_values, np.exp(polynomial(log_x_values)), color=colours[idx], label="Log {}".format(labels[idx]),

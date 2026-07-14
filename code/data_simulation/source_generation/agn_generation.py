@@ -187,11 +187,15 @@ def generate_mock_agn_catalog(catalog, agn_data, detection_threshold=np.float64(
             actual_counts[idx] += 1
 
     # CHECK SIMULATED FLUX DENSITIES AND PIVOT ENERGIES HAVE SAME CORRELATION AS IN 4FGL
-    # plt.title('Simulated $F_0$ against $E_0$')
-    # plt.xlabel('log $E_0$')
-    # plt.ylabel('log $F_{0, AGN}$')
-    # plt.scatter(np.log(parameters[:, 0]), np.log(parameters[:, 1]), s=2)
-    # plt.show()
+    # import matplotlib.pyplot as plt
+    #
+    # fig2, ax2 = plt.subplots()
+    #
+    # fig2.suptitle('Simulated $F_0$ against $E_0$')
+    # ax2.set_xlabel('log $E_0$')
+    # ax2.set_ylabel('log $F_{0, AGN}$')
+    # ax2.scatter(np.log(np.array(parameters)[:, 0]), np.log(np.array(parameters)[:, 1]), s=2)
+    # fig2.savefig("agnf0againste0.png")
     #
     # # CHECK SIMULATED PIVOT ENERGIES AND SPECTRAL INDICES (ALPHAS) HAVE SAME CORRELATION AS IN 4FGL
     # plt.title('Simulated $\\alpha$ against $E_0$')

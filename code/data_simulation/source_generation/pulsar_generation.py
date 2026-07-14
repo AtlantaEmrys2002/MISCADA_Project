@@ -10,7 +10,7 @@ from astropy.table import QTable
 from astropy import units as u
 from math import floor
 import numpy as np
-from . pulsar_spectral_parameters import energy_flux_pulsar
+from . pulsar_spectral_parameters import energy_flux_pulsar, pulsar_flux_density
 from . utils import split_normal
 from scipy.optimize import curve_fit
 from scipy.stats import Mixture, Normal, cauchy
@@ -42,8 +42,11 @@ def pulsar_generator(pulsar_stats, energy_flux_low, energy_flux_high, cauchy_par
         # However, the distribution of pivot energies in the 4FGL follows log-normal more precise
         pivot_energy = np.random.lognormal(mean=mean_log_pivot_energy_pulsars, sigma=std_log_pivot_energy_pulsars)
 
-        # Generate new flux densities - log-normal for flux densities
+        # Generate new flux densities - log-normal for flux densities was initially used then used cubic correlation
+        # of log pivot energy and log flux density
         flux_density = np.random.lognormal(mean=mean_log_flux_density_pulsars, sigma=std_log_flux_density_pulsars)
+
+        # flux_density = pulsar_flux_density(pivot_energy)[0]
 
         # Gaussian recommended in ID8 - AT THE MOMENT - may change to log-normal
 
@@ -234,6 +237,8 @@ def generate_mock_pulsar_catalog(catalog: str, pulsars, detection_threshold):
 
     while (actual_counts[0] < target_counts[0]) and np.any(np.less(actual_counts[target_peak:],
                                                                    target_counts[target_peak:])):
+
+        print("PULSAR: {}".format(len(parameters)))
 
         # Due to uncomplimentary functionality - need max of intervals[:-1] - see reference to Digitize Error
         new_source = pulsar_generator(pulsar_stats, energy_flux_low=np.min(target_bin_intervals),

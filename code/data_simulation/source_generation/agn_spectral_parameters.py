@@ -5,7 +5,6 @@ import warnings
 
 # polynomial with degree 2 relating pivot energies and flux densities (coefficients below are c, b, a) such that
 # ax^2 + bx + c = 0
-# poly = np.polynomial.Polynomial([-21.159501476671274, -2.8553356136745753, 0.10975452653160912])
 poly = np.polynomial.Polynomial([-30.484182252126633, -6.779223799814874, 0.7112492265517346])
 
 

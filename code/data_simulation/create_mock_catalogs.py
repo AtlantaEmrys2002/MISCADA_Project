@@ -24,7 +24,7 @@ from read_write_functions import catalog_data_preparation, save_catalog
 from source_generation.agn_generation import generate_mock_agn_catalog
 from source_generation.pulsar_generation import generate_mock_pulsar_catalog
 import time
-from verification.visualisation import plot_luminosity_function, plot_spatial_distribution
+from verification.visualisation import plot_correlation, plot_luminosity_function, plot_spatial_distribution
 
 
 def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
@@ -159,12 +159,12 @@ def create_catalog(fermi_catalog: str, data_4fgl: tuple, threshold, verify: bool
 
     if verify:
         # Verify realism and correctness of generated gamma-ray sources
-        verification(simulated_agn, simulated_pulsar)
+        verification(simulated_agn, simulated_pulsar, catalog_4fgl=fermi_catalog)
 
     return simulated_agn, simulated_pulsar, simulation_time
 
 
-def verification(simulated_agns, simulated_pulsars, directory="./plots/verification"):
+def verification(simulated_agns, simulated_pulsars, catalog_4fgl: str, directory="./plots/verification"):
     # Verify simulated data realism and correctness
 
     # Create directory to store results
@@ -172,12 +172,20 @@ def verification(simulated_agns, simulated_pulsars, directory="./plots/verificat
 
     # SPECTRAL PARAMETERS
 
+    # # Compare the luminosity function of the simulated AGNs with that of those in the 4FGL
+    # plot_luminosity_function("/Volumes/T7/data/catalog/4FGL_DR4.fit", simulated_agns[:, 4],
+    #                          directory=directory, source_type="AGN")
+    #
+    # # Compare the luminosity function of the simulated pulsars with that of those in the 4FGL
+    # plot_luminosity_function("/Volumes/T7/data/catalog/4FGL_DR4.fit", simulated_pulsars[:, 5],
+    #                          directory=directory, source_type="Pulsar")
+
     # Compare the luminosity function of the simulated AGNs with that of those in the 4FGL
-    plot_luminosity_function("/Volumes/T7/data/catalog/4FGL_DR4.fit", simulated_agns[:, 4],
+    plot_luminosity_function(catalog_4fgl, simulated_agns[:, 4],
                              directory=directory, source_type="AGN")
 
     # Compare the luminosity function of the simulated pulsars with that of those in the 4FGL
-    plot_luminosity_function("/Volumes/T7/data/catalog/4FGL_DR4.fit", simulated_pulsars[:, 5],
+    plot_luminosity_function(catalog_4fgl, simulated_pulsars[:, 5],
                              directory=directory, source_type="Pulsar")
 
     # SPATIAL DISTRIBUTION
@@ -189,6 +197,32 @@ def verification(simulated_agns, simulated_pulsars, directory="./plots/verificat
     # Plot simulated pulsar spatial distributions
     plot_spatial_distribution(simulated_pulsars[:, 6], simulated_pulsars[:, 7], source_type='Pulsar',
                               directory=directory)
+
+    ## CORRELATION ANALYSIS
+
+    agn_correlated_variables = [("Pivot_Energy", "LP_Flux_Density"), ("Pivot_Energy", "LP_Index")]
+    agn_correlated_variables_indices = [(0, 1), (0, 2)]
+
+    pulsar_correlated_variables = [("Pivot_Energy", "PLEC_Flux_Density")]
+    pulsar_correlated_variables_indices = [(0, 1)]
+
+    for a in range(len(agn_correlated_variables)):
+
+        variable_names = agn_correlated_variables[a]
+        indices = agn_correlated_variables_indices[a]
+
+        plot_correlation(catalog_4fgl, var1_name=variable_names[0], var2_name=variable_names[1],
+                         simulated_var1=simulated_agns[:, indices[0]], simulated_var2=simulated_agns[:, indices[1]],
+                         source_type="AGN", directory=directory)
+
+    for p in range(len(pulsar_correlated_variables)):
+
+        variable_names = pulsar_correlated_variables[p]
+        indices = pulsar_correlated_variables_indices[p]
+
+        plot_correlation(catalog_4fgl, var1_name=variable_names[0], var2_name=variable_names[1],
+                         simulated_var1=simulated_pulsars[:, indices[0]],
+                         simulated_var2=simulated_pulsars[:, indices[1]], source_type="Pulsar", directory=directory)
 
 
 # MAIN PROGRAM
@@ -248,7 +282,7 @@ if __name__ == "__main__":
         print("ANALYSIS: ", end='')
 
         # Analyse parameters, their distributions, and their correlations
-        analysis(agn_4fgl, pulsar_4fgl)
+        analysis(agn_4fgl.copy(), pulsar_4fgl.copy())
 
         print("DONE")
 
@@ -269,7 +303,8 @@ if __name__ == "__main__":
             else:
                 run_verify = False
 
-        new_agns, new_pulsars, generation_time = create_catalog(fermi_catalog=file, data_4fgl=(agn_4fgl, pulsar_4fgl),
+        new_agns, new_pulsars, generation_time = create_catalog(fermi_catalog=file, data_4fgl=(agn_4fgl.copy(),
+                                                                                               pulsar_4fgl.copy()),
                                                                 threshold=source_detection_threshold, verify=run_verify)
 
         total_time += generation_time
