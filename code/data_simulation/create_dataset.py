@@ -1,4 +1,5 @@
 import argparse
+import healpy as hp
 from map_generation.visualisation import plot_all_sky_map
 from map_generation.healpix_maps import (create_diffuse_source_map, create_diffuse_background,
                                          create_expected_counts_map, create_exposure_map,
@@ -38,10 +39,6 @@ def visualise_maps(energy_bins, exposure_map, point_source_map, diffuse_source_m
                          directory="./plots/all_sky_maps/catalog_{}/".format(catalog_id), logarithmic=True)
 
 
-# def create_dataset():
-#
-#     # Creates a dataset from a single catalog
-
 if __name__ == "__main__":
 
     # INPUT PARAMETER PARSING
@@ -72,6 +69,10 @@ if __name__ == "__main__":
                                                                                 "binned isotropic gamma-ray background."
                                                                                 "")
 
+    parser.add_argument("--galactic_background", required=True, type=str, help="Location of FITS-formatted"
+                                                                               " energy-binned galactic gamma-ray "
+                                                                               "background.")
+
     args = parser.parse_args()
 
     exposure_fits_file = args.exposure_fits
@@ -79,6 +80,7 @@ if __name__ == "__main__":
     point_source_psf_file = args.pointsource_psf
     diffuse_source_psf_roi_file = args.diffuse_source_psf_roi
     isotropic_background_file = args.isotropic_background
+    galactic_background_file = args.galactic_background
 
     # Create directory to store useful simulated data in if it does not already exist
     Path("./simulated_data/utils/").mkdir(parents=True, exist_ok=True)
@@ -87,6 +89,9 @@ if __name__ == "__main__":
 
     # Prepare exposure maps
     exposure_maps, energy_bins = create_exposure_map(exposure_file=exposure_fits_file)
+
+    # Number of energy bins
+    num_bins = len(energy_bins) - 1
 
     # Save exposure map (it will be the same for every catalog/sky map)
     np.save("./simulated_data/utils/binned_healpix_exposure_maps.npy", exposure_maps)
@@ -100,51 +105,85 @@ if __name__ == "__main__":
     binned_point_source_psf_parameters = fit_point_source_psf(file_name=point_source_psf_file)
 
     # Create and fit point spread function for diffuse sources (i.e. background sources)
-    # binned_diffuse_source_psf = fit_diffuse_source_psf(roi_count_map="/Volumes/T7/project_data/real_data/diffuse_psf_roi/count_map.fits")
     binned_diffuse_source_psf = fit_diffuse_source_psf(roi_count_map=diffuse_source_psf_roi_file)
 
-    # BACKGROUND
+    # BACKGROUND INFINITE STATISTICS MAPS
+
+    # Will sample each time (to create unique backgrounds), but always sample from same infinite statistics map, so only
+    # have to generate once
 
     # Infinite statistics map of isotropic background (energy binned)
-    # infinite_statistis_isotropic_background = create_isotropic_background(isotropic_background_file=
-    #                                                     "/Volumes/T7/data/background_models/iso_P8R3_SOURCE_V3_v1.txt",
-    #                                                     nside=nside,
-    #                                                     exposure_map=exposure_maps, energy_bins=energy_bins)
-
     infinite_statistics_isotropic_background = create_isotropic_background(isotropic_background_file=
-                                                                          isotropic_background_file,
-                                                                          nside=nside,
-                                                                          exposure_map=exposure_maps,
-                                                                          energy_bins=energy_bins)
+                                                                           isotropic_background_file,
+                                                                           nside=nside,
+                                                                           exposure_map=exposure_maps,
+                                                                           energy_bins=energy_bins)
 
-    print(infinite_statistics_isotropic_background.shape)
+    np.save("./simulated_data/utils/binned_healpix_infinite_statistics_isotropic_background_maps.npy",
+            infinite_statistics_isotropic_background)
+
+    # Create infinite statistics map of diffuse background
+    infinite_statistics_galactic_diffuse_backgrounds = create_diffuse_background(
+        diffuse_background_file=galactic_background_file,
+        exposure_map=exposure_maps, nside=nside)
+
+    np.save("./simulated_data/utils/binned_healpix_infinite_statistics_galactic_background_maps.npy",
+            infinite_statistics_galactic_diffuse_backgrounds)
 
     # Loop over catalogs
 
-    # for c in range(num_catalogs):
-    #     file_location = "./simulated_data/catalogs/catalog_{}".format(c + 1)
-    #
-    #     # Calculate coordinates and binned fluxes from each mock simulated catalog
-    #     agn_coordinates, agn_binned_fluxes = xml_parser(energy_bins, xml_file=file_location + "/agns.xml")
-    #     pulsar_coordinates, pulsar_binned_fluxes = xml_parser(energy_bins, xml_file=file_location + "/pulsars.xml")
-    #
-    #     # Convert galactic coordinates of each source to pixel location in HEALPIX-formatted map
-    #     agn_pixels = angle_to_healpix_pixels(agn_coordinates, nside=nside)
-    #     pulsar_pixels = angle_to_healpix_pixels(pulsar_coordinates, nside=nside)
-    #
-    #     # Convolve each PSF with our fitted LAT PSF - i.e. calculate new positions for each gamma ray to originate from
-    #     # - can do this directly from each infinite statistics count map (instead of method described in Robust Neural
-    #     # paper)
-    #     agn_point_source_maps = create_point_source_map(coordinates=agn_coordinates, exposure_maps=exposure_maps,
-    #                                                     psf_parameters=binned_point_source_psf_parameters,
-    #                                                     fluxes=agn_binned_fluxes, nside=nside)
-    #
-    #     pulsar_point_source_maps = create_point_source_map(coordinates=pulsar_coordinates, exposure_maps=exposure_maps,
-    #                                                        psf_parameters=binned_point_source_psf_parameters,
-    #                                                        fluxes=pulsar_binned_fluxes, nside=nside)
-    #
+    for c in range(num_catalogs):
 
+        print("Creating Sky Map {}".format(c + 1))
 
+        file_location = "./simulated_data/catalogs/catalog_{}".format(c + 1)
+
+        # Create directory to store useful simulated data in if it does not already exist
+        Path(file_location).mkdir(parents=True, exist_ok=True)
+
+        # Create background - convolve infinite statistics maps of isotropic and galactic backgrounds with diffuse PSF,
+        # scale with randomly-generated normalisation constant, and Poisson sample to create unqiue background count map
+        diffuse_source_background = create_diffuse_source_map(
+            expected_counts_diffuse_background=infinite_statistics_galactic_diffuse_backgrounds,
+            expected_counts_isotropic_background=infinite_statistics_isotropic_background,
+            psfs=binned_diffuse_source_psf)
+
+        plot_all_sky_map(healpix_maps=diffuse_source_background, energy_bins=energy_bins, title="Diffuse Background",
+                         directory="./plots/all_sky_maps/", logarithmic=True)
+
+        # Calculate coordinates and binned fluxes from each mock simulated catalog
+        agn_coordinates, agn_binned_fluxes = xml_parser(energy_bins, xml_file=file_location + "/agns.xml")
+        pulsar_coordinates, pulsar_binned_fluxes = xml_parser(energy_bins, xml_file=file_location + "/pulsars.xml")
+
+        # Convert galactic coordinates of each source to pixel location in HEALPIX-formatted map
+        agn_pixels = angle_to_healpix_pixels(agn_coordinates, nside=nside)
+        pulsar_pixels = angle_to_healpix_pixels(pulsar_coordinates, nside=nside)
+
+        # Convolve each PSF with our fitted LAT PSF - i.e. calculate new positions for each gamma ray to originate from
+        # - can do this directly from each infinite statistics count map (instead of method described in Robust Neural
+        # paper)
+        agn_point_source_maps = create_point_source_map(coordinates=agn_coordinates, exposure_maps=exposure_maps,
+                                                        psf_parameters=binned_point_source_psf_parameters,
+                                                        fluxes=agn_binned_fluxes, nside=nside)
+
+        pulsar_point_source_maps = create_point_source_map(coordinates=pulsar_coordinates, exposure_maps=exposure_maps,
+                                                           psf_parameters=binned_point_source_psf_parameters,
+                                                           fluxes=pulsar_binned_fluxes, nside=nside)
+
+        # Save count maps
+
+        save_location = "./simulated_data/count_maps/skymap_{}".format(c + 1)
+
+        for n in range(num_bins):
+
+            hp.fitsfunc.write_map(filename=save_location + "/background.fits", m=diffuse_source_background[n],
+                                  coord="G", dtype=np.float64, overwrite=True)
+
+            hp.fitsfunc.write_map(filename=save_location + "/agns.fits", m=agn_point_source_maps[n], coord="G",
+                                  dtype=np.float64, overwrite=True)
+
+            hp.fitsfunc.write_map(filename=save_location + "/pulsars.fits", m=pulsar_point_source_maps[n], coord="G",
+                                  dtype=np.float64, overwrite=True)
 
 
 # # MAIN PROGRAM
@@ -195,15 +234,7 @@ if __name__ == "__main__":
 # #                  directory="./plots/all_sky_maps/", logarithmic=True)
 #
 # # THIS IS FOR TESTING
-#
-# import numpy as np
-# point_source_maps = np.load("point_source_tmp.npy")
-#
-#
-#
-# # Save results
-# # save_count_maps(count_maps=point_source_maps, directory="./simulated_data/count_maps/", catalog_id=1)
-#
+
 # # DIFFUSE SOURCE MAPS
 #
 # # Create backgrounds models
@@ -226,9 +257,7 @@ if __name__ == "__main__":
 # # Fit PSF for diffuse background
 #
 # diffuse_psf = fit_diffuse_source_psf(roi_count_map="/Volumes/T7/project_data/real_data/diffuse_psf_roi/count_map.fits")
-#
-# # CONVOLVE GALACTIC AND ISOTROPIC BACKGROUND MAPS WITH PSF IN BELOW FUNC - ADD IN ARGUMENT TO PASS THE PSFS
-#
+
 # diffuse_source_background = create_diffuse_source_map(expected_counts_diffuse_background=galactic_diffuse_backgrounds,
 #                                        expected_counts_isotropic_background=isotropic_backgrounds, psfs=diffuse_psf)
 #

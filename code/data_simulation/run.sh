@@ -7,7 +7,7 @@ source gamma_source_detection/bin/activate
 # python create_mock_catalogs.py --catalog=/Volumes/T7/data/catalog/4FGL_DR4.fit --number=1 --analyse=yes --verify=first
 
 # Create mock all-sky count maps for AGN, pulsar, and background
-python create_dataset.py --exposure_fits=/Volumes/T7/project_data/real_data/fermi_filtered_gti_exposure_map.fits --number_skymaps=1 --pointsource_psf=/Volumes/T7/project_data/real_data/pointsource_psf.fits --diffuse_source_psf_roi=/Volumes/T7/project_data/real_data/diffuse_psf_roi/count_map.fits --isotropic_background=/Volumes/T7/data/background_models/iso_P8R3_SOURCE_V3_v1.txt
+python create_dataset.py --exposure_fits=/Volumes/T7/project_data/real_data/fermi_filtered_gti_exposure_map.fits --number_skymaps=1 --pointsource_psf=/Volumes/T7/project_data/real_data/pointsource_psf.fits --diffuse_source_psf_roi=/Volumes/T7/project_data/real_data/diffuse_psf_roi/count_map.fits --isotropic_background=/Volumes/T7/data/background_models/iso_P8R3_SOURCE_V3_v1.txt --galactic_background=/Volumes/T7/data/background_models/gll_iem_v07.fits
 
 deactivate
 

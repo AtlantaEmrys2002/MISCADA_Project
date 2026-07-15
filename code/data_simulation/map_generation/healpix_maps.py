@@ -36,12 +36,11 @@ def create_diffuse_source_map(expected_counts_isotropic_background, expected_cou
     # EXPECTED COUntS SMOOTHED BY PSF:
 
     for k in range(len(expected_counts_diffuse_background)):
-
         expected_counts_isotropic_background[k] = hp.sphtfunc.smoothing(map_in=expected_counts_isotropic_background[k],
-                                                                     beam_window=psfs[k])
+                                                                        beam_window=psfs[k])
 
         expected_counts_diffuse_background[k] = hp.sphtfunc.smoothing(map_in=expected_counts_diffuse_background[k],
-                                                                     beam_window=psfs[k])
+                                                                      beam_window=psfs[k])
 
     # Sample random normalisation coefficients - random brightness of background components
     a_diff = loguniform.rvs(a=0.1, b=2)
