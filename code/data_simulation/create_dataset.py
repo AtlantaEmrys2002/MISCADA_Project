@@ -1,275 +1,470 @@
-import argparse
-import healpy as hp
-from map_generation.visualisation import plot_all_sky_map
-from map_generation.healpix_maps import (create_diffuse_source_map, create_diffuse_background,
-                                         create_expected_counts_map, create_exposure_map,
-                                         create_infinite_statistics_map, create_isotropic_background,
-                                         create_point_source_map)
-from map_generation.utils import angle_to_healpix_pixels, get_nside
-import numpy as np
+# PLEASE NOTE THAT THE CODE IN THIS FILE WAS HEAVILY INFLUENCED AND ADAPTED FROM ID8's GitHub Code
+# WHICH CAN BE FOUND HERE: https://github.com/bapanes/AutoSourceID/blob/main/codes/from-cats-to-locnet-input.py
+
+
+# author: Boris Panes, February 4, 2021
+# this code contains several contributions from Christopher Eckner, Gulli and Roberto
+# specially concerning patch generation and photon flux
+
 import os
-from read_write_functions import save_count_maps, xml_parser
-from pathlib import Path
-from psfs.fit_psf import fit_diffuse_source_psf, fit_point_source_psf
-from psfs.visualisation import plot_fitted_point_source_psf
-from read_write_functions import xml_parser
+
+from astropy.coordinates import SkyCoord
+
+import numpy as np
+import healpy as hp
+import math as mt
+
+from bisect import bisect
+
+np.random.seed()
+
+# new approach
+def get_ps_info_128(patch_centre, list_agn_xml, list_psr_xml, xsize_patch):
+    list_row_agn, list_col_agn, list_flux_agn_1000, list_flux_agn_10000, list_ltrue_agn, list_btrue_agn = get_pixel_rc_list_from_xml_lb_list(
+        xsize_patch, patch_centre, list_agn_xml)
+
+    list_row_psr, list_col_psr, list_flux_psr_1000, list_flux_psr_10000, list_ltrue_psr, list_btrue_psr = get_pixel_rc_list_from_xml_lb_list(
+        xsize_patch, patch_centre, list_psr_xml)
+
+    agn_pos_list = np.zeros((len(list_row_agn), 6))
+    psr_pos_list = np.zeros((len(list_row_psr), 6))
+
+    # agn sources
+    # notice that we are using the 0 position for y0=list_row_agn and the first position for  x0=list_col_agn
+    for i in range(len(list_row_agn)):
+        y0 = list_row_agn[i]
+        x0 = list_col_agn[i]
+
+        flux_1000 = list_flux_agn_1000[i]
+        flux_10000 = list_flux_agn_10000[i]
+
+        ltrue = list_ltrue_agn[i]
+        btrue = list_btrue_agn[i]
+
+        agn_pos_list[i][0] = y0
+        agn_pos_list[i][1] = x0
+        agn_pos_list[i][2] = ltrue
+        agn_pos_list[i][3] = btrue
+        agn_pos_list[i][4] = flux_1000
+        agn_pos_list[i][5] = flux_10000
+
+    # psr sources
+    for i in range(len(list_row_psr)):
+        y0 = list_row_psr[i]
+        x0 = list_col_psr[i]
+
+        flux_1000 = list_flux_psr_1000[i]
+        flux_10000 = list_flux_psr_10000[i]
+
+        ltrue = list_ltrue_psr[i]
+        btrue = list_btrue_psr[i]
+
+        psr_pos_list[i][0] = y0
+        psr_pos_list[i][1] = x0
+        psr_pos_list[i][2] = ltrue
+        psr_pos_list[i][3] = btrue
+        psr_pos_list[i][4] = flux_1000
+        psr_pos_list[i][5] = flux_10000
+
+    return len(list_row_agn), len(list_row_psr), agn_pos_list, psr_pos_list
 
 
-def visualise_maps(energy_bins, exposure_map, point_source_map, diffuse_source_map, catalog_id):
-    # EXPOSURE MAP
+def distance(y0, x0, y1, x1):
+    return mt.sqrt((mt.pow(y1 - y0, 2) + mt.pow(x1 - x0, 2)))
 
-    # Visualise exposure map to verify correctness - the exposure map will be the same for each simulated sky map, so
-    # there is no need to consistently replot
-    if not os.path.isfile("./plots/all_sky_maps/exposure_map.png"):
-        # Create directory if it does not already exist
-        Path("./plots/all_sky_maps/").mkdir(parents=True, exist_ok=True)
 
-        plot_all_sky_map(healpix_maps=exposure_map, energy_bins=energy_bins, title="Exposure",
-                         directory="./plots/all_sky_maps/".format(catalog_id))
+def psf_bck_mask(y0, x0, radius, psf_mask):
+    nrow = psf_mask.shape[0]
+    ncol = psf_mask.shape[1]
 
-    # Names of each plot
-    titles = ["Point Source", "Diffuse Source"]
+    grid2D_psf = psf_mask.copy()
+    grid2D_bck = np.ones((nrow, ncol)) - grid2D_psf
 
-    maps = [point_source_map, diffuse_source_map]
+    for y in range(nrow):
+        for x in range(ncol):
 
-    num_maps = len(maps)
+            # distance to the center
+            s1 = distance(y0, x0, y, x)
 
-    for m in range(num_maps):
-        plot_all_sky_map(healpix_maps=maps[m], energy_bins=energy_bins, title=titles[m],
-                         directory="./plots/all_sky_maps/catalog_{}/".format(catalog_id), logarithmic=True)
+            if (s1 < radius):
+                grid2D_psf[y, x] = 1.0
+                grid2D_bck[y, x] = 0.0
+
+    return grid2D_psf, grid2D_bck
+
+
+def RotMatrixY(psi, isdeg=True):
+    if isdeg:
+        return np.array([[np.cos(np.radians(psi)), 0.0, -np.sin(np.radians(psi))], [0.0, 1.0, 0.0], \
+                         [np.sin(np.radians(psi)), 0.0, np.cos(np.radians(psi))]])
+    else:
+        return np.array([[np.cos(psi), 0.0, -np.sin(psi)], [0.0, 1.0, 0.0], [np.sin(psi), 0.0, np.cos(psi)]])
+
+
+def RotMatrixZ(psi, isdeg=True):
+    if isdeg:
+        return np.array([[np.cos(np.radians(psi)), np.sin(np.radians(psi)), 0.0], [-np.sin(np.radians(psi)), \
+                                                                                   np.cos(np.radians(psi)), 0.0],
+                         [0.0, 0.0, 1.0]])
+    else:
+        return np.array([[np.cos(psi), np.sin(psi), 0.0], [-np.sin(psi), np.cos(psi), 0.0], [0.0, 0.0, 1.0]])
+
+
+def sph2xyz(r, theta, phi, isdeg=True):
+    if isdeg:
+        return np.array([r * np.sin(np.radians(theta)) * np.cos(np.radians(phi)), \
+                         r * np.sin(np.radians(theta)) * np.sin(np.radians(phi)), r * np.cos(np.radians(theta))])
+    else:
+        return np.array([r * np.sin(theta) * np.cos(phi), r * np.sin(theta) * np.sin(phi), r * np.cos(theta)])
+
+
+def xyz2sph(x, y, z, isdeg=True, is_lat=False):
+    r = np.sqrt(x * x + y * y + z * z)
+    if isdeg:
+        phi = np.degrees(np.arctan2(y, x))
+        lat = np.degrees(np.arctan2(z, np.sqrt(x * x + y * y)))
+        if is_lat:
+            return np.array([r, lat, phi])
+        else:
+            return np.array([r, 90. - lat, phi])
+    else:
+        phi = np.arctan2(y, x)
+        lat = np.arctan2(z, np.sqrt(x * x + y * y))
+        if is_lat:
+            return np.array([r, lat, phi])
+        else:
+            return np.array([r, np.pi / 2.0 - lat, phi])
+
+
+# list of pixel positions in row, col format
+def get_pixel_rc_list_from_xml_lb_list(xsize, lb_centre, list_of_pos_xml):
+    lb_std_list = get_xml_lb_list_in_std_patch_coord(xsize, lb_centre, list_of_pos_xml)
+
+    coord_range_x = np.linspace(-4.9609375, 4.9609375, xsize)
+    coord_range_y = np.linspace(-4.9609375, 4.9609375, xsize)
+
+    list_of_pixel_row = []
+    list_of_pixel_col = []
+
+    list_of_pixel_flux_1000 = []
+    list_of_pixel_flux_10000 = []
+
+    list_of_pixel_ltrue = []
+    list_of_pixel_btrue = []
+    # l = longitude
+    # b = latitude
+
+    for i in range(len(lb_std_list)):
+        l, b, ltrue, btrue, flux_1000, flux_10000 = lb_std_list[i][0], lb_std_list[i][1], lb_std_list[i][2], \
+            lb_std_list[i][3], lb_std_list[i][4], lb_std_list[i][5]
+
+        # print(l,b)
+
+        pixel_l = xsize - bisect(list(coord_range_x), l)
+        pixel_b = bisect(list(coord_range_y), b)
+
+        list_of_pixel_row.append(pixel_b)
+        list_of_pixel_col.append(pixel_l)
+
+        list_of_pixel_flux_1000.append(flux_1000)
+        list_of_pixel_flux_10000.append(flux_10000)
+
+        list_of_pixel_ltrue.append(ltrue)
+        list_of_pixel_btrue.append(btrue)
+
+    return list_of_pixel_row, list_of_pixel_col, list_of_pixel_flux_1000, list_of_pixel_flux_10000, list_of_pixel_ltrue, list_of_pixel_btrue
+
+
+# Trying to implement something more complicated
+def get_xml_lb_list_in_std_patch_coord(xsize_patch, patch_centre, list_of_pos_xml):
+    # corners around the patch_centre_position
+
+    l_a, b_a = get_lb_from_pixel(id_pixel(0, 0, xsize_patch), patch_centre, xsize=xsize_patch)
+    l_b, b_b = get_lb_from_pixel(id_pixel(xsize_patch - 1, 0, xsize_patch), patch_centre, xsize=xsize_patch)
+
+    l_c, b_c = get_lb_from_pixel(id_pixel(0, xsize_patch - 1, xsize_patch), patch_centre, xsize=xsize_patch)
+    l_d, b_d = get_lb_from_pixel(id_pixel(xsize_patch - 1, xsize_patch - 1, xsize_patch), patch_centre,
+                                 xsize=xsize_patch)
+
+    # corners around the center position
+
+    l_c_a, b_c_a = get_lb_ps_centered((l_a, b_a), patch_centre)
+    l_c_b, b_c_b = get_lb_ps_centered((l_b, b_b), patch_centre)
+    l_c_c, b_c_c = get_lb_ps_centered((l_c, b_c), patch_centre)
+    l_c_d, b_c_d = get_lb_ps_centered((l_d, b_d), patch_centre)
+
+    l_arr = np.array([l_c_a, l_c_b, l_c_c, l_c_d])
+    b_arr = np.array([b_c_a, b_c_b, b_c_c, b_c_d])
+
+    l_c_min = np.amin(l_arr)
+    l_c_max = np.amax(l_arr)
+    b_c_min = np.amin(b_arr)
+    b_c_max = np.amax(b_arr)
+
+    list_of_lb_in_std_patch_coord = []
+
+    for pos_con in range(len(list_of_pos_xml)):
+
+        # positions in global lon lat coordinates
+        l_pos = list_of_pos_xml[pos_con][0]
+        b_pos = list_of_pos_xml[pos_con][1]
+
+        # positions in standard patch coordinates
+        l_c, b_c = get_lb_ps_centered((l_pos, b_pos), patch_centre)
+
+        if ((l_c >= l_c_min) & (l_c <= l_c_max) & (b_c >= b_c_min) & (b_c <= b_c_max)):
+            # print(pos_con, l_c, b_c, l_pos, b_pos)
+            # we add the flux
+            flux_pos_1000 = list_of_pos_xml[pos_con][2]
+            flux_pos_10000 = list_of_pos_xml[pos_con][3]
+
+            list_of_lb_in_std_patch_coord.append((l_c, b_c, l_pos, b_pos, flux_pos_1000, flux_pos_10000))
+
+    return list_of_lb_in_std_patch_coord
+
+
+def get_lb_from_pixel(pixel_id, lb_centre, xsize=128, isdeg=True,
+                      is_lat=True):  ##if input angles are in degree use 'isdeg = True'
+    ######### Generate (l,b) coordinate map of 10x10deg patch ######
+
+    # Following the suggestions of CA mail
+    if (xsize == 100):
+        coord_range = np.linspace(-4.95, 4.95, xsize)
+
+    if (xsize == 128):
+        coord_range = np.linspace(-4.9609375, 4.9609375, xsize)
+
+    X, Y = np.meshgrid(coord_range, coord_range)
+    lonlat_patch = list(zip(np.flip(X.flatten()), Y.flatten()))
+    ######### Get rotation matrix used to rotate the original centre to (0., 0.) #########
+    l_centre, b_centre = lb_centre
+    r = np.dot(RotMatrixY(-b_centre), RotMatrixZ(l_centre))
+    #########
+
+    lon_PS_rotated, lat_PS_rotated = lonlat_patch[pixel_id]
+
+    xyz_PS_rotated = sph2xyz(1., 90. - lat_PS_rotated, lon_PS_rotated)
+    x_PS, y_PS, z_PS = np.array(np.dot(r.T, xyz_PS_rotated), dtype='float32')
+    r, b_PS, l_PS = xyz2sph(x_PS, y_PS, z_PS, isdeg=isdeg, is_lat=is_lat)
+    return l_PS, b_PS
+
+
+# Function to implement inverse rotation
+# to add in the predictions?
+def get_lb_ps_centered(lb_ps, lb_centre, isdeg=True, is_lat=True):  ##if input angles are in degree use 'isdeg = True'
+
+    l_centre, b_centre = lb_centre
+    r = np.dot(RotMatrixY(-b_centre), RotMatrixZ(l_centre))
+
+    lon_PS_rotated, lat_PS_rotated = lb_ps
+
+    xyz_PS_rotated = sph2xyz(1., 90. - lat_PS_rotated, lon_PS_rotated)
+    x_PS, y_PS, z_PS = np.array(np.dot(r, xyz_PS_rotated), dtype='float32')
+    r, b_PS, l_PS = xyz2sph(x_PS, y_PS, z_PS, isdeg=isdeg, is_lat=is_lat)
+    return l_PS, b_PS
+
+
+def get_lb_from_rd(ra, dec):
+    # From galactic to equatorial coordinates
+    # https://docs.astropy.org/en/stable/coordinates/transforming.html
+
+    sc = SkyCoord(ra=ra, dec=dec, unit='deg', frame='fk5')
+    lon, lat = sc.galactic.l.degree, sc.galactic.b.degree
+
+    if (lon > 180):
+        lon = lon - 360
+    if (lon < -180):
+        lon = 360 + lon
+
+    return lon, lat
+
+
+def id_pixel(row, col, xsize_patch):
+    return xsize_patch * row + col
+
+
+# def create_dataset(folder, file="training.csv", n=50, height=128, width=128, prefix="test",
+#                    n_classes=2, faint="F0", init_con=0):
+
+def create_dataset(folder, file="training.csv", n=50, prefix="test",
+
+    for cat_number in range(int(n / max_patches_per_catalog)):
+
+        source_lines = []
+
+        if (n < (cat_number + 1) * max_patches_per_catalog):
+            patches = n - cat_number * max_patches_per_catalog
+            if patches == 0:
+                break
+
+        # part of the angle area correction
+        # iem /= pix_sr
+        # agn /= pix_sr
+        # psr /= pix_sr
+        ##############################################################
+
+        # for k in range(patches):
+        #
+        #     patch_iem = []
+        #     patch_agn = []
+        #     patch_psr = []
+        #
+        #     # transformation from 0-360 to -180-180
+        #     lon = (longitude[k] + 180) % 360 - 180
+        #
+        #     lat = latitude[k]
+
+            # for i in range(Nbins):
+            #     # notice that now we multiply each bin array by solid_area_ratio
+            #
+            #     patch_agn_tmp = hp.visufunc.cartview(agn[i], rot=(lon, lat, 0.), coord='G',
+            #                                          xsize=xsize_patch_generation,
+            #                                          lonra=lb_range, latra=lb_range, return_projected_map=True)
+            #     patch_agn.append(np.array(patch_agn_tmp) * solid_area_ratio)
+            #
+            #     patch_psr_tmp = hp.visufunc.cartview(psr[i], rot=(lon, lat, 0.), coord='G',
+            #                                          xsize=xsize_patch_generation,
+            #                                          lonra=lb_range, latra=lb_range, return_projected_map=True)
+            #     patch_psr.append(np.array(patch_psr_tmp) * solid_area_ratio)
+            #
+            #     patch_iem_tmp = hp.visufunc.cartview(iem[i], rot=(lon, lat, 0.), coord='G',
+            #                                          xsize=xsize_patch_generation,
+            #                                          lonra=lb_range, latra=lb_range, return_projected_map=True)
+            #     patch_iem.append(np.array(patch_iem_tmp) * solid_area_ratio)
+
+            # IEM_element = np.array(patch_iem)
+            # AGN_element = np.array(patch_agn)
+            # PSR_element = np.array(patch_psr)
+            # centre_coordinate = np.array((lon, lat))
+
+            # we recover the info using 128x128 patch dimensions
+            # this remains from our initial approach. it does not affect at all the image and mask generation
+            nagn, npsr, agn_pos_list, psr_pos_list = get_ps_info_128(centre_coordinate, list_of_agn_lb_from_xml,
+                                                                     list_of_psr_lb_from_xml, xsize_location)
+
+            print('patch number: %d,  coordinate center: (%.2f, %.2f) ' % (k, lon, lat))
+
+            # output generation
+            IEM_64 = np.zeros((xsize_patch_generation, xsize_patch_generation, Nbins), dtype=np.float32)
+            AGN_64 = np.zeros((xsize_patch_generation, xsize_patch_generation, Nbins), dtype=np.float32)
+            PSR_64 = np.zeros((xsize_patch_generation, xsize_patch_generation, Nbins), dtype=np.float32)
+
+            for bin_k in range(Nbins):
+                IEM_64[:, :, bin_k] = IEM_element[bin_k, :, :]
+                AGN_64[:, :, bin_k] = AGN_element[bin_k, :, :]
+                PSR_64[:, :, bin_k] = PSR_element[bin_k, :, :]
+
+            # generation of the input image
+            # we save IEM, AGN and PSR info separetely because it is useful for evaluations
+            X_64 = np.zeros((3, 64, 64, 5))
+
+            X_64[0, :, :, :] = IEM_64
+            X_64[1, :, :, :] = AGN_64
+            X_64[2, :, :, :] = PSR_64
+
+            # generation of patch total (sum of components) in image (tensor) like files
+            out_fn = f"{prefix}_image_{init_con + (cat_number * max_patches_per_catalog + k)}.npy"
+            np.save(os.path.join(folder, out_fn), X_64)
+
+            # generation of csv file content
+            grid2D_psf = np.zeros((xsize_patch_generation, xsize_patch_generation))
+            grid2D_bck = np.ones((xsize_patch_generation, xsize_patch_generation))
+            radius_64 = 2.5
+
+            # agns
+            id = 0
+            for i in range(nagn):
+                y = min(agn_pos_list[i][0], xsize_location - 1)
+                x = min(agn_pos_list[i][1], xsize_location - 1)
+
+                ltrue = agn_pos_list[i][2]
+                btrue = agn_pos_list[i][3]
+
+                # true photon flux from xml
+                flux_1000 = agn_pos_list[i][4]
+                flux_10000 = agn_pos_list[i][5]
+
+                xmin, xmax, ymin, ymax = max(0, x - r), min(xsize_location - 1, x + r), max(0, y - r), min(
+                    xsize_location - 1, y + r)
+
+                xmin = xmin // 2
+                xmax = xmax // 2
+                ymin = ymin // 2
+                ymax = ymax // 2
+
+                # generation of the masks
+                # print("agn: ", nagn, xmin,xmax,ymin,ymax)
+                grid2D_psf, grid2D_bck = psf_bck_mask(y // 2, x // 2, radius_64, grid2D_psf)
+
+                source_lines.append(f"{out_fn},{int(xmin)},{int(xmax)},{int(ymin)},{int(ymax)}," +
+                                    f"{int(id)},{float(lon)},{float(lat)},{float(flux_1000)}," +
+                                    f"{float(ltrue)},{float(btrue)},{int(catalog_id)},{float(flux_10000)}\n")
+
+            # pulsars
+            id = 1
+            for i in range(npsr):
+                y = min(psr_pos_list[i][0], xsize_location - 1)
+                x = min(psr_pos_list[i][1], xsize_location - 1)
+
+                ltrue = psr_pos_list[i][2]
+                btrue = psr_pos_list[i][3]
+
+                # true photon flux from xml
+                flux_1000 = psr_pos_list[i][4]
+                flux_10000 = psr_pos_list[i][5]
+
+                xmin, xmax, ymin, ymax = max(0, x - r), min(xsize_location - 1, x + r), max(0, y - r), min(
+                    xsize_location - 1, y + r)
+
+                xmin = xmin // 2
+                xmax = xmax // 2
+                ymin = ymin // 2
+                ymax = ymax // 2
+
+                grid2D_psf, grid2D_bck = psf_bck_mask(y // 2, x // 2, radius_64, grid2D_psf)
+
+                source_lines.append(f"{out_fn},{int(xmin)},{int(xmax)},{int(ymin)},{int(ymax)}," +
+                                    f"{int(id)},{float(lon)},{float(lat)},{float(flux_1000)}," +
+                                    f"{float(ltrue)},{float(btrue)},{int(catalog_id)},{float(flux_10000)}\n")
+
+            Y_p = np.zeros((xsize_patch_generation, xsize_patch_generation, 2))
+            Y_p[:, :, 0] = grid2D_psf
+            Y_p[:, :, 1] = grid2D_bck
+
+            out_mk = f"{prefix}_masks_{init_con + cat_number * max_patches_per_catalog + k}.npy"
+            np.save(os.path.join(folder, out_mk), Y_p)
+
+            # we write just at the end of the process to avoid the repeated opening of the file
+
+        f1 = open(os.path.join(folder, file), "a")
+        f1.writelines(source_lines)
+        f1.close()
+
+    return 0
 
 
 if __name__ == "__main__":
 
-    # INPUT PARAMETER PARSING
-
-    parser = argparse.ArgumentParser(description="Generate all-sky count maps for each specified source catalog, "
-                                                 "dividing them into agn, pulsar, and background.")
-
-    parser.add_argument("--exposure_fits", required=True, type=str, help="FITS-formatted file that stores"
-                                                                         "Fermi-LAT telescope exposure, i.e. energy-"
-                                                                         "binned file specifying how long telescope is"
-                                                                         "pointed at specific area of the sky.")
-
-    parser.add_argument("--number_skymaps", required=True, type=int, help="This specifies the number of "
-                                                                          "catalogs from which to generate all-sky "
-                                                                          "simulated source count maps.")
-
-    parser.add_argument("--pointsource_psf", required=True, type=str, help="This is a FITS-formatted file consistent "
-                                                                           "with that produced by gtpsf to describe the"
-                                                                           "point spread function that \"blurs\" point "
-                                                                           "sources")
-
-    parser.add_argument("--diffuse_source_psf_roi", required=True, type=str, help="This is a "
-                                                                                  "FITS-formatted file containing a "
-                                                                                  "count map of the ROI from which the "
-                                                                                  "diffuse PSF is derived.")
-
-    parser.add_argument("--isotropic_background", required=True, type=str, help="File location of energy-"
-                                                                                "binned isotropic gamma-ray background."
-                                                                                "")
-
-    parser.add_argument("--galactic_background", required=True, type=str, help="Location of FITS-formatted"
-                                                                               " energy-binned galactic gamma-ray "
-                                                                               "background.")
-
-    args = parser.parse_args()
-
-    exposure_fits_file = args.exposure_fits
-    num_catalogs = args.number_skymaps
-    point_source_psf_file = args.pointsource_psf
-    diffuse_source_psf_roi_file = args.diffuse_source_psf_roi
-    isotropic_background_file = args.isotropic_background
-    galactic_background_file = args.galactic_background
-
-    # Create directory to store useful simulated data in if it does not already exist
-    Path("./simulated_data/utils/").mkdir(parents=True, exist_ok=True)
-
-    # EXPOSURE MAP
-
-    # Prepare exposure maps
-    exposure_maps, energy_bins = create_exposure_map(exposure_file=exposure_fits_file)
-
-    # Number of energy bins
-    num_bins = len(energy_bins) - 1
-
-    # Save exposure map (it will be the same for every catalog/sky map)
-    np.save("./simulated_data/utils/binned_healpix_exposure_maps.npy", exposure_maps)
-
-    # Get NSIDE parameter from exposure map
-    nside = get_nside(exposure_maps[0])
-
-    # POINT SPREAD FUNCTIONS (PSF)
-
-    # Create and fit point spread function for point sources
-    binned_point_source_psf_parameters = fit_point_source_psf(file_name=point_source_psf_file)
-
-    # Create and fit point spread function for diffuse sources (i.e. background sources)
-    binned_diffuse_source_psf = fit_diffuse_source_psf(roi_count_map=diffuse_source_psf_roi_file)
-
-    # BACKGROUND INFINITE STATISTICS MAPS
-
-    # Will sample each time (to create unique backgrounds), but always sample from same infinite statistics map, so only
-    # have to generate once
-
-    # Infinite statistics map of isotropic background (energy binned)
-    infinite_statistics_isotropic_background = create_isotropic_background(isotropic_background_file=
-                                                                           isotropic_background_file,
-                                                                           nside=nside,
-                                                                           exposure_map=exposure_maps,
-                                                                           energy_bins=energy_bins)
-
-    np.save("./simulated_data/utils/binned_healpix_infinite_statistics_isotropic_background_maps.npy",
-            infinite_statistics_isotropic_background)
-
-    # Create infinite statistics map of diffuse background
-    infinite_statistics_galactic_diffuse_backgrounds = create_diffuse_background(
-        diffuse_background_file=galactic_background_file,
-        exposure_map=exposure_maps, nside=nside)
-
-    np.save("./simulated_data/utils/binned_healpix_infinite_statistics_galactic_background_maps.npy",
-            infinite_statistics_galactic_diffuse_backgrounds)
-
-    # Loop over catalogs
-
-    for c in range(num_catalogs):
-
-        print("Creating Sky Map {}".format(c + 1))
-
-        file_location = "./simulated_data/catalogs/catalog_{}".format(c + 1)
-
-        # Create directory to store useful simulated data in if it does not already exist
-        Path(file_location).mkdir(parents=True, exist_ok=True)
-
-        # Create background - convolve infinite statistics maps of isotropic and galactic backgrounds with diffuse PSF,
-        # scale with randomly-generated normalisation constant, and Poisson sample to create unqiue background count map
-        diffuse_source_background = create_diffuse_source_map(
-            expected_counts_diffuse_background=infinite_statistics_galactic_diffuse_backgrounds,
-            expected_counts_isotropic_background=infinite_statistics_isotropic_background,
-            psfs=binned_diffuse_source_psf)
-
-        plot_all_sky_map(healpix_maps=diffuse_source_background, energy_bins=energy_bins, title="Diffuse Background",
-                         directory="./plots/all_sky_maps/", logarithmic=True)
-
-        # Calculate coordinates and binned fluxes from each mock simulated catalog
-        agn_coordinates, agn_binned_fluxes = xml_parser(energy_bins, xml_file=file_location + "/agns.xml")
-        pulsar_coordinates, pulsar_binned_fluxes = xml_parser(energy_bins, xml_file=file_location + "/pulsars.xml")
-
-        # Convert galactic coordinates of each source to pixel location in HEALPIX-formatted map
-        agn_pixels = angle_to_healpix_pixels(agn_coordinates, nside=nside)
-        pulsar_pixels = angle_to_healpix_pixels(pulsar_coordinates, nside=nside)
-
-        # Convolve each PSF with our fitted LAT PSF - i.e. calculate new positions for each gamma ray to originate from
-        # - can do this directly from each infinite statistics count map (instead of method described in Robust Neural
-        # paper)
-        agn_point_source_maps = create_point_source_map(coordinates=agn_coordinates, exposure_maps=exposure_maps,
-                                                        psf_parameters=binned_point_source_psf_parameters,
-                                                        fluxes=agn_binned_fluxes, nside=nside)
-
-        pulsar_point_source_maps = create_point_source_map(coordinates=pulsar_coordinates, exposure_maps=exposure_maps,
-                                                           psf_parameters=binned_point_source_psf_parameters,
-                                                           fluxes=pulsar_binned_fluxes, nside=nside)
-
-        # Save count maps
-
-        save_location = "./simulated_data/count_maps/skymap_{}".format(c + 1)
-
-        for n in range(num_bins):
-
-            hp.fitsfunc.write_map(filename=save_location + "/background.fits", m=diffuse_source_background[n],
-                                  coord="G", dtype=np.float64, overwrite=True)
-
-            hp.fitsfunc.write_map(filename=save_location + "/agns.fits", m=agn_point_source_maps[n], coord="G",
-                                  dtype=np.float64, overwrite=True)
-
-            hp.fitsfunc.write_map(filename=save_location + "/pulsars.fits", m=pulsar_point_source_maps[n], coord="G",
-                                  dtype=np.float64, overwrite=True)
+    # Make directory in which patches are stored
+    Path("./simulated_data/patches/").mkdir(parents=True, exist_ok=True)
 
 
-# # MAIN PROGRAM
-#
-# # POINT SOURCE MAPS
-#
-# # Prepare exposure maps
-# exposure_maps, energy_bins = create_exposure_map(
-#     exposure_file="/Volumes/T7/project_data/real_data/fermi_filtered_gti_exposure_map.fits")
-#
-# # # Get NSIDE parameter from exposure map
-# nside = get_nside(exposure_maps[0])
-#
-# # THIS IS WHERE TO START THE LOOP OVER THE DIFFERENT MOCK SOURCE CATALOGS
-#
-# coordinates, binned_fluxes = xml_parser(energy_bins, xml_file="./simulated_data/sources.xml")
-#
-# pixels = angle_to_healpix_pixels(coordinates, nside=nside)
-#
-# # Calculated source locations in lon-lat, the pixels in which they are situated in the healpix map, the binned exposure
-# # maps of the sky, and their fluxes
-# # infinite_statistics_maps = create_infinite_statistics_map(exposure_maps, binned_fluxes, pixels)
-#
-# # # Plot infinite counts maps
-# # plot_all_sky_map(healpix_maps=infinite_statistics_maps, energy_bins=energy_bins, title="Infinite Counts",
-# #                  directory="./plots/all_sky_maps/", logarithmic=True)
-#
-# # Sample infinite statistics maps to create expected counts maps
-# # count_maps = create_expected_counts_map(infinite_counts_map=infinite_statistics_maps)
-#
-# # Plot infinite statistics count map
-# # plot_all_sky_map(healpix_maps=count_maps, energy_bins=energy_bins, title="Expected Counts",
-# #                  directory="./plots/all_sky_maps/", logarithmic=True)
-#
-# # Create and fit point spread function
-# binned_function_parameters = fit_point_source_psf(file_name="/Volumes/T7/project_data/real_data/pointsource_psf.fits")
-#
-# # Plot PSF fit
-# plot_fitted_point_source_psf(psf_file="/Volumes/T7/project_data/real_data/pointsource_psf.fits",
-#                              function_parameters=binned_function_parameters, directory="./plots/verification")
-#
-# # Convolve each PSF with our fitted LAT PSF - i.e. calculate new positions for each gamma ray to originate from - can do
-# # this directly from each infinite statistics count map
-# # point_source_maps = create_point_source_map(coordinates=coordinates, exposure_maps=exposure_maps,
-# #                                            psf_parameters=binned_function_parameters, fluxes=binned_fluxes, nside=nside)
-#
-# # plot_all_sky_map(healpix_maps=point_source_maps, energy_bins=energy_bins, title="Point Source",
-# #                  directory="./plots/all_sky_maps/", logarithmic=True)
-#
-# # THIS IS FOR TESTING
 
-# # DIFFUSE SOURCE MAPS
-#
-# # Create backgrounds models
-# isotropic_backgrounds = create_isotropic_background(isotropic_background_file=
-#                                                     "/Volumes/T7/data/background_models/iso_P8R3_SOURCE_V3_v1.txt",
-#                                                     nside=nside,
-#                                                     exposure_map=exposure_maps, energy_bins=energy_bins)
-#
-# # plot_all_sky_map(healpix_maps=isotropic_backgrounds, energy_bins=energy_bins, title="Isotropic Background",
-# #                  directory="./plots/all_sky_maps/", logarithmic=True)
-#
-# # Create infinite statistics map of diffuse background
-# galactic_diffuse_backgrounds = create_diffuse_background(
-#     diffuse_background_file="/Volumes/T7/data/background_models/gll_iem_v07.fits", exposure_map=exposure_maps,
-#     nside=nside)
-#
-# # plot_all_sky_map(healpix_maps=galactic_diffuse_backgrounds, energy_bins=energy_bins, title="Expected Diffuse Background",
-# #                  directory="./plots/all_sky_maps/", logarithmic=True)
-#
-# # Fit PSF for diffuse background
-#
-# diffuse_psf = fit_diffuse_source_psf(roi_count_map="/Volumes/T7/project_data/real_data/diffuse_psf_roi/count_map.fits")
+# February 4, 2020
+# given AGN, PSR and Background fits file, generate 768 patches per sky instance
 
-# diffuse_source_background = create_diffuse_source_map(expected_counts_diffuse_background=galactic_diffuse_backgrounds,
-#                                        expected_counts_isotropic_background=isotropic_backgrounds, psfs=diffuse_psf)
-#
-# # plot_all_sky_map(healpix_maps=diffuse_source_background, energy_bins=energy_bins, title="Diffuse Source Background",
-# #                  directory="./plots/all_sky_maps/", logarithmic=True)
-#
-#
-# visualise_maps(energy_bins=energy_bins, exposure_map=exposure_maps, point_source_map=point_source_maps,
-#                diffuse_source_map=diffuse_source_background, catalog_id=1)
+# Gulli's approach to generate a more uniform coverage of the sky
+longitude, latitude = hp.pix2ang(8, np.arange(hp.nside2npix(8)), lonlat=True)
 
-# WHEN REFERRING TO PDFs - USE THE TERM LIKELIHOOD INSTEAD OF PROBABILITY WHEN REFERRING TO THE Y-AXIS
+# patches per catalog
+max_patches_per_catalog = len(longitude)
 
-# REFERENCES
+# catalog list
+catalog_list = []
+catalog_list.append(400)
 
-# FITS Format of gtpsf Output - https://gamma-astro-data-formats.readthedocs.io/en/v0.1/irfs/psf/psf_gtpsf/
+# generate patch catalog
+# previous_plot_backend = matplotlib.get_backend()
+# matplotlib.use('Agg')
+# cats_test = create_dataset(test_folder, file="test.csv", prefix="test", n=len(longitude), faint="F0", init_con=0)
+# matplotlib.use(previous_plot_backend)

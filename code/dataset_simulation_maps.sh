@@ -40,11 +40,15 @@ conda activate fermi
 
 # Generate live time cube and apply zenith cut to data here - kept the default values for the spatial grid and
 # inclination angle
-# gtltcube evfile=$FERMIDATACUTGTI scfile=$SPACECRAFTFILE outfile=$FERMILIVETIMECUBE zmax=100 dcostheta=0.025 binsz=1
+gtltcube evfile=$FERMIDATACUTGTI scfile=$SPACECRAFTFILE outfile=$FERMILIVETIMECUBE zmax=100 dcostheta=0.025 binsz=1
 
 # Bin data and create count maps - this is to ensure that gtexpcube2 produces Healpix-style exposure maps (rather than
 # easy 2D arrays) - this is a major flaw in the Fermitools with no documentation. YOU MAY HAVE TO CLICK ENTER TO SAY ALL-SKY AND type yes for energy binning
-# gtbin evfile=$FERMIDATACUTGTI scfile=NONE outfile=$FERMIBINNED algorithm=HEALPIX coordsys=GAL ebinalg=LOG emin=300 emax=200000 enumbins=5 nxpix=360 nypix=180 binsz=0.23 hpx_ordering_scheme=RING hpx_order=8 xref=0 axisrot=0 proj=AIT yref=0
+#gtbin evfile=$FERMIDATACUTGTI scfile=NONE outfile=$FERMIBINNED algorithm=HEALPIX coordsys=GAL ebinalg=LOG emin=300 emax=200000 enumbins=5 nxpix=360 nypix=180 binsz=0.23 hpx_ordering_scheme=RING hpx_order=8 xref=0 axisrot=0 proj=AIT yref=0
+
+# ORIGINAL ABOVE WORKS FOR nside=64
+#gtbin evfile=$FERMIDATACUTGTI scfile=NONE outfile=$FERMIBINNED algorithm=HEALPIX coordsys=GAL ebinalg=LOG emin=300 emax=200000 enumbins=5 hpx_ordering_scheme=RING hpx_order=9 xref=0 axisrot=0 proj=AIT yref=0
+gtbin evfile=$FERMIDATACUTGTI scfile=NONE outfile=$FERMIBINNED algorithm=HEALPIX coordsys=GAL ebinalg=LOG emin=300 emax=200000 enumbins=5 hpx_ordering_scheme=RING hpx_order=7 # xref=0 axisrot=0 proj=AIT yref=0
 
 # Generate exposure maps - N.B. chose to use latitude, as this is consistent with the "robust neural ..." paper. bins`
 # came from the introductory paragraph of section 2 of the "robust neural..." paper. Used AIT projection, but it may be
@@ -52,7 +56,11 @@ conda activate fermi
 # gtexpcube2 infile=$FERMILIVETIMECUBE cmap=$FERMIBINNED outfile=$FERMIEXPMAP irfs=P8R3_ULTRACLEANVETO_V3 enumbins=5 emin=300 emax=200000 binsz=0.23 evtype=3
 
 # ABOVE IS ORIGINAL AND WORKS - BELOW IS TO SEE IF I CAN PRODUCE A BETTER FUNCTION
-gtexpcube2 infile=$FERMILIVETIMECUBE cmap=$FERMIBINNED outfile=$FERMIEXPMAP irfs=P8R3_ULTRACLEANVETO_V3 enumbins=16 emin=300 emax=200000 binsz=0.23 evtype=3
+#gtexpcube2 infile=$FERMILIVETIMECUBE cmap=$FERMIBINNED outfile=$FERMIEXPMAP irfs=P8R3_ULTRACLEANVETO_V3 enumbins=16 emin=300 emax=200000 binsz=0.23 evtype=3
+
+# TRYING TO MATCH Nside=128 - above line works for nside=64
+gtexpcube2 infile=$FERMILIVETIMECUBE cmap=$FERMIBINNED outfile=$FERMIEXPMAP irfs=P8R3_ULTRACLEANVETO_V3 enumbins=16 # emin=300 emax=200000 evtype=3
+
 
 # Generate the PSF for handling pointlike sources - want at l = 90 degrees, b = 40 degrees - converted to RA DEC J2000
 # which produces 252.131996, 41.585827°
