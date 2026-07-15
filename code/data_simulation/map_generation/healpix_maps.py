@@ -6,7 +6,8 @@ import healpy as hp
 from map_generation.utils import angle_to_healpix_pixels
 import numpy as np
 from psfs.utils import dual_function, monte_carlo_sampler
-from reproject import reproject_to_healpix
+# from reproject import reproject_to_healpix
+import reproject
 from scipy.stats import loguniform
 from scipy.integrate import quad
 from . utils import integrate_over_energy
@@ -82,7 +83,9 @@ def create_diffuse_background(diffuse_background_file, exposure_map, nside, to_c
 
             new_header = WCS(new_header).sub(2)
 
-            data, _ = reproject_to_healpix((data, new_header), 'galactic', nside=nside)
+            # data, _ = reproject_to_healpix((data, new_header), 'galactic', nside=nside)
+
+            data, _ = reproject.reproject_to_healpix((data, new_header), 'galactic', nside=nside)
 
             # N.B. May have to do the same thing for galactic diffuse background - PSF IS NOT DONE THE SAME WAY AS IN THE ABOVE
             # PAPER SO IT IS NOT IN sr^-1 and EXPOSURE IS IN cm2s
@@ -121,8 +124,8 @@ def create_exposure_map(exposure_file: str, num_bins_to_create=5):
         # EXPERIMENTATION BELOW
 
         # Integrate over energy - see robust paper and arxiv paper as well
-        exposure_maps, energy_bins = integrate_over_energy(maps=exposure_maps, energy_bins=energy_bins, num_bins=num_bins_to_create,
-                                                           energy_weighted=True)
+        exposure_maps, energy_bins = integrate_over_energy(maps=exposure_maps, energy_bins=energy_bins,
+                                                           num_bins=num_bins_to_create, energy_weighted=True)
 
     return exposure_maps, energy_bins
 
@@ -197,8 +200,6 @@ def create_isotropic_background(isotropic_background_file: str, nside: int, expo
         isotropic_constant = quad(func=isotropic_func, a=energy_bins[b], b=energy_bins[b + 1], args=(m, c))[0]
 
         isotropic_values.append(isotropic_constant)
-
-    # print(isotropic_values)
 
     isotropic_maps = []
 
@@ -316,7 +317,7 @@ def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, 
 
         for source in range(source_num):
 
-            print(source)
+            # print(source)
 
             c = cs[source]
 
@@ -326,7 +327,7 @@ def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, 
 
                 radial_angle_displacements = monte_carlo_sampler(dual_function, parameters=psf_parameters[b],
                                                                  num_samples=c)
-                angles = np.random.uniform(low=0, high=2*np.pi, size=c)
+                angles = np.random.uniform(low=0, high=2 * np.pi, size=c)
 
                 # Calculate new origins
 

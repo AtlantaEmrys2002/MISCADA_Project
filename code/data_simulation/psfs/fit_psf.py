@@ -22,16 +22,16 @@ def fit_diffuse_source_psf(roi_count_map, nside=512):
     #
     #     print(hdul.info())
 
-    import matplotlib.pyplot as plt
+    # import matplotlib.pyplot as plt
 
     with fits.open(roi_count_map) as hdul:
 
         # FOR LABELLING ONLY - CONVERT FROM KeV to MeV
-        energy_bins = [np.float64(k[1]) / 1000 for k in np.array(hdul[2].data)]
-
-        energy_bins.append(hdul[2].data[-1][2])
-
-        energy_bins = [np.round(k) for k in energy_bins]
+        # energy_bins = [np.float64(k[1]) / 1000 for k in np.array(hdul[2].data)]
+        #
+        # energy_bins.append(hdul[2].data[-1][2])
+        #
+        # energy_bins = [np.round(k) for k in energy_bins]
 
         # Centre of data
         midpoint = hdul[0].data[0].shape[0] // 2
@@ -81,29 +81,29 @@ def fit_diffuse_source_psf(roi_count_map, nside=512):
             # Clip < 0 values to 0
             beam = np.clip(beam, a_min=0, a_max=np.max(beam))
 
-            print("PSF TEST")
-            print(np.argwhere(beam < 0))
+            # print("PSF TEST")
+            # print(np.argwhere(beam < 0))
 
             psfs.append(beam)
 
             # CHECK BY APPLYING BEAM TO IMAGE WITH SINGLE PIXEL AT CENTER EQUAL TO MAXIMUM VALUE (BEFORE NORMALISATION)
             # AT THAT INTERVAL
 
-            npix = np.array([x for x in range(hp.pixelfunc.nside2npix(nside=nside))])
-
-            pix = hp.pixelfunc.ang2pix(nside, theta=90, phi=40, lonlat=True)
-
-            test = np.zeros_like(npix)
-
-            test[pix] = (energy_bins[b] + energy_bins[b + 1]) / 2
-
-            test_smoothed = hp.sphtfunc.smoothing(map_in=test, beam_window=beam)
-
-            hp.visufunc.mollview(map=test_smoothed)
-
-            plt.show()
-
-            plt.close()
+            # npix = np.array([x for x in range(hp.pixelfunc.nside2npix(nside=nside))])
+            #
+            # pix = hp.pixelfunc.ang2pix(nside, theta=90, phi=40, lonlat=True)
+            #
+            # test = np.zeros_like(npix)
+            #
+            # test[pix] = (energy_bins[b] + energy_bins[b + 1]) / 2
+            #
+            # test_smoothed = hp.sphtfunc.smoothing(map_in=test, beam_window=beam)
+            #
+            # hp.visufunc.mollview(map=test_smoothed)
+            #
+            # plt.show()
+            #
+            # plt.close()
 
     return psfs
 

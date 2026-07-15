@@ -5,7 +5,10 @@ import warnings
 
 # polynomial with degree 2 relating pivot energies and flux densities (coefficients below are c, b, a) such that
 # ax^2 + bx + c = 0
-poly = np.polynomial.Polynomial([-30.484182252126633, -6.779223799814874, 0.7112492265517346])
+# poly = np.polynomial.Polynomial([-30.484182252126633, -6.779223799814874, 0.7112492265517346])
+poly = np.polynomial.Polynomial([-3.106131156761208, -4.371650516868555, 0.1097545334282421])
+
+# ['a : 0.1097545334282421', 'b : -4.371650516868555', 'c : -3.106131156761208']
 
 
 # def energy_flux_agn(pivot_energy, flux_density, spectral_slope, curvature):
@@ -31,7 +34,7 @@ def integral_photon_flux_agn(pivot_energy, flux_density, spectral_slope, curvatu
     return energy
 
 
-def agn_flux_density(pivot_energies, noise_std=0.9181233644485474):
+def agn_flux_density(pivot_energies, noise_std=0.9181233203181715):
 
     # Default values for a, b, and c based on correlation analysis between pivot energies and flux densities. Found that
     # relation between E_0 and F_0 could be simulated as logF = a * logE^2 + b * logE + c
@@ -59,7 +62,9 @@ def agn_flux_density(pivot_energies, noise_std=0.9181233644485474):
     return flux_densities
 
 
-def agn_spectral_slope(pivot_energies, m=-0.879374590105285, c=2.0664361463117515, noise_std=0.13347913702284359):
+# def agn_spectral_slope(pivot_energies, m=-0.879374590105285, c=2.0664361463117515, noise_std=0.13347913702284359):
+
+def agn_spectral_slope(pivot_energies, m=-0.3454412867556543, c=4.755250286569133, noise_std=0.13347913702284359):
 
     # Based on correlation analysis of pivot energies and flux densities and spectral slopes,
     # created this method for generating spectral slopes based on pivot energies after fitting relation
@@ -79,10 +84,10 @@ def agn_spectral_slope(pivot_energies, m=-0.879374590105285, c=2.066436146311751
 
     noise = np.random.normal(loc=0, scale=noise_std, size=size)
 
+    # alphas += noise
+
     # Add noise
     alphas += np.exp(noise)
-
-    # alphas = np.exp(log_alphas)
 
     return alphas
 

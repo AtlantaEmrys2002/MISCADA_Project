@@ -44,9 +44,9 @@ def pulsar_generator(pulsar_stats, energy_flux_low, energy_flux_high, cauchy_par
 
         # Generate new flux densities - log-normal for flux densities was initially used then used cubic correlation
         # of log pivot energy and log flux density
-        flux_density = np.random.lognormal(mean=mean_log_flux_density_pulsars, sigma=std_log_flux_density_pulsars)
+        # flux_density = np.random.lognormal(mean=mean_log_flux_density_pulsars, sigma=std_log_flux_density_pulsars)
 
-        # flux_density = pulsar_flux_density(pivot_energy)[0]
+        flux_density = pulsar_flux_density(pivot_energy)[0]
 
         # Gaussian recommended in ID8 - AT THE MOMENT - may change to log-normal
 
@@ -238,7 +238,6 @@ def generate_mock_pulsar_catalog(catalog: str, pulsars, detection_threshold):
     while (actual_counts[0] < target_counts[0]) and np.any(np.less(actual_counts[target_peak:],
                                                                    target_counts[target_peak:])):
 
-        print("PULSAR: {}".format(len(parameters)))
 
         # Due to uncomplimentary functionality - need max of intervals[:-1] - see reference to Digitize Error
         new_source = pulsar_generator(pulsar_stats, energy_flux_low=np.min(target_bin_intervals),
@@ -252,10 +251,14 @@ def generate_mock_pulsar_catalog(catalog: str, pulsars, detection_threshold):
                 parameters.append(np.array(new_source))
                 actual_counts[idx] += 1
 
+                print("PULSAR: {}".format(len(parameters)))
+
         else:
 
             parameters.append(np.array(new_source))
             actual_counts[idx] += 1
+
+            print("PULSAR: {}".format(len(parameters)))
 
     parameters = np.array(parameters)
 

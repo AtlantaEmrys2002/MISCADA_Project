@@ -4,7 +4,8 @@ from scipy.integrate import quad
 import warnings
 
 
-poly = np.polynomial.Polynomial([-26.32681683834449, -1.2813737892102322, -1.888182538356475, -2.147009478562273])
+# poly = np.polynomial.Polynomial([-26.32681683834449, -1.2813737892102322, -1.888182538356475, -2.147009478562273])
+poly = np.polynomial.Polynomial([179.66839590413852, -89.19289721267037, 12.958983638603955, -0.6310345163342851])
 
 # def energy_flux_pulsar(pivot_energy, flux_density, spectral_slope, exponential_index, exponential_factor):
 
@@ -44,21 +45,7 @@ def pulsar_flux_density(pivot_energies, noise_std=0.8723404255319149):
 
     log_pivot_energies = np.log(pivot_energies)
 
-    poly_p = np.polynomial.Polynomial([-26.32681683834449, -1.2813737892102322, -1.888182538356475, -2.147009478562273])
-
-    # ['a : -2.147009478562273', 'b : -1.888182538356475', 'c : -1.2813737892102322', 'd : -26.32681683834449']
-
-    log_flux_densities = poly_p(log_pivot_energies)
-
-    # import matplotlib.pyplot as plt
-
-    # plt.close()
-    #
-    # plt.plot(np.linspace(5, 9, 100), poly_p(np.linspace(5, 9, 100)))
-    #
-    # plt.savefig("testing.png")
-    #
-    # plt.close()
+    log_flux_densities = poly(log_pivot_energies)
 
     # Calculate number of noise elements to generate and create noise
     size = np.atleast_1d(log_flux_densities).shape
@@ -70,11 +57,6 @@ def pulsar_flux_density(pivot_energies, noise_std=0.8723404255319149):
     flux_densities = np.exp(log_flux_densities)
 
     return flux_densities
-
-
-
-
-
 
 
 def s1_agn(pivot_energy, flux_density, spectral_slope, curvature):

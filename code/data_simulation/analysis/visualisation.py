@@ -109,7 +109,8 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
 
         polynomial_log = polynomial(log_var1)
 
-        print(["{} : {}".format(chr((degree - x) + 97), polynomial.coef[x]) for x in range(degree, -1, -1)])
+        # print(["{} : {}".format(chr((degree - x) + 97), polynomial.coef[x]) for x in range(degree, -1, -1)])
+        print(["{} : {}".format(chr((degree - x) + 97), polynomial.convert().coef[x]) for x in range(degree, -1, -1)])
         print("RMSE of {} Fit: {}".format(labels[idx], root_mean_squared_error(log_var2, polynomial_log)))
 
         residuals.append(log_var2 - polynomial_log)
@@ -119,6 +120,7 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
         percentage = np.sum(np.abs(normalised_residual) > 2) / len(normalised_residual)
 
         print("Percentage of normalised residuals in [-2, 2]: {}".format(1 - percentage))
+        print("Standard Deviation of Non-Normalised Residuals: {}".format(np.std(log_var2 - polynomial_log, ddof=1)))
 
         print('-' * 60)
 
@@ -133,7 +135,11 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
         ax[0].plot(x_values, polynomial(log_x_values), color="black", label="Logarithmic")
         ax[1].plot(log_x_values, np.log(polynomial(log_x_values)), color="black", label="Logarithmic")
 
-        print("a: {} b: {}".format(polynomial.coef[1], polynomial.coef[0]))
+        # print("a: {} b: {}".format(polynomial.coef[1], polynomial.coef[0]))
+
+        logarithmic_coefficients = polynomial.convert().coef
+
+        print("a: {} b: {}".format(logarithmic_coefficients[1], logarithmic_coefficients[0]))
 
         log_polynomial = np.log(polynomial(log_var1))
 

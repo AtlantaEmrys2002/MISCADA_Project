@@ -164,6 +164,8 @@ def generate_mock_agn_catalog(catalog, agn_data, detection_threshold=np.float64(
 
     parameters = []
 
+    print("TARGET COUNTS: {}".format(np.sum(target_counts)))
+
     while (actual_counts[0] < target_counts[0]) and np.any(np.less(actual_counts[target_peak:],
                                                                    target_counts[target_peak:])):
 
@@ -181,28 +183,14 @@ def generate_mock_agn_catalog(catalog, agn_data, detection_threshold=np.float64(
                 parameters.append(np.array(new_source))
                 actual_counts[idx] += 1
 
+                print("AGN: {}".format(len(parameters)))
+
         else:
 
             parameters.append(np.array(new_source))
             actual_counts[idx] += 1
 
-    # CHECK SIMULATED FLUX DENSITIES AND PIVOT ENERGIES HAVE SAME CORRELATION AS IN 4FGL
-    # import matplotlib.pyplot as plt
-    #
-    # fig2, ax2 = plt.subplots()
-    #
-    # fig2.suptitle('Simulated $F_0$ against $E_0$')
-    # ax2.set_xlabel('log $E_0$')
-    # ax2.set_ylabel('log $F_{0, AGN}$')
-    # ax2.scatter(np.log(np.array(parameters)[:, 0]), np.log(np.array(parameters)[:, 1]), s=2)
-    # fig2.savefig("agnf0againste0.png")
-    #
-    # # CHECK SIMULATED PIVOT ENERGIES AND SPECTRAL INDICES (ALPHAS) HAVE SAME CORRELATION AS IN 4FGL
-    # plt.title('Simulated $\\alpha$ against $E_0$')
-    # plt.xlabel('$E_0$')
-    # plt.ylabel('$\\alpha$')
-    # plt.scatter(parameters[:, 0], parameters[:, 2], s=2)
-    # plt.show()
+            print("AGN: {}".format(len(parameters)))
 
     return np.array(parameters)
 

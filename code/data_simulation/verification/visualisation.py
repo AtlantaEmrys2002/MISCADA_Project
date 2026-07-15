@@ -47,7 +47,7 @@ def plot_correlation(catalog_4fgl: str, var1_name: str, var2_name: str, simulate
         pulsar_mask = (catalog["CLASS1"] == "psr")
         sources_4fgl = catalog[pulsar_mask]
 
-    plt.rcParams["figure.figsize"] = (16, 8)
+    plt.rcParams["figure.figsize"] = (10, 4)
 
     fig, ax = plt.subplots(1, 2)
 
@@ -60,8 +60,8 @@ def plot_correlation(catalog_4fgl: str, var1_name: str, var2_name: str, simulate
 
     # Plot simulated data's correlation
 
-    ax[0].scatter(simulated_var1, simulated_var2, color='orange', alpha=0.6)
-    ax[1].scatter(np.log(simulated_var1), np.log(simulated_var2), color='orange', alpha=0.6)
+    ax[0].scatter(simulated_var1, simulated_var2, color='orange', alpha=0.6, label="Simulated")
+    ax[1].scatter(np.log(simulated_var1), np.log(simulated_var2), color='orange', alpha=0.6, label="Simulated")
 
     # Formatting
 

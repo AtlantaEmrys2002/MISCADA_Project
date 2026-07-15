@@ -289,7 +289,7 @@ def integrate_over_energy(maps, energy_bins, num_bins, energy_weighted=False, pr
 
         integrated_map = lower_addition + middle_addition + upper_addition
 
-        print(np.sum(lower_addition), np.sum(middle_addition), np.sum(upper_addition))
+        # print(np.sum(lower_addition), np.sum(middle_addition), np.sum(upper_addition))
 
         integrated_maps.append(integrated_map)
 
@@ -300,7 +300,8 @@ def integrate_over_energy(maps, energy_bins, num_bins, energy_weighted=False, pr
 
     if energy_weighted is True:
 
-        integrated_energies = [quad(exponential_func, new_energy_bins[k], new_energy_bins[k + 1])[0] for k in range(num_bins)]
+        integrated_energies = [quad(exponential_func, new_energy_bins[k], new_energy_bins[k + 1])[0] for k in
+                               range(num_bins)]
 
         for x in range(num_bins):
 

@@ -606,12 +606,7 @@ def xml_parser(energy_bins, xml_file: str):
             # For each energy interval, calculate corresponding flux
             for f in range(num_bins - 1):
 
-                # flux = energy_flux_agn(pivot_energy=spectral_parameter_dictionary["Eb"],
-                #                        flux_density=spectral_parameter_dictionary["norm"],
-                #                        spectral_slope=spectral_parameter_dictionary["alpha"],
-                #                        curvature=spectral_parameter_dictionary["beta"], min_energy=energy_bins[f],
-                #                        max_energy=energy_bins[f + 1])
-
+                # N.B. Integral photon flux is not the same as energy flux
                 flux = integral_photon_flux_agn(pivot_energy=spectral_parameter_dictionary["Eb"],
                                                 flux_density=spectral_parameter_dictionary["norm"],
                                                 spectral_slope=spectral_parameter_dictionary["alpha"],
@@ -626,13 +621,7 @@ def xml_parser(energy_bins, xml_file: str):
             # For each energy interval, calculate corresponding flux
             for f in range(num_bins - 1):
 
-                # flux = energy_flux_pulsar(pivot_energy=spectral_parameter_dictionary["Scale"],
-                #                           flux_density=spectral_parameter_dictionary["Prefactor"],
-                #                           spectral_slope=spectral_parameter_dictionary["Index1"],
-                #                           exponential_index=spectral_parameter_dictionary["Index2"],
-                #                           exponential_factor=spectral_parameter_dictionary["Expfactor"],
-                #                           min_energy=energy_bins[f], max_energy=energy_bins[f + 1])
-
+                # N.B. Integral photon flux is not the same as energy flux
                 flux = integral_photon_flux_pulsar(pivot_energy=spectral_parameter_dictionary["Scale"],
                                           flux_density=spectral_parameter_dictionary["Prefactor"],
                                           spectral_slope=spectral_parameter_dictionary["Index1"],
@@ -651,10 +640,15 @@ def xml_parser(energy_bins, xml_file: str):
 
     # Have coordinates in format [RA, DEC] - need to convert them to Lat-lon
 
-    coordinates = [SkyCoord(ra=c[0] * u.degree, dec=c[1] * u.degree, frame='icrs').galactic for c in coordinates]
+    # Convert coordinates to np array
+    coordinates = np.array(coordinates)
+
+    coordinates = SkyCoord(ra=coordinates[:, 0] * u.degree, dec=coordinates[:, 1] * u.degree, frame='icrs').galactic
+
+    coordinates = np.array([coordinates.l.value, coordinates.b.value]).T
 
     # Get coordinates into numpy array then separate into list of lats and lons
-    coordinates = np.array([[c.l.value, c.b.value] for c in coordinates])
+    # coordinates = np.array([[c.l.value, c.b.value] for c in coordinates])
 
     # Convert fluxes to numpy
     fluxes = np.array(fluxes)
