@@ -16,7 +16,6 @@ def psf_bck_mask(y0, x0, radius, psf_mask):
     ncol = psf_mask.shape[1]
 
     grid2D_psf = psf_mask.copy()
-    grid2D_bck = np.ones((nrow, ncol)) - grid2D_psf
 
     # Calculate all possible indices into image
     coords = np.array([(y, x) for y in range(nrow) for x in range(ncol)])
@@ -30,8 +29,6 @@ def psf_bck_mask(y0, x0, radius, psf_mask):
     mask = coords[distances < radius]
 
     # Mask array
-
     grid2D_psf[mask[:, 0], mask[:, 1]] = 1.0
-    grid2D_bck[mask[:, 0], mask[:, 1]] = 0.0
 
-    return grid2D_psf, grid2D_bck
+    return grid2D_psf

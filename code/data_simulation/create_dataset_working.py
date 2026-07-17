@@ -1,4 +1,4 @@
-# ALL FUNCTIONS EXCEPT FOR main() WHERE TAKEN DIRECTLY FROM ID8'S GITHUB CODE
+# This code is based on the code from ID8 - I have altered/optimised and tailored it to my project specifications.
 # The link to this code can be found here: https://github.com/bapanes/AutoSourceID/blob/main/codes/from-cats-to-locnet-
 # input.py
 
@@ -28,23 +28,12 @@ if __name__ == "__main__":
     parser.add_argument("--num_energy_bins", required=True, type=int, help="The number of energy bins that "
                                                                            "photons were binned into using fermitools.")
 
-    parser.add_argument("--num_patches_per_catalog", required=False, type=int, help="The number of patches"
-                                                                                    "to generate per sky-map provided.")
-
     args = parser.parse_args()
 
     num_catalogs = args.num_catalogs
     num_bins = args.num_energy_bins
-    # n = args.num_patches_per_catalog
 
     # FILE CREATION AND ORGANISATION
-
-    # list for the csv files - stores information about each patch (including true source locations)
-    header_line = "filename,xmin,xmax,ymin,ymax,class,lon_c,lat_c,flux_1000,lon_p,lat_p,catalog,flux_10000\n"
-
-    f1 = open(os.path.join("./simulated_data/patches/", "metadata.csv"), "w+")
-    f1.writelines(header_line)
-    f1.close()
 
     energy_bins = np.logspace(np.log(300), np.log(200000), num=num_bins + 1, base=np.e)
 
@@ -70,6 +59,7 @@ if __name__ == "__main__":
     # pix_sr = 4.0 * np.pi / Npix
 
     lb_range = [-5, 5]
+    # noinspection PyUnresolvedReferences
     proj = hp.projector.CartesianProj(lonra=lb_range, latra=lb_range, xsize=xsize_patch_generation)
 
     I, J = np.meshgrid(np.arange(xsize_patch_generation), np.arange(xsize_patch_generation))
@@ -86,6 +76,17 @@ if __name__ == "__main__":
     # The number of patches to generate per catalog
     max_patches_per_catalog = len(longitude)
 
+    # CREATE CSV FILE FOR STORING PATCH INFORMATION
+
+    # list for the csv files - stores information about each patch
+    header_line = "patch_id,centre_lat,centre_lon,num_agn,num_psr\n"
+
+    f1 = open(os.path.join("./simulated_data/patches/", "patch_metadata.csv"), "w+")
+    f1.writelines(header_line)
+    f1.close()
+
+    patch_information = []
+
     for c in range(num_catalogs):
 
         # READ IN MAPS AND SPATIAL/SPECTRAL PARAMETERS
@@ -97,10 +98,11 @@ if __name__ == "__main__":
         catalogs_directory = "./simulated_data/catalogs/catalog_{}".format(c + 1)
 
         # Read in the coordinates and associated integral photon fluxes of each source in AGN and pulsar maps
-        agn_coordinates, agn_photon_fluxes = xml_parser(energy_bins=energy_bins,
-                                                        xml_file=catalogs_directory + "/agns.xml")
-        pulsar_coordinates, pulsar_photon_fluxes = xml_parser(energy_bins=energy_bins,
-                                                              xml_file=catalogs_directory + "/pulsars.xml")
+        agn_coordinates, agn_photon_fluxes, agn_ids = xml_parser(energy_bins=energy_bins,
+                                                        xml_file=catalogs_directory + "/agns.xml", give_ids=True)
+        pulsar_coordinates, pulsar_photon_fluxes, pulsar_ids = xml_parser(energy_bins=energy_bins,
+                                                              xml_file=catalogs_directory + "/pulsars.xml",
+                                                                          give_ids=True)
 
         binned_agn_map = []
         binned_pulsar_map = []
@@ -148,25 +150,24 @@ if __name__ == "__main__":
             binned_background_patch = []
 
             for b in range(num_bins):
-
                 agn_patch_bin = hp.visufunc.cartview(binned_agn_map[b], rot=(lon, lat, 0.), coord='G',
-                                                       xsize=xsize_patch_generation, lonra=lb_range, latra=lb_range,
-                                                       return_projected_map=True)
+                                                     xsize=xsize_patch_generation, lonra=lb_range, latra=lb_range,
+                                                     return_projected_map=True)
 
                 pulsar_patch_bin = hp.visufunc.cartview(binned_pulsar_map[b], rot=(lon, lat, 0.), coord='G',
-                                                       xsize=xsize_patch_generation, lonra=lb_range, latra=lb_range,
-                                                       return_projected_map=True)
+                                                        xsize=xsize_patch_generation, lonra=lb_range, latra=lb_range,
+                                                        return_projected_map=True)
 
                 background_patch_bin = hp.visufunc.cartview(binned_background_map[b], rot=(lon, lat, 0.), coord='G',
-                                                       xsize=xsize_patch_generation, lonra=lb_range, latra=lb_range,
-                                                       return_projected_map=True)
+                                                            xsize=xsize_patch_generation, lonra=lb_range,
+                                                            latra=lb_range, return_projected_map=True)
 
                 binned_agn_patch.append(agn_patch_bin)
                 binned_pulsar_patch.append(pulsar_patch_bin)
                 binned_background_patch.append(background_patch_bin)
 
-                # Need these here (even though we are not showing the plots - this is because visufunc creates a plot - we
-                # only need the 2D array)
+                # Need these here (even though we are not showing the plots - this is because visufunc creates a plot -
+                # we only need the 2D array)
                 plt.cla()
                 plt.clf()
                 plt.close("all")
@@ -182,34 +183,43 @@ if __name__ == "__main__":
             # Create directory where patches stored
             patch_directory = "./simulated_data/patches/patch_{}/".format(patch_id)
 
+            # Create file for storing individual patches' metadata
+            # list for the csv files - stores information about each patch
+            individual_patch_header_line = "source_id,source_type,cartesian_y,cartesian_x\n"
+
+            f2 = open(os.path.join(patch_directory, "metadata.csv"), "w+")
+            f2.writelines(individual_patch_header_line)
+            f2.close()
+
             Path(patch_directory).mkdir(parents=True, exist_ok=True)
 
             np.save(patch_directory + "/patch.npy", patch)
 
-            # SAVE METADATA CSV FILE FOR THIS PATCH AND THE MASK
 
 
             # GET NO. AGN AND PULSARS WITHIN PATCH, AS WELL AS THE CARTESIAN COORDINATES OF AGN AND PULSARS IN THE PATCH
 
-            # AGN and Pulsar coorindates must be in lon-lat format (l, b) with degree values
+            # AGN and Pulsar coordinates must be in lon-lat format (l, b) with degree values
 
-            # we recover the info using 128x128 patch dimensions
-            # this remains from our initial approach. it does not affect at all the image and mask generation
-            # nagn, npsr, agn_pos_list, psr_pos_list = get_ps_info_128(patch_centre, agn_coordinates,
-            #                                                          pulsar_coordinates, xsize_location)
+            # Get number of AGN and pulsar in given patch and their positions (in Cartesian coordinates and Galactic
+            # coordinates_
+            nagn, npsr, agn_pos_list, psr_pos_list, agn_patch_ids, pulsar_patch_ids = get_ps_info_128(patch_centre,
+                                                                                                      agn_coordinates,
+                                                                                                      pulsar_coordinates,
+                                                                                                      agn_ids,
+                                                                                                      pulsar_ids)
 
-            nagn, npsr, agn_pos_list, psr_pos_list = get_ps_info_128(patch_centre, agn_coordinates, pulsar_coordinates)
-
-            # CREATE MASK
+            # CREATE MASKS
 
             # Create blank masks which can be added to
             grid2D_psf = np.zeros((xsize_patch_generation, xsize_patch_generation))
             grid2D_bck = np.ones((xsize_patch_generation, xsize_patch_generation))
 
+            source_info = []
+
             # Add AGN masks iteratively
             for i in range(nagn):
-
-                # Find the minimum of the position in the image and 127 (the maximum index of the image in the y or x
+                # Find the minimum of the position in the image and 127 (the maximum index of the image in the y or x-
                 # axis)
                 y = min(agn_pos_list[i][0], xsize_location - 1)
                 x = min(agn_pos_list[i][1], xsize_location - 1)
@@ -223,21 +233,61 @@ if __name__ == "__main__":
                     xsize_location - 1, y + r)
 
                 # Divide by 2 to get the coordinates on the 64 x 64 image
-                xmin = xmin // 2
-                xmax = xmax // 2
-                ymin = ymin // 2
-                ymax = ymax // 2
+                xmin //= 2
+                xmax //= 2
+                ymin //= 2
+                ymax //= 2
 
-                # CREATE MASKS
-                grid2D_psf, grid2D_bck = psf_bck_mask(y // 2, x // 2, radius=2.5, psf_mask=grid2D_psf)
+                grid2D_psf = psf_bck_mask(y // 2, x // 2, radius=2.5, psf_mask=grid2D_psf)
 
-            print('done')
+                source_info.append(f"{agn_patch_ids[i]},AGN,{y},{x}\n")
 
-                # source_lines.append(f"{out_fn},{int(xmin)},{int(xmax)},{int(ymin)},{int(ymax)}," +
-                #                     f"{int(id)},{float(lon)},{float(lat)},{float(flux_1000)}," +
-                #                     f"{float(ltrue)},{float(btrue)},{int(catalog_id)},{float(flux_10000)}\n")
+            for i in range(npsr):
 
+                y = min(psr_pos_list[i][0], xsize_location - 1)
+                x = min(psr_pos_list[i][1], xsize_location - 1)
 
+                ltrue = psr_pos_list[i][2]
+                btrue = psr_pos_list[i][3]
+
+                r = 5
+                xmin, xmax, ymin, ymax = max(0, x - r), min(xsize_location - 1, x + r), max(0, y - r), min(
+                    xsize_location - 1, y + r)
+
+                xmin //= 2
+                xmax //= 2
+                ymin //= 2
+                ymax //= 2
+
+                grid2D_psf = psf_bck_mask(y // 2, x // 2, radius=2.5, psf_mask=grid2D_psf)
+
+                source_info.append(f"{pulsar_patch_ids[i]},PSR,{y},{x}\n")
+
+            # Save masks
+            np.save(patch_directory + "/mask.npy", grid2D_psf)
+
+            # SAVE METADATA CSV FILE FOR THIS PATCH AND THE MASK
+
+            # "source_id,source_type,cartesian_x,cartesian_y,"
+
+            # Individual metadata for this patch
+            f2 = open(os.path.join(patch_directory, "metadata.csv"), "a")
+            f2.writelines(source_info)
+            f2.close()
+
+            # Metadata for all patches
+            patch_information.append(f"{patch_id},{lat},{lon},{nagn},{npsr}\n")
+
+            # meta_data_information.append([str(patch_id), int(xmin), int(xmax), int(ymin), int(ymax), int(lat), int(lon), FLUXES, ])
+
+            # lat and lon are true global positions of patch centre
+            # ltrue and btrue are true global positions of source
+
+    # SAVE PATCH METADATA
+
+    f1 = open("./simulated_data/patches/patch_metadata.csv", "a")
+    f1.writelines(patch_information)
+    f1.close()
 
 
 

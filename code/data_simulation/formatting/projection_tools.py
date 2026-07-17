@@ -104,7 +104,7 @@ def get_lb_from_pixel(pixel_id, lb_centre):
     return l_PS, b_PS
 
 
-def get_xml_lb_list_in_std_patch_coord(patch_centre, list_of_pos_xml):
+def get_xml_lb_list_in_std_patch_coord(patch_centre, list_of_pos_xml, source_ids):
 
     # AGAIN USED TO GET COORDINATES OF SOURCE WITH L, B COORD INTO PATCH COORD SYS
 
@@ -133,6 +133,8 @@ def get_xml_lb_list_in_std_patch_coord(patch_centre, list_of_pos_xml):
 
     list_of_lb_in_std_patch_coord = []
 
+    list_of_ids = []
+
     for pos_con in range(len(list_of_pos_xml)):
 
         # positions in global lon lat coordinates
@@ -146,14 +148,16 @@ def get_xml_lb_list_in_std_patch_coord(patch_centre, list_of_pos_xml):
 
             list_of_lb_in_std_patch_coord.append((l_c, b_c, l_pos, b_pos))
 
-    return list_of_lb_in_std_patch_coord
+            list_of_ids.append(source_ids[pos_con])
+
+    return list_of_lb_in_std_patch_coord, list_of_ids
 
 
-def get_pixel_rc_list_from_xml_lb_list(lb_centre, list_of_pos_xml):
+def get_pixel_rc_list_from_xml_lb_list(lb_centre, list_of_pos_xml, source_ids):
 
     # FUNCTION CONVERTS LON, LAT POSITION OF SOURCE TO POSITION IN IMAGE (IF THERE)
 
-    lb_std_list = get_xml_lb_list_in_std_patch_coord(lb_centre, list_of_pos_xml)
+    lb_std_list, list_of_ids = get_xml_lb_list_in_std_patch_coord(lb_centre, list_of_pos_xml, source_ids)
 
     list_of_pixel_row = []
     list_of_pixel_col = []
@@ -179,10 +183,10 @@ def get_pixel_rc_list_from_xml_lb_list(lb_centre, list_of_pos_xml):
         list_of_pixel_ltrue.append(ltrue)
         list_of_pixel_btrue.append(btrue)
 
-    return list_of_pixel_row, list_of_pixel_col, list_of_pixel_ltrue, list_of_pixel_btrue
+    return list_of_pixel_row, list_of_pixel_col, list_of_pixel_ltrue, list_of_pixel_btrue, list_of_ids
 
 
-def get_ps_info_128(patch_centre, list_agn_xml, list_psr_xml):
+def get_ps_info_128(patch_centre, list_agn_xml, list_psr_xml, agn_ids, pulsar_ids):
 
     # Assume size of patch (when deriving coordinates) is equal to 128 x 128 (not 64 x 64) to increase precision
 
@@ -190,11 +194,11 @@ def get_ps_info_128(patch_centre, list_agn_xml, list_psr_xml):
 
     # THIS FUNCTION RETURNS THE NO. AGN AND PULSARS IN A PATCH AND THEIR CARTESIAN COORDINATES WITHIN PATCH
 
-    list_row_agn, list_col_agn, list_ltrue_agn, list_btrue_agn = get_pixel_rc_list_from_xml_lb_list(
-        patch_centre, list_agn_xml)
+    list_row_agn, list_col_agn, list_ltrue_agn, list_btrue_agn, list_agn_ids = get_pixel_rc_list_from_xml_lb_list(
+        patch_centre, list_agn_xml, agn_ids)
 
-    list_row_psr, list_col_psr, list_ltrue_psr, list_btrue_psr = get_pixel_rc_list_from_xml_lb_list(
-        patch_centre, list_psr_xml)
+    list_row_psr, list_col_psr, list_ltrue_psr, list_btrue_psr, list_psr_ids = get_pixel_rc_list_from_xml_lb_list(
+        patch_centre, list_psr_xml, pulsar_ids)
 
     num_agn_in_patch = len(list_row_agn)
     num_pulsar_in_patch = len(list_row_psr)
@@ -211,4 +215,4 @@ def get_ps_info_128(patch_centre, list_agn_xml, list_psr_xml):
     psr_pos_list = np.array([[list_row_psr[i], list_col_psr[i], list_ltrue_psr[i], list_btrue_psr[i]] for i in
                              range(num_pulsar_in_patch)])
 
-    return num_agn_in_patch, num_pulsar_in_patch, agn_pos_list, psr_pos_list
+    return num_agn_in_patch, num_pulsar_in_patch, agn_pos_list, psr_pos_list, list_agn_ids, list_psr_ids

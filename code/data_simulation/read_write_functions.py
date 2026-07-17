@@ -536,7 +536,7 @@ def save_catalog(simulated_agns, simulated_pulsars, file_name: str):
         f.write(pulsar_xml_str)
 
 
-def xml_parser(energy_bins, xml_file: str):
+def xml_parser(energy_bins, xml_file: str, give_ids=False):
 
     # Read XML files to get latitude and longitude of each source (separate into AGN, pulsars, and background - if they
     # are in the same file), as well as the flux of the source
@@ -553,8 +553,12 @@ def xml_parser(energy_bins, xml_file: str):
     # Remove diffuse sources - only processing point sources with this function
     sources = [sources[k] for k in range(len(sources)) if sources[k].getAttribute("type") != "DiffuseSource"]
 
+    source_ids = []
+
     # Parse XML
     for source in sources:
+
+        source_ids.append(source.getAttribute("name"))
 
         source_type = source.getAttribute("name")[:3]
 
@@ -653,7 +657,13 @@ def xml_parser(energy_bins, xml_file: str):
     # Convert fluxes to numpy
     fluxes = np.array(fluxes)
 
-    return coordinates, fluxes
+    if give_ids:
+
+        return coordinates, fluxes, source_ids
+
+    else:
+
+        return coordinates, fluxes
 
 
 # REFERENCES

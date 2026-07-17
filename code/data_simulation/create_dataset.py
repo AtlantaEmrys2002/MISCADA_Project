@@ -200,68 +200,68 @@ def create_dataset(folder, file="training.csv", n=50, prefix="test",
             grid2D_bck = np.ones((xsize_patch_generation, xsize_patch_generation))
             radius_64 = 2.5
 
-            # agns
-            id = 0
-            for i in range(nagn):
-                y = min(agn_pos_list[i][0], xsize_location - 1)
-                x = min(agn_pos_list[i][1], xsize_location - 1)
-
-                ltrue = agn_pos_list[i][2]
-                btrue = agn_pos_list[i][3]
-
-                # true photon flux from xml
-                flux_1000 = agn_pos_list[i][4]
-                flux_10000 = agn_pos_list[i][5]
-
-                xmin, xmax, ymin, ymax = max(0, x - r), min(xsize_location - 1, x + r), max(0, y - r), min(
-                    xsize_location - 1, y + r)
-
-                xmin = xmin // 2
-                xmax = xmax // 2
-                ymin = ymin // 2
-                ymax = ymax // 2
-
-                # generation of the masks
-                # print("agn: ", nagn, xmin,xmax,ymin,ymax)
-                grid2D_psf, grid2D_bck = psf_bck_mask(y // 2, x // 2, radius_64, grid2D_psf)
-
-                source_lines.append(f"{out_fn},{int(xmin)},{int(xmax)},{int(ymin)},{int(ymax)}," +
-                                    f"{int(id)},{float(lon)},{float(lat)},{float(flux_1000)}," +
-                                    f"{float(ltrue)},{float(btrue)},{int(catalog_id)},{float(flux_10000)}\n")
+            # # agns
+            # id = 0
+            # for i in range(nagn):
+            #     y = min(agn_pos_list[i][0], xsize_location - 1)
+            #     x = min(agn_pos_list[i][1], xsize_location - 1)
+            #
+            #     ltrue = agn_pos_list[i][2]
+            #     btrue = agn_pos_list[i][3]
+            #
+            #     # true photon flux from xml
+            #     flux_1000 = agn_pos_list[i][4]
+            #     flux_10000 = agn_pos_list[i][5]
+            #
+            #     xmin, xmax, ymin, ymax = max(0, x - r), min(xsize_location - 1, x + r), max(0, y - r), min(
+            #         xsize_location - 1, y + r)
+            #
+            #     xmin = xmin // 2
+            #     xmax = xmax // 2
+            #     ymin = ymin // 2
+            #     ymax = ymax // 2
+            #
+            #     # generation of the masks
+            #     # print("agn: ", nagn, xmin,xmax,ymin,ymax)
+            #     grid2D_psf, grid2D_bck = psf_bck_mask(y // 2, x // 2, radius_64, grid2D_psf)
+            #
+            #     source_lines.append(f"{out_fn},{int(xmin)},{int(xmax)},{int(ymin)},{int(ymax)}," +
+            #                         f"{int(id)},{float(lon)},{float(lat)},{float(flux_1000)}," +
+            #                         f"{float(ltrue)},{float(btrue)},{int(catalog_id)},{float(flux_10000)}\n")
 
             # pulsars
-            id = 1
-            for i in range(npsr):
-                y = min(psr_pos_list[i][0], xsize_location - 1)
-                x = min(psr_pos_list[i][1], xsize_location - 1)
+            # id = 1
+            # for i in range(npsr):
+            #     y = min(psr_pos_list[i][0], xsize_location - 1)
+            #     x = min(psr_pos_list[i][1], xsize_location - 1)
+            #
+            #     ltrue = psr_pos_list[i][2]
+            #     btrue = psr_pos_list[i][3]
+            #
+            #     # true photon flux from xml
+            #     flux_1000 = psr_pos_list[i][4]
+            #     flux_10000 = psr_pos_list[i][5]
+            #
+            #     xmin, xmax, ymin, ymax = max(0, x - r), min(xsize_location - 1, x + r), max(0, y - r), min(
+            #         xsize_location - 1, y + r)
+            #
+            #     xmin = xmin // 2
+            #     xmax = xmax // 2
+            #     ymin = ymin // 2
+            #     ymax = ymax // 2
+            #
+            #     grid2D_psf, grid2D_bck = psf_bck_mask(y // 2, x // 2, radius_64, grid2D_psf)
 
-                ltrue = psr_pos_list[i][2]
-                btrue = psr_pos_list[i][3]
+                # source_lines.append(f"{out_fn},{int(xmin)},{int(xmax)},{int(ymin)},{int(ymax)}," +
+                #                     f"{int(id)},{float(lon)},{float(lat)},{float(flux_1000)}," +
+                #                     f"{float(ltrue)},{float(btrue)},{int(catalog_id)},{float(flux_10000)}\n")
 
-                # true photon flux from xml
-                flux_1000 = psr_pos_list[i][4]
-                flux_10000 = psr_pos_list[i][5]
-
-                xmin, xmax, ymin, ymax = max(0, x - r), min(xsize_location - 1, x + r), max(0, y - r), min(
-                    xsize_location - 1, y + r)
-
-                xmin = xmin // 2
-                xmax = xmax // 2
-                ymin = ymin // 2
-                ymax = ymax // 2
-
-                grid2D_psf, grid2D_bck = psf_bck_mask(y // 2, x // 2, radius_64, grid2D_psf)
-
-                source_lines.append(f"{out_fn},{int(xmin)},{int(xmax)},{int(ymin)},{int(ymax)}," +
-                                    f"{int(id)},{float(lon)},{float(lat)},{float(flux_1000)}," +
-                                    f"{float(ltrue)},{float(btrue)},{int(catalog_id)},{float(flux_10000)}\n")
-
-            Y_p = np.zeros((xsize_patch_generation, xsize_patch_generation, 2))
-            Y_p[:, :, 0] = grid2D_psf
-            Y_p[:, :, 1] = grid2D_bck
-
-            out_mk = f"{prefix}_masks_{init_con + cat_number * max_patches_per_catalog + k}.npy"
-            np.save(os.path.join(folder, out_mk), Y_p)
+            # Y_p = np.zeros((xsize_patch_generation, xsize_patch_generation, 2))
+            # Y_p[:, :, 0] = grid2D_psf
+            # Y_p[:, :, 1] = grid2D_bck
+            #
+            # out_mk = f"{prefix}_masks_{init_con + cat_number * max_patches_per_catalog + k}.npy"
+            # np.save(os.path.join(folder, out_mk), Y_p)
 
             # we write just at the end of the process to avoid the repeated opening of the file
 
