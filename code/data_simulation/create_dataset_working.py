@@ -5,6 +5,7 @@
 
 import argparse
 from formatting.projection_tools import get_ps_info_128
+from formatting.mask_creation import psf_bck_mask
 import healpy as hp
 import matplotlib.pyplot as plt
 import numpy as np
@@ -47,7 +48,17 @@ if __name__ == "__main__":
 
     energy_bins = np.logspace(np.log(300), np.log(200000), num=num_bins + 1, base=np.e)
 
+    # Size of patch side when calculating Cartesian positions in image
     xsize_location = 128
+
+    # Create template grid on which to project patch
+
+    coord_range = np.linspace(-4.9609375, 4.9609375, 128)
+
+    X, Y = np.meshgrid(coord_range, coord_range)
+    lonlat_patch_template = list(zip(np.flip(X.flatten()), Y.flatten()))
+
+    np.save("template.npy", lonlat_patch_template)
 
     ##################################################
     # global 64x64 correction
@@ -116,14 +127,15 @@ if __name__ == "__main__":
 
         for p in range(patches):
 
+            # Unique identifier of patch being generated
+            patch_id = c * max_patches_per_catalog + p
+
             # CENTRE OF PATCH p
 
             # transformation from 0-360 to -180-180 - healpy uses this coordinate system
             lon = (longitude[p] + 180) % 360 - 180
 
             lat = latitude[p]
-
-            print(lon, lat)
 
             patch_centre = np.array([lon, lat])
 
@@ -168,26 +180,62 @@ if __name__ == "__main__":
             patch = binned_agn_patch + binned_pulsar_patch + binned_background_patch
 
             # Create directory where patches stored
-            patch_directory = "./simulated_data/patches/patch_{}/".format(p)
+            patch_directory = "./simulated_data/patches/patch_{}/".format(patch_id)
 
             Path(patch_directory).mkdir(parents=True, exist_ok=True)
 
-            np.save(patch_directory + "/patch.npy".format(c * max_patches_per_catalog + p), patch)
+            np.save(patch_directory + "/patch.npy", patch)
 
             # SAVE METADATA CSV FILE FOR THIS PATCH AND THE MASK
 
 
-
-
-
-
-
             # GET NO. AGN AND PULSARS WITHIN PATCH, AS WELL AS THE CARTESIAN COORDINATES OF AGN AND PULSARS IN THE PATCH
+
+            # AGN and Pulsar coorindates must be in lon-lat format (l, b) with degree values
 
             # we recover the info using 128x128 patch dimensions
             # this remains from our initial approach. it does not affect at all the image and mask generation
-            nagn, npsr, agn_pos_list, psr_pos_list = get_ps_info_128(patch_centre, agn_coordinates,
-                                                                     pulsar_coordinates, xsize_location)
+            # nagn, npsr, agn_pos_list, psr_pos_list = get_ps_info_128(patch_centre, agn_coordinates,
+            #                                                          pulsar_coordinates, xsize_location)
+
+            nagn, npsr, agn_pos_list, psr_pos_list = get_ps_info_128(patch_centre, agn_coordinates, pulsar_coordinates)
+
+            # CREATE MASK
+
+            # Create blank masks which can be added to
+            grid2D_psf = np.zeros((xsize_patch_generation, xsize_patch_generation))
+            grid2D_bck = np.ones((xsize_patch_generation, xsize_patch_generation))
+
+            # Add AGN masks iteratively
+            for i in range(nagn):
+
+                # Find the minimum of the position in the image and 127 (the maximum index of the image in the y or x
+                # axis)
+                y = min(agn_pos_list[i][0], xsize_location - 1)
+                x = min(agn_pos_list[i][1], xsize_location - 1)
+
+                ltrue = agn_pos_list[i][2]
+                btrue = agn_pos_list[i][3]
+
+                # Further points of disc (in terms of indices) from location
+                r = 5
+                xmin, xmax, ymin, ymax = max(0, x - r), min(xsize_location - 1, x + r), max(0, y - r), min(
+                    xsize_location - 1, y + r)
+
+                # Divide by 2 to get the coordinates on the 64 x 64 image
+                xmin = xmin // 2
+                xmax = xmax // 2
+                ymin = ymin // 2
+                ymax = ymax // 2
+
+                # CREATE MASKS
+                grid2D_psf, grid2D_bck = psf_bck_mask(y // 2, x // 2, radius=2.5, psf_mask=grid2D_psf)
+
+            print('done')
+
+                # source_lines.append(f"{out_fn},{int(xmin)},{int(xmax)},{int(ymin)},{int(ymax)}," +
+                #                     f"{int(id)},{float(lon)},{float(lat)},{float(flux_1000)}," +
+                #                     f"{float(ltrue)},{float(btrue)},{int(catalog_id)},{float(flux_10000)}\n")
 
 
 

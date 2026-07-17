@@ -188,15 +188,14 @@ if __name__ == "__main__":
         Path(save_location).mkdir(parents=True, exist_ok=True)
 
         for n in range(num_bins):
-
             hp.fitsfunc.write_map(filename=save_location + "/background_{}.fits".format(n), m=diffuse_source_background[n],
                                   coord="G", dtype=np.float64, overwrite=True)
 
-            hp.fitsfunc.write_map(filename=save_location + "/agns_{}.fits".format(n), m=agn_point_source_maps[n], coord="G",
-                                  dtype=np.float64, overwrite=True)
+            hp.fitsfunc.write_map(filename=save_location + "/agns_{}.fits".format(n), m=agn_point_source_maps[n],
+                                  coord="G", dtype=np.float64, overwrite=True)
 
-            hp.fitsfunc.write_map(filename=save_location + "/pulsars_{}.fits".format(n), m=pulsar_point_source_maps[n], coord="G",
-                                  dtype=np.float64, overwrite=True)
+            hp.fitsfunc.write_map(filename=save_location + "/pulsars_{}.fits".format(n), m=pulsar_point_source_maps[n],
+                                  coord="G", dtype=np.float64, overwrite=True)
 
 
 # # MAIN PROGRAM

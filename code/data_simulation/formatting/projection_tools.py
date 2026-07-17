@@ -1,4 +1,4 @@
-# THE CODE IN THIS FILE WAS NOT WRITTEN BY ME - SEE BELOW FOR REFERENCING INFORMATION
+# THE CODE IN THIS FILE WAS TAKEN (AND ADAPTED FROM ID8 PAPER'S CODE) - SEE BELOW FOR REFERENCING INFORMATION
 
 # The link to this code can be found here: https://github.com/bapanes/AutoSourceID/blob/main/codes/from-cats-to-locnet-
 # input.py
@@ -12,55 +12,61 @@
 from bisect import bisect
 import numpy as np
 
+# CONSTANTS
 
-def RotMatrixY(psi, isdeg=True):
-    if isdeg:
-        return np.array([[np.cos(np.radians(psi)), 0.0, -np.sin(np.radians(psi))], [0.0, 1.0, 0.0],
-                         [np.sin(np.radians(psi)), 0.0, np.cos(np.radians(psi))]])
-    else:
-        return np.array([[np.cos(psi), 0.0, -np.sin(psi)], [0.0, 1.0, 0.0], [np.sin(psi), 0.0, np.cos(psi)]])
+coord_range_x = np.linspace(-4.9609375, 4.9609375, 128)
+coord_range_y = np.linspace(-4.9609375, 4.9609375, 128)
 
 
-def RotMatrixZ(psi, isdeg=True):
-    if isdeg:
-        return np.array([[np.cos(np.radians(psi)), np.sin(np.radians(psi)), 0.0], [-np.sin(np.radians(psi)),
-                                                                                   np.cos(np.radians(psi)), 0.0],
-                         [0.0, 0.0, 1.0]])
-    else:
-        return np.array([[np.cos(psi), np.sin(psi), 0.0], [-np.sin(psi), np.cos(psi), 0.0], [0.0, 0.0, 1.0]])
+def RotMatrixY(psi):
+
+    # Convert to radians
+    psi_rad = np.radians(psi)
+
+    sin_psi = np.sin(psi_rad)
+    cos_psi = np.cos(psi_rad)
+
+    return np.array([[cos_psi, 0.0, -sin_psi],
+                     [0.0, 1.0, 0.0],
+                     [sin_psi, 0.0, cos_psi]])
 
 
+def RotMatrixZ(psi):
 
-def sph2xyz(r, theta, phi, isdeg=True):
-    if isdeg:
-        return np.array([r * np.sin(np.radians(theta)) * np.cos(np.radians(phi)),
-                         r * np.sin(np.radians(theta)) * np.sin(np.radians(phi)), r * np.cos(np.radians(theta))])
-    else:
-        return np.array([r * np.sin(theta) * np.cos(phi), r * np.sin(theta) * np.sin(phi), r * np.cos(theta)])
+    # Convert to radians
+    psi_rad = np.radians(psi)
+
+    sin = np.sin(psi_rad)
+    cos = np.cos(psi_rad)
+
+    return np.array([[cos, sin, 0.0], [-sin, cos, 0.0], [0.0, 0.0, 1.0]])
 
 
-def xyz2sph(x, y, z, isdeg=True, is_lat=False):
-    r = np.sqrt(x * x + y * y + z * z)
-    if isdeg:
-        phi = np.degrees(np.arctan2(y, x))
-        lat = np.degrees(np.arctan2(z, np.sqrt(x * x + y * y)))
-        if is_lat:
-            return np.array([r, lat, phi])
-        else:
-            return np.array([r, 90. - lat, phi])
-    else:
-        phi = np.arctan2(y, x)
-        lat = np.arctan2(z, np.sqrt(x * x + y * y))
-        if is_lat:
-            return np.array([r, lat, phi])
-        else:
-            return np.array([r, np.pi / 2.0 - lat, phi])
+def sph2xyz(r, theta, phi):
+
+    # Convert theta and phi to radians
+    theta_rad = np.radians(theta)
+    phi_rad = np.radians(phi)
+
+    new = np.array([r * np.sin(theta_rad) * np.cos(phi_rad),
+                    r * np.sin(theta_rad) * np.sin(phi_rad),
+                    r * np.cos(theta_rad)])
+
+    return new
+
+
+def xyz2sph(x, y, z):
+
+    phi = np.degrees(np.arctan2(y, x))
+    lat = np.degrees(np.arctan2(z, np.sqrt(x * x + y * y)))
+
+    return np.array([lat, phi])
 
 
 # AGAIN BELOW USED TO GET L, B IN PATCH COORDINATES
 # Function to implement inverse rotation
 # to add in the predictions?
-def get_lb_ps_centered(lb_ps, lb_centre, isdeg=True, is_lat=True):  ##if input angles are in degree use 'isdeg = True'
+def get_lb_ps_centered(lb_ps, lb_centre):
 
     l_centre, b_centre = lb_centre
     r = np.dot(RotMatrixY(-b_centre), RotMatrixZ(l_centre))
@@ -69,23 +75,20 @@ def get_lb_ps_centered(lb_ps, lb_centre, isdeg=True, is_lat=True):  ##if input a
 
     xyz_PS_rotated = sph2xyz(1., 90. - lat_PS_rotated, lon_PS_rotated)
     x_PS, y_PS, z_PS = np.array(np.dot(r, xyz_PS_rotated), dtype='float32')
-    r, b_PS, l_PS = xyz2sph(x_PS, y_PS, z_PS, isdeg=isdeg, is_lat=is_lat)
+
+    b_PS, l_PS = xyz2sph(x_PS, y_PS, z_PS)
+
     return l_PS, b_PS
 
 
-def get_lb_from_pixel(pixel_id, lb_centre, xsize=128, isdeg=True,
-                      is_lat=True):  ##if input angles are in degree use 'isdeg = True'
+def get_lb_from_pixel(pixel_id, lb_centre):
     ######### Generate (l,b) coordinate map of 10x10deg patch ######
 
-    # Following the suggestions of CA mail
-    if (xsize == 100):
-        coord_range = np.linspace(-4.95, 4.95, xsize)
+    # Following the suggestions of CA mail when generating template - THIS ASSUMES xsize=128 - otherwise would have to
+    # introduce conditional statement
 
-    if (xsize == 128):
-        coord_range = np.linspace(-4.9609375, 4.9609375, xsize)
+    lonlat_patch = np.load("template.npy")
 
-    X, Y = np.meshgrid(coord_range, coord_range)
-    lonlat_patch = list(zip(np.flip(X.flatten()), Y.flatten()))
     ######### Get rotation matrix used to rotate the original centre to (0., 0.) #########
     l_centre, b_centre = lb_centre
     r = np.dot(RotMatrixY(-b_centre), RotMatrixZ(l_centre))
@@ -95,26 +98,23 @@ def get_lb_from_pixel(pixel_id, lb_centre, xsize=128, isdeg=True,
 
     xyz_PS_rotated = sph2xyz(1., 90. - lat_PS_rotated, lon_PS_rotated)
     x_PS, y_PS, z_PS = np.array(np.dot(r.T, xyz_PS_rotated), dtype='float32')
-    r, b_PS, l_PS = xyz2sph(x_PS, y_PS, z_PS, isdeg=isdeg, is_lat=is_lat)
+
+    b_PS, l_PS = xyz2sph(x_PS, y_PS, z_PS)
+
     return l_PS, b_PS
 
 
-def id_pixel(row, col, xsize_patch):
-    return xsize_patch * row + col
-
-
-def get_xml_lb_list_in_std_patch_coord(xsize_patch, patch_centre, list_of_pos_xml):
+def get_xml_lb_list_in_std_patch_coord(patch_centre, list_of_pos_xml):
 
     # AGAIN USED TO GET COORDINATES OF SOURCE WITH L, B COORD INTO PATCH COORD SYS
 
     # corners around the patch_centre_position
 
-    l_a, b_a = get_lb_from_pixel(id_pixel(0, 0, xsize_patch), patch_centre, xsize=xsize_patch)
-    l_b, b_b = get_lb_from_pixel(id_pixel(xsize_patch - 1, 0, xsize_patch), patch_centre, xsize=xsize_patch)
-
-    l_c, b_c = get_lb_from_pixel(id_pixel(0, xsize_patch - 1, xsize_patch), patch_centre, xsize=xsize_patch)
-    l_d, b_d = get_lb_from_pixel(id_pixel(xsize_patch - 1, xsize_patch - 1, xsize_patch), patch_centre,
-                                 xsize=xsize_patch)
+    # GET THE LAT AND LON OF THE FOUR CORNERS OF THE 128 x 128 PATCH
+    l_a, b_a = get_lb_from_pixel(0, patch_centre)
+    l_b, b_b = get_lb_from_pixel(16256, patch_centre)
+    l_c, b_c = get_lb_from_pixel(127, patch_centre)
+    l_d, b_d = get_lb_from_pixel(16383, patch_centre)
 
     # corners around the center position
 
@@ -149,14 +149,11 @@ def get_xml_lb_list_in_std_patch_coord(xsize_patch, patch_centre, list_of_pos_xm
     return list_of_lb_in_std_patch_coord
 
 
-def get_pixel_rc_list_from_xml_lb_list(xsize, lb_centre, list_of_pos_xml):
+def get_pixel_rc_list_from_xml_lb_list(lb_centre, list_of_pos_xml):
 
     # FUNCTION CONVERTS LON, LAT POSITION OF SOURCE TO POSITION IN IMAGE (IF THERE)
 
-    lb_std_list = get_xml_lb_list_in_std_patch_coord(xsize, lb_centre, list_of_pos_xml)
-
-    coord_range_x = np.linspace(-4.9609375, 4.9609375, xsize)
-    coord_range_y = np.linspace(-4.9609375, 4.9609375, xsize)
+    lb_std_list = get_xml_lb_list_in_std_patch_coord(lb_centre, list_of_pos_xml)
 
     list_of_pixel_row = []
     list_of_pixel_col = []
@@ -166,10 +163,14 @@ def get_pixel_rc_list_from_xml_lb_list(xsize, lb_centre, list_of_pos_xml):
     # l = longitude
     # b = latitude
 
-    for i in range(len(lb_std_list)):
+    num_source_type = len(lb_std_list)
+
+    for i in range(num_source_type):
+
         l, b, ltrue, btrue = lb_std_list[i][0], lb_std_list[i][1], lb_std_list[i][2], lb_std_list[i][3]
 
-        pixel_l = xsize - bisect(list(coord_range_x), l)
+        # Again assuming that xsize will always be 128
+        pixel_l = 128 - bisect(list(coord_range_x), l)
         pixel_b = bisect(list(coord_range_y), b)
 
         list_of_pixel_row.append(pixel_b)
@@ -178,47 +179,36 @@ def get_pixel_rc_list_from_xml_lb_list(xsize, lb_centre, list_of_pos_xml):
         list_of_pixel_ltrue.append(ltrue)
         list_of_pixel_btrue.append(btrue)
 
-    return (list_of_pixel_row, list_of_pixel_col, list_of_pixel_ltrue, list_of_pixel_btrue)
+    return list_of_pixel_row, list_of_pixel_col, list_of_pixel_ltrue, list_of_pixel_btrue
 
 
-def get_ps_info_128(patch_centre, list_agn_xml, list_psr_xml, xsize_patch):
+def get_ps_info_128(patch_centre, list_agn_xml, list_psr_xml):
+
+    # Assume size of patch (when deriving coordinates) is equal to 128 x 128 (not 64 x 64) to increase precision
+
+    # Always pass AGN and pulsar longitudes and latitudes in degrees and not radians
 
     # THIS FUNCTION RETURNS THE NO. AGN AND PULSARS IN A PATCH AND THEIR CARTESIAN COORDINATES WITHIN PATCH
 
     list_row_agn, list_col_agn, list_ltrue_agn, list_btrue_agn = get_pixel_rc_list_from_xml_lb_list(
-        xsize_patch, patch_centre, list_agn_xml)
+        patch_centre, list_agn_xml)
 
     list_row_psr, list_col_psr, list_ltrue_psr, list_btrue_psr = get_pixel_rc_list_from_xml_lb_list(
-        xsize_patch, patch_centre, list_psr_xml)
+        patch_centre, list_psr_xml)
 
-    agn_pos_list = np.zeros((len(list_row_agn), 6))
-    psr_pos_list = np.zeros((len(list_row_psr), 6))
+    num_agn_in_patch = len(list_row_agn)
+    num_pulsar_in_patch = len(list_row_psr)
 
     # agn sources
-    # notice that we are using the 0 position for y0=list_row_agn and the first position for x0=list_col_agn
-    for i in range(len(list_row_agn)):
-        y0 = list_row_agn[i]
-        x0 = list_col_agn[i]
 
-        ltrue = list_ltrue_agn[i]
-        btrue = list_btrue_agn[i]
-
-        agn_pos_list[i][0] = y0
-        agn_pos_list[i][1] = x0
-        agn_pos_list[i][2] = ltrue
-        agn_pos_list[i][3] = btrue
+    # y0 and x0 in pos 0 and 1 respectively because of image indexing in python - image has coordinates formatted as y,
+    # x instead of x, y
+    # Per row, pos 0 holds y0 in image, pos 1 holds x0 in image, pos 2 holds true l and pos 3 holds true b
+    agn_pos_list = np.array([[list_row_agn[i], list_col_agn[i], list_ltrue_agn[i], list_btrue_agn[i]] for i in
+                             range(num_agn_in_patch)])
 
     # psr sources
-    for i in range(len(list_row_psr)):
-        y0 = list_row_psr[i]
-        x0 = list_col_psr[i]
+    psr_pos_list = np.array([[list_row_psr[i], list_col_psr[i], list_ltrue_psr[i], list_btrue_psr[i]] for i in
+                             range(num_pulsar_in_patch)])
 
-        ltrue = list_ltrue_psr[i]
-        btrue = list_btrue_psr[i]
-
-        psr_pos_list[i][0] = y0
-        psr_pos_list[i][1] = x0
-        psr_pos_list[i][2] = ltrue
-        psr_pos_list[i][3] = btrue
-
-    return len(list_row_agn), len(list_row_psr), agn_pos_list, psr_pos_list
+    return num_agn_in_patch, num_pulsar_in_patch, agn_pos_list, psr_pos_list

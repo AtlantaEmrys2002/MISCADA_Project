@@ -93,177 +93,6 @@ def psf_bck_mask(y0, x0, radius, psf_mask):
     return grid2D_psf, grid2D_bck
 
 
-def RotMatrixY(psi, isdeg=True):
-    if isdeg:
-        return np.array([[np.cos(np.radians(psi)), 0.0, -np.sin(np.radians(psi))], [0.0, 1.0, 0.0], \
-                         [np.sin(np.radians(psi)), 0.0, np.cos(np.radians(psi))]])
-    else:
-        return np.array([[np.cos(psi), 0.0, -np.sin(psi)], [0.0, 1.0, 0.0], [np.sin(psi), 0.0, np.cos(psi)]])
-
-
-def RotMatrixZ(psi, isdeg=True):
-    if isdeg:
-        return np.array([[np.cos(np.radians(psi)), np.sin(np.radians(psi)), 0.0], [-np.sin(np.radians(psi)), \
-                                                                                   np.cos(np.radians(psi)), 0.0],
-                         [0.0, 0.0, 1.0]])
-    else:
-        return np.array([[np.cos(psi), np.sin(psi), 0.0], [-np.sin(psi), np.cos(psi), 0.0], [0.0, 0.0, 1.0]])
-
-
-def sph2xyz(r, theta, phi, isdeg=True):
-    if isdeg:
-        return np.array([r * np.sin(np.radians(theta)) * np.cos(np.radians(phi)), \
-                         r * np.sin(np.radians(theta)) * np.sin(np.radians(phi)), r * np.cos(np.radians(theta))])
-    else:
-        return np.array([r * np.sin(theta) * np.cos(phi), r * np.sin(theta) * np.sin(phi), r * np.cos(theta)])
-
-
-def xyz2sph(x, y, z, isdeg=True, is_lat=False):
-    r = np.sqrt(x * x + y * y + z * z)
-    if isdeg:
-        phi = np.degrees(np.arctan2(y, x))
-        lat = np.degrees(np.arctan2(z, np.sqrt(x * x + y * y)))
-        if is_lat:
-            return np.array([r, lat, phi])
-        else:
-            return np.array([r, 90. - lat, phi])
-    else:
-        phi = np.arctan2(y, x)
-        lat = np.arctan2(z, np.sqrt(x * x + y * y))
-        if is_lat:
-            return np.array([r, lat, phi])
-        else:
-            return np.array([r, np.pi / 2.0 - lat, phi])
-
-
-# list of pixel positions in row, col format
-def get_pixel_rc_list_from_xml_lb_list(xsize, lb_centre, list_of_pos_xml):
-    lb_std_list = get_xml_lb_list_in_std_patch_coord(xsize, lb_centre, list_of_pos_xml)
-
-    coord_range_x = np.linspace(-4.9609375, 4.9609375, xsize)
-    coord_range_y = np.linspace(-4.9609375, 4.9609375, xsize)
-
-    list_of_pixel_row = []
-    list_of_pixel_col = []
-
-    list_of_pixel_flux_1000 = []
-    list_of_pixel_flux_10000 = []
-
-    list_of_pixel_ltrue = []
-    list_of_pixel_btrue = []
-    # l = longitude
-    # b = latitude
-
-    for i in range(len(lb_std_list)):
-        l, b, ltrue, btrue, flux_1000, flux_10000 = lb_std_list[i][0], lb_std_list[i][1], lb_std_list[i][2], \
-            lb_std_list[i][3], lb_std_list[i][4], lb_std_list[i][5]
-
-        # print(l,b)
-
-        pixel_l = xsize - bisect(list(coord_range_x), l)
-        pixel_b = bisect(list(coord_range_y), b)
-
-        list_of_pixel_row.append(pixel_b)
-        list_of_pixel_col.append(pixel_l)
-
-        list_of_pixel_flux_1000.append(flux_1000)
-        list_of_pixel_flux_10000.append(flux_10000)
-
-        list_of_pixel_ltrue.append(ltrue)
-        list_of_pixel_btrue.append(btrue)
-
-    return list_of_pixel_row, list_of_pixel_col, list_of_pixel_flux_1000, list_of_pixel_flux_10000, list_of_pixel_ltrue, list_of_pixel_btrue
-
-
-# Trying to implement something more complicated
-def get_xml_lb_list_in_std_patch_coord(xsize_patch, patch_centre, list_of_pos_xml):
-    # corners around the patch_centre_position
-
-    l_a, b_a = get_lb_from_pixel(id_pixel(0, 0, xsize_patch), patch_centre, xsize=xsize_patch)
-    l_b, b_b = get_lb_from_pixel(id_pixel(xsize_patch - 1, 0, xsize_patch), patch_centre, xsize=xsize_patch)
-
-    l_c, b_c = get_lb_from_pixel(id_pixel(0, xsize_patch - 1, xsize_patch), patch_centre, xsize=xsize_patch)
-    l_d, b_d = get_lb_from_pixel(id_pixel(xsize_patch - 1, xsize_patch - 1, xsize_patch), patch_centre,
-                                 xsize=xsize_patch)
-
-    # corners around the center position
-
-    l_c_a, b_c_a = get_lb_ps_centered((l_a, b_a), patch_centre)
-    l_c_b, b_c_b = get_lb_ps_centered((l_b, b_b), patch_centre)
-    l_c_c, b_c_c = get_lb_ps_centered((l_c, b_c), patch_centre)
-    l_c_d, b_c_d = get_lb_ps_centered((l_d, b_d), patch_centre)
-
-    l_arr = np.array([l_c_a, l_c_b, l_c_c, l_c_d])
-    b_arr = np.array([b_c_a, b_c_b, b_c_c, b_c_d])
-
-    l_c_min = np.amin(l_arr)
-    l_c_max = np.amax(l_arr)
-    b_c_min = np.amin(b_arr)
-    b_c_max = np.amax(b_arr)
-
-    list_of_lb_in_std_patch_coord = []
-
-    for pos_con in range(len(list_of_pos_xml)):
-
-        # positions in global lon lat coordinates
-        l_pos = list_of_pos_xml[pos_con][0]
-        b_pos = list_of_pos_xml[pos_con][1]
-
-        # positions in standard patch coordinates
-        l_c, b_c = get_lb_ps_centered((l_pos, b_pos), patch_centre)
-
-        if ((l_c >= l_c_min) & (l_c <= l_c_max) & (b_c >= b_c_min) & (b_c <= b_c_max)):
-            # print(pos_con, l_c, b_c, l_pos, b_pos)
-            # we add the flux
-            flux_pos_1000 = list_of_pos_xml[pos_con][2]
-            flux_pos_10000 = list_of_pos_xml[pos_con][3]
-
-            list_of_lb_in_std_patch_coord.append((l_c, b_c, l_pos, b_pos, flux_pos_1000, flux_pos_10000))
-
-    return list_of_lb_in_std_patch_coord
-
-
-def get_lb_from_pixel(pixel_id, lb_centre, xsize=128, isdeg=True,
-                      is_lat=True):  ##if input angles are in degree use 'isdeg = True'
-    ######### Generate (l,b) coordinate map of 10x10deg patch ######
-
-    # Following the suggestions of CA mail
-    if (xsize == 100):
-        coord_range = np.linspace(-4.95, 4.95, xsize)
-
-    if (xsize == 128):
-        coord_range = np.linspace(-4.9609375, 4.9609375, xsize)
-
-    X, Y = np.meshgrid(coord_range, coord_range)
-    lonlat_patch = list(zip(np.flip(X.flatten()), Y.flatten()))
-    ######### Get rotation matrix used to rotate the original centre to (0., 0.) #########
-    l_centre, b_centre = lb_centre
-    r = np.dot(RotMatrixY(-b_centre), RotMatrixZ(l_centre))
-    #########
-
-    lon_PS_rotated, lat_PS_rotated = lonlat_patch[pixel_id]
-
-    xyz_PS_rotated = sph2xyz(1., 90. - lat_PS_rotated, lon_PS_rotated)
-    x_PS, y_PS, z_PS = np.array(np.dot(r.T, xyz_PS_rotated), dtype='float32')
-    r, b_PS, l_PS = xyz2sph(x_PS, y_PS, z_PS, isdeg=isdeg, is_lat=is_lat)
-    return l_PS, b_PS
-
-
-# Function to implement inverse rotation
-# to add in the predictions?
-def get_lb_ps_centered(lb_ps, lb_centre, isdeg=True, is_lat=True):  ##if input angles are in degree use 'isdeg = True'
-
-    l_centre, b_centre = lb_centre
-    r = np.dot(RotMatrixY(-b_centre), RotMatrixZ(l_centre))
-
-    lon_PS_rotated, lat_PS_rotated = lb_ps
-
-    xyz_PS_rotated = sph2xyz(1., 90. - lat_PS_rotated, lon_PS_rotated)
-    x_PS, y_PS, z_PS = np.array(np.dot(r, xyz_PS_rotated), dtype='float32')
-    r, b_PS, l_PS = xyz2sph(x_PS, y_PS, z_PS, isdeg=isdeg, is_lat=is_lat)
-    return l_PS, b_PS
-
-
 def get_lb_from_rd(ra, dec):
     # From galactic to equatorial coordinates
     # https://docs.astropy.org/en/stable/coordinates/transforming.html
@@ -288,14 +117,14 @@ def id_pixel(row, col, xsize_patch):
 
 def create_dataset(folder, file="training.csv", n=50, prefix="test",
 
-    for cat_number in range(int(n / max_patches_per_catalog)):
-
-        source_lines = []
-
-        if (n < (cat_number + 1) * max_patches_per_catalog):
-            patches = n - cat_number * max_patches_per_catalog
-            if patches == 0:
-                break
+    # for cat_number in range(int(n / max_patches_per_catalog)):
+    #
+    #     source_lines = []
+    #
+    #     if (n < (cat_number + 1) * max_patches_per_catalog):
+    #         patches = n - cat_number * max_patches_per_catalog
+    #         if patches == 0:
+    #             break
 
         # part of the angle area correction
         # iem /= pix_sr
@@ -338,33 +167,33 @@ def create_dataset(folder, file="training.csv", n=50, prefix="test",
             # centre_coordinate = np.array((lon, lat))
 
             # we recover the info using 128x128 patch dimensions
-            # this remains from our initial approach. it does not affect at all the image and mask generation
-            nagn, npsr, agn_pos_list, psr_pos_list = get_ps_info_128(centre_coordinate, list_of_agn_lb_from_xml,
-                                                                     list_of_psr_lb_from_xml, xsize_location)
-
-            print('patch number: %d,  coordinate center: (%.2f, %.2f) ' % (k, lon, lat))
+            # # this remains from our initial approach. it does not affect at all the image and mask generation
+            # nagn, npsr, agn_pos_list, psr_pos_list = get_ps_info_128(centre_coordinate, list_of_agn_lb_from_xml,
+            #                                                          list_of_psr_lb_from_xml, xsize_location)
+            #
+            # print('patch number: %d,  coordinate center: (%.2f, %.2f) ' % (k, lon, lat))
 
             # output generation
-            IEM_64 = np.zeros((xsize_patch_generation, xsize_patch_generation, Nbins), dtype=np.float32)
-            AGN_64 = np.zeros((xsize_patch_generation, xsize_patch_generation, Nbins), dtype=np.float32)
-            PSR_64 = np.zeros((xsize_patch_generation, xsize_patch_generation, Nbins), dtype=np.float32)
-
-            for bin_k in range(Nbins):
-                IEM_64[:, :, bin_k] = IEM_element[bin_k, :, :]
-                AGN_64[:, :, bin_k] = AGN_element[bin_k, :, :]
-                PSR_64[:, :, bin_k] = PSR_element[bin_k, :, :]
-
-            # generation of the input image
-            # we save IEM, AGN and PSR info separetely because it is useful for evaluations
-            X_64 = np.zeros((3, 64, 64, 5))
-
-            X_64[0, :, :, :] = IEM_64
-            X_64[1, :, :, :] = AGN_64
-            X_64[2, :, :, :] = PSR_64
-
-            # generation of patch total (sum of components) in image (tensor) like files
-            out_fn = f"{prefix}_image_{init_con + (cat_number * max_patches_per_catalog + k)}.npy"
-            np.save(os.path.join(folder, out_fn), X_64)
+            # IEM_64 = np.zeros((xsize_patch_generation, xsize_patch_generation, Nbins), dtype=np.float32)
+            # AGN_64 = np.zeros((xsize_patch_generation, xsize_patch_generation, Nbins), dtype=np.float32)
+            # PSR_64 = np.zeros((xsize_patch_generation, xsize_patch_generation, Nbins), dtype=np.float32)
+            #
+            # for bin_k in range(Nbins):
+            #     IEM_64[:, :, bin_k] = IEM_element[bin_k, :, :]
+            #     AGN_64[:, :, bin_k] = AGN_element[bin_k, :, :]
+            #     PSR_64[:, :, bin_k] = PSR_element[bin_k, :, :]
+            #
+            # # generation of the input image
+            # # we save IEM, AGN and PSR info separetely because it is useful for evaluations
+            # X_64 = np.zeros((3, 64, 64, 5))
+            #
+            # X_64[0, :, :, :] = IEM_64
+            # X_64[1, :, :, :] = AGN_64
+            # X_64[2, :, :, :] = PSR_64
+            #
+            # # generation of patch total (sum of components) in image (tensor) like files
+            # out_fn = f"{prefix}_image_{init_con + (cat_number * max_patches_per_catalog + k)}.npy"
+            # np.save(os.path.join(folder, out_fn), X_64)
 
             # generation of csv file content
             grid2D_psf = np.zeros((xsize_patch_generation, xsize_patch_generation))
