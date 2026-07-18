@@ -29,6 +29,7 @@ def get_nside(healpix_exposure_map):
 def exponential_func(energy):
     return energy ** -2.4
 
+
 # BELOW WORKS FOR EXPOSURE MAPS
 
 # def integrate_over_energy(maps, energy_bins, num_bins, energy_weighted=False, predefined=False, min_e=300,
@@ -217,6 +218,7 @@ def integrate_over_energy(maps, energy_bins, num_bins, energy_weighted=False, pr
                 new_maps.append((m * new_energy_bins[n + 1]) + c)
 
     integrated_maps = []
+
 
     # Calculate numerical integrals
     for n in range(num_bins):

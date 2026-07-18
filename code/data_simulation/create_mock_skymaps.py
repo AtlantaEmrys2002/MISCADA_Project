@@ -81,14 +81,13 @@ if __name__ == "__main__":
     isotropic_background_file = args.isotropic_background
     galactic_background_file = args.galactic_background
 
-    from astropy.io import fits
+    # from astropy.io import fits
 
-    test_file = "/Volumes/T7/project_data/real_data/fermi_filtered_gti_binned.fits"
-
-    # with fits.open(test_file) as hdul:
+    # test_file = "/Volumes/T7/project_data/real_data/fermi_filtered_gti_binned.fits"
     #
-    #     print(hdul["SKYMAP"].data.shape)
-
+    # # with fits.open(test_file) as hdul:
+    # #
+    # #     print(hdul["SKYMAP"].data.shape)
 
     # Create directory to store useful simulated data in if it does not already exist
     Path("./simulated_data/utils/").mkdir(parents=True, exist_ok=True)
