@@ -261,6 +261,8 @@ def scale_psf(psf_values, energy_bin, c_0=3.5, c_1=0.15, beta=0.8):
 # FWHM - https://stackoverflow.com/questions/8914491/finding-the-nearest-value-and-return-the-index-of-array-in-python
 # FWHM 2 - https://en.wikipedia.org/wiki/Full_width_at_half_maximum
 # Normalising Functions - https://math.stackexchange.com/questions/4806473/forcing-a-function-to-integrate-to-1
+# Normalise PDF - https://stackoverflow.com/questions/52223236/how-to-adjust-a-data-set-so-that-the-total-sum-is-equal-
+# to-1-i-thought-i-kne
 # PDF > 1 - https://math.stackexchange.com/questions/1720053/how-can-a-probability-density-function-pdf-be-greater-
 # than-1
 # PDF from Data - https://math.stackexchange.com/questions/2325565/is-it-possible-to-calculate-probability-density-

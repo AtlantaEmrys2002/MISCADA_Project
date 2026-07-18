@@ -32,3 +32,10 @@ def psf_bck_mask(y0, x0, radius, psf_mask):
     grid2D_psf[mask[:, 0], mask[:, 1]] = 1.0
 
     return grid2D_psf
+
+
+# REFERENCES
+
+# Modifying Array Locations - https://stackoverflow.com/questions/7761393/how-to-modify-a-2d-numpy-array-at-specific-loc
+# ations-without-a-loop
+# Selecting Certain Indicies - https://stackoverflow.com/questions/30917753/subsetting-a-2d-numpy-array

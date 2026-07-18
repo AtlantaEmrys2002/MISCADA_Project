@@ -1,3 +1,4 @@
+import argparse
 from benchmarks.uneb import uneb_algorithm
 from benchmarks.unek import unek_algorithm
 from utils import random_data
@@ -5,7 +6,7 @@ from utils import random_data
 
 # UNEK Algorithm
 
-train_batches, validation_batches, test_batches = random_data(n=256)
+# train_batches, validation_batches, test_batches = random_data(n=256)
 
 # print(unek_algorithm(train_batches, validation_batches, test_batches))
 
@@ -54,6 +55,20 @@ train_batches, validation_batches, test_batches = random_data(n=256)
 #         plt.imshow(D, interpolation='none')
 #
 #         plt.show()
+
+if __name__ == "__main__":
+
+    # PROCESS USER INPUT
+
+    parser = argparse.ArgumentParser(description="Generates a series of catalogs of simulated gamma-ray sources (AGNs"
+                                                 "and pulsars) with spectral and spatial parameter distributions "
+                                                 "identical to that of a specified catalog (e.g. 4FGL) and stores them "
+                                                 "in a fermitools-compatible XML format.")
+
+    # READ IN PATCHES CORRECTLY
+
+    train_batches, validation_batches, test_batches = random_data(n=256)
+
 
 
 # REFERENCES

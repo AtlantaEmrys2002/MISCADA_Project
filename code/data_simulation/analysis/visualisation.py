@@ -371,6 +371,7 @@ def plot_parameter_relationships(sources, source_type: str, directory: str):
 
 # REFERENCES
 
+# Alphabet-ASCII Relation - https://stackoverflow.com/questions/4528982/convert-alphabet-letters-to-number-in-python
 # Astropy Documentation - https://docs.astropy.org/en/stable/index_user_docs.html
 # Cauchy Distribution - https://en.wikipedia.org/wiki/Cauchy_distribution
 # Closing Plot - https://stackoverflow.com/questions/741877/how-do-i-tell-matplotlib-that-i-am-done-with-a-plot
@@ -400,6 +401,7 @@ def plot_parameter_relationships(sources, source_type: str, directory: str):
 # Pandas Documentation - https://pandas.pydata.org/docs/index.html
 # Pearson Correlation - https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
 # Plotting Correlation Matrices - https://stackoverflow.com/questions/29432629/plot-correlation-matrix-using-pandas
+# PDFs - https://www.lesswrong.com/posts/jmq3mon8TSC99ittm/common-probability-distributions
 # Scipy Documentation - https://docs.scipy.org/doc/scipy/index.html
 # Seaborn Heatmaps - https://stackoverflow.com/questions/50947776/plot-two-seaborn-heatmap-graphs-side-by-side
 # Shot Noise - https://en.wikipedia.org/wiki/Shot_noise

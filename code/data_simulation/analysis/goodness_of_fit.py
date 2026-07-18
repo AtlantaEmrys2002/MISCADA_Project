@@ -172,6 +172,7 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05) -> None:
 # Chi-Squared Goodness of Fit - http://www.stat.yale.edu/Courses/1997-98/101/chigf.htm
 # Chi-Squared Polyfit - https://stackoverflow.com/questions/5477359/chi-square-numpy-polyfit-numpy
 # Chi-Squared Test - https://en.wikipedia.org/wiki/Chi-squared_test
+# Chi-Squared - https://www.scribbr.com/statistics/chi-square-goodness-of-fit/
 # Chi-Squred with Zero Expected Counts - https://stats.stackexchange.com/questions/78101/chi-squared-test-with-0-
 # expected-values
 # Fitting Distributions - https://cseweb.ucsd.edu/~dasgupta/291w22/distributions-handout.pdf
@@ -197,3 +198,5 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05) -> None:
 # Normality Testing - https://www.graphpad.com/support/faq/testing-data-for-normal-distrbution/
 # Reduced Chi-Squared - https://en.wikipedia.org/wiki/Reduced_chi-squared_statistic
 # Rounding in Format - https://stackoverflow.com/questions/1598579/rounding-decimals-with-new-python-format-function
+# Types of Residual - https://stats.stackexchange.com/questions/22653/raw-residuals-versus-standardised-residuals-versus
+# -studentised-residuals-what

@@ -349,10 +349,8 @@ def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, 
 # REFERENCES
 
 # Astropy Affiliated - https://www.astropy.org/affiliated/
+# Background Model Information - https://fermi.gsfc.nasa.gov/ssc/data/access/lat/BackgroundModels.html
 # Map Cube Formats - https://fermi.gsfc.nasa.gov/ssc/data/analysis/scitools/other_sources.html
 # Reproject Suggestion - https://stackoverflow.com/questions/54715123/converting-a-map-in-cartesian-projection-with-
 # spherical-coordinate-to-healix-p
 # Skycoords and Arrays - https://stackoverflow.com/questions/36146183/astropy-skycoord-extremely-slow-how-to-resovle-it
-
-
-
