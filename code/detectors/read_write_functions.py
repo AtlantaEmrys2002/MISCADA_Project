@@ -1,6 +1,6 @@
 
 
-def read_patches(directory=str):
+def read_patches(num_patches=int, directory=str):
 
     print('hi')
 

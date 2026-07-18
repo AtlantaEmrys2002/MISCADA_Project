@@ -1,6 +1,7 @@
 import argparse
 from benchmarks.uneb import uneb_algorithm
 from benchmarks.unek import unek_algorithm
+from read_write_functions import read_patches
 from utils import random_data
 
 
@@ -60,15 +61,30 @@ if __name__ == "__main__":
 
     # PROCESS USER INPUT
 
-    parser = argparse.ArgumentParser(description="Generates a series of catalogs of simulated gamma-ray sources (AGNs"
-                                                 "and pulsars) with spectral and spatial parameter distributions "
-                                                 "identical to that of a specified catalog (e.g. 4FGL) and stores them "
-                                                 "in a fermitools-compatible XML format.")
+    parser = argparse.ArgumentParser(description="Reads in a collection of specified patches and formats them to be "
+                                                 "passed to benchmark algorithms. These benchmarks are then applied and"
+                                                 "the parameters of the 'best' versions of them are saved.")
+
+    parser.add_argument("--patch_location", required=True, type=str, help="The directory in which the"
+                                                                          "patch data is stored.")
+
+    parser.add_argument("--num_patches", required=True, type=int, help="The number of patches to read from"
+                                                                       "the specified patch directory.")
+
+    args = parser.parse_args()
+
+    patches_directory = args.patch_location
+    num_patches = args.num_patches
 
     # READ IN PATCHES CORRECTLY
 
-    train_batches, validation_batches, test_batches = random_data(n=256)
+    print("Reading in and formatting patches...")
 
+    read_patches(num_patches=num_patches, directory=patches_directory)
+
+
+
+    # train_batches, validation_batches, test_batches = random_data(n=256)
 
 
 # REFERENCES
