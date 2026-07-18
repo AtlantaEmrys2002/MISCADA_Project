@@ -47,9 +47,6 @@ def random_data(n=256):
     # Combine to create test data
     test_data = [(test_images[k], test_segments[k]) for k in range(n)]
 
-    print(test_images.shape)
-    print(test_segments.shape)
-
     # RANDOM SPLIT OF INDICES AT THE MOMENT - 70% vs 20% v 10% split
     train_indices = np.random.choice(256, size=179, replace=False)
     validation_indices = np.random.choice(np.array([k for k in range(256) if k not in train_indices]), size=51,

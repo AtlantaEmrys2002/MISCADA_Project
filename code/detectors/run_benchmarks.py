@@ -80,11 +80,13 @@ if __name__ == "__main__":
 
     print("Reading in and formatting patches...")
 
-    read_patches(num_patches=num_patches, directory=patches_directory)
+    train, valid, test = read_patches(num_patches=num_patches, directory=patches_directory)
 
+    print("Complete")
 
+    # train, valid, test = random_data(n=256)
 
-    # train_batches, validation_batches, test_batches = random_data(n=256)
+    print(unek_algorithm(train, valid, test))
 
 
 # REFERENCES
