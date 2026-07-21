@@ -82,12 +82,14 @@ if __name__ == "__main__":
     galactic_background_file = args.galactic_background
 
     # from astropy.io import fits
-
-    # test_file = "/Volumes/T7/project_data/real_data/fermi_filtered_gti_binned.fits"
     #
-    # # with fits.open(test_file) as hdul:
-    # #
-    # #     print(hdul["SKYMAP"].data.shape)
+    # test_file = "/Volumes/T7/project_data/real_data/fermi_filtered_gti_binned.fits"
+
+    # with fits.open(test_file) as hdul:
+    #
+    #     print(hdul.info())
+    #
+    #     # print(hdul["SKYMAP"].data.shape)
 
     # Create directory to store useful simulated data in if it does not already exist
     Path("./simulated_data/utils/").mkdir(parents=True, exist_ok=True)
@@ -97,6 +99,11 @@ if __name__ == "__main__":
     # Prepare exposure maps
     exposure_maps, energy_bins = create_exposure_map(exposure_file=exposure_fits_file)
 
+    # if not os.path.isfile("./plots/all_sky_maps/exposure_map.png"):
+    #
+    # plot_all_sky_map(healpix_maps=exposure_maps, energy_bins=energy_bins, title="Exposure",
+    #                      directory="./plots/all_sky_maps/")
+
     # Number of energy bins
     num_bins = len(energy_bins) - 1
 
@@ -105,8 +112,10 @@ if __name__ == "__main__":
 
     # Get NSIDE parameter from exposure map
     nside = get_nside(exposure_maps[0])
+    nside1 = get_nside(exposure_maps[1])
+    nside2 = get_nside(exposure_maps[2])
 
-    print(nside)
+    print(nside, nside1, nside2)
 
     # POINT SPREAD FUNCTIONS (PSF)
 

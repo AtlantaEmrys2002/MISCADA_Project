@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import pandas as pd
 import torch
 from torch.utils.data import DataLoader, Subset
 
@@ -13,6 +14,31 @@ def read_patches(num_patches=int, directory=str):
     # Read in masks
     masks = (np.array([[np.load("{}/patch_{}/mask.npy".format(directory, n))] for n in range(num_patches)])
              .astype(np.float32))
+
+    # Read in metadata
+
+    source_ids = []
+    actual_cartesian_locations = []
+    types = []
+
+    for n in range(num_patches):
+
+        file_name = "{}/patch_{}/metadata.csv".format(directory, n)
+
+        df = pd.read_csv(file_name)
+
+        source_ids.append(df["source_id"].to_numpy())
+
+        ys = df["cartesian_y"].to_numpy()
+        xs = df["cartesian_x"].to_numpy()
+
+        cartesian_coords = np.array(list(zip(ys, xs)))
+
+        actual_cartesian_locations.append(cartesian_coords)
+
+        types.append(df["source_type"].to_numpy())
+
+    metadata = [source_ids, actual_cartesian_locations, types]
 
     # Combine to create test data
     test_data = [(torch.from_numpy(patches[k]), torch.from_numpy(masks[k])) for k in range(num_patches)]
@@ -44,6 +70,6 @@ def read_patches(num_patches=int, directory=str):
     validation_batches = DataLoader(validation_split, batch_size=128, shuffle=True)
     test_batches = DataLoader(test_split, batch_size=128)
 
-    return train_batches, validation_batches, test_batches
+    return train_batches, validation_batches, test_batches, metadata
 
 

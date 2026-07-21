@@ -42,6 +42,11 @@ def create_diffuse_source_map(expected_counts_isotropic_background, expected_cou
         expected_counts_diffuse_background[k] = hp.sphtfunc.smoothing(map_in=expected_counts_diffuse_background[k],
                                                                       beam_window=psfs[k])
 
+    # CLIP NEGATIVE VALUES (AS RECOMMENDED BY ID50)
+
+    expected_counts_isotropic_background = np.clip(a=expected_counts_isotropic_background, a_min=0, a_max=None)
+    expected_counts_diffuse_background = np.clip(a=expected_counts_diffuse_background, a_min=0, a_max=None)
+
     # Sample random normalisation coefficients - random brightness of background components
     a_diff = loguniform.rvs(a=0.1, b=2)
     a_iso = loguniform.rvs(a=0.1, b=2)
@@ -107,7 +112,6 @@ def create_diffuse_background(diffuse_background_file, exposure_map, nside, to_c
 
 
 def create_exposure_map(exposure_file: str, num_bins_to_create=5):
-
     # Num bins is the number of energy bins that to create (here, we want 5)
 
     # Read and plot binned exposure files

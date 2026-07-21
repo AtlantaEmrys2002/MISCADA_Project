@@ -82,9 +82,6 @@ if __name__ == "__main__":
     xsize_patch_generation = 64
     NSIDE = 256
 
-    # CHANGED THIS - CHECK THAT THIS OK!!!!
-     # NSIDE = 64
-
     Npix = 12 * NSIDE * NSIDE
     pix_sr = 4.0 * np.pi / Npix
 

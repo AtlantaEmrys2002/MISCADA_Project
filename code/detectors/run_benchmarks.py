@@ -80,13 +80,22 @@ if __name__ == "__main__":
 
     print("Reading in and formatting patches...")
 
-    train, valid, test = read_patches(num_patches=num_patches, directory=patches_directory)
+    # WARNING - REMEMBER THAT PREDICTED LOCATIONS ARE NOT IN THE SAME ORDER AS ACTUAL LOCATIONS - HAVE TO FIND WHICH ONES ARE CLOSEST
+    # REMEMBER ACTUAL LOCATIONS ARE GIVEN AS y,x AND NOT x, y - READ tHE METADATA CAREFULLY!!!!!!! LOOK BACK AT NOTES IN read_write_functions
+
+    train, valid, test, metadata = read_patches(num_patches=num_patches, directory=patches_directory)
 
     print("Complete")
 
     # train, valid, test = random_data(n=256)
 
-    print(unek_algorithm(train, valid, test))
+    predicted_segmentations, predicted_locations = unek_algorithm(train, valid, test)
+
+    print(predicted_locations)
+
+    print(metadata)
+
+
 
 
 # REFERENCES
