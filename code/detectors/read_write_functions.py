@@ -20,6 +20,7 @@ def read_patches(num_patches=int, directory=str):
     source_ids = []
     actual_cartesian_locations = []
     types = []
+    patch_ids = list(range(1, int(num_patches) + 1))
 
     for n in range(num_patches):
 
@@ -38,7 +39,7 @@ def read_patches(num_patches=int, directory=str):
 
         types.append(df["source_type"].to_numpy())
 
-    metadata = [source_ids, actual_cartesian_locations, types]
+    metadata = [patch_ids, source_ids, actual_cartesian_locations, types]
 
     # Combine to create test data
     test_data = [(torch.from_numpy(patches[k]), torch.from_numpy(masks[k])) for k in range(num_patches)]
@@ -68,7 +69,7 @@ def read_patches(num_patches=int, directory=str):
     # Create batches
     train_batches = DataLoader(train_split, batch_size=128, shuffle=True)
     validation_batches = DataLoader(validation_split, batch_size=128, shuffle=True)
-    test_batches = DataLoader(test_split, batch_size=128)
+    test_batches = DataLoader(test_split, batch_size=128, shuffle=False)
 
     return train_batches, validation_batches, test_batches, metadata
 

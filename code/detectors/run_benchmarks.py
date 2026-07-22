@@ -89,9 +89,12 @@ if __name__ == "__main__":
 
     # train, valid, test = random_data(n=256)
 
-    predicted_segmentations, predicted_locations = unek_algorithm(train, valid, test)
+    unek_predicted_segmentations, unek_predicted_locations = unek_algorithm(train, valid, test)
 
-    print(predicted_locations)
+
+    # Save predictions
+
+    # print(predicted_locations)
 
     print(metadata)
 

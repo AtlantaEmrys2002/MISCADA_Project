@@ -1,4 +1,5 @@
-# This code is based on the code from ID8 - I have altered/optimised and tailored it to my project specifications.
+# This code is based on the code from ID8 - I have altered/optimised, tailored, and rewritten it for my project
+# specifications.
 # The link to this code can be found here: https://github.com/bapanes/AutoSourceID/blob/main/codes/from-cats-to-locnet-
 # input.py
 
@@ -86,7 +87,7 @@ if __name__ == "__main__":
     pix_sr = 4.0 * np.pi / Npix
 
     lb_range = [-5, 5]
-    # noinspection PyUnresolvedReferences - HERE I PICKED coord = G to be safe
+    # noinspection PyUnresolvedReferences
     proj = hp.projector.CartesianProj(lonra=lb_range, latra=lb_range, xsize=xsize_patch_generation)
 
     I, J = np.meshgrid(np.arange(xsize_patch_generation), np.arange(xsize_patch_generation))
@@ -149,6 +150,7 @@ if __name__ == "__main__":
             pulsars = hp.fitsfunc.read_map(filename=skymaps_directory + "/pulsars_{}.fits".format(b), field=None)
             background = hp.fitsfunc.read_map(filename=skymaps_directory + "/background_{}.fits".format(b), field=None)
 
+            # THIS IS LIKELY WHERE ANY PROBLEMS WILL OCCUR
             binned_agn_map.append(agns / pix_sr)
             binned_pulsar_map.append(pulsars / pix_sr)
             binned_background_map.append(background / pix_sr)
