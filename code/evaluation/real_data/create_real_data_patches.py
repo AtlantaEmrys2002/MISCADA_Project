@@ -7,11 +7,13 @@ import argparse
 import healpy.fitsfunc
 from astropy.table import QTable
 import healpy as hp
-from ../../data_simulation/map_generation.visualisation import format_scientific_notation_label
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 from pathlib import Path
+from utils import get_ps_info_128, psf_bck_mask
+from visualisation import format_scientific_notation_label
+
 
 def plot_patch(binned_patches, mask, unformatted_energy_bins, directory):
 
@@ -186,6 +188,7 @@ if __name__ == "__main__":
         binned_patch = []
 
         for b in range(num_bins):
+
             patch_bin = hp.visufunc.cartview(binned_count_map[b], rot=(lon, lat, 0.), coord='G',
                                              xsize=xsize_patch_generation, lonra=lb_range, latra=lb_range,
                                              return_projected_map=True)
@@ -197,6 +200,10 @@ if __name__ == "__main__":
             plt.cla()
             plt.clf()
             plt.close("all")
+
+        plt.cla()
+        plt.clf()
+        plt.close("all")
 
         # Convert to numpy
         binned_patch = np.array(binned_patch)
@@ -279,7 +286,7 @@ if __name__ == "__main__":
 
             source_info.append(f"{pulsar_patch_ids[i]},PSR,{y},{x}\n")
 
-        plot_patch(binned_patches=patch, mask=grid2D_psf, unformatted_energy_bins=energy_bins,
+        plot_patch(binned_patches=binned_patch, mask=grid2D_psf, unformatted_energy_bins=energy_bins,
                    directory=patch_directory)
 
         # Save masks
