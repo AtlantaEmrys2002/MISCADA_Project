@@ -1,3 +1,5 @@
+from . classification_metrics import classification_confusion_matrix
+
 
 def evaluate_classifiers():
 

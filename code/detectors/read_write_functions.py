@@ -1,3 +1,4 @@
+import copy
 import math
 import numpy as np
 import pandas as pd
@@ -15,7 +16,7 @@ def read_patches(num_patches=int, directory=str):
     masks = (np.array([[np.load("{}/patch_{}/mask.npy".format(directory, n))] for n in range(num_patches)])
              .astype(np.float32))
 
-    # Read in metadata
+    # Read in metadata for each patch
 
     source_ids = []
     actual_cartesian_locations = []
@@ -39,7 +40,9 @@ def read_patches(num_patches=int, directory=str):
 
         types.append(df["source_type"].to_numpy())
 
-    metadata = [patch_ids, source_ids, actual_cartesian_locations, types]
+    # metadata = [patch_ids, source_ids, actual_cartesian_locations, types]
+
+    # metadata = [[patch_ids[k], source_ids[k], actual_cartesian_locations[k], types[k]] for k in range(num_patches)]
 
     # Combine to create test data
     test_data = [(torch.from_numpy(patches[k]), torch.from_numpy(masks[k])) for k in range(num_patches)]
@@ -71,6 +74,13 @@ def read_patches(num_patches=int, directory=str):
     validation_batches = DataLoader(validation_split, batch_size=128, shuffle=True)
     test_batches = DataLoader(test_split, batch_size=128, shuffle=False)
 
-    return train_batches, validation_batches, test_batches, metadata
+    # N.B. only need metadata for testing data
+    # test_metadata = [metadata[k] for k in test_indices]
+
+    # N.B. Only need the IDs of each test patch and make sure not to shuffle the test patches
+
+    test_patch_ids = copy.deepcopy(test_indices) + 1
+
+    return train_batches, validation_batches, test_batches, test_patch_ids  # test_metadata
 
 

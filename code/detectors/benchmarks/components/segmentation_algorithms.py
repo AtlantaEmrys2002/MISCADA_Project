@@ -143,14 +143,13 @@ class UNET(nn.Module):
                                padding=padding, uphill=downhill)
 
     def forward(self, x):
-
         enc_out, routes = self.encoder(x)
         out = self.decoder(enc_out, routes)
 
         return out
 
 
-def unet_train(train_data, test_data, training_epochs=50):
+def unet_train(train_data, test_data, training_epochs=50, save_file="./benchmarks/pre_trained_models/unet.pt"):
 
     # Adapted this code from https://docs.pytorch.org/tutorials/beginner/introyt/trainingyt.html
 
@@ -167,6 +166,10 @@ def unet_train(train_data, test_data, training_epochs=50):
     optimiser = torch.optim.Adam(unet.parameters(), lr=0.01)
 
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimiser, min_lr=10 ** -5)
+
+    # Start with large value that is easily surpassed
+    best_vloss = 100000000000000
+    best_epoch = 0
 
     # Training epochs
     for epoch in range(training_epochs):
@@ -207,10 +210,18 @@ def unet_train(train_data, test_data, training_epochs=50):
 
         avg_vloss = running_vloss / (i + 1)
 
+        # if this is the best model (in terms of loss) found so far, save model
+        if avg_vloss < best_vloss:
+
+            best_vloss = avg_vloss
+            best_epoch = epoch
+
+            torch.save(unet.state_dict(), save_file)
+
         # Calling after validation loss - decrease learning rate if no improvement
         scheduler.step(avg_vloss)
 
-    return unet
+    return unet, best_epoch
 
 
 # REFERENCES

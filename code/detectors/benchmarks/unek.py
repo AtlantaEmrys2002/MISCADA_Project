@@ -15,11 +15,12 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained=
     if use_pretrained is False:
 
         # Train U-Net on data
-        model = unet_train(train_data=training_data, test_data=validation_data)
+        model, best_epoch = unet_train(train_data=training_data, test_data=validation_data, save_file=pretrained_model_file)
+
+        print("BEST EPOCH: {}".format(best_epoch))
 
         # Save model
-        torch.save(model.state_dict(), pretrained_model_file)
-        # shutil.move(pretrained_model_file, "./benchmarks/")
+        # torch.save(model.state_dict(), pretrained_model_file)
 
     else:
 
@@ -35,7 +36,6 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained=
     testing_inputs = []
 
     for i, vdata in enumerate(testing_data):
-
         testing_inputs.append(vdata[0])
 
     with torch.no_grad():

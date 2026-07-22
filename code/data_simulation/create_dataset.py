@@ -56,10 +56,14 @@ if __name__ == "__main__":
     parser.add_argument("--num_energy_bins", required=True, type=int, help="The number of energy bins that "
                                                                            "photons were binned into using fermitools.")
 
+    parser.add_argument("--patch_directory", required=True, type=str, help="Directory in which to save "
+                                                                           "generated patches")
+
     args = parser.parse_args()
 
     num_catalogs = args.num_catalogs
     num_bins = args.num_energy_bins
+    save_directory = args.patch_directory
 
     # FILE CREATION AND ORGANISATION
 
@@ -100,11 +104,7 @@ if __name__ == "__main__":
     # Gulli's approach to generate a more uniform coverage of the sky - specifies the longitudes at which to draw out
     # the slice of the sky to take
 
-    # ChANGED THIS TO 7
-
     longitude, latitude = hp.pix2ang(8, np.arange(hp.nside2npix(8)), lonlat=True)
-
-    # longitude, latitude = hp.pix2ang(7, np.arange(hp.nside2npix(7)), lonlat=True)
 
     # The number of patches to generate per catalog
     max_patches_per_catalog = len(longitude)
@@ -114,7 +114,7 @@ if __name__ == "__main__":
     # list for the csv files - stores information about each patch
     header_line = "patch_id,centre_lat,centre_lon,num_agn,num_psr\n"
 
-    f1 = open(os.path.join("./simulated_data/patches/", "patch_metadata.csv"), "w+")
+    f1 = open(save_directory + "/patches/patch_metadata.csv", "w+")
     f1.writelines(header_line)
     f1.close()
 
@@ -127,16 +127,23 @@ if __name__ == "__main__":
         # Num patches to generate
         patches = max_patches_per_catalog
 
-        skymaps_directory = "./simulated_data/count_maps/skymap_{}".format(c + 1)
-        catalogs_directory = "./simulated_data/catalogs/catalog_{}".format(c + 1)
+        skymaps_directory = save_directory + "/count_maps/skymap_{}".format(c + 1)
+        catalogs_directory = save_directory + "/catalogs/catalog_{}".format(c + 1)
 
         # Read in the coordinates and associated integral photon fluxes of each source in AGN and pulsar maps
-        agn_coordinates, agn_photon_fluxes, agn_ids = xml_parser(energy_bins=energy_bins,
-                                                                 xml_file=catalogs_directory + "/agns.xml",
-                                                                 give_ids=True)
-        pulsar_coordinates, pulsar_photon_fluxes, pulsar_ids = xml_parser(energy_bins=energy_bins,
-                                                                          xml_file=catalogs_directory + "/pulsars.xml",
-                                                                          give_ids=True)
+        # agn_coordinates, agn_photon_fluxes, agn_ids = xml_parser(energy_bins=energy_bins,
+        #                                                          xml_file=catalogs_directory + "/agns.xml",
+        #                                                          give_ids=True)
+        # pulsar_coordinates, pulsar_photon_fluxes, pulsar_ids = xml_parser(energy_bins=energy_bins,
+        #                                                                   xml_file=catalogs_directory + "/pulsars.xml",
+        #                                                                   give_ids=True)
+
+        agn_coordinates, _, agn_ids = xml_parser(energy_bins=energy_bins,
+                                                 xml_file=catalogs_directory + "/agns.xml",
+                                                 give_ids=True)
+        pulsar_coordinates, _, pulsar_ids = xml_parser(energy_bins=energy_bins,
+                                                       xml_file=catalogs_directory + "/pulsars.xml",
+                                                       give_ids=True)
 
         binned_agn_map = []
         binned_pulsar_map = []
@@ -214,7 +221,6 @@ if __name__ == "__main__":
                                                             xsize=xsize_patch_generation, lonra=lb_range,
                                                             latra=lb_range, return_projected_map=True)
 
-
                 binned_background_patch.append(np.array(background_patch_bin) * solid_area_ratio)
 
                 # Need these here (even though we are not showing the plots - this is because visufunc creates a plot -
@@ -234,7 +240,9 @@ if __name__ == "__main__":
             patch = binned_agn_patch + binned_pulsar_patch + binned_background_patch
 
             # Create directory where patches stored
-            patch_directory = "./simulated_data/patches/patch_{}/".format(patch_id)
+            # patch_directory = "./simulated_data/patches/patch_{}/".format(patch_id)
+
+            patch_directory = save_directory + "/patches/patch_{}/".format(patch_id)
 
             Path(patch_directory).mkdir(parents=True, exist_ok=True)
 
@@ -329,6 +337,8 @@ if __name__ == "__main__":
 
     # SAVE PATCH METADATA
 
-    f1 = open("./simulated_data/patches/patch_metadata.csv", "a")
+    # f1 = open("./simulated_data/patches/patch_metadata.csv", "a")
+
+    f1 = open(save_directory + "/patches/patch_metadata.csv", "a")
     f1.writelines(patch_information)
     f1.close()

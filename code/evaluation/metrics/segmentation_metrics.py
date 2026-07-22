@@ -16,7 +16,7 @@ def binary_balanced_accuracy(actual_segmentation, predicted_segmentation):
     first_term = true_positives / (true_positives + false_negatives)
     second_term = true_negatives / (true_negatives + false_positives)
 
-    balanced_accuracy = (first_term + second_term)/2
+    balanced_accuracy = (first_term + second_term) / 2
 
     return balanced_accuracy
 

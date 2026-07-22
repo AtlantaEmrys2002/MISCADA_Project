@@ -1,7 +1,5 @@
 #!/usr/bin/env bash -l
 
-# RENAME THE FILE - create_dataset.sh
-
 # File names - change to match the desired locations
 
 # Raw data from the Fermi LAT collaboration
@@ -28,7 +26,7 @@ conda init
 conda activate fermi
 
 # Store the names of all relevant .fits files in events.txt
- ls $RAWDATAFILES/*.fits > $LIST
+ls $RAWDATAFILES/*.fits > $LIST
 
 # Select front and back events (ID8) with energy between 300 MeV and 200 GeV (recommended by ID8) and zenith cut is 100
 # degrees (ID25)
