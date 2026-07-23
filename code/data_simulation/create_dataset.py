@@ -240,8 +240,6 @@ if __name__ == "__main__":
             patch = binned_agn_patch + binned_pulsar_patch + binned_background_patch
 
             # Create directory where patches stored
-            # patch_directory = "./simulated_data/patches/patch_{}/".format(patch_id)
-
             patch_directory = save_directory + "/patches/patch_{}/".format(patch_id)
 
             Path(patch_directory).mkdir(parents=True, exist_ok=True)

@@ -17,16 +17,13 @@ def uneb_algorithm(training_data, validation_data, testing_data, use_pretrained=
         # Train U-Net on data
         model = unet_train(train_data=training_data, test_data=validation_data)
 
-        # Save model
-        torch.save(model.state_dict(), pretrained_model_file)
-
     else:
 
         # Use pre-trained model
         model = UNET(5, 16, 1, padding=1, downhill=4)
         model.load_state_dict(torch.load(pretrained_model_file, weights_only=True))
 
-    # Set to model evaluation model to ensure not accidently continuing training
+    # Set to model evaluation model to ensure not accidentally continuing training
     model.eval()
 
     # Feed test count maps to trained U-Net model to perform semantic segmentation
@@ -49,9 +46,8 @@ def uneb_algorithm(training_data, validation_data, testing_data, use_pretrained=
     source_locations = blob_detection(unet_predictions)
 
     # Return the segmented images returned by U-Net and locations of source centres returned by K-means
-    return unet_predictions, source_locations
+    return unet_predictions.detach().cpu().numpy(), source_locations
 
 # REFERENCES
 
 # ID25 - followed their theory/mathematical definition to implement my own version
-

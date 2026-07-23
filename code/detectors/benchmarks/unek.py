@@ -57,4 +57,5 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained=
 
 # REFERENCES
 
+# Detach - https://stackoverflow.com/questions/49768306/pytorch-tensor-to-numpy-array
 # ID8 - followed their theory/mathematical definition to implement my own version

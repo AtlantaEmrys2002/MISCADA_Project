@@ -2,6 +2,7 @@ from metrics.localisation_metrics import chamfer_distance
 from metrics.segmentation_metrics import (binary_balanced_accuracy, dice_coefficient, segmentation_precision,
                                           segmentation_recall)
 import numpy as np
+import os
 
 
 def evaluate_classifiers():
@@ -46,19 +47,28 @@ if __name__ == "__main__":
     # TAKE INPUTS (RECOMMENDED READ IN FILE)
 
     # Add name of models here
-    models = ["UNEK"]
+    models = ["UNEK", "UNEB"]
+
+    detectors = {"UNEK": "U-NET", "UNEB": "U-NET"}
+    localisers = {"UNEK": "K-Means", "UNEB": "Blob Detection"}
+    classifiers = {"UNEK": "CNN", "UNEB": "CNN"}
 
     results = []
 
     csv_headers = ("id,detection_algorithm,localisation_algorithm,classification_algorithm,"
                    "segmentation_balanced_binary_accuracy,segmentation_dive_coefficient,segmentation_precision,"
-                   "segmentation_recall")
+                   "segmentation_recall\n")
+
+    # Set up file
+    file = open("./results.csv", "w+")
+    file.writelines(csv_headers)
+    file.close()
+
+    id = 0
 
     for m in models:
 
         segments = np.load("./../results/{}/segmentations.npy".format(m))
-
-        # num_patches = segments.shape[0]
 
         actual = segments[:, 0]
 
@@ -67,27 +77,18 @@ if __name__ == "__main__":
         av_bin_balanced_acc, av_dice, av_prec, av_rec = evaluate_detection(actual_segmentations=actual,
                                                                            predicted_segmentations=predicted)
 
-        results.append()
+        results.append(f"{id},{detectors[m]},{localisers[m]},{classifiers[m]},{av_bin_balanced_acc},{av_dice},"
+                       f"{av_prec},{av_rec}\n")
 
-
+        id += 1
 
     # EVALUATE DIFFERENT STAGES FOR EACH MODEL WITH METRICS
 
-    # For each model, get metrics for all TEST PATCHES (not training/validation patches)
+    # SAVE RESULTS TO FILE
 
-    # for m in models:
-    #
-    #
-
-
-
-
-    # SAVE RESULTS TO FILE - RECOMMEND ROWS WITH SEGMENTATION, LOCALISATION, AND CLASSIFICATION METRICS LISTED FIRST FOLLOWED BY METRICS
-
-
-
-
-
+    file = open("./results.csv", "a")
+    file.writelines(results)
+    file.close()
 
 
 # NEED TO MAKE SURE PLOTS DIRECTORY EXISTS AND CONFUSION MATRIX FILE EXISTS (SEE CLASSIFICATION METRICS FILE)

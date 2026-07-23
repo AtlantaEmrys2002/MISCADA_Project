@@ -308,3 +308,8 @@ if __name__ == "__main__":
     f1.writelines(patch_information)
     f1.close()
 
+
+# REFERENCES
+
+# Fits to Pandas - https://stackoverflow.com/questions/71142383/how-to-convert-fits-file-astropy-table-to-pandas-df-and
+# -reverse
