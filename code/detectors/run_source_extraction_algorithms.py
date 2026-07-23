@@ -1,7 +1,7 @@
 import argparse
 from benchmarks.uneb import uneb_algorithm
 from benchmarks.unek import unek_algorithm
-from read_write_functions import read_patches
+from read_write_functions import read_patches, save_predictions
 from utils import random_data
 
 
@@ -19,10 +19,15 @@ if __name__ == "__main__":
     parser.add_argument("--num_patches", required=True, type=int, help="The number of patches to read from"
                                                                        "the specified patch directory.")
 
+    parser.add_argument("--save_directory", required=True, type=str, help="Location in which to save the "
+                                                                          "predictions and results for each source"
+                                                                          "extraction method.")
+
     args = parser.parse_args()
 
     patches_directory = args.patch_location
     num_patches = args.num_patches
+    save_directory = args.save_directory
 
     # READ IN PATCHES CORRECTLY
 
@@ -37,10 +42,14 @@ if __name__ == "__main__":
 
     # train, valid, test = random_data(n=256)
 
+    # Results when applied to the TEST data (not the train or validation data)
     unek_predicted_segmentations, unek_predicted_locations = unek_algorithm(train, valid, test)
 
+    # Save predictions for test patches
 
-    # Save predictions
+    save_predictions(patch_ids=test_patch_ids, predicted_segmentations=unek_predicted_segmentations,
+                     predicted_locations=unek_predicted_locations, directory=save_directory, method="UNEK")
+
 
 
 

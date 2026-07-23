@@ -15,7 +15,8 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained=
     if use_pretrained is False:
 
         # Train U-Net on data
-        model, best_epoch = unet_train(train_data=training_data, test_data=validation_data, save_file=pretrained_model_file)
+        model, best_epoch = unet_train(train_data=training_data, test_data=validation_data,
+                                       save_file=pretrained_model_file)
 
         print("BEST EPOCH: {}".format(best_epoch))
 
@@ -49,8 +50,9 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained=
     # Determine the number of sources present within each U-Net segmented image and return the location of their centres
     source_locations = k_means_clustering(unet_predictions)
 
-    # Return the segmented images returned by U-Net and locations of source centres returned by K-means
-    return unet_predictions, source_locations
+    # Return the segmented images returned by U-Net and locations of source centres returned by K-means for the TEST
+    # data
+    return unet_predictions.detach().cpu().numpy(), source_locations
 
 
 # REFERENCES

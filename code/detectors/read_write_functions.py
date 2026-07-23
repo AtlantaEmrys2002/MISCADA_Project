@@ -2,6 +2,7 @@ import copy
 import math
 import numpy as np
 import pandas as pd
+from pathlib import Path
 import torch
 from torch.utils.data import DataLoader, Subset
 
@@ -79,8 +80,30 @@ def read_patches(num_patches=int, directory=str):
 
     # N.B. Only need the IDs of each test patch and make sure not to shuffle the test patches
 
-    test_patch_ids = copy.deepcopy(test_indices) + 1
+    test_patch_ids = copy.deepcopy(test_indices)  # + 1
 
     return train_batches, validation_batches, test_batches, test_patch_ids  # test_metadata
+
+
+def save_predictions(patch_ids, predicted_segmentations, predicted_locations, directory: str, method: str):
+
+    # Create directory to store results
+
+    save_location = directory + "/{}/".format(method)
+
+    Path(save_location).mkdir(parents=True, exist_ok=True)
+
+    # SAVE ACTUAL AND PREDICTED SEGMENTATIONS OF EACH PATCH
+
+    patches_location = "./../data_simulation/simulated_data/patches/"
+
+    actual_segmentations = [np.load(patches_location + "patch_{}/mask.npy".format(p)) for p in patch_ids]
+
+    predicted_segmentations = [predicted_segmentations[p][0].astype(np.float64) for p in range(len(patch_ids))]
+
+    segmentations = np.array(list(zip(actual_segmentations, predicted_segmentations)))
+
+    np.save(save_location + "segmentations.npy", segmentations)
+
 
 
