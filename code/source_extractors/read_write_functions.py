@@ -93,9 +93,9 @@ def save_predictions(patch_ids, predicted_segmentations, predicted_locations, di
 
     Path(save_location).mkdir(parents=True, exist_ok=True)
 
-    # SAVE ACTUAL AND PREDICTED SEGMENTATIONS OF EACH PATCH
-
     patches_location = "./../data_simulation/simulated_data/patches/"
+
+    # SAVE ACTUAL AND PREDICTED SEGMENTATIONS OF EACH PATCH
 
     actual_segmentations = [np.load(patches_location + "patch_{}/mask.npy".format(p)) for p in patch_ids]
 
@@ -104,6 +104,17 @@ def save_predictions(patch_ids, predicted_segmentations, predicted_locations, di
     segmentations = np.array(list(zip(actual_segmentations, predicted_segmentations)))
 
     np.save(save_location + "segmentations.npy", segmentations)
+
+    # SAVE ACTUAL AND PREDICTED LOCATIONS OF EACH PATCH
+
+    np.save(save_location + "predicted_locations.npy", predicted_locations)
+
+    dfs = [pd.read_csv(patches_location + "patch_{}/metadata.csv".format(p)) for p in patch_ids]
+
+    print(dfs[0])
+    print(predicted_locations)
+
+
 
 
 # REFERENCES
