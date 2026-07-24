@@ -14,6 +14,12 @@ from psfs.visualisation import plot_fitted_point_source_psf
 from read_write_functions import xml_parser
 
 
+def save_count_maps(binned_maps, save_file, n_bins=5):
+    for n in range(n_bins):
+        hp.fitsfunc.write_map(filename=save_file.format(n), m=binned_maps[n], coord="G", dtype=np.float64,
+                              overwrite=True)
+
+
 def visualise_maps(energy_bins, exposure_map, point_source_map, diffuse_source_map, catalog_id):
     # EXPOSURE MAP
 
@@ -81,16 +87,6 @@ if __name__ == "__main__":
     isotropic_background_file = args.isotropic_background
     galactic_background_file = args.galactic_background
 
-    # from astropy.io import fits
-    #
-    # test_file = "/Volumes/T7/project_data/real_data/fermi_filtered_gti_binned.fits"
-
-    # with fits.open(test_file) as hdul:
-    #
-    #     print(hdul.info())
-    #
-    #     # print(hdul["SKYMAP"].data.shape)
-
     # Create directory to store useful simulated data in if it does not already exist
     Path("./simulated_data/utils/").mkdir(parents=True, exist_ok=True)
 
@@ -98,11 +94,6 @@ if __name__ == "__main__":
 
     # Prepare exposure maps
     exposure_maps, energy_bins = create_exposure_map(exposure_file=exposure_fits_file)
-
-    # if not os.path.isfile("./plots/all_sky_maps/exposure_map.png"):
-    #
-    # plot_all_sky_map(healpix_maps=exposure_maps, energy_bins=energy_bins, title="Exposure",
-    #                      directory="./plots/all_sky_maps/")
 
     # Number of energy bins
     num_bins = len(energy_bins) - 1
@@ -112,10 +103,6 @@ if __name__ == "__main__":
 
     # Get NSIDE parameter from exposure map
     nside = get_nside(exposure_maps[0])
-    nside1 = get_nside(exposure_maps[1])
-    nside2 = get_nside(exposure_maps[2])
-
-    print(nside, nside1, nside2)
 
     # POINT SPREAD FUNCTIONS (PSF)
 
@@ -151,7 +138,6 @@ if __name__ == "__main__":
     # Loop over catalogs
 
     for c in range(num_catalogs):
-
         print("Creating Sky Map {}".format(c + 1))
 
         file_location = "./simulated_data/catalogs/catalog_{}".format(c + 1)
@@ -160,14 +146,11 @@ if __name__ == "__main__":
         Path(file_location).mkdir(parents=True, exist_ok=True)
 
         # Create background - convolve infinite statistics maps of isotropic and galactic backgrounds with diffuse PSF,
-        # scale with randomly-generated normalisation constant, and Poisson sample to create unqiue background count map
+        # scale with randomly-generated normalisation constant, and Poisson sample to create unique background count map
         diffuse_source_background = create_diffuse_source_map(
             expected_counts_diffuse_background=infinite_statistics_galactic_diffuse_backgrounds,
             expected_counts_isotropic_background=infinite_statistics_isotropic_background,
             psfs=binned_diffuse_source_psf)
-
-        # plot_all_sky_map(healpix_maps=diffuse_source_background, energy_bins=energy_bins, title="Diffuse Background",
-        #                  directory="./plots/all_sky_maps/", logarithmic=True)
 
         # Calculate coordinates and binned fluxes from each mock simulated catalog
         agn_coordinates, agn_binned_fluxes = xml_parser(energy_bins, xml_file=file_location + "/agns.xml")
@@ -188,37 +171,20 @@ if __name__ == "__main__":
                                                            psf_parameters=binned_point_source_psf_parameters,
                                                            fluxes=pulsar_binned_fluxes, nside=nside)
 
-        # Save count maps
+        # SAVE COUNT MAPS
 
         save_location = "./simulated_data/count_maps/skymap_{}".format(c + 1)
 
         # Create directory to store simulated count maps in if it does not already exist
         Path(save_location).mkdir(parents=True, exist_ok=True)
 
-        for n in range(num_bins):
-            hp.fitsfunc.write_map(filename=save_location + "/background_{}.fits".format(n), m=diffuse_source_background[n],
-                                  coord="G", dtype=np.float64, overwrite=True)
-
-            hp.fitsfunc.write_map(filename=save_location + "/agns_{}.fits".format(n), m=agn_point_source_maps[n],
-                                  coord="G", dtype=np.float64, overwrite=True)
-
-            hp.fitsfunc.write_map(filename=save_location + "/pulsars_{}.fits".format(n), m=pulsar_point_source_maps[n],
-                                  coord="G", dtype=np.float64, overwrite=True)
+        save_count_maps(diffuse_source_background, save_file=save_location + "/background_{}.fits")
+        save_count_maps(agn_point_source_maps, save_file=save_location + "/agns_{}.fits")
+        save_count_maps(pulsar_point_source_maps, save_file=save_location + "/pulsars_{}.fits")
 
 
-# # MAIN PROGRAM
-#
-# # POINT SOURCE MAPS
-#
-# # Prepare exposure maps
-# exposure_maps, energy_bins = create_exposure_map(
-#     exposure_file="/Volumes/T7/project_data/real_data/fermi_filtered_gti_exposure_map.fits")
-#
-# # # Get NSIDE parameter from exposure map
-# nside = get_nside(exposure_maps[0])
-#
-# # THIS IS WHERE TO START THE LOOP OVER THE DIFFERENT MOCK SOURCE CATALOGS
-#
+
+
 # coordinates, binned_fluxes = xml_parser(energy_bins, xml_file="./simulated_data/sources.xml")
 #
 # pixels = angle_to_healpix_pixels(coordinates, nside=nside)
@@ -227,16 +193,8 @@ if __name__ == "__main__":
 # # maps of the sky, and their fluxes
 # # infinite_statistics_maps = create_infinite_statistics_map(exposure_maps, binned_fluxes, pixels)
 #
-# # # Plot infinite counts maps
-# # plot_all_sky_map(healpix_maps=infinite_statistics_maps, energy_bins=energy_bins, title="Infinite Counts",
-# #                  directory="./plots/all_sky_maps/", logarithmic=True)
-#
 # # Sample infinite statistics maps to create expected counts maps
 # # count_maps = create_expected_counts_map(infinite_counts_map=infinite_statistics_maps)
-#
-# # Plot infinite statistics count map
-# # plot_all_sky_map(healpix_maps=count_maps, energy_bins=energy_bins, title="Expected Counts",
-# #                  directory="./plots/all_sky_maps/", logarithmic=True)
 #
 # # Create and fit point spread function
 # binned_function_parameters = fit_point_source_psf(file_name="/Volumes/T7/project_data/real_data/pointsource_psf.fits")
@@ -249,46 +207,11 @@ if __name__ == "__main__":
 # # this directly from each infinite statistics count map
 # # point_source_maps = create_point_source_map(coordinates=coordinates, exposure_maps=exposure_maps,
 # #                                            psf_parameters=binned_function_parameters, fluxes=binned_fluxes, nside=nside)
-#
-# # plot_all_sky_map(healpix_maps=point_source_maps, energy_bins=energy_bins, title="Point Source",
-# #                  directory="./plots/all_sky_maps/", logarithmic=True)
-#
+
 # # THIS IS FOR TESTING
 
-# # DIFFUSE SOURCE MAPS
-#
-# # Create backgrounds models
-# isotropic_backgrounds = create_isotropic_background(isotropic_background_file=
-#                                                     "/Volumes/T7/data/background_models/iso_P8R3_SOURCE_V3_v1.txt",
-#                                                     nside=nside,
-#                                                     exposure_map=exposure_maps, energy_bins=energy_bins)
-#
-# # plot_all_sky_map(healpix_maps=isotropic_backgrounds, energy_bins=energy_bins, title="Isotropic Background",
-# #                  directory="./plots/all_sky_maps/", logarithmic=True)
-#
-# # Create infinite statistics map of diffuse background
-# galactic_diffuse_backgrounds = create_diffuse_background(
-#     diffuse_background_file="/Volumes/T7/data/background_models/gll_iem_v07.fits", exposure_map=exposure_maps,
-#     nside=nside)
-#
-# # plot_all_sky_map(healpix_maps=galactic_diffuse_backgrounds, energy_bins=energy_bins, title="Expected Diffuse Background",
-# #                  directory="./plots/all_sky_maps/", logarithmic=True)
-#
-# # Fit PSF for diffuse background
-#
-# diffuse_psf = fit_diffuse_source_psf(roi_count_map="/Volumes/T7/project_data/real_data/diffuse_psf_roi/count_map.fits")
-
-# diffuse_source_background = create_diffuse_source_map(expected_counts_diffuse_background=galactic_diffuse_backgrounds,
-#                                        expected_counts_isotropic_background=isotropic_backgrounds, psfs=diffuse_psf)
-#
-# # plot_all_sky_map(healpix_maps=diffuse_source_background, energy_bins=energy_bins, title="Diffuse Source Background",
-# #                  directory="./plots/all_sky_maps/", logarithmic=True)
-#
-#
 # visualise_maps(energy_bins=energy_bins, exposure_map=exposure_maps, point_source_map=point_source_maps,
 #                diffuse_source_map=diffuse_source_background, catalog_id=1)
-
-# WHEN REFERRING TO PDFs - USE THE TERM LIKELIHOOD INSTEAD OF PROBABILITY WHEN REFERRING TO THE Y-AXIS
 
 # REFERENCES
 
