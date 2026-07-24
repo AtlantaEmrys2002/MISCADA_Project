@@ -3,8 +3,8 @@ import healpy as hp
 from map_generation.visualisation import plot_all_sky_map
 from map_generation.healpix_maps import (create_diffuse_source_map, create_diffuse_background,
                                          create_expected_counts_map, create_exposure_map,
-                                         create_infinite_statistics_map, create_isotropic_background,
-                                         create_point_source_map)
+                                         create_infinite_counts_maps, create_isotropic_background,
+                                         create_point_source_map, create_count_map)
 from map_generation.utils import angle_to_healpix_pixels, get_nside
 import numpy as np
 import os
@@ -78,6 +78,10 @@ if __name__ == "__main__":
                                                                                " energy-binned galactic gamma-ray "
                                                                                "background.")
 
+    parser.add_argument("--num_maps_per_catalog", required=True, type=int, help="The number of independent"
+                                                                                "sky maps to create per catalog"
+                                                                                "provided via Poisson sampling.")
+
     args = parser.parse_args()
 
     exposure_fits_file = args.exposure_fits
@@ -86,6 +90,7 @@ if __name__ == "__main__":
     diffuse_source_psf_roi_file = args.diffuse_source_psf_roi
     isotropic_background_file = args.isotropic_background
     galactic_background_file = args.galactic_background
+    num_maps_per_catalog = args.num_maps_per_catalog
 
     # Create directory to store useful simulated data in if it does not already exist
     Path("./simulated_data/utils/").mkdir(parents=True, exist_ok=True)
@@ -127,7 +132,7 @@ if __name__ == "__main__":
     np.save("./simulated_data/utils/binned_healpix_infinite_statistics_isotropic_background_maps.npy",
             infinite_statistics_isotropic_background)
 
-    # Create infinite statistics map of diffuse background
+    # Create infinite statistics map of diffuse background - can use for every count map
     infinite_statistics_galactic_diffuse_backgrounds = create_diffuse_background(
         diffuse_background_file=galactic_background_file,
         exposure_map=exposure_maps, nside=nside)
@@ -135,55 +140,133 @@ if __name__ == "__main__":
     np.save("./simulated_data/utils/binned_healpix_infinite_statistics_galactic_background_maps.npy",
             infinite_statistics_galactic_diffuse_backgrounds)
 
-    # Loop over catalogs
+    # N.B. Can sample from these multiple times to create independent count maps (even though they have the same source
+    # catalogs)
 
+    # Create one infinite count map per catalog
     for c in range(num_catalogs):
-        print("Creating Sky Map {}".format(c + 1))
 
-        file_location = "./simulated_data/catalogs/catalog_{}".format(c + 1)
+        # CREATE INFINITE STATISTICS MAPS FOR POINT SOURCES
 
-        # Create directory to store useful simulated data in if it does not already exist
-        Path(file_location).mkdir(parents=True, exist_ok=True)
+        print("Creating Infinite Statistics Count Map {}".format(c + 1))
 
-        # Create background - convolve infinite statistics maps of isotropic and galactic backgrounds with diffuse PSF,
-        # scale with randomly-generated normalisation constant, and Poisson sample to create unique background count map
-        diffuse_source_background = create_diffuse_source_map(
-            expected_counts_diffuse_background=infinite_statistics_galactic_diffuse_backgrounds,
-            expected_counts_isotropic_background=infinite_statistics_isotropic_background,
-            psfs=binned_diffuse_source_psf)
+        catalog_file_location = "./simulated_data/catalogs/catalog_{}".format(c + 1)
+
+        infinite_statistics_directory = "./simulated_data/infinite_count_maps/infinite_count_map_{}".format(c + 1)
+
+        # Create directory to store infinite statistics map for each catalog
+        Path(infinite_statistics_directory).mkdir(parents=True, exist_ok=True)
 
         # Calculate coordinates and binned fluxes from each mock simulated catalog
-        agn_coordinates, agn_binned_fluxes = xml_parser(energy_bins, xml_file=file_location + "/agns.xml")
-        pulsar_coordinates, pulsar_binned_fluxes = xml_parser(energy_bins, xml_file=file_location + "/pulsars.xml")
+        agn_coordinates, agn_binned_fluxes = xml_parser(energy_bins, xml_file=catalog_file_location + "/agns.xml")
+        pulsar_coordinates, pulsar_binned_fluxes = xml_parser(energy_bins, xml_file=catalog_file_location +
+                                                                                    "/pulsars.xml")
 
         # Convert galactic coordinates of each source to pixel location in HEALPIX-formatted map
         agn_pixels = angle_to_healpix_pixels(agn_coordinates, nside=nside)
         pulsar_pixels = angle_to_healpix_pixels(pulsar_coordinates, nside=nside)
 
-        # Convolve each PSF with our fitted LAT PSF - i.e. calculate new positions for each gamma ray to originate from
-        # - can do this directly from each infinite statistics count map (instead of method described in Robust Neural
-        # paper)
-        agn_point_source_maps = create_point_source_map(coordinates=agn_coordinates, exposure_maps=exposure_maps,
-                                                        psf_parameters=binned_point_source_psf_parameters,
-                                                        fluxes=agn_binned_fluxes, nside=nside)
+        # Create binned infinite counts maps for each source type
+        agn_infinite_counts_map = create_infinite_counts_maps(source_pixels=agn_pixels, exposure_maps=exposure_maps,
+                                                              fluxes=agn_binned_fluxes)
 
-        pulsar_point_source_maps = create_point_source_map(coordinates=pulsar_coordinates, exposure_maps=exposure_maps,
-                                                           psf_parameters=binned_point_source_psf_parameters,
-                                                           fluxes=pulsar_binned_fluxes, nside=nside)
+        pulsar_infinite_counts_map = create_infinite_counts_maps(source_pixels=pulsar_pixels,
+                                                                 exposure_maps=exposure_maps,
+                                                                 fluxes=pulsar_binned_fluxes)
 
-        # SAVE COUNT MAPS
+        save_count_maps(agn_infinite_counts_map, save_file=infinite_statistics_directory +
+                                                           "/agn_infinite_counts_{}.fits")
+        save_count_maps(pulsar_infinite_counts_map, save_file=infinite_statistics_directory
+                                                              + "/pulsar_infinite_counts_{}.fits")
 
-        save_location = "./simulated_data/count_maps/skymap_{}".format(c + 1)
+        # CREATE COUNT MAPS
 
-        # Create directory to store simulated count maps in if it does not already exist
-        Path(save_location).mkdir(parents=True, exist_ok=True)
+        for m in range(num_maps_per_catalog):
 
-        save_count_maps(diffuse_source_background, save_file=save_location + "/background_{}.fits")
-        save_count_maps(agn_point_source_maps, save_file=save_location + "/agns_{}.fits")
-        save_count_maps(pulsar_point_source_maps, save_file=save_location + "/pulsars_{}.fits")
+            # i.e. sample infinite counts map and convolve with PSFs
 
+            # Create background - convolve infinite statistics maps of isotropic and galactic backgrounds with diffuse
+            # PSF, then scale with randomly-generated normalisation constant, and Poisson sample to create unique
+            # background count map
+            diffuse_source_background = create_diffuse_source_map(
+                expected_counts_diffuse_background=infinite_statistics_galactic_diffuse_backgrounds,
+                expected_counts_isotropic_background=infinite_statistics_isotropic_background,
+                psfs=binned_diffuse_source_psf)
 
+            # Create AGN count maps (with PSF convolution and Poisson sampling
+            agn_point_source_map = create_count_map(coordinates=agn_coordinates, exposure_maps=exposure_maps,
+                                                    psf_parameters=binned_point_source_psf_parameters,
+                                                    fluxes=agn_binned_fluxes, nside=nside,
+                                                    infinite_stats_file=infinite_statistics_directory +
+                                                                       "/agn_infinite_counts_{}.fits")
 
+            # Create pulsar count maps (with PSF convolution and Poisson sampling)
+            pulsar_point_source_map = create_count_map(coordinates=pulsar_coordinates, exposure_maps=exposure_maps,
+                                                    psf_parameters=binned_point_source_psf_parameters,
+                                                    fluxes=pulsar_binned_fluxes, nside=nside,
+                                                    infinite_stats_file=infinite_statistics_directory +
+                                                                       "/pulsar_infinite_counts_{}.fits")
+
+            # SAVE COUNT MAPS
+
+            save_location = "./simulated_data/count_maps/skymap_{}".format((c * num_maps_per_catalog) + m + 1)
+
+            # Create directory to store simulated count maps in if it does not already exist
+            Path(save_location).mkdir(parents=True, exist_ok=True)
+
+            save_count_maps(diffuse_source_background, save_file=save_location + "/background_{}.fits")
+            save_count_maps(agn_point_source_map, save_file=save_location + "/agns_{}.fits")
+            save_count_maps(pulsar_point_source_map, save_file=save_location + "/pulsars_{}.fits")
+
+    #
+    #
+    # # Loop over catalogs
+    #
+    # for c in range(num_catalogs):
+    #     print("Creating Sky Map {}".format(c + 1))
+    #
+    #     file_location = "./simulated_data/catalogs/catalog_{}".format(c + 1)
+    #
+    #     # Create directory to store useful simulated data in if it does not already exist
+    #     Path(file_location).mkdir(parents=True, exist_ok=True)
+    #
+    #     # Create background - convolve infinite statistics maps of isotropic and galactic backgrounds with diffuse PSF,
+    #     # scale with randomly-generated normalisation constant, and Poisson sample to create unique background count map
+    #     diffuse_source_background = create_diffuse_source_map(
+    #         expected_counts_diffuse_background=infinite_statistics_galactic_diffuse_backgrounds,
+    #         expected_counts_isotropic_background=infinite_statistics_isotropic_background,
+    #         psfs=binned_diffuse_source_psf)
+    #
+    #     # Calculate coordinates and binned fluxes from each mock simulated catalog
+    #     agn_coordinates, agn_binned_fluxes = xml_parser(energy_bins, xml_file=file_location + "/agns.xml")
+    #     pulsar_coordinates, pulsar_binned_fluxes = xml_parser(energy_bins, xml_file=file_location + "/pulsars.xml")
+    #
+    #     # Convert galactic coordinates of each source to pixel location in HEALPIX-formatted map
+    #     agn_pixels = angle_to_healpix_pixels(agn_coordinates, nside=nside)
+    #     pulsar_pixels = angle_to_healpix_pixels(pulsar_coordinates, nside=nside)
+    #
+    #     # Convolve each PSF with our fitted LAT PSF - i.e. calculate new positions for each gamma ray to originate from
+    #     # - can do this directly from each infinite statistics count map (instead of method described in Robust Neural
+    #     # paper)
+    #     agn_point_source_maps = create_point_source_map(coordinates=agn_coordinates, exposure_maps=exposure_maps,
+    #                                                     psf_parameters=binned_point_source_psf_parameters,
+    #                                                     fluxes=agn_binned_fluxes, nside=nside)
+    #
+    #     pulsar_point_source_maps = create_point_source_map(coordinates=pulsar_coordinates, exposure_maps=exposure_maps,
+    #                                                        psf_parameters=binned_point_source_psf_parameters,
+    #                                                        fluxes=pulsar_binned_fluxes, nside=nside)
+    #
+    #     # SAVE COUNT MAPS
+    #
+    #     save_location = "./simulated_data/count_maps/skymap_{}".format(c + 1)
+    #
+    #     # Create directory to store simulated count maps in if it does not already exist
+    #     Path(save_location).mkdir(parents=True, exist_ok=True)
+    #
+    #     save_count_maps(diffuse_source_background, save_file=save_location + "/background_{}.fits")
+    #     save_count_maps(agn_point_source_maps, save_file=save_location + "/agns_{}.fits")
+    #     save_count_maps(pulsar_point_source_maps, save_file=save_location + "/pulsars_{}.fits")
+    #
 
 # coordinates, binned_fluxes = xml_parser(energy_bins, xml_file="./simulated_data/sources.xml")
 #

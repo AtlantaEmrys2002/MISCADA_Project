@@ -50,4 +50,6 @@ def uneb_algorithm(training_data, validation_data, testing_data, use_pretrained=
 
 # REFERENCES
 
+# Data Types - https://stackoverflow.com/questions/67456368/pytorch-getting-runtimeerror-found-dtype-double-but-expected
+# -float
 # ID25 - followed their theory/mathematical definition to implement my own version

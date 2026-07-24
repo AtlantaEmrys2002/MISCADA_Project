@@ -99,8 +99,6 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
 
         idx = degree - 1
 
-        # polynomial = np.polynomial.Polynomial.fit(log_var1, log_var2, deg=degree)
-
         polynomial = np.polynomial.Polynomial.fit(log_var1, log_var2, deg=degree)
 
         ax[0].plot(x_values, np.exp(polynomial(log_x_values)), color=colours[idx], label="Log {}".format(labels[idx]),
@@ -109,7 +107,6 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
 
         polynomial_log = polynomial(log_var1)
 
-        # print(["{} : {}".format(chr((degree - x) + 97), polynomial.coef[x]) for x in range(degree, -1, -1)])
         print(["{} : {}".format(chr((degree - x) + 97), polynomial.convert().coef[x]) for x in range(degree, -1, -1)])
         print("RMSE of {} Fit: {}".format(labels[idx], root_mean_squared_error(log_var2, polynomial_log)))
 
@@ -134,8 +131,6 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
         polynomial = np.polynomial.Polynomial.fit(log_var1, var2, deg=1)
         ax[0].plot(x_values, polynomial(log_x_values), color="black", label="Logarithmic")
         ax[1].plot(log_x_values, np.log(polynomial(log_x_values)), color="black", label="Logarithmic")
-
-        # print("a: {} b: {}".format(polynomial.coef[1], polynomial.coef[0]))
 
         logarithmic_coefficients = polynomial.convert().coef
 
@@ -379,6 +374,7 @@ def plot_parameter_relationships(sources, source_type: str, directory: str):
 # Covariance - https://en.wikipedia.org/wiki/Covariance_matrix
 # Figure Sizing - https://stackoverflow.com/questions/332289/how-do-i-change-the-size-of-figures-drawn-with-matplotlib
 # Fitting Log-normals - https://stackoverflow.com/questions/18534562/scipy-lognormal-fitting
+# Fitting Noisy Data - https://stackoverflow.com/questions/49201515/fit-numpy-polynomials-to-noisy-data
 # Fitting Recommendations - https://dataviz.shef.ac.uk/docs/18/03/2021/LearningPath-Statistical-Modeling-1
 # Gaussian Fitting Sharp Peak - https://stackoverflow.com/questions/74146895/gaussian-fitting-of-a-sharply-peaked-curve
 # Gaussian Mixture - https://scikit-learn.org/stable/modules/generated/sklearn.mixture.GaussianMixture.html
@@ -401,6 +397,8 @@ def plot_parameter_relationships(sources, source_type: str, directory: str):
 # Pandas Documentation - https://pandas.pydata.org/docs/index.html
 # Pearson Correlation - https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
 # Plotting Correlation Matrices - https://stackoverflow.com/questions/29432629/plot-correlation-matrix-using-pandas
+# Polynomial Fit Coefficients - https://stackoverflow.com/questions/67371614/numpy-polynomial-polynomial-fit-gives-
+# different-coefficients-than-polynomial-p
 # PDFs - https://www.lesswrong.com/posts/jmq3mon8TSC99ittm/common-probability-distributions
 # Scipy Documentation - https://docs.scipy.org/doc/scipy/index.html
 # Seaborn Heatmaps - https://stackoverflow.com/questions/50947776/plot-two-seaborn-heatmap-graphs-side-by-side

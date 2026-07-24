@@ -2,7 +2,6 @@ import numpy as np
 
 
 def dual_function(x, sigma_core, gamma_core, sigma_tail, gamma_tail, f_core):
-
     first_distribution = king_function(x, sigma=sigma_core, gamma=gamma_core)
 
     second_distribution = king_function(x, sigma=sigma_tail, gamma=gamma_tail)
@@ -11,7 +10,6 @@ def dual_function(x, sigma_core, gamma_core, sigma_tail, gamma_tail, f_core):
 
 
 def king_function(x, sigma, gamma):
-
     # Called King function by this paper - https://iopscience.iop.org/article/10.1088/0004-637X/765/1/54/pdf
     # However, it is often referred to as the Moffat distribution - note in final paper
 
@@ -25,7 +23,6 @@ def king_function(x, sigma, gamma):
 
 
 def monte_carlo_sampler(func, parameters, num_samples):
-
     # Used to sample random values directly from PDF
 
     # https://en.wikipedia.org/wiki/Ratio_of_uniforms
@@ -59,6 +56,39 @@ def monte_carlo_sampler(func, parameters, num_samples):
 
     return samples
 
+
+def monte_carlo_sampler_2(parameters, num_samples):
+    # Used to sample random values directly from PDF
+
+    # https://en.wikipedia.org/wiki/Ratio_of_uniforms
+
+    # Find the upper bound of the interval from which we sample initial x - take initial maximum to be 30 degrees (as
+    # that is our specified radius for diffuse sources - much greater than for this for our point sources)
+
+    intervals = np.linspace(0, 30, num=10000)
+
+    func_values = dual_function(intervals, sigma_core=parameters[0], gamma_core=parameters[1], sigma_tail=parameters[2],
+                                gamma_tail=parameters[3], f_core=parameters[4])
+
+    # Bounding box
+    y_min, y_max = 0, func_values[np.argmax(func_values)]
+
+    # Uniformly sample this bounding box - if under the curve, include
+
+    samples = []
+
+    while len(samples) < num_samples:
+
+        # "Throw dart" into bounding box
+        candidate_x = np.random.uniform(low=0, high=30)
+        candidate_y = np.random.uniform(low=0, high=y_max)
+
+        # If it is under the curve
+        if candidate_y <= dual_function(candidate_x, sigma_core=parameters[0], gamma_core=parameters[1],
+                                        sigma_tail=parameters[2], gamma_tail=parameters[3], f_core=parameters[4]):
+            samples.append(candidate_x)
+
+    return samples
 
 # REFERENCES
 

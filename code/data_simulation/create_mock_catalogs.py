@@ -1,8 +1,6 @@
 # This method is adapted from ID8. All code is my own (except where indicated), but Python
 # implementation provided by the authors to *access* (not generate) data can be found in ID8 footnotes. Reasons for
 # implementing are as follows:
-# 2) I hoped to improve upon their implementation performance-wise - by implementing from scratch, I am familiar with
-# the code and can improve it more easily.
 # 3) I wanted to understand the method so that I could reimplement the code in C/C++ to make use of parallel processing
 # and GPUs.
 # 4) Once I had reimplemented (possibly in two languages) and made optimisations, I could then improve simulation
@@ -10,8 +8,6 @@
 # 5) NOT ALL THE METHODS FOR SIMULATING DATA WERE PROVIDED IN THE ABOVE CODE - MORE ABOUT ACCESSING PRE-GENERATED DATA!
 # - CHECK - IT'S ALL ABOUT ACCESSING PREGENERATED DATA - https://git.io/JO5FP - COULD USE TO READ MY XML FILES AND
 # GENERATE PATCHES.
-# 6) IT WILL BE USEFUL - TRAIN MODELS, BENCHMARK DETECTION SCHEMES, HAVE EXACT POSITIONS OF SOURCES SO CAN ALSO
-# EVALUATE SENSITIVITY AND LOCALISATION
 
 # LIBRARIES
 import argparse
