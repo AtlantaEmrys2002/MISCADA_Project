@@ -2,7 +2,6 @@ import argparse
 from benchmarks.uneb import uneb_algorithm
 from benchmarks.unek import unek_algorithm
 from read_write_functions import read_patches, save_predictions
-# from utils import random_data
 
 if __name__ == "__main__":
     # PROCESS USER INPUT
@@ -38,7 +37,7 @@ if __name__ == "__main__":
 
     print("Complete")
 
-    # train, valid, test = random_data(n=256)
+    # UNEK
 
     # Results when applied to the TEST data (not the train or validation data)
     unek_predicted_segmentations, unek_predicted_locations = unek_algorithm(train, valid, test)
@@ -47,6 +46,8 @@ if __name__ == "__main__":
 
     save_predictions(patch_ids=test_patch_ids, predicted_segmentations=unek_predicted_segmentations,
                      predicted_locations=unek_predicted_locations, directory=save_directory, method="UNEK")
+
+    # UNEB
 
     # N.B. use pre-trained, as exactly the same data is being used as validation and test data
     uneb_predicted_segmentations, uneb_prediction_locations = uneb_algorithm(train, valid, test, use_pretrained=True)

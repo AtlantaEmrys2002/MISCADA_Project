@@ -109,13 +109,16 @@ def save_predictions(patch_ids, predicted_segmentations, predicted_locations, di
 
     np.save(save_location + "predicted_locations.npy", predicted_locations)
 
-    dfs = [pd.read_csv(patches_location + "patch_{}/metadata.csv".format(p)) for p in patch_ids]
+    # Save patch IDs to ensure the actual locations of the sources can be retrieved
+    np.save(save_location + "patch_ids.npy", patch_ids)
 
-    print(dfs[0])
-    print(predicted_locations)
-
-
-
+    # dfs = [pd.read_csv(patches_location + "patch_{}/metadata.csv".format(p)) for p in patch_ids]
+    #
+    # # N.B. I assume that the clustering algorithms return coordinates in form (x, y). Therefore, save locations as such!
+    #
+    # actual_locations = [df[['cartesian_x', 'cartesian_y']].to_numpy() for df in dfs]
+    #
+    # np.savez(save_location + "actual_locations.npy", actual_locations)
 
 # REFERENCES
 
