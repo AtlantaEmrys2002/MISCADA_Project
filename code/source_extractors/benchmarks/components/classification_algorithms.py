@@ -1,13 +1,22 @@
 import torch
 from torch import nn
 
+
+class CategoricalCrossEntropy(nn.Module):
+
+    def __init__(self):
+        super(CategoricalCrossEntropy, self).__init__()
+
+    def forward(self, predictions, targets):
+        return nn.NLLLoss()(torch.log(predictions), targets)
+
+
 class SourceClassifier(nn.Module):
 
     # Architecture is that specified in ID8. This implementation is completely unique and created by this author.
 
     def __init__(self):
-
-        # INPUT is 128, 5, 7, 7
+        # Input has dimensions of 128, 5, 7, 7
 
         super().__init__()
 
@@ -46,29 +55,115 @@ class SourceClassifier(nn.Module):
         )
 
     def forward(self, x):
-
         x = self.batch_norm(x)
         x = self.conv_layers(x)
         x = self.max_pooling(x)
-
-        print(x.shape)
-
         x = self.flatten(x)
         x = self.dense_layers(x)
 
         return x
 
 
+def classifier_training(train_data, test_data, training_epochs=50,
+                        save_file="./benchmarks/pre_trained_models/classifier.pt"):
+
+    classifier = SourceClassifier()
+
+    # Define loss function
+
+    loss_fn = CategoricalCrossEntropy()
+    optimiser = torch.optim.Adam(classifier.parameters(), lr=0.01)
+
+    # Start with large value that is easily surpassed
+    best_vloss = 100000000000000
+    best_epoch = 0
+
+    epochs_since_improvement = 0
+
+    # Training epochs
+    for epoch in range(training_epochs):
+
+        print("EPOCH {}".format(epoch))
+
+        classifier.train(True)
+
+        for i, data in enumerate(train_data):
+
+            inputs, labels = data[0], data[1]
+
+            # Make sure to zero gradients when calculating loss and don't update model
+            output = classifier(inputs)
+
+            # Compute loss and gradients
+            loss = loss_fn(output, labels)
+            loss.backward()
+
+            # Adjust weights
+            optimiser.step()
+
+        # Set to evaluate mode
+        classifier.eval()
+
+        running_vloss = 0.0
+
+        with torch.no_grad():
+            for i, vdata in enumerate(test_data):
+
+                vinputs, vlabels = vdata[0], vdata[1]
+
+                voutputs = classifier(vinputs)
+
+                vloss = loss_fn(voutputs, vlabels)
+
+                running_vloss += vloss
+
+        avg_vloss = running_vloss / (i + 1)
+
+        # if this is the best model (in terms of loss) found so far, save model
+        if avg_vloss < best_vloss:
+
+            best_vloss = avg_vloss
+            best_epoch = epoch
+
+            epochs_since_improvement = 0
+
+            torch.save(classifier.state_dict(), save_file)
+
+        else:
+
+            epochs_since_improvement += 1
+
+        # if no improvement in loss for 50 epochs, stop training
+        if epochs_since_improvement == 50:
+
+            break
+
+        elif epochs_since_improvement == 5:
+
+            # Half the learning rate
+
+            for g in optimiser.param_groups:
+                g['lr'] /= 2
+
+    return classifier, best_epoch
 
 
+classifier = SourceClassifier()
 
+print(classifier)
 
+test = torch.rand(128, 5, 7, 7)
 
-# classifier = SourceClassifier()
-#
-# print(classifier)
-#
-# test = torch.rand(128, 5, 7, 7)
-#
-# print(classifier(test))
+print(classifier(test).detach().cpu().numpy())
 
+# REFERENCES
+
+# Categorical Cross Entropy - https://discuss.pytorch.org/t/categorical-cross-entropy-loss-function-equivalent-in-
+# pytorch/85165/3
+# Custom Loss Functions - https://machinelearningmastery.com/creating-custom-layers-loss-functions-pytorch/
+# Dense Layers - https://apxml.com/courses/pytorch-for-tensorflow-developers/chapter-2-pytorch-nn-module-for-keras-
+# users/common-layer-types-pytorch-tf
+# Dense Layers 2 - https://discuss.pytorch.org/t/pytorch-torch-nn-equivalent-of-tensorflow-keras-dense-layers/133518
+# Flatten with Linear - https://discuss.pytorch.org/t/should-i-flatten-before-the-linear-layer/43570
+# Updating Learning Rate - https://stackoverflow.com/questions/48324152/how-to-change-the-learning-rate-of-an-optimizer-
+# at-any-given-moment-no-lr-sched
