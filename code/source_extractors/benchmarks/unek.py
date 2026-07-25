@@ -5,14 +5,12 @@ from . components.classification_algorithms import classifier_train
 from . components.clustering_algorithms import k_means_clustering
 from . components.segmentation_algorithms import UNET, unet_train
 import numpy as np
-# from .. data_simulation.read_write_functions import xml_parser_locations
+from . utils import get_lb_from_pixel, pixel_id
 import torch
 from xml.dom import minidom, Node
 
 
 def xml_parser_locations(xml_file: str, coordinate_system='G'):
-
-    print(xml_file)
 
     # COULD CALL THIS FROM OTHER FUNCTION MAYBE??
 
@@ -33,8 +31,6 @@ def xml_parser_locations(xml_file: str, coordinate_system='G'):
     for source in sources:
 
         source_ids.append(source.getAttribute("name"))
-
-        # source_type = source.getAttribute("name")[:3]
 
         # PARSE SPATIAL PARAMETERS
 
@@ -80,6 +76,7 @@ def xml_parser_locations(xml_file: str, coordinate_system='G'):
     else:
 
         raise TypeError("Coordinate system not supported.")
+
 
 def source_boxes(patches, predicted_source_locations):
 
@@ -130,29 +127,29 @@ def source_box_labels(patch_ids, predicted_source_locations):
     source_information = pd.read_csv("./../data_simulation/simulated_data/patches/patch_metadata.csv")
 
     # Gives the ID of the catalog that each patch is based on
-    patch_catalogs = dict(zip(source_information["patch_id"].to_numpy(), source_information["catalog_id"].to_numpy() + 1))
+    patch_catalogs = dict(zip(source_information["patch_id"].to_numpy(), source_information["catalog_id"].to_numpy() +
+                              1))
+
+    patch_centres = np.array(list(zip(source_information["centre_lon"].to_numpy(), source_information["centre_lat"].
+                                      to_numpy())))
 
     # Figure out catalog for each patch - MAYBE CREATED A CSV FILE
 
     agn_coordinates_per_catalog = []
     pulsar_coordinates_per_catalog = []
 
-    # print(np.max(source_information["catalog_id"].to_numpy()))
-
     for catalog_id in range(1, np.max(source_information["catalog_id"].to_numpy()) + 2):
 
-        actual_agn_coordinates, actual_agn_ids = xml_parser_locations(xml_file="./../data_simulation/simulated_data/catalogs/catalog_{}/"
-                                                                               "agns.xml".format(catalog_id),
-                                                                      coordinate_system='C')
+        actual_agn_coordinates, actual_agn_ids = xml_parser_locations(xml_file="./../data_simulation/simulated_data/"
+                                                                               "catalogs/catalog_{}/agns.xml".
+                                                                      format(catalog_id), coordinate_system='C')
 
-        actual_psr_coordinates, actual_psr_ids = xml_parser_locations(xml_file="./../data_simulation/simulated_data/catalogs/catalog_{}/"
-                                                                               "pulsars.xml".format(catalog_id),
-                                                                      coordinate_system='C')
+        actual_psr_coordinates, actual_psr_ids = xml_parser_locations(xml_file="./../data_simulation/simulated_data/"
+                                                                               "catalogs/catalog_{}/pulsars.xml".
+                                                                      format(catalog_id), coordinate_system='C')
 
         agn_coordinates_per_catalog.append(dict(zip(actual_agn_ids, actual_agn_coordinates)))
         pulsar_coordinates_per_catalog.append(dict(zip(actual_psr_ids, actual_psr_coordinates)))
-
-    # print(pulsar_coordinates_per_catalog)
 
     for n in range(num_patches):
 
@@ -166,7 +163,10 @@ def source_box_labels(patch_ids, predicted_source_locations):
 
         patch_information = pd.read_csv("./../data_simulation/simulated_data/patches/patch_{}/metadata.csv".format(n))
 
-        actual_sources_in_patch = patch_information["source_id"].to_numpy()
+        # actual_sources_in_patch = patch_information["source_id"].to_numpy()
+
+        actual_agn_in_patch = patch_information[patch_information["source_type"] == "AGN"]["source_id"].to_numpy()
+        actual_psr_in_patch = patch_information[patch_information["source_type"] == "PSR"]["source_id"].to_numpy()
 
         # FROM SOURCE IDS ABOVE GET COORDINATES OF EACH SOURCE WITH THAT ID IN THE CATALOG ID FOUND ABOVE
         # THEN CALCULATE DISTANCE BETWEEN COORDS OF PIXEL IN WHICH PREDICTED (USInG HEALPY FUNCTION TO CONVERT TO
@@ -176,10 +176,56 @@ def source_box_labels(patch_ids, predicted_source_locations):
 
         # N.B. FOR ABOVE - ITERATE OVER PREDICTED SOURCES
 
-        # actual_locations_in_celestial =
+        actual_agn_locations_in_celestial = [agn_coordinates_per_catalog[catalog_of_patch - 1][actual_agn_in_patch[k]]
+                                             for k in range(len(actual_agn_in_patch))]
+
+        actual_psr_locations_in_celestial = [pulsar_coordinates_per_catalog[catalog_of_patch - 1]
+                                             [actual_psr_in_patch[k]] for k in range(len(actual_psr_in_patch))]
+
+        # Since we have no way of knowing where in patch model will predict, we take centre of pixel to be the point at
+        # which the model believes there is a source
+
+        center_of_patch = patch_centres[patch_id]
+
+        predicted_locs_for_patch_galactic = []
+
+        for pred in predicted_locs_for_patch:
+
+            y_val = pred[0]
+            x_val = pred[1]
+
+            # We are calculating location in 128 x 128 instead of 64 x 64 image. Remember to keep this way round - x,y
+            # becomes y,x for images.
+
+            pixel_id_val = pixel_id(x_val * 2, y_val * 2, 128)
+
+            l_ps, b_ps = get_lb_from_pixel(pixel_id_val, center_of_patch)
+
+            predicted_locs_for_patch_galactic.append([l_ps, b_ps])
+
+        predicted_locs_for_patch_galactic = np.array(predicted_locs_for_patch_galactic)
+
+        # Convert prediction locs to celestial coordinates
+
+        predicted_locs_for_patch_celestial = SkyCoord(l=predicted_locs_for_patch_galactic[:, 0] * u.degree,
+                                                      b=predicted_locs_for_patch_galactic[:, 1] * u.degree,
+                                                      frame='galactic').icrs
+
+        predicted_locs_for_patch_celestial = np.array([predicted_locs_for_patch_celestial.ra.value,
+                                                       predicted_locs_for_patch_celestial.dec.value]).T
+
+        # FIND SEPARATION OF PREDICTED AND GALACTIC COORDINATES
+
+        # Iterate over predictions and return whether they are AGN, PSR, FAKE - N.B. NEED NUMBER SYSTEM FOR THIS
 
 
 
+
+
+        # USE SEPARATATION NOT CARTESIAN DISTANCE WHEN DOING RA AND DEC - SEE DISTANCE FUNCTION
+
+
+        # DON'T FORGET TO NORAMLISE
 
     return labels
 
