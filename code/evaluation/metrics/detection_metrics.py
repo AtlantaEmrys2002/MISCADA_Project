@@ -36,6 +36,10 @@ def precision_recall_distances(actual_sources, predicted_sources, distance_thres
     return precision, recall
 
 
+
+
+# NEED TO CHANGE ThIS SO WORKS FOR RA-DEC AND 0.3 DEGREES
+
 def s90(actual_source_locations, predicted_source_locations, signal_to_noise_ratio, distance_threshold=10):
     # From ID8 - assume energy fluxes in MeV and locations are in Cartesian coordinates (i.e. for patch 64 x 64, gives
     # locations of both in format (x, y) where x and y are in range [0, 63] (0-indexed)

@@ -4,7 +4,8 @@ import numpy as np
 import torch
 
 
-def uneb_algorithm(training_data, validation_data, testing_data, use_pretrained=False,
+def uneb_algorithm(training_data, validation_data, testing_data,  use_pretrained_detector=False,
+                   use_pretrained_classifier=False,
                    pretrained_model_file="./benchmarks/pre_trained_models/unet.pt"):
 
     # SEMANTIC SEGMENTATION
@@ -12,7 +13,7 @@ def uneb_algorithm(training_data, validation_data, testing_data, use_pretrained=
     # Pre-trained parameter determines if we should use a U-Net I have already trained on data on create a new U-Net
     # and train it on the training/validation data
 
-    if use_pretrained is False:
+    if use_pretrained_detector is False:
 
         # Train U-Net on data
         model = unet_train(train_data=training_data, test_data=validation_data)
@@ -29,10 +30,13 @@ def uneb_algorithm(training_data, validation_data, testing_data, use_pretrained=
     # Feed test count maps to trained U-Net model to perform semantic segmentation
 
     testing_inputs = []
+    test_patch_ids = []
 
     for i, vdata in enumerate(testing_data):
+        test_patch_ids.append(vdata[0])
+        testing_inputs.append(vdata[1])
 
-        testing_inputs.append(vdata[0])
+    test_patch_ids = test_patch_ids[0].detach().cpu().numpy()
 
     with torch.no_grad():
 
@@ -46,7 +50,7 @@ def uneb_algorithm(training_data, validation_data, testing_data, use_pretrained=
     source_locations = blob_detection(unet_predictions)
 
     # Return the segmented images returned by U-Net and locations of source centres returned by K-means
-    return unet_predictions.detach().cpu().numpy(), source_locations
+    return unet_predictions.detach().cpu().numpy(), source_locations, test_patch_ids
 
 # REFERENCES
 

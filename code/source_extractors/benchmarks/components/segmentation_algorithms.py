@@ -180,7 +180,7 @@ def unet_train(train_data, test_data, training_epochs=50, save_file="./benchmark
 
         for i, data in enumerate(train_data):
 
-            inputs, labels = data[0], data[1]
+            _, inputs, labels = data[0], data[1], data[2]
 
             # Make sure to zero gradients when calculating loss and don't update model
             output = unet(inputs)
@@ -200,7 +200,7 @@ def unet_train(train_data, test_data, training_epochs=50, save_file="./benchmark
         with torch.no_grad():
             for i, vdata in enumerate(test_data):
 
-                vinputs, vlabels = vdata[0], vdata[1]
+                vid, vinputs, vlabels = vdata[0], vdata[1], vdata[2]
 
                 voutputs = unet(vinputs)
 

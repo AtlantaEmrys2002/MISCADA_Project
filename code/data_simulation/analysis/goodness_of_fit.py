@@ -175,6 +175,7 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05) -> None:
 # Chi-Squared - https://www.scribbr.com/statistics/chi-square-goodness-of-fit/
 # Chi-Squred with Zero Expected Counts - https://stats.stackexchange.com/questions/78101/chi-squared-test-with-0-
 # expected-values
+# Distributions - https://civil.colorado.edu/~balajir/CVEN5454/lectures/Ang-n-Tang-Chap7-Goodness-of-fit-PDFs-test.pdf
 # Fitting Distributions - https://cseweb.ucsd.edu/~dasgupta/291w22/distributions-handout.pdf
 # Goodness of Fit - https://www.lboro.ac.uk/media/media/schoolanddepartments/mlsc/downloads/HELM%20Workbook%2042%20
 # Goodness%20of%20Fit%20and%20Contingency%20Tables.pdf

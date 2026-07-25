@@ -56,7 +56,7 @@ if __name__ == "__main__":
                                                                          "binned file specifying how long telescope is"
                                                                          "pointed at specific area of the sky.")
 
-    parser.add_argument("--number_skymaps", required=True, type=int, help="This specifies the number of "
+    parser.add_argument("--number_catalogs", required=True, type=int, help="This specifies the number of "
                                                                           "catalogs from which to generate all-sky "
                                                                           "simulated source count maps.")
 
@@ -85,7 +85,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     exposure_fits_file = args.exposure_fits
-    num_catalogs = args.number_skymaps
+    num_catalogs = args.number_catalogs
     point_source_psf_file = args.pointsource_psf
     diffuse_source_psf_roi_file = args.diffuse_source_psf_roi
     isotropic_background_file = args.isotropic_background

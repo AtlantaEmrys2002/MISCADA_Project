@@ -5,41 +5,16 @@
 
 
 import argparse
+
 from formatting.projection_tools import get_ps_info_128
 from formatting.mask_creation import psf_bck_mask
 import healpy as hp
-from map_generation.visualisation import format_scientific_notation_label
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 from pathlib import Path
 from read_write_functions import xml_parser
-
-
-def plot_patch(binned_patches, mask, unformatted_energy_bins, directory):
-
-    formatted_energy_bins = format_scientific_notation_label(unformatted_energy_bins)
-
-    plt.rcParams["figure.figsize"] = (15, 10)
-
-    fig, ax = plt.subplots(nrows=2, ncols=3)
-
-    axes = ax.flatten()
-
-    for a in range(len(axes) - 1):
-
-        im = axes[a].imshow(binned_patches[a])
-
-        axes[a].set_title("Count Map {} MeV - {} MeV".format(formatted_energy_bins[a], formatted_energy_bins[a + 1]))
-
-        fig.colorbar(im, ax=axes[a])
-
-    axes[-1].imshow(mask)
-
-    fig.suptitle("Binned Patch Count Map")
-    fig.tight_layout()
-
-    plt.savefig(directory + "/patch_visualised.png")
+from verification.visualisation import plot_patch
 
 
 if __name__ == "__main__":
@@ -47,7 +22,7 @@ if __name__ == "__main__":
     # INPUT PARAMETERS AND DATA
 
     parser = argparse.ArgumentParser(description="Read in simulated all-sky maps and catalogs to create a dataset of "
-                                                 "ROIs to be fed to source dectection algorithms.")
+                                                 "ROIs to be fed to source detection algorithms.")
 
     parser.add_argument("--num_catalogs", required=True, type=int, help="The number of simulated catalogs "
                                                                         "that have been generated and can be"
@@ -116,7 +91,7 @@ if __name__ == "__main__":
     # CREATE CSV FILE FOR STORING PATCH INFORMATION
 
     # list for the csv files - stores information about each patch
-    header_line = "patch_id,centre_lat,centre_lon,num_agn,num_psr\n"
+    header_line = "patch_id,catalog_id,centre_lat,centre_lon,num_agn,num_psr\n"
 
     f1 = open(save_directory + "/patches/patch_metadata.csv", "w+")
     f1.writelines(header_line)
@@ -126,8 +101,6 @@ if __name__ == "__main__":
 
     # Num patches to generate
     patches = max_patches_per_catalog
-
-    # for c in range(num_catalogs):
 
     for c in range(num_catalogs):
 
@@ -141,12 +114,6 @@ if __name__ == "__main__":
             # catalogs_directory = save_directory + "/catalogs/catalog_{}".format(c + 1)
 
             # Read in the coordinates and associated integral photon fluxes of each source in AGN and pulsar maps
-            # agn_coordinates, agn_photon_fluxes, agn_ids = xml_parser(energy_bins=energy_bins,
-            #                                                          xml_file=catalogs_directory + "/agns.xml",
-            #                                                          give_ids=True)
-            # pulsar_coordinates, pulsar_photon_fluxes, pulsar_ids = xml_parser(energy_bins=energy_bins,
-            #                                                                   xml_file=catalogs_directory + "/pulsars.xml",
-            #                                                                   give_ids=True)
 
             agn_coordinates, _, agn_ids = xml_parser(energy_bins=energy_bins,
                                                      xml_file=catalogs_directory + "/agns.xml",
@@ -167,7 +134,6 @@ if __name__ == "__main__":
                 pulsars = hp.fitsfunc.read_map(filename=skymaps_directory + "/pulsars_{}.fits".format(b), field=None)
                 background = hp.fitsfunc.read_map(filename=skymaps_directory + "/background_{}.fits".format(b), field=None)
 
-                # THIS IS LIKELY WHERE ANY PROBLEMS WILL OCCUR
                 binned_agn_map.append(agns / pix_sr)
                 binned_pulsar_map.append(pulsars / pix_sr)
                 binned_background_map.append(background / pix_sr)
@@ -343,7 +309,7 @@ if __name__ == "__main__":
                 f2.close()
 
                 # Metadata for all patches
-                patch_information.append(f"{patch_id},{lat},{lon},{nagn},{npsr}\n")
+                patch_information.append(f"{patch_id},{c},{lat},{lon},{nagn},{npsr}\n")
 
     # SAVE PATCH METADATA
 
@@ -352,3 +318,8 @@ if __name__ == "__main__":
     f1 = open(save_directory + "/patches/patch_metadata.csv", "a")
     f1.writelines(patch_information)
     f1.close()
+
+
+# REFERENCES
+
+# Indexing 3D Arrays stored as 1D - https://cplusplus.com/forum/general/137677/

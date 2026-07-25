@@ -406,3 +406,5 @@ def create_count_map(coordinates, exposure_maps, psf_parameters, fluxes, nside, 
 # Reproject Suggestion - https://stackoverflow.com/questions/54715123/converting-a-map-in-cartesian-projection-with-
 # spherical-coordinate-to-healix-p
 # Skycoords and Arrays - https://stackoverflow.com/questions/36146183/astropy-skycoord-extremely-slow-how-to-resovle-it
+# Unique Counts - https://stackoverflow.com/questions/28663856/how-do-i-count-the-occurrence-of-a-certain-item-in-an-
+# ndarray

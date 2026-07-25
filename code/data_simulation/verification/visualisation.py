@@ -1,6 +1,7 @@
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.table import QTable
+from map_generation.visualisation import format_scientific_notation_label
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
@@ -14,7 +15,7 @@ axis_labels = {"LP_Flux_Density": "Differential Flux Density",
 
 # Used for mathematical descriptions - gives mathematical notation equivalent to variable
 mathematical_notation = {"Pivot_Energy": "$E_0$", "LP_Flux_Density": "$F_0$", "LP_Index": "$\\alpha$",
-                         "LP_beta": "$\\beta$", "PLEC_Flux_Density": "$F_0$", "PLEC_IndexS": "$\Gamma$",
+                         "LP_beta": "$\\beta$", "PLEC_Flux_Density": "$F_0$", "PLEC_IndexS": "$\\Gamma$",
                          "PLEC_Exp_Index": "$b$", "PLEC_ExpfactorS": "$a$", "GLAT": "Latitude"}
 
 # Used for indicating units
@@ -145,6 +146,36 @@ def plot_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64
     fig.savefig(directory + "/4fgl_{}_luminosity_function.png".format(source_type.lower()))
 
     plt.close()
+
+
+def plot_patch(binned_patches, mask, unformatted_energy_bins, directory):
+
+    # PLOT ENERGY BINNED COUNT MAPS AND CORRESPONDING MASK
+
+    formatted_energy_bins = format_scientific_notation_label(unformatted_energy_bins)
+
+    plt.rcParams["figure.figsize"] = (15, 10)
+
+    fig, ax = plt.subplots(nrows=2, ncols=3)
+
+    axes = ax.flatten()
+
+    num_bins = unformatted_energy_bins.shape[0] - 1
+
+    for a in range(num_bins):
+
+        im = axes[a].imshow(binned_patches[a])
+
+        axes[a].set_title("Count Map {} MeV - {} MeV".format(formatted_energy_bins[a], formatted_energy_bins[a + 1]))
+
+        fig.colorbar(im, ax=axes[a])
+
+    axes[-1].imshow(mask)
+
+    fig.suptitle("Binned Patch Count Map")
+    fig.tight_layout()
+
+    plt.savefig(directory + "/patch_visualised.png")
 
 
 def plot_spatial_distribution(galactic_longitudes, galactic_latitudes, source_type: str, directory: str):

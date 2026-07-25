@@ -22,7 +22,6 @@ def read_patches(num_patches=int, directory=str):
     source_ids = []
     actual_cartesian_locations = []
     types = []
-    patch_ids = list(range(1, int(num_patches) + 1))
 
     for n in range(num_patches):
 
@@ -41,12 +40,8 @@ def read_patches(num_patches=int, directory=str):
 
         types.append(df["source_type"].to_numpy())
 
-    # metadata = [patch_ids, source_ids, actual_cartesian_locations, types]
-
-    # metadata = [[patch_ids[k], source_ids[k], actual_cartesian_locations[k], types[k]] for k in range(num_patches)]
-
     # Combine to create test data
-    test_data = [(torch.from_numpy(patches[k]), torch.from_numpy(masks[k])) for k in range(num_patches)]
+    test_data = [(k, torch.from_numpy(patches[k]), torch.from_numpy(masks[k])) for k in range(num_patches)]
 
     # Select random samples
     train_set_size = math.floor(float(num_patches) * 0.7)
@@ -80,9 +75,9 @@ def read_patches(num_patches=int, directory=str):
 
     # N.B. Only need the IDs of each test patch and make sure not to shuffle the test patches
 
-    test_patch_ids = copy.deepcopy(test_indices)  # + 1
+    # test_patch_ids = copy.deepcopy(test_indices)  # + 1
 
-    return train_batches, validation_batches, test_batches, test_patch_ids  # test_metadata
+    return train_batches, validation_batches, test_batches  #, test_patch_ids  # test_metadata
 
 
 def save_predictions(patch_ids, predicted_segmentations, predicted_locations, directory: str, method: str):

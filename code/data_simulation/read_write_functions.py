@@ -536,6 +536,76 @@ def save_catalog(simulated_agns, simulated_pulsars, file_name: str):
         f.write(pulsar_xml_str)
 
 
+def xml_parser_locations(xml_file: str, coordinate_system='G'):
+
+    # COULD CALL THIS FROM OTHER FUNCTION MAYBE??
+
+    # GET NAME AND LOCATION OF SOURCE IN SKY
+
+    docs = minidom.parse(xml_file)
+
+    sources = docs.getElementsByTagName("source")
+
+    coordinates = []
+
+    # Remove diffuse sources - only processing point sources with this function
+    sources = [sources[k] for k in range(len(sources)) if sources[k].getAttribute("type") != "DiffuseSource"]
+
+    source_ids = []
+
+    # Parse XML
+    for source in sources:
+
+        source_ids.append(source.getAttribute("name"))
+
+        source_type = source.getAttribute("name")[:3]
+
+        # PARSE SPATIAL PARAMETERS
+
+        spatial_model = source.getElementsByTagName("spatialModel")[0]
+
+        parameters = spatial_model.getElementsByTagName("parameter")
+
+        coordinate = [0, 0]
+
+        for param in parameters:
+            name = param.getAttribute("name")
+
+            if name == "RA":
+                coordinate[0] = float(param.getAttribute("value"))
+            else:
+                coordinate[1] = float(param.getAttribute("value"))
+
+        coordinates.append(coordinate)
+
+    # Have coordinates in format [RA, DEC] - need to convert them to Lat-lon
+
+    # Convert coordinates to np array
+    coordinates = np.array(coordinates)
+
+    if coordinate_system == 'G':
+
+        # if want in galactic coordinates then convert
+
+        # Get coordinates into numpy array then separate into list of lats and lons
+
+        coordinates = SkyCoord(ra=coordinates[:, 0] * u.degree, dec=coordinates[:, 1] * u.degree, frame='icrs').galactic
+
+        coordinates = np.array([coordinates.l.value, coordinates.b.value]).T
+
+        return coordinates, source_ids
+
+    elif coordinate_system == "C":
+
+        # if want celestial coordinates, just return
+
+        return coordinates, source_ids
+
+    else:
+
+        raise TypeError("Coordinate system not supported.")
+
+
 def xml_parser(energy_bins, xml_file: str, give_ids=False):
 
     # Read XML files to get latitude and longitude of each source (separate into AGN, pulsars, and background - if they
@@ -690,3 +760,4 @@ def xml_parser(energy_bins, xml_file: str, give_ids=False):
 # RA-Dec Units - https://www.reddit.com/r/Astronomy/comments/1fkv3nv/how_do_i_convert_from_hhmmss_to_degrees/
 # Source Descriptions - https://fermi.gsfc.nasa.gov/ssc/data/analysis/scitools/source_models.html#LogParabola
 # Strip Function - https://stackoverflow.com/questions/8270092/remove-all-whitespace-in-a-string
+# XML Tutorial - https://www.datacamp.com/tutorial/python-xml-elementtree

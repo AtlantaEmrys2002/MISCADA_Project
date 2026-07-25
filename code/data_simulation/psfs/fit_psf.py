@@ -268,5 +268,6 @@ def scale_psf(psf_values, energy_bin, c_0=3.5, c_1=0.15, beta=0.8):
 # PDF from Data - https://math.stackexchange.com/questions/2325565/is-it-possible-to-calculate-probability-density-
 # function-from-a-data-set
 # Radial Profiles - https://cxc.cfa.harvard.edu/ciao/why/radial_profile_correction.html
+# Radial Profiles - https://stackoverflow.com/questions/34965275/radial-profile-from-a-fits-image
 # Window Function - https://en.wikipedia.org/wiki/Window_function
 
