@@ -321,6 +321,31 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
 
         labels.append(np.array(labels_for_patch))
 
+
+
+
+
+
+
+
+
+
+
+
+    # lABELS SHOULD BE VECTORS WITH 1 BEING SORUCE TYPE AND 0 BEING NOT OSURCE TYPE, E.G. [1, 0, 0] is AGN, [0, 1, 0] is
+    # PSR and [0, 0, 1] is FAKE
+
+
+
+
+
+
+
+
+
+
+
+
     return labels
 
 
