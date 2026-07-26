@@ -7,8 +7,15 @@ class CategoricalCrossEntropy(nn.Module):
     def __init__(self):
         super(CategoricalCrossEntropy, self).__init__()
 
+
     def forward(self, predictions, targets):
-        return nn.NLLLoss()(torch.log(predictions), targets)
+
+        N = len(predictions)
+
+        # return nn.NLLLoss()(torch.log(predictions), targets)
+
+        # see references for this below line - borrowed for medium article on categorical cross entropy loss
+        return -1 / N * torch.sum(torch.sum(targets * torch.log(predictions)))
 
 
 class SourceClassifier(nn.Module):
@@ -152,6 +159,8 @@ def classifier_train(train_data, test_data, training_epochs=50,
 
 # Categorical Cross Entropy - https://discuss.pytorch.org/t/categorical-cross-entropy-loss-function-equivalent-in-
 # pytorch/85165/3
+# Categorical Cross Entropy Loss - https://arjun-sarkar786.medium.com/implementation-of-all-loss-functions-deep-learning
+# -in-numpy-tensorflow-and-pytorch-e20e72626ebd
 # Custom Loss Functions - https://machinelearningmastery.com/creating-custom-layers-loss-functions-pytorch/
 # Dense Layers - https://apxml.com/courses/pytorch-for-tensorflow-developers/chapter-2-pytorch-nn-module-for-keras-
 # users/common-layer-types-pytorch-tf

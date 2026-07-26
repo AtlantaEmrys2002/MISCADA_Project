@@ -7,6 +7,7 @@ from . components.segmentation_algorithms import UNET, unet_train
 import numpy as np
 from . utils import get_lb_from_pixel, pixel_id
 import torch
+from torch.utils.data import DataLoader, Subset
 from xml.dom import minidom
 
 
@@ -321,37 +322,56 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
 
         labels.append(np.array(labels_for_patch))
 
-
-
-
-
-
-
-
-
-
-
-
-    # lABELS SHOULD BE VECTORS WITH 1 BEING SORUCE TYPE AND 0 BEING NOT OSURCE TYPE, E.G. [1, 0, 0] is AGN, [0, 1, 0] is
-    # PSR and [0, 0, 1] is FAKE
-
-
-
-
-
-
-
-
-
-
-
-
     return labels
+
+
+def str_labels_to_vector_labels(labels):
+    num_patches = len(labels)
+
+    vector_labels = []
+
+    for n in range(num_patches):
+
+        patch = labels[n]
+
+        patch_labels = []
+
+        for p in patch:
+
+            if p == "AGN":
+
+                patch_labels.append(np.array([1., 0., 0.]))
+
+            elif p == "PSR":
+
+                patch_labels.append(np.array([0., 1., 0.]))
+
+            else:
+
+                patch_labels.append(np.array([0., 0., 1.]))
+
+        vector_labels.append(np.array(patch_labels))
+
+    return vector_labels
+
+
+def normalise_sub_patches(sub_patches):
+
+    # Normalises each patch independently - assume format of subpatches is n patches each with m subpatches
+
+    num_patches = sub_patches.shape[0]
+
+    print(num_patches)
+
+    # for p in range(num_patches):
+
+
 
 
 def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_detector=False,
                    use_pretrained_classifier=False,
-                   pretrained_model_file="./benchmarks/pre_trained_models/unet.pt"):
+                   pretrained_model_file="./benchmarks/pre_trained_models/unet.pt",
+                   pretrained_classifier_file="./benchmarks/pre_trained_models/classifier.pt"):
 
     # SEMANTIC SEGMENTATION
 
@@ -447,6 +467,17 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_
         training_sub_boxes = source_boxes(training_inputs, train_predicted_source_locations)
         validation_sub_boxes = source_boxes(validation_inputs, validation_predicted_source_locations)
 
+        # Normalise each patch
+
+        normalise_images(training_sub_boxes)
+
+
+
+
+
+
+
+
         # Get labels for each of the boxes (i.e. AGN, PSR, FAKE)
 
         train_labels = source_box_labels(patch_ids=training_patch_ids,
@@ -455,9 +486,59 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_
         validation_labels = source_box_labels(patch_ids=validation_patch_ids,
                                               predicted_source_locations=validation_predicted_source_locations)
 
+        train_labels = str_labels_to_vector_labels(train_labels)
+
+        validation_labels = str_labels_to_vector_labels(validation_labels)
+
+        # Fetch training patch and validation patch data and combine
+
+        train_classification_data = []
+
+        num_training_patches = len(training_sub_boxes)
+
+        for patch in range(num_training_patches):
+
+            num_predicted_sources = len(training_sub_boxes[patch])
+
+            for pred_source in range(num_predicted_sources):
+
+                train_classification_data.append([training_sub_boxes[patch][pred_source],
+                                                  train_labels[patch][pred_source]])
+
+        validation_classification_data = []
+
+        num_validation_patches = len(validation_sub_boxes)
+
+        for patch in range(num_validation_patches):
+
+            num_predicted_sources = len(validation_sub_boxes[patch])
+
+            for pred_source in range(num_predicted_sources):
+
+                validation_classification_data.append([torch.from_numpy(validation_sub_boxes[patch][pred_source]),
+                                                       torch.from_numpy(validation_labels[patch][pred_source])])
+
+        train_split = Subset(train_classification_data, np.arange(0, len(training_sub_boxes)))
+
+        validation_split = Subset(validation_classification_data, np.arange(0, len(validation_sub_boxes)))
+
+        train_batches_class = DataLoader(train_split, batch_size=128, shuffle=True)
+        validation_batches_class = DataLoader(validation_split, batch_size=128, shuffle=True)
+
+        # Train U-Net on data
+        model, best_epoch = classifier_train(train_data=train_batches_class, test_data=validation_batches_class,
+                                             save_file=pretrained_classifier_file)
+
+        print("BEST EPOCH: {}".format(best_epoch))
 
 
-        # Fetch training patch and validation patch data
+
+
+
+
+
+
+        # Need to BALANCE THIS DATASET - FIND GREATEST NUMBER OF OCCURRENCES AND THEN DUPLICATE AS MANY AS POSSIBLE TO FILL UP!!!!!!!
 
 
 
@@ -506,20 +587,10 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_
     #
     #                 classification_patches.append(new_patch)
 
+                # lABELS SHOULD BE VECTORS WITH 1 BEING SORUCE TYPE AND 0 BEING NOT OSURCE TYPE, E.G. [1, 0, 0] is AGN, [0, 1, 0] is
+                # PSR and [0, 0, 1] is FAKE
 
-
-
-
-
-
-
-
-
-
-
-
-
-        # classifier_train()
+                # classifier_train()
 
 
 

@@ -66,16 +66,6 @@ def get_lb_from_pixel(pixel_id, lb_centre, xsize=128, is_lat=True):
     r = np.dot(RotMatrixY(-b_centre), RotMatrixZ(l_centre))
     #########
 
-    # if type(pixel_id) is not np.int64 and type(pixel_id) is not int:
-    #
-    #     rotated_coordinates = lonlat_patch[pixel_id]
-    #
-    #     lon_PS_rotated, lat_PS_rotated = rotated_coordinates[:, 0], rotated_coordinates[:, 1]
-    #
-    # else:
-    #
-    #     lon_PS_rotated, lat_PS_rotated = lonlat_patch[pixel_id]
-
     rotated_coordinates = lonlat_patch[pixel_id]
 
     lon_PS_rotated, lat_PS_rotated = rotated_coordinates[:, 0], rotated_coordinates[:, 1]
@@ -88,23 +78,12 @@ def get_lb_from_pixel(pixel_id, lb_centre, xsize=128, is_lat=True):
     # HEALPIX SYSTEM)
     l_PS += 180  # to get to 0 - 360
 
-    # if type(pixel_id) is not np.int32 and type(pixel_id) is not int:
-    #
-    #     out_of_range = np.logical_or(l_PS > 360, l_PS < 0)
-    #
-    #     np.where(out_of_range, l_PS % 360, l_PS)
-    #
-    # else:
-    #
-    #     if l_PS > 360 or l_PS < 0:
-    #         l_PS = l_PS % 360
-
     out_of_range = np.logical_or(l_PS > 360, l_PS < 0)
 
     l_PS = np.where(out_of_range, l_PS % 360, l_PS)
 
     # When returning individual values
-    if l_PS.shape[0] == 1:
+    if type(pixel_id) is int or type(pixel_id) is np.int64:
 
         l_PS = l_PS[0]
         b_PS = b_PS[0]

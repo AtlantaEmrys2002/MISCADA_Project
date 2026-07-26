@@ -70,9 +70,6 @@ def read_patches(num_patches=int, directory=str):
     validation_batches = DataLoader(validation_split, batch_size=128, shuffle=True)
     test_batches = DataLoader(test_split, batch_size=128, shuffle=False)
 
-    # N.B. only need metadata for testing data
-    # test_metadata = [metadata[k] for k in test_indices]
-
     # N.B. Only need the IDs of each test patch and make sure not to shuffle the test patches
 
     return train_batches, validation_batches, test_batches
