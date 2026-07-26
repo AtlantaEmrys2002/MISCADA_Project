@@ -357,7 +357,7 @@ def str_labels_to_vector_labels(labels):
 
 def normalise_sub_patches(sub_patches):
 
-    # Normalises each patch independently - assume format of subpatches is n patches each with m subpatches
+    # Normalises each patch independently - assume format of sub-patches is n patches each with m sub-patches
 
     num_patches = len(sub_patches)
 
@@ -387,6 +387,41 @@ def normalise_sub_patches(sub_patches):
         normalised_sub_patches_arr.append(np.array(sub_patches_in_patch))
 
     return normalised_sub_patches_arr
+
+
+def prepare_classifier_data(patches, predicted_locations, patch_ids):
+
+    # Get 7 x 7 boxes around each predicted source in each patch
+    sub_boxes = source_boxes(patches, predicted_locations)
+
+    # Normalise each patch (normalise each energy bin separately)
+    normalised_sub_boxes = normalise_sub_patches(sub_boxes)
+
+    # Get labels for each patch (i.e. AGN, PSR, FAKE)
+    labels = source_box_labels(patch_ids=patch_ids, predicted_source_locations=predicted_locations)
+
+    # Format labels such that they are in vector format, e.g. AGN is equivalent to [1., 0., 0.]
+    vector_labels = str_labels_to_vector_labels(labels)
+
+    data = []
+
+    # Combine data such that each sub-patch is associated with its equivalent label
+
+    num_patches = len(sub_boxes)
+
+    for patch in range(num_patches):
+
+        num_predicted_sources = len(sub_boxes[patch])
+
+        for pred_source in range(num_predicted_sources):
+            data.append([normalised_sub_boxes[patch][pred_source], vector_labels[patch][pred_source]])
+
+    # Reformat as DataSet
+    split = Subset(data, np.arange(0, len(sub_boxes)))
+
+    batches = DataLoader(split, batch_size=128, shuffle=True)
+
+    return batches
 
 
 def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_detector=False,
@@ -484,6 +519,22 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_
         training_inputs = training_inputs[0].detach().cpu().numpy()
         validation_inputs = validation_inputs[0].detach().cpu().numpy()
 
+
+        # Prepare detected sources for classification (effectively, data prep)
+
+        train_batches_class = (
+            prepare_classifier_data(patches=training_inputs, predicted_locations=train_predicted_source_locations,
+                                    patch_ids=training_patch_ids))
+
+
+
+
+
+
+
+
+
+
         # Get 7 x 7 boxes around each predicted source in each patch
         training_sub_boxes = source_boxes(training_inputs, train_predicted_source_locations)
         validation_sub_boxes = source_boxes(validation_inputs, validation_predicted_source_locations)
@@ -538,7 +589,7 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_
 
         validation_split = Subset(validation_classification_data, np.arange(0, len(validation_sub_boxes)))
 
-        train_batches_class = DataLoader(train_split, batch_size=128, shuffle=True)
+        # train_batches_class = DataLoader(train_split, batch_size=128, shuffle=True)
         validation_batches_class = DataLoader(validation_split, batch_size=128, shuffle=True)
 
 
@@ -620,71 +671,8 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    # if use_pretrained_classifier is False:
-    #
-    #     # PREPARE DATA FOR CLASSIFIER
-    #
-    #     test_patches = np.array(testing_inputs)[0]
-    #
-    #     num_test_patches = test_patches.shape[0]
-    #
-    #     classification_patches = []
-    #
-    #     for n in range(num_test_patches):
-    #
-    #         predicted_locations_in_patch = predicted_source_locations[n].astype(int)
-    #
-    #         test_patch = test_patches[n]
-    #
-    #         for loc in predicted_locations_in_patch:
-    #
-    #             x, y = loc[0], loc[1]
-    #
-    #             # Select 7 x 7 grid around predicted location
-    #             rows = np.arange(x - 3, x + 4)
-    #             cols = np.arange(y - 3, y + 4)
-    #
-    #             # if cannot create a 7 x 7 grid, ignore during classification
-    #             if rows[0] < 0 or cols[0] < 0 or rows[-1] > 64 or cols[-1] > 64:
-    #
-    #                 continue
-    #
-    #             else:
-    #
-    #                 new_patch = test_patch[:, rows, :][:, :, cols]
-
-                        # DON'T FORGET TO NORAMLISE THE IMAGES - THIS HASN'T BEEN DONE YET!!!!!
-    #
-    #                 classification_patches.append(new_patch)
-
-                # lABELS SHOULD BE VECTORS WITH 1 BEING SORUCE TYPE AND 0 BEING NOT OSURCE TYPE, E.G. [1, 0, 0] is AGN, [0, 1, 0] is
-                # PSR and [0, 0, 1] is FAKE
-
-                # classifier_train()
-
-
-
-
-
-
     # Return the segmented images returned by U-Net and locations of source centres returned by K-means for the TEST
-    # data
+    # data, as well as the predictions of the class of each predicted source
     return unet_predictions.detach().cpu().numpy(), predicted_source_locations, test_patch_ids
 
 
