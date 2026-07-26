@@ -81,20 +81,21 @@ if __name__ == "__main__":
 
 
     # Results when applied to the TEST data (not the train or validation data)
-    unek_predicted_segmentations, unek_predicted_locations, test_patch_ids = unek_algorithm(train, valid, test,
+    unek_predicted_segmentations, unek_predicted_locations, unek_classifier_predictions, actual_classes, test_patch_ids = unek_algorithm(train, valid, test,
                                                                                             use_pretrained_detector=
                                                                                             True)
 
     # Save predictions for test patches
     save_predictions(patch_ids=test_patch_ids, predicted_segmentations=unek_predicted_segmentations,
-                     predicted_locations=unek_predicted_locations, directory=save_directory, method="UNEK")
+                     predicted_locations=unek_predicted_locations,
+                     predicted_classes=unek_classifier_predictions, actual_classes=actual_classes, directory=save_directory, method="UNEK")
 
     # UNEB
 
-    # N.B. use pre-trained, as exactly the same data is being used as validation and test data
-    uneb_predicted_segmentations, uneb_prediction_locations, test_patch_ids = uneb_algorithm(train, valid, test,
-                                                                                             use_pretrained_detector=
-                                                                                             True)
+    # # N.B. use pre-trained, as exactly the same data is being used as validation and test data
+    # uneb_predicted_segmentations, uneb_prediction_locations, test_patch_ids = uneb_algorithm(train, valid, test,
+    #                                                                                          use_pretrained_detector=
+    #                                                                                          True)
 
     save_predictions(patch_ids=test_patch_ids, predicted_segmentations=uneb_predicted_segmentations,
                      predicted_locations=uneb_prediction_locations, directory=save_directory, method="UNEB")

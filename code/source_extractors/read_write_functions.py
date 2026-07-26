@@ -75,7 +75,8 @@ def read_patches(num_patches=int, directory=str):
     return train_batches, validation_batches, test_batches
 
 
-def save_predictions(patch_ids, predicted_segmentations, predicted_locations, directory: str, method: str):
+def save_predictions(patch_ids, predicted_segmentations, predicted_locations, predicted_classes, actual_classes,
+                     directory: str, method: str):
 
     # Create directory to store results
 
@@ -101,6 +102,18 @@ def save_predictions(patch_ids, predicted_segmentations, predicted_locations, di
 
     # Save patch IDs to ensure the actual locations of the sources can be retrieved
     np.save(save_location + "patch_ids.npy", patch_ids)
+
+    # SAVE ACTUAL AND PREDICTED CLASSIFICATIONS OF EACH DETECTED SOURCE
+
+    # classifications = np.array(list(zip(actual_classes, predicted_classes)))
+
+    classifications = [[actual_classes[k], predicted_classes[k]] for k in range(len(actual_classes))]
+
+    print(classifications.shape)
+
+    np.save(save_location + "classifications", classifications)
+
+
 
     # dfs = [pd.read_csv(patches_location + "patch_{}/metadata.csv".format(p)) for p in patch_ids]
     #

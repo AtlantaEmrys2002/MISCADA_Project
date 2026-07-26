@@ -1,11 +1,11 @@
 import pandas as pd
 from astropy.coordinates import SkyCoord
 from astropy import units as u
-from . components.classification_algorithms import SourceClassifier, classifier_train
-from . components.clustering_algorithms import k_means_clustering
-from . components.segmentation_algorithms import UNET, unet_train
+from .components.classification_algorithms import SourceClassifier, classifier_train
+from .components.clustering_algorithms import k_means_clustering
+from .components.segmentation_algorithms import UNET, unet_train
 import numpy as np
-from . utils import get_lb_from_pixel, pixel_id
+from .utils import get_lb_from_pixel, pixel_id
 import torch
 from torch.utils.data import DataLoader, Subset
 from xml.dom import minidom
@@ -42,7 +42,6 @@ def image_cartesian_coordinates_to_galactic_coordinates(coordinates, patch_centr
 
 
 def xml_parser_locations(xml_file: str, coordinate_system='G'):
-
     # COULD CALL THIS FROM OTHER FUNCTION MAYBE??
 
     # GET NAME AND LOCATION OF SOURCE IN SKY
@@ -110,7 +109,6 @@ def xml_parser_locations(xml_file: str, coordinate_system='G'):
 
 
 def source_boxes(patches, predicted_source_locations):
-
     # Select 7 x 7 boxes around each patch location - all in Cartesian coordinates
 
     num_patches = patches.shape[0]
@@ -150,7 +148,6 @@ def source_boxes(patches, predicted_source_locations):
 
 
 def source_box_labels(patch_ids, predicted_source_locations, localisation_threshold=0.3):
-
     catalog_directory = "./../data_simulation/simulated_data/catalogs/catalog_{}/{}.xml"
     patches_metadata_file = "./../data_simulation/simulated_data/patches/patch_metadata.csv"
     individual_patch_metadata_file = "./../data_simulation/simulated_data/patches/patch_{}/metadata.csv"
@@ -180,7 +177,6 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
     pulsar_coordinates_per_catalog = []
 
     for catalog_id in range(1, num_catalogs + 1):
-
         actual_agn_coordinates, actual_agn_ids = (
             xml_parser_locations(xml_file=catalog_directory.format(catalog_id, "agns"), coordinate_system='C'))
 
@@ -227,13 +223,11 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
         # Convert to SkyCoords
 
         if num_agn_in_patch > 0:
-
             actual_agn_locations_in_celestial = SkyCoord(ra=actual_agn_locations_in_celestial[:, 0] * u.degree,
                                                          dec=actual_agn_locations_in_celestial[:, 1] * u.degree,
                                                          frame='icrs')
 
         if num_psr_in_patch > 0:
-
             actual_psr_locations_in_celestial = SkyCoord(ra=actual_psr_locations_in_celestial[:, 0] * u.degree,
                                                          dec=actual_psr_locations_in_celestial[:, 1] * u.degree,
                                                          frame='icrs')
@@ -356,7 +350,6 @@ def str_labels_to_vector_labels(labels):
 
 
 def normalise_sub_patches(sub_patches):
-
     # Normalises each patch independently - assume format of sub-patches is n patches each with m sub-patches
 
     num_patches = len(sub_patches)
@@ -376,7 +369,6 @@ def normalise_sub_patches(sub_patches):
             sub_patch = []
 
             for b in range(num_bins):
-
                 mu = np.mean(sub_patches[p][s][b])
                 sigma = np.std(sub_patches[p][s][b])
 
@@ -389,7 +381,7 @@ def normalise_sub_patches(sub_patches):
     return normalised_sub_patches_arr
 
 
-def prepare_classifier_data(patches, predicted_locations, patch_ids):
+def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_data=True):
 
     # Get 7 x 7 boxes around each predicted source in each patch
     sub_boxes = source_boxes(patches, predicted_locations)
@@ -419,7 +411,13 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids):
     # Reformat as DataSet
     split = Subset(data, np.arange(0, len(sub_boxes)))
 
-    batches = DataLoader(split, batch_size=128, shuffle=True)
+    if shuffle_data:
+
+        batches = DataLoader(split, batch_size=128, shuffle=True)
+
+    else:
+
+        batches = DataLoader(split, batch_size=128, shuffle=False)
 
     return batches
 
@@ -428,7 +426,6 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_
                    use_pretrained_classifier=False,
                    pretrained_model_file="./benchmarks/pre_trained_models/unet.pt",
                    pretrained_classifier_file="./benchmarks/pre_trained_models/classifier.pt"):
-
     # SEMANTIC SEGMENTATION
 
     # Pre-trained parameter determines if we should use a U-Net I have already trained on data on create a new U-Net
@@ -519,83 +516,18 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_
         training_inputs = training_inputs[0].detach().cpu().numpy()
         validation_inputs = validation_inputs[0].detach().cpu().numpy()
 
-
         # Prepare detected sources for classification (effectively, data prep)
-
         train_batches_class = (
             prepare_classifier_data(patches=training_inputs, predicted_locations=train_predicted_source_locations,
                                     patch_ids=training_patch_ids))
 
-
-
-
-
-
-
-
-
-
-        # Get 7 x 7 boxes around each predicted source in each patch
-        training_sub_boxes = source_boxes(training_inputs, train_predicted_source_locations)
-        validation_sub_boxes = source_boxes(validation_inputs, validation_predicted_source_locations)
-
-        # Normalise each patch
-
-        training_sub_boxes = normalise_sub_patches(training_sub_boxes)
-
-        validation_sub_boxes = normalise_sub_patches(validation_sub_boxes)
-
-        # Get labels for each of the boxes (i.e. AGN, PSR, FAKE)
-
-        train_labels = source_box_labels(patch_ids=training_patch_ids,
-                                         predicted_source_locations=train_predicted_source_locations)
-
-        validation_labels = source_box_labels(patch_ids=validation_patch_ids,
-                                              predicted_source_locations=validation_predicted_source_locations)
-
-        train_labels = str_labels_to_vector_labels(train_labels)
-
-        validation_labels = str_labels_to_vector_labels(validation_labels)
-
-        # Fetch training patch and validation patch data and combine
-
-        train_classification_data = []
-
-        num_training_patches = len(training_sub_boxes)
-
-        for patch in range(num_training_patches):
-
-            num_predicted_sources = len(training_sub_boxes[patch])
-
-            for pred_source in range(num_predicted_sources):
-
-                train_classification_data.append([training_sub_boxes[patch][pred_source],
-                                                  train_labels[patch][pred_source]])
-
-        validation_classification_data = []
-
-        num_validation_patches = len(validation_sub_boxes)
-
-        for patch in range(num_validation_patches):
-
-            num_predicted_sources = len(validation_sub_boxes[patch])
-
-            for pred_source in range(num_predicted_sources):
-
-                validation_classification_data.append([torch.from_numpy(validation_sub_boxes[patch][pred_source]),
-                                                       torch.from_numpy(validation_labels[patch][pred_source])])
-
-        train_split = Subset(train_classification_data, np.arange(0, len(training_sub_boxes)))
-
-        validation_split = Subset(validation_classification_data, np.arange(0, len(validation_sub_boxes)))
-
-        # train_batches_class = DataLoader(train_split, batch_size=128, shuffle=True)
-        validation_batches_class = DataLoader(validation_split, batch_size=128, shuffle=True)
-
+        validation_batches_class = (
+            prepare_classifier_data(patches=validation_inputs, predicted_locations=
+            validation_predicted_source_locations, patch_ids=validation_patch_ids))
 
         # Need to BALANCE THESE ABOVE DATASETS - FIND GREATEST NUMBER OF OCCURRENCES AND THEN DUPLICATE AS MANY AS POSSIBLE TO FILL UP!!!!!!!
 
-        # Train U-Net on data
+        # Train classifier on data
         classifier_model, best_epoch_classifier = classifier_train(train_data=train_batches_class,
                                                                    test_data=validation_batches_class,
                                                                    save_file=pretrained_classifier_file)
@@ -612,38 +544,13 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_
 
     testing_inputs = []
 
-    for i, vdata in enumerate(training_data):
+    for i, vdata in enumerate(testing_data):
         testing_inputs.append(vdata[1])
 
     testing_inputs = testing_inputs[0].detach().cpu().numpy()
 
-    # Get 7 x 7 boxes around each predicted source in each patch
-    testing_sub_boxes = source_boxes(testing_inputs, predicted_source_locations)
-
-    # Normalise each patch
-
-    testing_sub_boxes = normalise_sub_patches(testing_sub_boxes)
-
-    testing_labels = source_box_labels(patch_ids=test_patch_ids, predicted_source_locations=predicted_source_locations)
-
-    test_labels = str_labels_to_vector_labels(testing_labels)
-
-    # Fetch training patch and validation patch data and combine
-
-    test_classification_data = []
-
-    num_test_patches = len(testing_sub_boxes)
-
-    for patch in range(num_test_patches):
-
-        num_predicted_sources = len(testing_sub_boxes[patch])
-
-        for pred_source in range(num_predicted_sources):
-            test_classification_data.append([testing_sub_boxes[patch][pred_source], test_labels[patch][pred_source]])
-
-    test_split = Subset(test_classification_data, np.arange(0, len(testing_sub_boxes)))
-
-    test_batches_class = DataLoader(test_split, batch_size=128, shuffle=False)
+    test_batches_class = prepare_classifier_data(patches=testing_inputs, predicted_locations=predicted_source_locations,
+                                                 patch_ids=test_patch_ids)
 
     # Set to model evaluation model to ensure not accidentally continuing training
     classifier_model.eval()
@@ -651,30 +558,25 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_
     # Feed test count maps to trained U-Net model to perform semantic segmentation
 
     testing_inputs = []
-
     testing_actual_labels = []
 
     for i, vdata in enumerate(test_batches_class):
         testing_inputs.append(vdata[0])
         testing_actual_labels.append(vdata[1])
 
-    testing_actual_labels = testing_actual_labels[0].detach().cpu().numpy()
+    actual_classes = testing_actual_labels[0].detach().cpu().numpy()
 
     with torch.no_grad():
 
+
+        # FIGURE THIS OUT!!!!!
+
         classifier_predictions = np.array([classifier_model(i) for i in testing_inputs][0])
-
-    class_predictions = torch.from_numpy(classifier_predictions)
-
-
-
-
-
 
     # Return the segmented images returned by U-Net and locations of source centres returned by K-means for the TEST
     # data, as well as the predictions of the class of each predicted source
-    return unet_predictions.detach().cpu().numpy(), predicted_source_locations, test_patch_ids
-
+    return (unet_predictions.detach().cpu().numpy(), predicted_source_locations, classifier_predictions, actual_classes,
+            test_patch_ids)
 
 # REFERENCES
 
