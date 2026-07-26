@@ -71,8 +71,8 @@ class SourceClassifier(nn.Module):
         return x
 
 
-def classifier_train(train_data, test_data, training_epochs=50,
-                        save_file="./benchmarks/pre_trained_models/classifier.pt"):
+def classifier_train(train_data, test_data, training_epochs=50, save_file="./benchmarks/pre_trained_models/"
+                                                                          "classifier.pt"):
 
     classifier = SourceClassifier()
 
