@@ -10,7 +10,7 @@ import torch
 from xml.dom import minidom
 
 
-def image_cartesian_coordinates_to_galactic_coordinates(coordinates, patch_centre):
+def image_cartesian_coordinates_to_galactic_coordinates(coordinates, patch_centre, coordinate_system='G'):
     # Converts x, y index into 64 x 64 image into the longitude and latitude of a source in that image, given
     # the galactic coordinates of the centre of that image.
 
@@ -22,13 +22,22 @@ def image_cartesian_coordinates_to_galactic_coordinates(coordinates, patch_centr
     # 1D array.
     pixel_id_values = pixel_id(x_vals * 2, y_vals * 2, 128)
 
-
-
-    print("ARRAY ONE")
-
     new_coords = get_lb_from_pixel(pixel_id_values, patch_centre)
 
-    return np.array(new_coords).T
+    if coordinate_system == 'G':
+
+        return np.array(new_coords).T
+
+    elif coordinate_system == 'C':
+
+        new_coords = (SkyCoord(l=new_coords[0] * u.degree, b=new_coords[1] * u.degree, frame='galactic').
+                      transform_to('icrs'))
+
+        return np.array([new_coords.ra.value, new_coords.dec.value]).T
+
+    else:
+
+        raise TypeError("Coordinate system not supported.")
 
 
 def xml_parser_locations(xml_file: str, coordinate_system='G'):
@@ -228,48 +237,10 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
                                                          dec=actual_psr_locations_in_celestial[:, 1] * u.degree,
                                                          frame='icrs')
 
-        # Since we have no way of knowing where in patch model will predict, we take centre of pixel to be the point at
-        # which the model believes there is a source
-
-        predicted_locs_for_patch_galactic = []
-
-        predicted_locs_for_patch = predicted_source_locations[n]
-
-
-
-
-
-
-        for pred in predicted_locs_for_patch:
-
-            y_val = pred[0]
-            x_val = pred[1]
-
-            # We are calculating location in 128 x 128 instead of 64 x 64 image. Remember to keep this way round - x,y
-            # becomes y,x for images.
-
-            pixel_id_val = pixel_id(x_val * 2, y_val * 2, 128)
-
-            l_ps, b_ps = get_lb_from_pixel(np.array([pixel_id_val]), center_of_patch)
-
-            # predicted_locs_for_patch_galactic.append([l_ps, b_ps])
-
-            predicted_locs_for_patch_galactic.append([l_ps[0], b_ps[0]])
-
-        predicted_locs_for_patch_galactic = np.array(predicted_locs_for_patch_galactic)
-
-        print("SHAPES")
-
-        print(np.all(np.equal(predicted_locs_for_patch_galactic, image_cartesian_coordinates_to_galactic_coordinates(predicted_locs_for_patch, patch_centre=center_of_patch) )))
-
-        # Convert prediction locs to celestial coordinates
-
-        predicted_locs_for_patch_celestial = SkyCoord(l=predicted_locs_for_patch_galactic[:, 0] * u.degree,
-                                                      b=predicted_locs_for_patch_galactic[:, 1] * u.degree,
-                                                      frame='galactic').transform_to('icrs')
-
-        predicted_locs_for_patch_celestial = np.array([predicted_locs_for_patch_celestial.ra.value,
-                                                       predicted_locs_for_patch_celestial.dec.value]).T
+        # Convert the predicted locations of sources from coordinates within 64 x 64 patch to RA-DEC
+        predicted_locs_for_patch_celestial = (
+            image_cartesian_coordinates_to_galactic_coordinates(predicted_source_locations[n],
+                                                                patch_centre=center_of_patch, coordinate_system='C'))
 
         # FIND SEPARATION OF PREDICTED AND GALACTIC COORDINATES
 
@@ -283,7 +254,7 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
 
             # Calculate distance between this predicted source and all other sources in the source
 
-            if len(actual_agn_locations_in_celestial) > 0:
+            if num_agn_in_patch > 0:
 
                 separation_agn = pred_skycoord.separation(actual_agn_locations_in_celestial).degree
 
@@ -291,7 +262,7 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
 
                 separation_agn = np.array([])
 
-            if len(actual_psr_locations_in_celestial) > 0:
+            if num_psr_in_patch > 0:
 
                 separation_psr = pred_skycoord.separation(actual_psr_locations_in_celestial).degree
 
@@ -334,11 +305,13 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
                     closest_psr = np.argmin(separation_psr)
                     closest_agn = np.argmin(separation_agn)
 
-                    if separation_psr[closest_psr] < separation_agn[closest_agn] and separation_psr[closest_psr] < localisation_threshold:
+                    if (separation_psr[closest_psr] < separation_agn[closest_agn] and separation_psr[closest_psr] <
+                            localisation_threshold):
 
                         labels_for_patch.append("PSR")
 
-                    elif separation_agn[closest_agn] < separation_psr[closest_psr] and separation_agn[closest_agn] < localisation_threshold:
+                    elif (separation_agn[closest_agn] < separation_psr[closest_psr] and separation_agn[closest_agn] <
+                          localisation_threshold):
 
                         labels_for_patch.append("AGN")
 
@@ -347,10 +320,6 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
                         labels_for_patch.append("FAKE")
 
         labels.append(np.array(labels_for_patch))
-
-    # DON'T FORGET TO NORAMLISE THE IMAGES
-
-    print(labels)
 
     return labels
 
@@ -507,6 +476,8 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_
     #             else:
     #
     #                 new_patch = test_patch[:, rows, :][:, :, cols]
+
+                        # DON'T FORGET TO NORAMLISE THE IMAGES - THIS HASN'T BEEN DONE YET!!!!!
     #
     #                 classification_patches.append(new_patch)
 

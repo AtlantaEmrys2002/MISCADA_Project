@@ -46,6 +46,11 @@ def xyz2sph(x, y, z, is_lat=False):
 
 def get_lb_from_pixel(pixel_id, lb_centre, xsize=128, is_lat=True):
 
+    # Ensures function works with arrays and scalars
+    if type(pixel_id) is int or type(pixel_id) is np.int64:
+
+        pixel_id = np.array([pixel_id])
+
     ##if input angles are in degree use 'isdeg = True'
     ######### Generate (l,b) coordinate map of 10x10deg patch ######
 
@@ -94,10 +99,15 @@ def get_lb_from_pixel(pixel_id, lb_centre, xsize=128, is_lat=True):
     #     if l_PS > 360 or l_PS < 0:
     #         l_PS = l_PS % 360
 
-
     out_of_range = np.logical_or(l_PS > 360, l_PS < 0)
 
     l_PS = np.where(out_of_range, l_PS % 360, l_PS)
+
+    # When returning individual values
+    if l_PS.shape[0] == 1:
+
+        l_PS = l_PS[0]
+        b_PS = b_PS[0]
 
     return l_PS, b_PS
 
