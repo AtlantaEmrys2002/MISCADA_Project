@@ -176,11 +176,27 @@ def source_box_labels(patch_ids, predicted_source_locations):
 
         # N.B. FOR ABOVE - ITERATE OVER PREDICTED SOURCES
 
-        actual_agn_locations_in_celestial = [agn_coordinates_per_catalog[catalog_of_patch - 1][actual_agn_in_patch[k]]
-                                             for k in range(len(actual_agn_in_patch))]
+        actual_agn_locations_in_celestial = np.array([agn_coordinates_per_catalog[catalog_of_patch - 1]
+                                                      [actual_agn_in_patch[k]] for k in
+                                                      range(len(actual_agn_in_patch))])
 
-        actual_psr_locations_in_celestial = [pulsar_coordinates_per_catalog[catalog_of_patch - 1]
-                                             [actual_psr_in_patch[k]] for k in range(len(actual_psr_in_patch))]
+        actual_psr_locations_in_celestial = np.array([pulsar_coordinates_per_catalog[catalog_of_patch - 1]
+                                                      [actual_psr_in_patch[k]] for k in
+                                                      range(len(actual_psr_in_patch))])
+
+        # Convert to SkyCoords
+
+        if len(actual_agn_locations_in_celestial) > 0:
+
+            actual_agn_locations_in_celestial = SkyCoord(ra=actual_agn_locations_in_celestial[:, 0] * u.degree,
+                                                         dec=actual_agn_locations_in_celestial[:, 1] * u.degree,
+                                                         frame='icrs')
+
+        if len(actual_psr_locations_in_celestial) > 0:
+
+            actual_psr_locations_in_celestial = SkyCoord(ra=actual_psr_locations_in_celestial[:, 0] * u.degree,
+                                                         dec=actual_psr_locations_in_celestial[:, 1] * u.degree,
+                                                         frame='icrs')
 
         # Since we have no way of knowing where in patch model will predict, we take centre of pixel to be the point at
         # which the model believes there is a source
@@ -209,7 +225,7 @@ def source_box_labels(patch_ids, predicted_source_locations):
 
         predicted_locs_for_patch_celestial = SkyCoord(l=predicted_locs_for_patch_galactic[:, 0] * u.degree,
                                                       b=predicted_locs_for_patch_galactic[:, 1] * u.degree,
-                                                      frame='galactic').icrs
+                                                      frame='galactic').transform_to('icrs')
 
         predicted_locs_for_patch_celestial = np.array([predicted_locs_for_patch_celestial.ra.value,
                                                        predicted_locs_for_patch_celestial.dec.value]).T
@@ -218,6 +234,92 @@ def source_box_labels(patch_ids, predicted_source_locations):
 
         # Iterate over predictions and return whether they are AGN, PSR, FAKE - N.B. NEED NUMBER SYSTEM FOR THIS
 
+        labels_for_patch = []
+
+        for pred in predicted_locs_for_patch_celestial:
+
+            pred_skycoord = SkyCoord(ra=pred[0] * u.degree, dec=pred[1] * u.degree, frame="icrs")
+
+            # Calculate distance between this predicted source and all other sources in the source
+
+            if len(actual_agn_locations_in_celestial) > 0:
+
+                # print(pred_skycoord.is_equivalent_frame(actual_agn_locations_in_celestial))
+
+                separation_agn = pred_skycoord.separation(actual_agn_locations_in_celestial).degree
+
+            else:
+
+                separation_agn = np.array([])
+
+            if len(actual_psr_locations_in_celestial) > 0:
+
+                separation_psr = pred_skycoord.separation(actual_psr_locations_in_celestial).degree
+
+            else:
+
+                separation_psr = np.array([])
+
+            if separation_agn.shape[0] == 0 and separation_psr.shape[0] == 0:
+
+                labels_for_patch.append("FAKE")
+
+            else:
+
+                if separation_agn.shape[0] == 0:
+
+                    closest_psr = np.argmin(separation_psr)
+
+                    if separation_psr[closest_psr] < 0.3:
+
+                        labels_for_patch.append("PSR")
+
+                    else:
+
+                        labels_for_patch.append("FAKE")
+
+                elif separation_psr.shape[0] == 0:
+
+                    closest_agn = np.argmin(separation_agn)
+
+                    if separation_agn[closest_agn] < 0.3:
+
+                        labels_for_patch.append("AGN")
+
+                    else:
+
+                        labels_for_patch.append("FAKE")
+
+                else:
+
+                    closest_psr = np.argmin(separation_psr)
+                    closest_agn = np.argmin(separation_agn)
+
+                    if separation_psr[closest_psr] < separation_agn[closest_agn] and separation_psr[closest_psr] < 0.3:
+
+                        labels_for_patch.append("PSR")
+
+                    elif separation_agn[closest_agn] < separation_psr[closest_psr] and separation_agn[closest_agn] < 0.3:
+
+                        labels_for_patch.append("AGN")
+
+                    else:
+
+                        labels_for_patch.append("FAKE")
+
+        labels.append(np.array(labels_for_patch))
+
+
+
+
+
+            # print(separation_agn)
+            # print(type(separation_agn))
+            #
+            # # Determine if there are AGN or pulsars closest to source
+            # print(np.argmin(separation_agn))
+            # print(np.argmin(separation_psr))
+
 
 
 
@@ -225,7 +327,9 @@ def source_box_labels(patch_ids, predicted_source_locations):
         # USE SEPARATATION NOT CARTESIAN DISTANCE WHEN DOING RA AND DEC - SEE DISTANCE FUNCTION
 
 
-        # DON'T FORGET TO NORAMLISE
+        # DON'T FORGET TO NORAMLISE THE IMAGES
+
+    print(labels)
 
     return labels
 

@@ -75,9 +75,7 @@ def read_patches(num_patches=int, directory=str):
 
     # N.B. Only need the IDs of each test patch and make sure not to shuffle the test patches
 
-    # test_patch_ids = copy.deepcopy(test_indices)  # + 1
-
-    return train_batches, validation_batches, test_batches  #, test_patch_ids  # test_metadata
+    return train_batches, validation_batches, test_batches
 
 
 def save_predictions(patch_ids, predicted_segmentations, predicted_locations, directory: str, method: str):
