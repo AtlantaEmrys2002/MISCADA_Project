@@ -81,9 +81,9 @@ if __name__ == "__main__":
 
 
     # Results when applied to the TEST data (not the train or validation data)
-    unek_predicted_segmentations, unek_predicted_locations, unek_classifier_predictions, actual_classes, test_patch_ids = unek_algorithm(train, valid, test,
-                                                                                            use_pretrained_detector=
-                                                                                            True)
+    (unek_predicted_segmentations, unek_predicted_locations, unek_classifier_predictions, actual_classes,
+     test_patch_ids) = unek_algorithm(train, valid, test, use_pretrained_detector=True)
+
 
     # Save predictions for test patches
     save_predictions(patch_ids=test_patch_ids, predicted_segmentations=unek_predicted_segmentations,

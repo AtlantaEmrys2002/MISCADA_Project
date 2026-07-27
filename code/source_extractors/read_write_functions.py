@@ -1,8 +1,11 @@
-import copy
+# from astropy.coordinates import SkyCoord
+# from astropy import units as u
+# import copy
 import math
 import numpy as np
 import pandas as pd
 from pathlib import Path
+import pickle
 import torch
 from torch.utils.data import DataLoader, Subset
 
@@ -98,18 +101,25 @@ def save_predictions(patch_ids, predicted_segmentations, predicted_locations, pr
 
     # SAVE ACTUAL AND PREDICTED LOCATIONS OF EACH PATCH
 
-    np.save(save_location + "predicted_locations.npy", predicted_locations)
+    # np.save(save_location + "predicted_locations.npy", predicted_locations)
+
+    with open(save_location + "predicted_locations.data", 'wb') as f:
+
+        pickle.dump(predicted_locations, f)
 
     # Save patch IDs to ensure the actual locations of the sources can be retrieved
     np.save(save_location + "patch_ids.npy", patch_ids)
 
     # SAVE ACTUAL AND PREDICTED CLASSIFICATIONS OF EACH DETECTED SOURCE
 
-    # classifications = np.array(list(zip(actual_classes, predicted_classes)))
-
     classifications = [[actual_classes[k], predicted_classes[k]] for k in range(len(actual_classes))]
 
-    print(classifications.shape)
+    # print(len(classifications))
+    # print(len(classifications[0]))
+    # print(classifications[0][0].shape)
+
+
+    # print(classifications.shape)
 
     np.save(save_location + "classifications", classifications)
 
@@ -122,6 +132,7 @@ def save_predictions(patch_ids, predicted_segmentations, predicted_locations, pr
     # actual_locations = [df[['cartesian_x', 'cartesian_y']].to_numpy() for df in dfs]
     #
     # np.savez(save_location + "actual_locations.npy", actual_locations)
+
 
 # REFERENCES
 

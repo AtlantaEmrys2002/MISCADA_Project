@@ -25,7 +25,7 @@ class SourceClassifier(nn.Module):
     def __init__(self):
         # Input has dimensions of 128, 5, 7, 7
 
-        super().__init__()
+        super(SourceClassifier, self).__init__()
 
         self.batch_norm = nn.BatchNorm2d(num_features=5)
 
@@ -57,7 +57,8 @@ class SourceClassifier(nn.Module):
             nn.Linear(in_features=32, out_features=16),
             nn.ReLU(inplace=True),
             nn.Linear(in_features=16, out_features=3),
-            nn.Softmax()
+            # nn.Softmax(dim=1)
+            nn.Softmax(dim=1)
 
         )
 
@@ -79,7 +80,7 @@ def classifier_train(train_data, test_data, training_epochs=50, save_file="./ben
     # Define loss function
 
     loss_fn = CategoricalCrossEntropy()
-    optimiser = torch.optim.Adam(classifier.parameters(), lr=0.01)
+    optimiser = torch.optim.Adam(classifier.parameters(), lr=1.e-6)
 
     # Start with large value that is easily surpassed
     best_vloss = 100000000000000
@@ -92,7 +93,7 @@ def classifier_train(train_data, test_data, training_epochs=50, save_file="./ben
 
         print("EPOCH {}".format(epoch))
 
-        classifier.train(True)
+        classifier.train()
 
         for i, data in enumerate(train_data):
 
@@ -161,10 +162,13 @@ def classifier_train(train_data, test_data, training_epochs=50, save_file="./ben
 # pytorch/85165/3
 # Categorical Cross Entropy Loss - https://arjun-sarkar786.medium.com/implementation-of-all-loss-functions-deep-learning
 # -in-numpy-tensorflow-and-pytorch-e20e72626ebd
+# Categorical Cross Entropy Loss - https://www.geeksforgeeks.org/deep-learning/categorical-cross-entropy-in-multi-class
+# -classification/
 # Custom Loss Functions - https://machinelearningmastery.com/creating-custom-layers-loss-functions-pytorch/
 # Dense Layers - https://apxml.com/courses/pytorch-for-tensorflow-developers/chapter-2-pytorch-nn-module-for-keras-
 # users/common-layer-types-pytorch-tf
 # Dense Layers 2 - https://discuss.pytorch.org/t/pytorch-torch-nn-equivalent-of-tensorflow-keras-dense-layers/133518
+# Fixing Nan Predictions - https://discuss.pytorch.org/t/outputing-nan-as-predictions-in-my-neural-network-training-loop/183151/2
 # Flatten with Linear - https://discuss.pytorch.org/t/should-i-flatten-before-the-linear-layer/43570
 # Updating Learning Rate - https://stackoverflow.com/questions/48324152/how-to-change-the-learning-rate-of-an-optimizer-
 # at-any-given-moment-no-lr-sched
