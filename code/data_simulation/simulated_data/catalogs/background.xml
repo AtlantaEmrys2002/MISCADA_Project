@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<source_library title="source library">
+<source name="iso_P8R3_SOURCE_V3_v1" type="DiffuseSource">
+<spectrum apply_edisp="false" file="/Volumes/T7/data/background_models/iso_P8R3_SOURCE_V3_v1.txt" type="FileFunction">
+<parameter free="1" max="10" min="0.01" name="Normalization" scale="1" value="1" />
+</spectrum>
+<spatialModel type="ConstantValue">
+<parameter free="0" max="10.0" min="0.0" name="Value" scale="1.0" value="1.0"/>
+</spatialModel>
+</source>
+<source name="gll_iem_v07" type="DiffuseSource">
+<spectrum type="PowerLaw">
+<parameter free="1" max="10.0" min="0.0" name="Prefactor" scale="1.0" value= "1.0"/>
+<parameter free="0" max="1" min="-1" name="Index" scale="1.0" value= "1.0"/>
+<parameter free="0" max="1e6" min="2e1" name="Scale" scale="1.0" value= "100"/>
+</spectrum>
+<spatialModel file="/Volumes/T7/data/background_models/gll_iem_v07.fits" type="MapCubeFunction">
+<parameter free="0" max="1000.0" min="0.001" name="Normalization" scale= "1.0" value="1.0"/>
+</spatialModel>
+</source>
+</source_library>

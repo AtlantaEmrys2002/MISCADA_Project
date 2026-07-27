@@ -2,8 +2,6 @@
 *__pycache__*
 *.gif
 *.txt
-*.csv
 *.fits
 *DS_Store*
-*.xml
 *.par
