@@ -1,8 +1,10 @@
-from metrics.localisation_metrics import chamfer_distance
+from metrics.utils import image_cartesian_coordinates_to_physical_coordinates
+from metrics.localisation_metrics import new_chamfer_distance
 from metrics.segmentation_metrics import (binary_balanced_accuracy, dice_coefficient, segmentation_precision,
                                           segmentation_recall)
 import numpy as np
-import os
+import pickle
+from read_write_functions import get_patch_centres, localisation_metadata # xml_parser_locations
 
 
 def evaluate_classifiers():
@@ -12,9 +14,9 @@ def evaluate_classifiers():
 
 def evaluate_localisation(actual_source_centers, predicted_source_centers):
 
-    num_patches = actual_source_centers.shape[0]
+    num_patches = len(actual_source_centers)
 
-    average_chamfer_distance = sum([chamfer_distance(actual_source_centers[p], predicted_source_centers[p]) for p in
+    average_chamfer_distance = sum([new_chamfer_distance(actual_source_centers[p], predicted_source_centers[p]) for p in
                                     range(num_patches)]) / num_patches
 
     return average_chamfer_distance
@@ -47,7 +49,8 @@ if __name__ == "__main__":
     # TAKE INPUTS (RECOMMENDED READ IN FILE)
 
     # Add name of models here
-    models = ["UNEK", "UNEB"]
+    # models = ["UNEK", "UNEB"]
+    models = ["UNEK"]
 
     detectors = {"UNEK": "U-NET", "UNEB": "U-NET"}
     localisers = {"UNEK": "K-Means", "UNEB": "Blob Detection"}
@@ -64,23 +67,75 @@ if __name__ == "__main__":
     file.writelines(csv_headers)
     file.close()
 
-    id = 0
+    model_id = 0
+
+    # # READ IN ACTUAL COORDINATES OF EACH SOURCE IN EACH CATALOG
+
+    patch_centres = get_patch_centres(patches_metadata_file="./../data_simulation/simulated_data/patches/patch_metadata.csv")
+
+    # CALCULATE METRICS FOR EACH SOURCE EXTRACTION ALGORITHM
 
     for m in models:
 
+        # IDs of patches used to test model
+        patch_ids = np.load("./../results/{}/patch_ids.npy".format(m))
+
+        # DETECTION (SEGMENTATION) EVALUATION
+
         segments = np.load("./../results/{}/segmentations.npy".format(m))
 
-        actual = segments[:, 0]
+        actual_segments = segments[:, 0]
 
-        predicted = segments[:, 1]
+        predicted_segments = segments[:, 1]
 
-        av_bin_balanced_acc, av_dice, av_prec, av_rec = evaluate_detection(actual_segmentations=actual,
-                                                                           predicted_segmentations=predicted)
+        av_bin_balanced_acc, av_dice, av_prec, av_rec = evaluate_detection(actual_segmentations=actual_segments,
+                                                                           predicted_segmentations=predicted_segments)
 
-        results.append(f"{id},{detectors[m]},{localisers[m]},{classifiers[m]},{av_bin_balanced_acc},{av_dice},"
+        # LOCALISATION EVALUATION
+
+        # Get predicted locations from model (in x, y coordinates in 64 x 64 image)
+        with open("./../results/{}/predicted_locations.data".format(m), 'rb') as f:
+
+            predicted_locations = pickle.load(f)
+
+        # Convert predicted locations to celestial RA/DEC coordinates
+
+        predicted_locations_celestial = [
+            image_cartesian_coordinates_to_physical_coordinates(coordinates=predicted_locations[p],
+                                                                patch_centre=patch_centres[patch_ids[p]],
+                                                                coordinate_system='C') for p in range(len(patch_ids))]
+
+        # Get locations of actual sources (in celestial coordinates) within each patch
+        actual_agn_locations_celestial, actual_psr_locations_celestial = localisation_metadata(patch_ids=patch_ids)
+
+        actual_source_locations = []
+
+        for n in range(actual_segments.shape[0]):
+
+            if actual_agn_locations_celestial[n].size != 0 and actual_psr_locations_celestial[n].size != 0:
+                actual_source_locations_for_patch = np.vstack((actual_agn_locations_celestial[n],
+                                                               actual_psr_locations_celestial[n]))
+            elif actual_psr_locations_celestial[n].size == 0:
+                actual_source_locations_for_patch = actual_agn_locations_celestial[n]
+            else:
+                actual_source_locations_for_patch = actual_psr_locations_celestial[n]
+
+            actual_source_locations.append(actual_source_locations_for_patch)
+
+        # Evaluate localisation
+        av_chamfer_distance = evaluate_localisation(actual_source_centers=actual_source_locations,
+                                                    predicted_source_centers=predicted_locations_celestial)
+
+
+
+
+
+        # SAVE RESULTS
+
+        results.append(f"{model_id},{detectors[m]},{localisers[m]},{classifiers[m]},{av_bin_balanced_acc},{av_dice},"
                        f"{av_prec},{av_rec}\n")
 
-        id += 1
+        model_id += 1
 
     # EVALUATE DIFFERENT STAGES FOR EACH MODEL WITH METRICS
 

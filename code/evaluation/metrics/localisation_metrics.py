@@ -1,19 +1,51 @@
+from astropy.coordinates import SkyCoord
+import astropy.units as u
 import numpy as np
 from scipy.spatial.distance import cdist
 
 
-def chamfer_distance(actual_source_centres, predicted_source_centres):
+def new_chamfer_distance(actual_source_centres, predicted_source_centres):
     # ID11 - evaluates localisation power of faint source detection (how close predicted point sources are to actual
-    # point source)
+    # point source). I have adapted Chamfer distance to work with RA/DEC instead of cartesian coordinates in image.
+
+    # It is REALLY important to notice the difference between Chamfer distance and this new metric which relies on
+    # angular separation
 
     # A = Predicted source centres
     # B = Ground truth source centres
 
-    distances = cdist(predicted_source_centres, actual_source_centres)
+    # Convert predicted source_centres to sky coordinates
+    predicted_source_centres_sky = SkyCoord(ra=predicted_source_centres[:, 0] * u.degree,
+                                            dec=predicted_source_centres[:, 1] * u.degree, frame='icrs')
 
-    dist_ab = np.sum(np.min(distances, axis=1))
+    actual_source_centres_sky = SkyCoord(ra=actual_source_centres[:, 0] * u.degree,
+                                         dec=actual_source_centres[:, 1] * u.degree, frame='icrs')
 
-    dist_ba = np.sum(np.min(distances, axis=0))
+    dist_ab = 0
+
+    for a in actual_source_centres:
+
+        coordinate = SkyCoord(ra=a[0] * u.degree, dec=a[1] * u.degree, frame='icrs')
+
+        separation_from_closest_predicted_source = np.argmin(coordinate.separation(predicted_source_centres_sky).degree)
+
+        dist_ab += separation_from_closest_predicted_source
+
+    dist_ba = 0
+
+    for p in predicted_source_centres:
+
+        coordinate = SkyCoord(ra=p[0] * u.degree, dec=p[1] * u.degree, frame='icrs')
+
+        separation_from_closest_actual_source = np.argmin(coordinate.separation(actual_source_centres_sky).degree)
+
+        dist_ba += separation_from_closest_actual_source
+
+    # distances = cdist(predicted_source_centres, actual_source_centres)
+    #
+    # dist_ab = np.sum(np.min(distances, axis=1))
+    #
+    # dist_ba = np.sum(np.min(distances, axis=0))
 
     dist_chamfer = dist_ab + dist_ba
 

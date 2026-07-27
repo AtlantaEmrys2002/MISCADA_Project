@@ -1,8 +1,6 @@
 import argparse
 from benchmarks.uneb import uneb_algorithm
 from benchmarks.unek import unek_algorithm
-import numpy as np
-import pandas as pd
 from read_write_functions import read_patches, save_predictions
 
 if __name__ == "__main__":
