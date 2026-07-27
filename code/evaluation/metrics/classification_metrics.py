@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from pathlib import Path
 import seaborn as sn
 from sklearn.metrics import confusion_matrix
 
@@ -19,6 +20,8 @@ def classification_confusion_matrix(ground_truth, predicted, classifier_name, di
     ax.set_ylabel("Actual Source Type")
 
     ax.set_title("Confusion Matrix for {} Source Classifier".format(classifier_name))
+
+    Path(directory + "/classifier_confusion_matrices/").mkdir(parents=True, exist_ok=True)
 
     plt.savefig(directory + "/classifier_confusion_matrices/{}_classifier_confusion_matrix.png".format(
         classifier_name.lower()))

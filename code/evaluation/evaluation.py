@@ -1,15 +1,19 @@
 from metrics.utils import image_cartesian_coordinates_to_physical_coordinates
+from metrics.classification_metrics import classification_confusion_matrix
 from metrics.localisation_metrics import chamfer_separation, num_sources_correctly_detected
 from metrics.segmentation_metrics import (binary_balanced_accuracy, dice_coefficient, segmentation_precision,
                                           segmentation_recall)
 import numpy as np
+from pathlib import Path
 import pickle
-from read_write_functions import get_patch_centres, localisation_metadata
+from read_write_functions import get_patch_centres, localisation_metadata, vector_labels_to_str
 
 
-def evaluate_classifiers():
+def evaluate_classifiers(actual_class, predicted_class, method_name, directory):
 
-    pass
+    # Plot confusion matrices
+    classification_confusion_matrix(ground_truth=actual_class, predicted=predicted_class, classifier_name=method_name,
+                                    directory=directory)
 
 
 def evaluate_localisation(actual_source_centers, predicted_source_centers):
@@ -67,9 +71,13 @@ if __name__ == "__main__":
                    "segmentation_recall,chamfer_separation,frac_sources_detected\n")
 
     # Set up file
-    file = open("./results.csv", "w+")
+    file = open("./../results/results.csv", "w+")
     file.writelines(csv_headers)
     file.close()
+
+    # Create directory in which to save plots
+    plot_directory = "./../results/plots"
+    Path(plot_directory).mkdir(parents=True, exist_ok=True)
 
     model_id = 0
 
@@ -131,6 +139,49 @@ if __name__ == "__main__":
             evaluate_localisation(actual_source_centers=actual_source_locations, predicted_source_centers=
             predicted_locations_celestial))
 
+        # CLASSIFICATION EVALUATION
+
+        classifications = np.load("./../results/{}/classifications.npy".format(m))
+
+        actual_classes, predicted_classes = vector_labels_to_str(classifications[:, 0]), vector_labels_to_str(classifications[:, 1])
+
+        # This does not take into account any spatial distributions (at the moment!!!!!!)
+        evaluate_classifiers(actual_class=actual_classes, predicted_class=predicted_classes, method_name=m,
+                             directory=plot_directory)
+
+
+
+
+
+        # print(predicted_classes.shape)
+        #
+        # classifications_for_each_patch = []
+        #
+        # starting_index = 0
+
+        # for p in range(patch_ids.shape[0]):
+        #
+        #     num_predicted_sources_in_patch = predicted_locations[p].shape[0]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         # SAVE RESULTS
 
         results.append(f"{model_id},{detectors[m]},{localisers[m]},{classifiers[m]},{av_bin_balanced_acc},{av_dice},"
@@ -142,7 +193,7 @@ if __name__ == "__main__":
 
     # SAVE RESULTS TO FILE
 
-    file = open("./results.csv", "a")
+    file = open("./../results/results.csv", "a")
     file.writelines(results)
     file.close()
 

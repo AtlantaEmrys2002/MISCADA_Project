@@ -95,6 +95,29 @@ def get_patch_centres(patches_metadata_file="./../data_simulation/simulated_data
     return patch_centres
 
 
+def vector_labels_to_str(labels):
+    str_labels = []
+
+    agn_vector = np.array([1., 0., 0.])
+    psr_vector = np.array([0., 1., 0.])
+
+    for p in labels:
+
+        if np.all(np.equal(p, agn_vector)):
+
+            str_labels.append("AGN")
+
+        elif np.all(np.equal(p, psr_vector)):
+
+            str_labels.append("PSR")
+
+        else:
+
+            str_labels.append("FAKE")
+
+    return str_labels
+
+
 def localisation_metadata(patch_ids):
 
     # patch_ids - numpy array of all patches used to test model
