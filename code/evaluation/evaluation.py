@@ -1,10 +1,10 @@
 from metrics.utils import image_cartesian_coordinates_to_physical_coordinates
-from metrics.localisation_metrics import new_chamfer_distance
+from metrics.localisation_metrics import chamfer_separation, num_sources_correctly_detected
 from metrics.segmentation_metrics import (binary_balanced_accuracy, dice_coefficient, segmentation_precision,
                                           segmentation_recall)
 import numpy as np
 import pickle
-from read_write_functions import get_patch_centres, localisation_metadata # xml_parser_locations
+from read_write_functions import get_patch_centres, localisation_metadata
 
 
 def evaluate_classifiers():
@@ -16,10 +16,14 @@ def evaluate_localisation(actual_source_centers, predicted_source_centers):
 
     num_patches = len(actual_source_centers)
 
-    average_chamfer_distance = sum([new_chamfer_distance(actual_source_centers[p], predicted_source_centers[p]) for p in
+    average_chamfer_distance = sum([chamfer_separation(actual_source_centers[p], predicted_source_centers[p]) for p in
                                     range(num_patches)]) / num_patches
 
-    return average_chamfer_distance
+    average_percentage_of_sources_detected = (
+            sum([num_sources_correctly_detected(actual_source_locations[p], predicted_locations_celestial[p]) for p in
+                 range(num_patches)]) / num_patches)
+
+    return average_chamfer_distance, average_percentage_of_sources_detected
 
 
 def evaluate_detection(actual_segmentations, predicted_segmentations):
@@ -60,7 +64,7 @@ if __name__ == "__main__":
 
     csv_headers = ("id,detection_algorithm,localisation_algorithm,classification_algorithm,"
                    "segmentation_balanced_binary_accuracy,segmentation_dive_coefficient,segmentation_precision,"
-                   "segmentation_recall\n")
+                   "segmentation_recall,chamfer_separation,frac_sources_detected\n")
 
     # Set up file
     file = open("./results.csv", "w+")
@@ -123,17 +127,14 @@ if __name__ == "__main__":
             actual_source_locations.append(actual_source_locations_for_patch)
 
         # Evaluate localisation
-        av_chamfer_distance = evaluate_localisation(actual_source_centers=actual_source_locations,
-                                                    predicted_source_centers=predicted_locations_celestial)
-
-
-
-
+        av_chamfer_distance, av_frac_sources_detected = (
+            evaluate_localisation(actual_source_centers=actual_source_locations, predicted_source_centers=
+            predicted_locations_celestial))
 
         # SAVE RESULTS
 
         results.append(f"{model_id},{detectors[m]},{localisers[m]},{classifiers[m]},{av_bin_balanced_acc},{av_dice},"
-                       f"{av_prec},{av_rec}\n")
+                       f"{av_prec},{av_rec},{av_chamfer_distance},{av_frac_sources_detected}\n")
 
         model_id += 1
 

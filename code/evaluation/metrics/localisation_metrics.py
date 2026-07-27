@@ -4,9 +4,11 @@ import numpy as np
 from scipy.spatial.distance import cdist
 
 
-def new_chamfer_distance(actual_source_centres, predicted_source_centres):
+def chamfer_separation(actual_source_centres, predicted_source_centres):
     # ID11 - evaluates localisation power of faint source detection (how close predicted point sources are to actual
     # point source). I have adapted Chamfer distance to work with RA/DEC instead of cartesian coordinates in image.
+    # In fact, this metric is more similar to ID12 - which deems nearest neighbours separated by 1-2 arcmin to be a good
+    # match)
 
     # It is REALLY important to notice the difference between Chamfer distance and this new metric which relies on
     # angular separation
@@ -41,15 +43,34 @@ def new_chamfer_distance(actual_source_centres, predicted_source_centres):
 
         dist_ba += separation_from_closest_actual_source
 
-    # distances = cdist(predicted_source_centres, actual_source_centres)
-    #
-    # dist_ab = np.sum(np.min(distances, axis=1))
-    #
-    # dist_ba = np.sum(np.min(distances, axis=0))
-
     dist_chamfer = dist_ab + dist_ba
 
     return dist_chamfer
+
+
+def num_sources_correctly_detected(actual_source_centres, predicted_source_centres, separation_threshold=0.3):
+    # This determines how many sources in patch are correctly detected (it does not matter what source type they are,
+    # but whether they are correctly detected and localised as a source). A fraction is returned - the proportion of
+    # sources in patch actually detected.
+
+    total_sources = len(actual_source_centres)
+
+    # Convert predicted source_centres to sky coordinates
+    predicted_source_centres_sky = SkyCoord(ra=predicted_source_centres[:, 0] * u.degree,
+                                            dec=predicted_source_centres[:, 1] * u.degree, frame='icrs')
+
+    num_sources_detected = 0
+
+    for a in actual_source_centres:
+
+        coordinate = SkyCoord(ra=a[0] * u.degree, dec=a[1] * u.degree, frame='icrs')
+
+        separation_from_closest_predicted_source = np.argmin(coordinate.separation(predicted_source_centres_sky).degree)
+
+        if separation_from_closest_predicted_source < separation_threshold:
+            num_sources_detected += 1
+
+    return num_sources_detected / total_sources
 
 
 # REFERENCES
