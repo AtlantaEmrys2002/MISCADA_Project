@@ -46,7 +46,7 @@ def normalise_sub_patches(sub_patches):
 
     num_patches = len(sub_patches)
 
-    num_bins = sub_patches[0][0].shape[0]
+    num_bins = 5  # sub_patches[0][0].shape[0]
 
     normalised_sub_patches_arr = []
 
@@ -74,6 +74,13 @@ def normalise_sub_patches(sub_patches):
 
 def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_data=True):
 
+    # Remove all patches with no predicted sources
+    ids_to_remove = [p for p in range(len(patch_ids)) if len(predicted_locations[p]) == 0]
+
+    predicted_locations = [predicted_locations[p] for p in range(len(patch_ids)) if p not in ids_to_remove]
+    patches = np.delete(patches, np.array(ids_to_remove).astype(int), 0)
+    patch_ids = np.delete(patch_ids, np.array(ids_to_remove).astype(int), 0)
+
     # Get 7 x 7 boxes around each predicted source in each patch
     sub_boxes = source_boxes(patches, predicted_locations)
 
@@ -98,6 +105,10 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
 
         for pred_source in range(num_predicted_sources):
             data.append([normalised_sub_boxes[patch][pred_source], vector_labels[patch][pred_source]])
+
+    if len(data) == 0:
+
+        raise RuntimeError("Not enough sources were localised - no data is available for the classifier to train on.")
 
     # Reformat as DataSet
     split = Subset(data, np.arange(0, len(data)))
@@ -238,9 +249,17 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
                                                          frame='icrs')
 
         # Convert the predicted locations of sources from coordinates within 64 x 64 patch to RA-DEC
-        predicted_locs_for_patch_celestial = (
-            image_cartesian_coordinates_to_galactic_coordinates(predicted_source_locations[n],
-                                                                patch_centre=center_of_patch, coordinate_system='C'))
+
+        if len(predicted_source_locations[n]) > 0:
+
+            predicted_locs_for_patch_celestial = (
+                image_cartesian_coordinates_to_galactic_coordinates(predicted_source_locations[n],
+                                                                    patch_centre=center_of_patch,
+                                                                    coordinate_system='C'))
+
+        else:
+
+            predicted_locs_for_patch_celestial = np.array([])
 
         # FIND SEPARATION OF PREDICTED AND GALACTIC COORDINATES
 

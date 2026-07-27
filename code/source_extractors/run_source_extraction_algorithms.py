@@ -39,35 +39,8 @@ if __name__ == "__main__":
 
     # GET INFORMATION FOR TEST PATCHES
 
-    # FETCH PATCH INFORMATION
-
-    # Fetch the actual locations of each source
-    # file_structure = "./../data_simulation/simulated_data/patches/patch_{}/metadata.csv"
-    #
-    # patch_information = [pd.read_csv(file_structure.format(k)) for k in test_patch_ids]
-    #
-    # types = [df["source_type"].to_numpy() for df in patch_information]
-    #
-    # actual_source_locations = [np.array(list(zip(df["cartesian_x"].to_numpy(), df["cartesian_y"].to_numpy()))) for df
-    #                            in patch_information]
-    #
-    # source_ids = [df["source_id"].to_numpy() for df in patch_information]
-
     # NEED INFINITE COUNTS PATCH SO IT GOES PATCH ID, SOURCE ID, CARTESIAN LOCATION, RA/DEC LOCATION IN SKY, TYPE, FLUX IN RANGE 300-200000
     # FLUX IS THE ONE IN PHOTON cm^-2 s^-1 (I.E. PHOTON FLUX), NO. PHOTONS FROM SOURCE VS NO. PHOTONS FROM THAT PIXEL IN THE MAP
-
-
-
-
-    # WE NEED TO TRAIN ON OUTPUT WITH TRAIN DATA!!! THIS IS IMPORTANT - SAVE TEST DATA TILL THE END - NEED PATCH INFO FOR ALL - NOT JUST THE TEST PATCHES!!!!!!!
-    # SO RETURN PATCH IDS OF VALIDATION AND TEST DATA TOO
-
-
-
-
-
-
-
 
     print("Complete")
 
@@ -81,24 +54,56 @@ if __name__ == "__main__":
 
 
     # Results when applied to the TEST data (not the train or validation data)
-    (unek_predicted_segmentations, unek_predicted_locations, unek_classifier_predictions, actual_classes,
-     test_patch_ids) = unek_algorithm(train, valid, test, use_pretrained_detector=True)
 
+    successful_algorithms = []
+    unsuccessful_algorithms = []
 
-    # Save predictions for test patches
-    save_predictions(patch_ids=test_patch_ids, predicted_segmentations=unek_predicted_segmentations,
-                     predicted_locations=unek_predicted_locations,
-                     predicted_classes=unek_classifier_predictions, actual_classes=actual_classes, directory=save_directory, method="UNEK")
+    try:
+
+        (unek_predicted_segmentations, unek_predicted_locations, unek_classifier_predictions, actual_classes,
+         test_patch_ids) = unek_algorithm(train, valid, test, use_pretrained_detector=True)
+
+    except RuntimeError:
+
+        print("Not enough data to train classifier for " + "UNEK")
+        unsuccessful_algorithms.append("UNEK")
+
+    else:
+
+        # Save predictions for test patches
+        save_predictions(patch_ids=test_patch_ids, predicted_segmentations=unek_predicted_segmentations,
+                         predicted_locations=unek_predicted_locations,
+                         predicted_classes=unek_classifier_predictions, actual_classes=actual_classes,
+                         directory=save_directory, method="UNEK")
+
+        successful_algorithms.append("UNEK")
 
     # UNEB
 
-    # # N.B. use pre-trained, as exactly the same data is being used as validation and test data
-    # uneb_predicted_segmentations, uneb_prediction_locations, test_patch_ids = uneb_algorithm(train, valid, test,
-    #                                                                                          use_pretrained_detector=
-    #                                                                                          True)
+    try:
 
-    save_predictions(patch_ids=test_patch_ids, predicted_segmentations=uneb_predicted_segmentations,
-                     predicted_locations=uneb_prediction_locations, directory=save_directory, method="UNEB")
+        # # N.B. use pre-trained, as exactly the same data is being used as validation and test data
+        (uneb_predicted_segmentations, uneb_prediction_locations, uneb_classifier_predictions, actual_class,
+         test_patch_ids) = uneb_algorithm(train, valid, test, use_pretrained_detector=True)
+
+    except RuntimeError:
+
+        print("Not enough data to train classifier for " + "UNEB")
+        unsuccessful_algorithms.append("UNEB")
+
+    else:
+
+        # N.B. although we use the same U-Net as UNEK, we do not use the same classifier (although the architectures are the
+        # same, the output localisations (K-means vs blob detection) will vary, so need to train classifier on the
+        # predictions of the localise algorithm.
+        save_predictions(patch_ids=test_patch_ids, predicted_segmentations=uneb_predicted_segmentations,
+                         predicted_locations=uneb_prediction_locations, predicted_classes=uneb_classifier_predictions,
+                         actual_classes=actual_class, directory=save_directory, method="UNEB")
+
+        successful_algorithms.append("UNEB")
+
+    print("Successfully Trained Algorithms: {}".format(successful_algorithms))
+    print("Unsucessfully Trained Algorithms: {}".format(unsuccessful_algorithms))
 
 # REFERENCES
 
