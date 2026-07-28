@@ -1,7 +1,8 @@
 import argparse
 from benchmarks.uneb import uneb_algorithm
 from benchmarks.unek import unek_algorithm
-from read_write_functions import read_patches, save_predictions
+from pathlib import Path
+from read_write_functions import read_patches, save_predictions, read_real_data
 
 if __name__ == "__main__":
     # PROCESS USER INPUT
@@ -26,16 +27,25 @@ if __name__ == "__main__":
     num_patches = args.num_patches
     save_directory = args.save_directory
 
+    real_data_save_directory = save_directory + "/real"
+
+    Path(real_data_save_directory).mkdir(parents=True, exist_ok=True)
+
     # READ IN PATCHES CORRECTLY
 
     print("Reading in and formatting patches...")
 
-    # WARNING - REMEMBER THAT PREDICTED LOCATIONS ARE NOT IN THE SAME ORDER AS ACTUAL LOCATIONS - HAVE TO FIND WHICH ONES ARE CLOSEST
-    # REMEMBER ACTUAL LOCATIONS ARE GIVEN AS y,x AND NOT x, y - READ tHE METADATA CAREFULLY!!!!!!! LOOK BACK AT NOTES IN read_write_functions
-
     train, valid, test = read_patches(num_patches=num_patches, directory=patches_directory)
 
-    # GET INFORMATION FOR TEST PATCHES
+    # CHANGE BELOW TO 768 ONCE CONFIRMED IT IS WORKING
+
+    real_data = read_real_data(num_patches=768, directory="./real_data/real_patches/patches")
+
+
+
+
+
+
 
     # NEED INFINITE COUNTS PATCH SO IT GOES PATCH ID, SOURCE ID, CARTESIAN LOCATION, RA/DEC LOCATION IN SKY, TYPE, FLUX IN RANGE 300-200000
     # FLUX IS THE ONE IN PHOTON cm^-2 s^-1 (I.E. PHOTON FLUX), NO. PHOTONS FROM SOURCE VS NO. PHOTONS FROM THAT PIXEL IN THE MAP
@@ -47,7 +57,7 @@ if __name__ == "__main__":
 
 
 
-    # CHANGE BACK tO NOt PRETRAINED AFTER GOT CLASSIFIER WORKING
+    # CHANGE BACK tO NOt PRETRAINED AFTER GOT CLASSIFIER WORKING!!!!!
 
 
 
@@ -59,7 +69,7 @@ if __name__ == "__main__":
     try:
 
         (unek_predicted_segmentations, unek_predicted_locations, unek_classifier_predictions, actual_classes,
-         test_patch_ids) = unek_algorithm(train, valid, test, use_pretrained_detector=True)
+         test_patch_ids) = unek_algorithm(train, valid, test)
 
     except RuntimeError:
 
@@ -76,29 +86,51 @@ if __name__ == "__main__":
 
         successful_algorithms.append("UNEK")
 
+        # Apply to real Fermi LAT data
+
+        (real_unek_predicted_segmentations, real_unek_predicted_locations, real_unek_classifier_predictions, real_actual_classes,
+         real_test_patch_ids) = unek_algorithm([], [], testing_data=real_data, use_pretrained_detector=True, use_pretrained_classifier=True)
+
+        # Save predictions for real data
+        save_predictions(patch_ids=real_test_patch_ids, predicted_segmentations=real_unek_predicted_segmentations,
+                         predicted_locations=real_unek_predicted_locations,
+                         predicted_classes=real_unek_classifier_predictions, actual_classes=real_actual_classes,
+                         directory=real_data_save_directory, method="UNEK")
+
     # UNEB
 
-    try:
+    # try:
+    #
+    #     # # N.B. use pre-trained, as exactly the same data is being used as validation and test data
+    #     (uneb_predicted_segmentations, uneb_prediction_locations, uneb_classifier_predictions, actual_class,
+    #      test_patch_ids) = uneb_algorithm(train, valid, test, use_pretrained_detector=True)
+    #
+    # except RuntimeError:
+    #
+    #     print("Not enough data to train classifier for " + "UNEB")
+    #     unsuccessful_algorithms.append("UNEB")
+    #
+    # else:
+    #
+    #     # N.B. although we use the same U-Net as UNEK, we do not use the same classifier (although the architectures are the
+    #     # same, the output localisations (K-means vs blob detection) will vary, so need to train classifier on the
+    #     # predictions of the localise algorithm.
+    #     save_predictions(patch_ids=test_patch_ids, predicted_segmentations=uneb_predicted_segmentations,
+    #                      predicted_locations=uneb_prediction_locations, predicted_classes=uneb_classifier_predictions,
+    #                      actual_classes=actual_class, directory=save_directory, method="UNEB")
+    #
+    #     successful_algorithms.append("UNEB")
 
-        # # N.B. use pre-trained, as exactly the same data is being used as validation and test data
-        (uneb_predicted_segmentations, uneb_prediction_locations, uneb_classifier_predictions, actual_class,
-         test_patch_ids) = uneb_algorithm(train, valid, test, use_pretrained_detector=True)
+        # Apply to real Fermi LAT data
 
-    except RuntimeError:
+        (real_uneb_predicted_segmentations, real_uneb_predicted_locations, real_uneb_classifier_predictions, real_actual_classes,
+         real_test_patch_ids) = uneb_algorithm([], [], testing_data=real_data, use_pretrained_detector=True, use_pretrained_classifier=True)
 
-        print("Not enough data to train classifier for " + "UNEB")
-        unsuccessful_algorithms.append("UNEB")
-
-    else:
-
-        # N.B. although we use the same U-Net as UNEK, we do not use the same classifier (although the architectures are the
-        # same, the output localisations (K-means vs blob detection) will vary, so need to train classifier on the
-        # predictions of the localise algorithm.
-        save_predictions(patch_ids=test_patch_ids, predicted_segmentations=uneb_predicted_segmentations,
-                         predicted_locations=uneb_prediction_locations, predicted_classes=uneb_classifier_predictions,
-                         actual_classes=actual_class, directory=save_directory, method="UNEB")
-
-        successful_algorithms.append("UNEB")
+        # Save predictions for real data
+        save_predictions(patch_ids=real_test_patch_ids, predicted_segmentations=real_uneb_predicted_segmentations,
+                         predicted_locations=real_uneb_predicted_locations,
+                         predicted_classes=real_uneb_classifier_predictions, actual_classes=real_actual_classes,
+                         directory=real_data_save_directory, method="UNEB")
 
     print("Successfully Trained Algorithms: {}".format(successful_algorithms))
     print("Unsucessfully Trained Algorithms: {}".format(unsuccessful_algorithms))

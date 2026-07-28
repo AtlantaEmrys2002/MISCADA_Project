@@ -66,16 +66,66 @@ def read_patches(num_patches=int, directory=str):
     # Split data into train, validation, and test sets
     train_split = Subset(test_data, train_indices)
     validation_split = Subset(test_data, validation_indices)
-    test_split = Subset(test_data, test_indices)
+    # test_split = Subset(test_data, test_indices)
 
     # Create batches
     train_batches = DataLoader(train_split, batch_size=128, shuffle=True)
     validation_batches = DataLoader(validation_split, batch_size=128, shuffle=True)
-    test_batches = DataLoader(test_split, batch_size=128, shuffle=False)
+    # test_batches = DataLoader(test_split, batch_size=128, shuffle=False)
 
     # N.B. Only need the IDs of each test patch and make sure not to shuffle the test patches
 
-    return train_batches, validation_batches, test_batches
+    data_for_testing = [test_data[k] for k in test_indices] # test_data[test_indices.astype(int)]
+
+    return train_batches, validation_batches, data_for_testing  # test_batches
+
+
+def read_real_data(num_patches, directory=str):
+
+    # READ IN REAL DATA
+
+    # Read in patches
+    patches = (np.array([np.load("{}/patch_{}/patch.npy".format(directory, n)) for n in range(num_patches)])
+               .astype(np.float32))
+
+    # Read in masks
+    masks = (np.array([[np.load("{}/patch_{}/mask.npy".format(directory, n))] for n in range(num_patches)])
+             .astype(np.float32))
+
+    # Read in metadata for each patch
+    source_ids = []
+    actual_cartesian_locations = []
+    types = []
+
+    for n in range(num_patches):
+
+        file_name = "{}/patch_{}/metadata.csv".format(directory, n)
+
+        df = pd.read_csv(file_name)
+
+        source_ids.append(df["source_id"].to_numpy())
+
+        ys = df["cartesian_y"].to_numpy()
+        xs = df["cartesian_x"].to_numpy()
+
+        cartesian_coords = np.array(list(zip(ys, xs)))
+
+        actual_cartesian_locations.append(cartesian_coords)
+
+        types.append(df["source_type"].to_numpy())
+
+    # Combine to create test data
+    test_data = [(k, torch.from_numpy(patches[k]), torch.from_numpy(masks[k])) for k in range(num_patches)]
+
+    # Split data into train, validation, and test sets
+    # data = Subset(test_data, np.arange(0, num_patches))
+    #
+    # # Create batches
+    # batched_data = DataLoader(data, batch_size=128, shuffle=True)
+
+    # return batched_data
+
+    return test_data
 
 
 def save_predictions(patch_ids, predicted_segmentations, predicted_locations, predicted_classes, actual_classes,
@@ -113,13 +163,6 @@ def save_predictions(patch_ids, predicted_segmentations, predicted_locations, pr
     # SAVE ACTUAL AND PREDICTED CLASSIFICATIONS OF EACH DETECTED SOURCE
 
     classifications = [[actual_classes[k], predicted_classes[k]] for k in range(len(actual_classes))]
-
-    # print(len(classifications))
-    # print(len(classifications[0]))
-    # print(classifications[0][0].shape)
-
-
-    # print(classifications.shape)
 
     np.save(save_location + "classifications", classifications)
 

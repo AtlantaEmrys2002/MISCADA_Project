@@ -38,15 +38,22 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_
 
     test_patch_ids = []
 
-    for i, vdata in enumerate(testing_data):
-        test_patch_ids.append(vdata[0])
-        testing_inputs.append(vdata[1])
+    # for i, vdata in enumerate(testing_data):
+    #     test_patch_ids.append(vdata[0])
+    #     testing_inputs.append(vdata[1])
 
-    test_patch_ids = test_patch_ids[0].detach().cpu().numpy()
+    for i in testing_data:
+
+        test_patch_ids.append(i[0])
+        testing_inputs.append(i[1])
+
+    # test_patch_ids = test_patch_ids[0].detach().cpu().numpy()
 
     with torch.no_grad():
 
-        unet_predictions = np.array([model(i) for i in testing_inputs][0])
+        # unet_predictions = np.array([model(i) for i in testing_inputs][0])
+
+        unet_predictions = np.array(model(torch.from_numpy(np.array(testing_inputs))))
 
     # CLUSTERING (SOURCE LOCALISATION)
 
@@ -127,10 +134,13 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_
 
     testing_inputs = []
 
-    for i, vdata in enumerate(testing_data):
-        testing_inputs.append(vdata[1])
+    # for i, vdata in enumerate(testing_data):
+    #     testing_inputs.append(vdata[1])
 
-    testing_inputs = testing_inputs[0].detach().cpu().numpy()
+    for i in testing_data:
+        testing_inputs.append(i[1])
+
+    # testing_inputs = testing_inputs[0].detach().cpu().numpy()
 
     test_batches_class = prepare_classifier_data(patches=testing_inputs, predicted_locations=predicted_source_locations,
                                                  patch_ids=test_patch_ids)
@@ -143,17 +153,28 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_
     testing_inputs_class = []
     testing_actual_labels = []
 
-    for i, vdata in enumerate(test_batches_class):
-        testing_inputs_class.append(vdata[0])
-        testing_actual_labels.append(vdata[1])
+    # for i, vdata in enumerate(test_batches_class):
+    #     testing_inputs_class.append(vdata[0])
+    #     testing_actual_labels.append(vdata[1])
+
+    for i in test_batches_class:
+
+        testing_inputs_class.append(i[0])
+        testing_actual_labels.append(i[1])
+
+
+    # actual_classes = testing_actual_labels  # testing_actual_labels[0].detach().cpu().numpy()
 
     actual_classes = testing_actual_labels[0].detach().cpu().numpy()
 
-    # print(np.isnan(np.sum(testing_inputs_class[0].numpy())))
 
     with torch.no_grad():
 
-        classifier_predictions = np.array([classifier_model(j) for j in testing_inputs_class][0])
+        # classifier_predictions = np.array([classifier_model(j) for j in testing_inputs_class][0])
+
+        classifier_predictions = classifier_model(torch.from_numpy(np.array(testing_inputs_class[0])))
+
+    classifier_predictions = classifier_predictions.detach().cpu().numpy()
 
     # Return the segmented images returned by U-Net and locations of source centres returned by K-means for the TEST
     # data, as well as the predictions of the class of each predicted source
