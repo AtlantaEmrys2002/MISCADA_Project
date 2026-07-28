@@ -169,8 +169,10 @@ def evaluate_on_real_data(file_4fgl, real_data_results_directory, model):
         actual_source_locations=actual_source_locations_4fgl,
         predicted_source_locations=predicted_locations_in_real_data_celestial)
 
+    Path("./../results/plots/source_discoveries_all_sky/").mkdir(parents=True, exist_ok=True)
+
     plot_predictions_actual(actual_coordinates=actual_source_locations_4fgl,
-                            predicted_coordinates=predicted_locations_in_real_data_celestial)
+                            predicted_coordinates=predicted_locations_in_real_data_celestial, model=model)
 
 
 

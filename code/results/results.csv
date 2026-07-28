@@ -1,1 +1,2 @@
 id,detection_algorithm,localisation_algorithm,classification_algorithm,segmentation_balanced_binary_accuracy,segmentation_dive_coefficient,segmentation_precision,segmentation_recall,chamfer_separation,frac_sources_detected
+0,U-NET,K-Means,CNN,0.5,0.0675048828125,3819.5,1.0,655.5,0.0
