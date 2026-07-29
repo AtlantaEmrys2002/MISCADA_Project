@@ -1,8 +1,29 @@
+"""
+Utility functions that supplement any source generation functions.
+"""
+
 from math import floor
 import numpy as np
 
 
 def luminosity_function_calculator(energy_fluxes_4fgl, n_min, detection_threshold: np.float64, num_bins: int = 50):
+    """For a given source type, calculates the number of simulated sources to generate with energy fluxes within each
+    interval of a fixed energy flux range such that the luminosity function of a catalog of sources wil resemble that
+    of the 4FGL catalog.
+
+    Parameters
+    ----------
+    energy_fluxes_4fgl
+        Energy fluxes of all sources of a given source type present within the 4FGL.
+    n_min
+        The number of sources to include in the lowest energy flux bin
+    detection_threshold: np.float64
+        The threshold energy flux below which the luminosity function of the 4FGL must be extrapolated.
+    num_bins: int, optional
+        The number of logarithmic bins used to divide up energy flux range for which the luminosity function is
+        calculated.
+
+    """
     # The minimum energy flux of our generated sources is an order of magnitude less than the 4FGL
     our_threshold = detection_threshold / 10
 
@@ -30,8 +51,6 @@ def luminosity_function_calculator(energy_fluxes_4fgl, n_min, detection_threshol
     extra_intervals = [10 ** (np.log10(bin_intervals[0]) - (bin_width * x)) for x in range(num_extra_bins, 0, -1)]
 
     # Create extra bin intervals
-
-    # Calculate number of random
 
     # Find bin with the most AGNs
     peak = np.argmax(counts)
