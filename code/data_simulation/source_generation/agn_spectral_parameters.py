@@ -1,6 +1,11 @@
+"""
+Methods for generating AGN spectral parameters based either on fitted distributions or correlations with other spectral
+parameters.
+"""
+
 import numpy as np
 from scipy.integrate import quad
-from . spectral_models import agn_spectral_model, agn_photon_flux
+from .spectral_models import agn_spectral_model, agn_photon_flux
 import warnings
 
 # polynomial with degree 2 relating pivot energies and flux densities (coefficients below are c, b, a) such that
@@ -8,13 +13,31 @@ import warnings
 poly = np.polynomial.Polynomial([-3.106131156761208, -4.371650516868555, 0.1097545334282421])
 
 
-# def energy_flux_agn(pivot_energy, flux_density, spectral_slope, curvature):
 def energy_flux_agn(pivot_energy, flux_density, spectral_slope, curvature, min_energy=100.0, max_energy=100000.0):
+    """Calculates the integral energy flux of a source, given the spectral parameters, between 100 and 100000 MeV - this
+    is just to guide the luminosity function calculation.
+
+    Parameters
+    ----------
+    pivot_energy
+        Pivot energy [MeV] of AGN.
+    flux_density
+        Flux density [photons/cm2/MeV/s] of AGN
+    spectral_slope
+        Spectral slope of AGN spectrum
+    curvature
+        AGN spectrum curvature
+    min_energy : np.float64
+        Minimum photon energy from which to integrate from
+    max_energy:
+        Maximum photon energy to integrate up to
+
+    """
     # Integrate over 0.1 - 100 GeV
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        # energy = quad(agn_spectral_model, 100, 100000, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
-        energy = quad(agn_spectral_model, min_energy, max_energy, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
+        energy = quad(agn_spectral_model, min_energy, max_energy, args=(pivot_energy, flux_density, spectral_slope,
+                                                                        curvature))[0]
 
     # Convert energy fluxes so ergs included in units instead of photons - see ID43
     return energy * 1.602 * 10 ** (-6)
@@ -24,20 +47,15 @@ def integral_photon_flux_agn(pivot_energy, flux_density, spectral_slope, curvatu
                              max_energy=100000.0):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        # energy = quad(agn_spectral_model, 100, 100000, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
-        energy = quad(agn_photon_flux, min_energy, max_energy, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
+        energy = quad(agn_photon_flux, min_energy, max_energy, args=(pivot_energy, flux_density, spectral_slope,
+                                                                     curvature))[0]
 
     return energy
 
 
 def agn_flux_density(pivot_energies, noise_std=0.9181233203181715):
-
     # Default values for a, b, and c based on correlation analysis between pivot energies and flux densities. Found that
     # relation between E_0 and F_0 could be simulated as logF = a * logE^2 + b * logE + c
-
-    # a: 0.10975452653160912
-    # b: -2.8553356136745753
-    # c: -21.159501476671274
 
     log_pivot_energies = np.log(pivot_energies)
 
@@ -65,8 +83,6 @@ def agn_spectral_slope(pivot_energies, m=-0.3454412867556543, c=4.75525028656913
 
     log_pivot_energies = np.log(pivot_energies)
 
-    # log_alphas = np.log((log_pivot_energies * m) + c)
-
     alphas = (log_pivot_energies * m) + c
 
     # Found standard deviation of the residuals of fit of 4FGL data (noise_std), assuming mean = 0. Add this simulated
@@ -77,28 +93,11 @@ def agn_spectral_slope(pivot_energies, m=-0.3454412867556543, c=4.75525028656913
 
     noise = np.random.normal(loc=0, scale=noise_std, size=size)
 
-    # alphas += noise
-
     # Add noise
-    alphas += np.exp(noise)
+
+    alphas += noise
 
     return alphas
-
-
-def s1_agn(pivot_energy, flux_density, spectral_slope, curvature):
-
-    # Integrate above 1 GeV
-    s1 = quad(agn_spectral_model, 1000, np.inf, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
-
-    return s1
-
-
-def s10_agn(pivot_energy, flux_density, spectral_slope, curvature):
-
-    # Integrate above 10 GeV
-    s1 = quad(agn_spectral_model, 10000, np.inf, args=(pivot_energy, flux_density, spectral_slope, curvature))[0]
-
-    return s1
 
 # REFERENCES
 
