@@ -19,18 +19,19 @@ def energy_flux_pulsar(pivot_energy, flux_density, spectral_slope, exponential_i
     Parameters
     ----------
     pivot_energy
-        Pivot energy [MeV] of pulsar
+        Pivot energy [MeV] of pulsar.
     flux_density
-        Flux density [photons/cm2/MeV/s] of pulsar
+        Flux density [photons/cm2/MeV/s] of pulsar.
     spectral_slope
-        Spectral slope of pulsar spectrum (Gamma)
+        Spectral slope of pulsar spectrum (Gamma).
     exponential_index
-        Exponential index b of pulsar spectrum
+        Exponential index b of pulsar spectrum.
     exponential_factor
-        Exponential factor a of pulsar spectrum [MeV^-b]
-    min_energy
-
-
+        Exponential factor of pulsar spectrum [MeV^-b].
+    min_energy : np.float64
+        Minimum photon energy from which to integrate from.
+    max_energy:
+        Maximum photon energy to integrate up to.
 
     """
     # Integrate over 0.1 - 100 GeV
@@ -46,6 +47,27 @@ def energy_flux_pulsar(pivot_energy, flux_density, spectral_slope, exponential_i
 
 def integral_photon_flux_pulsar(pivot_energy, flux_density, spectral_slope, exponential_index, exponential_factor,
                                 min_energy=100.0, max_energy=100000.0):
+    """Calculates the integral photon flux of a source, given the spectral parameters, between 100 and 100000 MeV - this
+    is just to guide the luminosity function calculation.
+
+    Parameters
+    ----------
+    pivot_energy
+        Pivot energy [MeV] of pulsar.
+    flux_density
+        Flux density [photons/cm2/MeV/s] of pulsar.
+    spectral_slope
+        Spectral slope of pulsar spectrum (Gamma).
+    exponential_index
+        Exponential index b of pulsar spectrum.
+    exponential_factor
+        Exponential factor of pulsar spectrum [MeV^-b].
+    min_energy : np.float64
+        Minimum photon energy from which to integrate from.
+    max_energy:
+        Maximum photon energy to integrate up to.
+
+    """
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         # Integrate over 0.1 - 100 GeV (100 - 100000 MeV)
@@ -56,6 +78,16 @@ def integral_photon_flux_pulsar(pivot_energy, flux_density, spectral_slope, expo
 
 
 def pulsar_flux_density(pivot_energies, noise_std=0.8723404255319149):
+    """Calculate the pivot energy of a source given its flux density - these two spectral parameters are correlated.
+
+    Parameters
+    ----------
+    pivot_energies
+        Pivot energy [MeV] of source(s).
+    noise_std
+        Standard deviation of Gaussian noise present in observed flux densities.
+
+    """
     log_pivot_energies = np.log(pivot_energies)
 
     log_flux_densities = poly(log_pivot_energies)

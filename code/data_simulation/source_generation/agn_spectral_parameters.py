@@ -22,15 +22,15 @@ def energy_flux_agn(pivot_energy, flux_density, spectral_slope, curvature, min_e
     pivot_energy
         Pivot energy [MeV] of AGN.
     flux_density
-        Flux density [photons/cm2/MeV/s] of AGN
+        Flux density [photons/cm2/MeV/s] of AGN.
     spectral_slope
-        Spectral slope of AGN spectrum
+        Spectral slope of AGN spectrum.
     curvature
-        AGN spectrum curvature
+        AGN spectrum curvature.
     min_energy : np.float64
-        Minimum photon energy from which to integrate from
+        Minimum photon energy from which to integrate from.
     max_energy:
-        Maximum photon energy to integrate up to
+        Maximum photon energy to integrate up to.
 
     """
     # Integrate over 0.1 - 100 GeV
@@ -53,15 +53,15 @@ def integral_photon_flux_agn(pivot_energy, flux_density, spectral_slope, curvatu
     pivot_energy
         Pivot energy [MeV] of AGN.
     flux_density
-        Flux density [photons/cm2/MeV/s] of AGN
+        Flux density [photons/cm2/MeV/s] of AGN.
     spectral_slope
-        Spectral slope of AGN spectrum
+        Spectral slope of AGN spectrum.
     curvature
-        AGN spectrum curvature
+        AGN spectrum curvature.
     min_energy : np.float64
-        Minimum photon energy from which to integrate from
+        Minimum photon energy from which to integrate from.
     max_energy:
-        Maximum photon energy to integrate up to
+        Maximum photon energy to integrate up to.
 
     """
     with warnings.catch_warnings():
@@ -78,7 +78,7 @@ def agn_flux_density(pivot_energies, noise_std=0.9181233203181715):
     Parameters
     ----------
     pivot_energies
-        Pivot energy [MeV] of source(s)
+        Pivot energy [MeV] of source(s).
     noise_std
         Standard deviation of Gaussian noise present in observed flux densities.
 
@@ -111,13 +111,13 @@ def agn_spectral_slope(pivot_energies, m=-0.3454412867556543, c=4.75525028656913
     Parameters
     ----------
     pivot_energies
-        Pivot energy [Mev] of source(s)
+        Pivot energy [Mev] of source(s).
     m
-        Gradient of log-log plot relating pivot energies and spectral slopes
+        Gradient of log-log plot relating pivot energies and spectral slopes.
     c
-        y-intercept of log-log plot relating pivot energies and spectral slopes
+        y-intercept of log-log plot relating pivot energies and spectral slopes.
     noise_std
-        Standard deviation of Gaussian noise present in observed spectral slopes
+        Standard deviation of Gaussian noise present in observed spectral slopes.
     """
     # Based on correlation analysis of pivot energies and flux densities and spectral slopes,
     # created this method for generating spectral slopes based on pivot energies after fitting relation
