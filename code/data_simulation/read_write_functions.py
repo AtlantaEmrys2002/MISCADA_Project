@@ -1,3 +1,7 @@
+"""
+I/O functions used during data simulation tasks.
+"""
+
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.table import QTable
@@ -5,7 +9,7 @@ import numpy as np
 from pathlib import Path
 from source_generation.agn_spectral_parameters import integral_photon_flux_agn
 from source_generation.pulsar_spectral_parameters import integral_photon_flux_pulsar
-from xml.dom import minidom  #, Node
+from xml.dom import minidom
 
 
 def agn_xml_writer(sources, root, xml):
@@ -23,9 +27,7 @@ def agn_xml_writer(sources, root, xml):
     """
     # ADD SOURCES
 
-    num_sources = len(sources)
-
-    print(num_sources, sources.shape[0])
+    num_sources = sources.shape[0]
 
     # Names of AGN parameters when stored in XML format
     agn_parameters = ["norm", "alpha", "Eb", "beta"]
@@ -166,22 +168,6 @@ def catalog_data_preparation(file_name: str):
     return agn_data, pulsar_data, source_detection_threshold, energy_fluxes_4fgl
 
 
-# def cleanEmptyTextNodes(node):
-#     # THIS RECURSIVE FUNCTION COMES FROM HERE - https://stackoverflow.com/questions/10034747/python-issue-using-xml-dom
-#     # -minidom-document-extra-empty-lines-between-child-ele
-#
-#     for child in node.childNodes:
-#
-#         if child.nodeType == Node.TEXT_NODE:
-#             child.data = ''
-#
-#         elif child.nodeType == Node.ELEMENT_NODE:
-#
-#             cleanEmptyTextNodes(child)
-#
-#     node.normalize()
-
-
 def pulsar_xml_writer(sources, root, xml):
     """Writes a 2D m x 9 array representing a pulsar's spectral and spatial parameters to an XML format consistent with
     fermitools.
@@ -195,9 +181,7 @@ def pulsar_xml_writer(sources, root, xml):
     """
     # PARAMETERS
 
-    num_sources = len(sources)
-
-    print(num_sources, sources.shape[0])
+    num_sources = sources.shape[0]
 
     pulsar_parameters = ["Prefactor", "Index1", "Scale", "Expfactor", "Index2"]
 
@@ -423,7 +407,7 @@ def xml_parser_locations(xml_file: str, coordinate_system='G'):
 
         # Return coordinates in galactic format (requires conversion)
 
-        # Get coordinates into numpy array then separate into list of lats and lons
+        # Get coordinates into numpy array then separate into list of latitudes and longitudes
 
         coordinates = SkyCoord(ra=coordinates[:, 0] * u.degree, dec=coordinates[:, 1] * u.degree, frame='icrs').galactic
 
@@ -529,7 +513,6 @@ def xml_parser(energy_bins, xml_file: str, give_ids=False):
 
             # For each energy interval, calculate corresponding flux
             for f in range(num_bins - 1):
-
                 # N.B. Integral photon flux is not the same as energy flux
                 flux = integral_photon_flux_agn(pivot_energy=spectral_parameter_dictionary["Eb"],
                                                 flux_density=spectral_parameter_dictionary["norm"],
@@ -582,12 +565,10 @@ def xml_parser(energy_bins, xml_file: str, give_ids=False):
 
         return coordinates, fluxes
 
-
 # REFERENCES
 
 # Accessing Numpy Columns - https://stackoverflow.com/questions/8386675/extracting-specific-columns-in-numpy-array
 # Accessing XML Tags - https://stackoverflow.com/questions/32387528/getting-list-of-tags-from-python-minidom-xml
-# Astropy Documentation - https://docs.astropy.org/en/stable/
 # Converting Coordinates - https://cloudlessnights.com/project/python-for-astronomy/convert-galactic-coordinates-to-ra-
 # dec-and-alt-az-with-astropy/
 # Converting Binary Strings - https://stackoverflow.com/questions/17615414/how-to-convert-binary-string-to-normal-string
@@ -595,11 +576,10 @@ def xml_parser(energy_bins, xml_file: str, give_ids=False):
 # Creating Dictionaries - https://stackoverflow.com/questions/8424942/creating-a-new-dictionary-in-python
 # Creating XML Documents - https://www.geeksforgeeks.org/python/create-xml-documents-using-python/
 # Example Fermitools XML Files - https://fermi.gsfc.nasa.gov/ssc/data/analysis/scitools/xml_model_defs.html#logParabola
-# Fermi Documention on XML Formatting - https://fermi.gsfc.nasa.gov/ssc/data/access/lat/BackgroundModels.html
+# Fermi Documentation on XML Formatting - https://fermi.gsfc.nasa.gov/ssc/data/access/lat/BackgroundModels.html
 # LAT IRF - https://fermi.gsfc.nasa.gov/ssc/data/analysis/lat_irfs/irf_overview.html
 # Pandas Columns - https://stackoverflow.com/questions/20297332/how-do-i-retrieve-the-number-of-columns-in-a-pandas-data
 # -frame
-# Pandas Documentation - https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.corr.html
 # Pandas Iteration of Columns - https://stackoverflow.com/questions/28218698/how-to-iterate-over-columns-of-a-pandas-
 # dataframe
 # Parsing XML - https://www.geeksforgeeks.org/python/parse-xml-using-minidom-in-python/

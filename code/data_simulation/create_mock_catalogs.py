@@ -1,3 +1,8 @@
+"""
+Main file to run for creating a realistic catalog (similar to the 4FGL) of simulated gamma-ray sources (AGN and pulsars)
+based on intensive distribution and correlation analysis.
+"""
+
 # LIBRARIES
 import argparse
 from pathlib import Path
@@ -12,7 +17,21 @@ import time
 from verification.visualisation import plot_correlation, plot_luminosity_function, plot_spatial_distribution
 
 
-def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
+def analysis(agn_rows, pulsar_rows, directory: str = "./plots/analysis"):
+    """Conducts a full analysis of all spectral (and one spatial) parameters for chosen gamma-ray sources. Included in
+    this analysis is the fitting of a PDF to the parameters of all sources of a given type within the 4FGL, as well as
+    a correlation analysis of these parameters.
+
+    Parameters
+    ----------
+    agn_rows : ndarray
+        2D m x 7 array of spectral and spatial parameters of m AGN sources.
+    pulsar_rows : ndarray
+        2D n x 7 array of spectral and spatial parameters of n AGN sources.
+    directory : str
+        Directory in which to store plots produced during analysis.
+
+    """
     # Create directory to store results
     Path(directory + "/parameter_distributions").mkdir(parents=True, exist_ok=True)
     Path(directory + "/parameter_correlations").mkdir(parents=True, exist_ok=True)
@@ -124,6 +143,27 @@ def analysis(agn_rows, pulsar_rows, directory="./plots/analysis"):
 
 
 def create_catalog(fermi_catalog: str, data_4fgl: tuple, threshold, verify: bool = False):
+    """Creates a catalog of simulated AGN and pulsar sources given the 4FGL data from which to sample realistic
+    parameter values and an energy flux from below which the luminosity function must be extrapolated.
+
+    Parameters
+    ----------
+    fermi_catalog : str
+        File in which 4FGL catalog is stored - used to plot luminosity functions of real and simulated data for valida
+        tion and verification.
+
+    data_4fgl : tuple
+        Relevant AGN and pulsar data extracted from the 4FGL from which to create PDFs of parameters to be sampled from.
+
+    threshold
+        Lowest energy flux of any 4FGL source - below this threshold, the luminosity function must be extrapolated to
+        generate faint sources.
+
+    verify : bool
+        Indicates whether the simulated data should undergo verification - involves plotting and comparison of simulated
+        and real data.
+
+    """
     start = time.time()
 
     # N.B. This makes a single simulated catalog of mock AGN and pulsars
@@ -149,7 +189,23 @@ def create_catalog(fermi_catalog: str, data_4fgl: tuple, threshold, verify: bool
     return simulated_agn, simulated_pulsar, simulation_time
 
 
-def verification(simulated_agns, simulated_pulsars, catalog_4fgl: str, directory="./plots/verification"):
+def verification(simulated_agns, simulated_pulsars, catalog_4fgl: str, directory: str = "./plots/verification"):
+    """Verify the correlation of simulated parameters matches that of the real parameters and that the luminosity
+    function of simulated sources matches that of the real sources.
+
+    Parameters
+    ----------
+
+    simulated_agns : ndarray
+        2D m x 7 array describing each of the 7 spectral and spatial parameters of m AGNs.
+    simulated_pulsars : ndarray
+        2D n x 9 array describing each of the 9 spectral and spatial parameters of n pulsars.
+    catalog_4fgl : str
+        Name of file containing FITS-formatted 4FGL catalog.
+    directory:
+        Name of file location in which store plots used for verifying simulated datas' realism.
+
+    """
     # Verify simulated data realism and correctness
 
     # Create directory to store results
@@ -179,11 +235,13 @@ def verification(simulated_agns, simulated_pulsars, catalog_4fgl: str, directory
 
     agn_correlated_variables = [("Pivot_Energy", "LP_Flux_Density"), ("Pivot_Energy", "LP_Index")]
     agn_correlated_variables_indices = [(0, 1), (0, 2)]
+    num_correlated_agn_variables = len(agn_correlated_variables)
 
     pulsar_correlated_variables = [("Pivot_Energy", "PLEC_Flux_Density")]
     pulsar_correlated_variables_indices = [(0, 1)]
+    num_correlated_psr_variables = len(pulsar_correlated_variables)
 
-    for a in range(len(agn_correlated_variables)):
+    for a in range(num_correlated_agn_variables):
         variable_names = agn_correlated_variables[a]
         indices = agn_correlated_variables_indices[a]
 
@@ -191,7 +249,7 @@ def verification(simulated_agns, simulated_pulsars, catalog_4fgl: str, directory
                          simulated_var1=simulated_agns[:, indices[0]], simulated_var2=simulated_agns[:, indices[1]],
                          source_type="AGN", directory=directory)
 
-    for p in range(len(pulsar_correlated_variables)):
+    for p in range(num_correlated_psr_variables):
         variable_names = pulsar_correlated_variables[p]
         indices = pulsar_correlated_variables_indices[p]
 
