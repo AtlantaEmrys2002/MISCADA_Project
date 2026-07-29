@@ -45,6 +45,25 @@ def energy_flux_agn(pivot_energy, flux_density, spectral_slope, curvature, min_e
 
 def integral_photon_flux_agn(pivot_energy, flux_density, spectral_slope, curvature, min_energy=100.0,
                              max_energy=100000.0):
+    """Calculates the integral photon flux of a source, given the spectral parameters, between 100 and 100000 MeV - this
+    is just to guide the luminosity function calculation.
+
+    Parameters
+    ----------
+    pivot_energy
+        Pivot energy [MeV] of AGN.
+    flux_density
+        Flux density [photons/cm2/MeV/s] of AGN
+    spectral_slope
+        Spectral slope of AGN spectrum
+    curvature
+        AGN spectrum curvature
+    min_energy : np.float64
+        Minimum photon energy from which to integrate from
+    max_energy:
+        Maximum photon energy to integrate up to
+
+    """
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         energy = quad(agn_photon_flux, min_energy, max_energy, args=(pivot_energy, flux_density, spectral_slope,
@@ -54,6 +73,16 @@ def integral_photon_flux_agn(pivot_energy, flux_density, spectral_slope, curvatu
 
 
 def agn_flux_density(pivot_energies, noise_std=0.9181233203181715):
+    """Calculate the pivot energy of a source given its flux density - these two spectral parameters are correlated.
+
+    Parameters
+    ----------
+    pivot_energies
+        Pivot energy [MeV] of source(s)
+    noise_std
+        Standard deviation of Gaussian noise present in observed flux densities.
+
+    """
     # Default values for a, b, and c based on correlation analysis between pivot energies and flux densities. Found that
     # relation between E_0 and F_0 could be simulated as logF = a * logE^2 + b * logE + c
 
@@ -77,6 +106,19 @@ def agn_flux_density(pivot_energies, noise_std=0.9181233203181715):
 
 
 def agn_spectral_slope(pivot_energies, m=-0.3454412867556543, c=4.755250286569133, noise_std=0.13347913702284359):
+    """Calculate the spectral slope of a source given its pivot energy - these two spectral parameters are correlated.
+
+    Parameters
+    ----------
+    pivot_energies
+        Pivot energy [Mev] of source(s)
+    m
+        Gradient of log-log plot relating pivot energies and spectral slopes
+    c
+        y-intercept of log-log plot relating pivot energies and spectral slopes
+    noise_std
+        Standard deviation of Gaussian noise present in observed spectral slopes
+    """
     # Based on correlation analysis of pivot energies and flux densities and spectral slopes,
     # created this method for generating spectral slopes based on pivot energies after fitting relation
     # found in cited paper (see fitting_agn_pivot_energy_spectral_slope_relation() for more info)
