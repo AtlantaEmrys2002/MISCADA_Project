@@ -1,11 +1,8 @@
-from astropy import units as u
-from astropy.coordinates import SkyCoord
 from astropy.table import QTable
 from map_generation.visualisation import format_scientific_notation_label
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
-
 
 axis_labels = {"LP_Flux_Density": "Differential Flux Density",
                "Pivot_Energy": "Pivot Energy", "LP_Index": "Spectral Slope",
@@ -27,7 +24,6 @@ units = {"LP_Flux_Density": "[ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$", "Pivot_Energy":
 
 def plot_correlation(catalog_4fgl: str, var1_name: str, var2_name: str, simulated_var1, simulated_var2,
                      source_type: str, directory: str) -> None:
-
     # VERIFY THAT THE SIMULATED CATALOG'S PARAMETERS HAVE SIMILAR CORRELATION TO THE ORIGINAL CATALOG
 
     # Read 4FGL Catalog
@@ -39,7 +35,8 @@ def plot_correlation(catalog_4fgl: str, var1_name: str, var2_name: str, simulate
     if source_type == "AGN":
 
         # Select all rows that describe AGN
-        agn_mask = np.isin(catalog['CLASS1'].data, np.array(['bcu', 'sey', 'ssrq', 'bll', 'fsrq', 'rdg', 'nlsy1', 'agn']))
+        agn_mask = np.isin(catalog['CLASS1'].data, np.array(['bcu', 'sey', 'ssrq', 'bll', 'fsrq', 'rdg', 'nlsy1',
+                                                             'agn']))
         sources_4fgl = catalog[agn_mask]
 
     else:
@@ -100,7 +97,8 @@ def plot_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64
     if source_type == "AGN":
 
         # Select all rows that describe AGN
-        agn_mask = np.isin(catalog['CLASS1'].data, np.array(['bcu', 'sey', 'ssrq', 'bll', 'fsrq', 'rdg', 'nlsy1', 'agn']))
+        agn_mask = np.isin(catalog['CLASS1'].data, np.array(['bcu', 'sey', 'ssrq', 'bll', 'fsrq', 'rdg', 'nlsy1',
+                                                             'agn']))
         sources = catalog[agn_mask]
 
     else:
@@ -119,12 +117,12 @@ def plot_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64
     fig, ax = plt.subplots(1, 1)
 
     # Plot 4FGL data
-    bin_edges = 10 ** np.linspace(-14, -9, 50)
+    bin_edges = 10 ** np.linspace(-14, -9)
     counts, bins = np.histogram(energy_fluxes_4fgl, bins=bin_edges)
     ax.stairs(counts, bins, label='4FGL')
 
     # Plot simulated data
-    bin_edges = 10 ** np.linspace(-15, -8, 50)
+    bin_edges = 10 ** np.linspace(-15, -8)
     counts, bins = np.histogram(energy_fluxes, bins=bin_edges)
     ax.stairs(counts, bins, label='Simulated')
 
@@ -149,7 +147,6 @@ def plot_luminosity_function(catalog: str, energy_fluxes: npt.NDArray[np.float64
 
 
 def plot_patch(binned_patches, mask, unformatted_energy_bins, directory):
-
     # PLOT ENERGY BINNED COUNT MAPS AND CORRESPONDING MASK
 
     formatted_energy_bins = format_scientific_notation_label(unformatted_energy_bins)
@@ -163,7 +160,6 @@ def plot_patch(binned_patches, mask, unformatted_energy_bins, directory):
     num_bins = unformatted_energy_bins.shape[0] - 1
 
     for a in range(num_bins):
-
         im = axes[a].imshow(binned_patches[a])
 
         axes[a].set_title("Count Map {} MeV - {} MeV".format(formatted_energy_bins[a], formatted_energy_bins[a + 1]))
@@ -179,7 +175,6 @@ def plot_patch(binned_patches, mask, unformatted_energy_bins, directory):
 
 
 def plot_spatial_distribution(galactic_longitudes, galactic_latitudes, source_type: str, directory: str):
-
     # N.B. longitudes and latitudes should be passed to this function in radians (not in degrees)
 
     xs = galactic_longitudes
