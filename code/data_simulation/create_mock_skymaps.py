@@ -299,3 +299,6 @@ if __name__ == "__main__":
 # REFERENCES
 
 # FITS Format of gtpsf Output - https://gamma-astro-data-formats.readthedocs.io/en/v0.1/irfs/psf/psf_gtpsf/
+# HEALPIX - https://gamma-astro-data-formats.readthedocs.io/en/latest/skymaps/healpix/
+# Info about PSF - https://docs.gammapy.org/0.20.1/tutorials/data/fermi_lat.html#PSF
+# Visualisation Confirmation - https://nptfit.readthedocs.io/en/latest/Example1_Overview_of_the_Fermi_Data.html

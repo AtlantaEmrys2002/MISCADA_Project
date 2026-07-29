@@ -212,14 +212,10 @@ def evaluate_on_real_data(file_4fgl, real_data_results_directory, model):
 
     Path("./../results/plots/source_discoveries_all_sky/").mkdir(parents=True, exist_ok=True)
 
-
-    # ADD THIS LINE BACK AT THE END!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    # plot_predictions_actual(actual_coordinates=actual_source_locations_4fgl,
-    #                         predicted_coordinates=predicted_locations_in_real_data_celestial, model=model)
+    plot_predictions_actual(actual_coordinates=actual_source_locations_4fgl,
+                            predicted_coordinates=predicted_locations_in_real_data_celestial, model=model)
 
     classifications = np.load("./../results/real/{}/classifications.npy".format(model))
-
 
     # THIS FRACTION IS THE NUMBER OF SOURCES CORRECTLY CLASSIFIED OF THE NUMBER OF SOURCES CORRECTLY DETECTED
     frac_correct_classed_sources = (
@@ -338,23 +334,6 @@ if __name__ == "__main__":
 
         evaluate_on_real_data(file_4fgl="/Volumes/T7/data/catalog/4FGL_DR4.fit",
                               real_data_results_directory="./../results/real", model=m)
-
-        # pred_classifications_for_each_patch = []
-        # actual_classifications_for_each_patch = []
-        #
-        # starting_index = 0
-        #
-        # for p in range(patch_ids.shape[0]):
-        #
-        #     num_predicted_sources_in_patch = predicted_locations[p].shape[0]
-        #
-        #     pred_classes = predicted_classes[starting_index: starting_index + num_predicted_sources_in_patch]
-        #
-        #     actual_classes = actual_classes[starting_index: starting_index + num_predicted_sources_in_patch]
-        #
-        #     pred_classifications_for_each_patch.append(pred_classes)
-        #
-        #     starting_index += num_predicted_sources_in_patch
 
         # SAVE RESULTS
 

@@ -23,9 +23,7 @@ def pixels_in_radius(coordinate, R):
 
 
 def blob_detection(binary_segments):
-
-    # ID25
-
+    # Clustering algorithm recommended by ID25
     params = cv2.SimpleBlobDetector_Params()
 
     params.minThreshold = 30
@@ -84,7 +82,6 @@ def blob_detection(binary_segments):
 
 
 def k_means_clustering(binary_segments):
-
     # IMPLEMENTED FOLLOWING PSEUDOCODE IN ID8 (MY OWN IMPLEMENTATION)
 
     source_centres_in_each_image = []
@@ -159,6 +156,7 @@ def k_means_clustering(binary_segments):
 # Blob Detector Params - https://stackoverflow.com/questions/8076889/how-to-use-opencv-simpleblobdetector
 # Blob Detection Thresholds - https://opencv.org/blob-detection-using-opencv/#h-filtering-blobs
 # Blob Detection Tutorials - https://opencv.org/blob-detection-using-opencv/
+# Blob Detection - https://www.geeksforgeeks.org/python/blob-detection-using-opencv/
 # Copy - https://stackoverflow.com/questions/37593013/deep-copy-of-a-np-array-of-np-array
 # Extracting Cartesian Coordinates from OpenCV - https://stackoverflow.com/questions/35884409/how-to-extract-x-y-
 # Filter Numpy - https://stackoverflow.com/questions/19821425/how-can-i-filter-numpy-array-by-list-of-indices

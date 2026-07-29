@@ -1,14 +1,3 @@
-# This method is adapted from ID8. All code is my own (except where indicated), but Python
-# implementation provided by the authors to *access* (not generate) data can be found in ID8 footnotes. Reasons for
-# implementing are as follows:
-# 3) I wanted to understand the method so that I could reimplement the code in C/C++ to make use of parallel processing
-# and GPUs.
-# 4) Once I had reimplemented (possibly in two languages) and made optimisations, I could then improve simulation
-# techniques and bring in new ideas, e.g. time data, light curves, etc.
-# 5) NOT ALL THE METHODS FOR SIMULATING DATA WERE PROVIDED IN THE ABOVE CODE - MORE ABOUT ACCESSING PRE-GENERATED DATA!
-# - CHECK - IT'S ALL ABOUT ACCESSING PREGENERATED DATA - https://git.io/JO5FP - COULD USE TO READ MY XML FILES AND
-# GENERATE PATCHES.
-
 # LIBRARIES
 import argparse
 from pathlib import Path
@@ -168,14 +157,6 @@ def verification(simulated_agns, simulated_pulsars, catalog_4fgl: str, directory
 
     # SPECTRAL PARAMETERS
 
-    # # Compare the luminosity function of the simulated AGNs with that of those in the 4FGL
-    # plot_luminosity_function("/Volumes/T7/data/catalog/4FGL_DR4.fit", simulated_agns[:, 4],
-    #                          directory=directory, source_type="AGN")
-    #
-    # # Compare the luminosity function of the simulated pulsars with that of those in the 4FGL
-    # plot_luminosity_function("/Volumes/T7/data/catalog/4FGL_DR4.fit", simulated_pulsars[:, 5],
-    #                          directory=directory, source_type="Pulsar")
-
     # Compare the luminosity function of the simulated AGNs with that of those in the 4FGL
     plot_luminosity_function(catalog_4fgl, simulated_agns[:, 4],
                              directory=directory, source_type="AGN")
@@ -194,7 +175,7 @@ def verification(simulated_agns, simulated_pulsars, catalog_4fgl: str, directory
     plot_spatial_distribution(simulated_pulsars[:, 6], simulated_pulsars[:, 7], source_type='Pulsar',
                               directory=directory)
 
-    ## CORRELATION ANALYSIS
+    # CORRELATION ANALYSIS
 
     agn_correlated_variables = [("Pivot_Energy", "LP_Flux_Density"), ("Pivot_Energy", "LP_Index")]
     agn_correlated_variables_indices = [(0, 1), (0, 2)]
@@ -203,7 +184,6 @@ def verification(simulated_agns, simulated_pulsars, catalog_4fgl: str, directory
     pulsar_correlated_variables_indices = [(0, 1)]
 
     for a in range(len(agn_correlated_variables)):
-
         variable_names = agn_correlated_variables[a]
         indices = agn_correlated_variables_indices[a]
 
@@ -212,7 +192,6 @@ def verification(simulated_agns, simulated_pulsars, catalog_4fgl: str, directory
                          source_type="AGN", directory=directory)
 
     for p in range(len(pulsar_correlated_variables)):
-
         variable_names = pulsar_correlated_variables[p]
         indices = pulsar_correlated_variables_indices[p]
 
@@ -320,6 +299,7 @@ if __name__ == "__main__":
 
 # Creating Path to Directories - https://stackoverflow.com/questions/273192/how-do-i-create-a-directory-and-any-missing-
 # parent-directories
+# Energy Flux - https://git.io/JO5FP
 # ID8 Paper - Identification of point sources in gamma rays using U-shaped convolutional neural networks and a data
 # challenge
 # Log-Normal Distribution - https://en.wikipedia.org/wiki/Log-normal_distribution

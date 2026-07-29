@@ -43,7 +43,6 @@ def plot_fitted_point_source_psf(psf_file: str, function_parameters, directory: 
         num_bins = len(psf_data)
 
         for b in range(num_bins):
-
             # Lowest energy (MeV) of this bin
             energy_value = psf_data[b][0]
 
@@ -82,7 +81,6 @@ def plot_fitted_point_source_psf(psf_file: str, function_parameters, directory: 
         counts, bins = np.histogram(random_values, bins=250, density=True)
         flattened_axes[x].stairs(counts, bins, color="green", label="Random Samples")
 
-
     # Formatting
 
     if num_bins % 2 == 1:
@@ -104,7 +102,7 @@ def plot_fitted_point_source_psf(psf_file: str, function_parameters, directory: 
             a.set_title("PDF of Angular Deviation for $\gamma$-Rays \nwith Energy {}+ MeV".format(labels[x]))
         else:
             a.set_title("PDF of Angular Deviation for $\gamma$-Rays \nwith Energy {}-{} MeV".format(labels[x],
-                                                                                                  labels[x+1]))
+                                                                                                    labels[x+1]))
 
         a.legend()
 

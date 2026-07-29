@@ -81,9 +81,6 @@ def fit_diffuse_source_psf(roi_count_map, nside=512):
             # Clip < 0 values to 0
             beam = np.clip(beam, a_min=0, a_max=np.max(beam))
 
-            # print("PSF TEST")
-            # print(np.argwhere(beam < 0))
-
             psfs.append(beam)
 
             # CHECK BY APPLYING BEAM TO IMAGE WITH SINGLE PIXEL AT CENTER EQUAL TO MAXIMUM VALUE (BEFORE NORMALISATION)
@@ -106,79 +103,6 @@ def fit_diffuse_source_psf(roi_count_map, nside=512):
             # plt.close()
 
     return psfs
-
-            # plt.plot(range(0, len(x_axis)), values, linestyle='--', label="{}-{} MeV".format(energy_bins[b], energy_bins[b + 1]))
-
-
-
-        # plt.xlabel("\\theta [pixels]")
-        # plt.ylabel("PSF(\\theta) [per pixel]")
-        #
-        # plt.xlim(0, 30)
-        # # plt.ylim(0, 600)
-        #
-        # plt.legend()
-        #
-        # plt.show()
-
-
-
-
-        # lmax = 3 * nside  # chose 3 based on above paper
-        #
-        # # Can plot below with plt.imshow(counts
-        # counts = hdul[0].data
-        #
-        # midpoint = counts.shape[0] // 2
-        #
-        # x_axis = counts[midpoint]
-        # y_axis = counts[:, midpoint]
-        #
-        # # x and y axis to form a cross
-        # values = (x_axis + y_axis) / 2
-        #
-        # max_value = np.max(values)
-        #
-        # # Closest value to half the intensity - https://stackoverflow.com/questions/8914491/finding-the-nearest-value-and-return-the-index-of-array-in-python
-        # half_intensity = (np.abs(values - (max_value // 2))).argmin()
-        #
-        # # FWHM
-        #
-        # # Find the difference between half way along the axis and centre - 0.05 degrees represented by 1 pixel. Multiply by two as it goes across the mean
-        #
-        # # Approximation from CMB Estimation Paper - https://arxiv.org/html/2410.12951v2 - resolution how many degrees
-        # # does side cover approximately
-        # side_length_pixel = np.sqrt((4 * np.pi) / (12 * nside ** 2))
-        #
-        # degrees_difference = np.abs(midpoint - half_intensity) * side_length_pixel * 2
-        #
-        # # Convert to arcmin FROM degrees - NEW DOCUMENTATION SAYS RADIANS (PREVIOUS SAYS ARCMIN)
-        # degrees_difference *= (np.pi / 180)
-        #
-        # beam = hp.sphtfunc.gauss_beam(fwhm=degrees_difference, lmax=lmax)
-        #
-        # # print(beam)
-        #
-        # # thetas = np.linspace(0, lmax, num=len(values)//2) * side_length_pixel
-        #
-        # import matplotlib.pyplot as plt
-        #
-        # # to_integrate = (2 * np.pi * beam * thetas)
-        # #
-        # # theta_diff = thetas[1:] - thetas[:-1]
-        # # func_diff = (to_integrate[1: ] + to_integrate[:-1])/2
-        # #
-        # # integral = np.sum(theta_diff * func_diff)
-        #
-        # # plt.plot(thetas, values[midpoint:] / (np.pi * thetas ** 2))
-        #
-        # # print(thetas)
-        #
-        # # plt.yscale("log")
-        #
-        # # plt.show()
-
-        # return beam
 
 
 def fit_point_source_psf(file_name):
@@ -267,6 +191,8 @@ def scale_psf(psf_values, energy_bin, c_0=3.5, c_1=0.15, beta=0.8):
 # than-1
 # PDF from Data - https://math.stackexchange.com/questions/2325565/is-it-possible-to-calculate-probability-density-
 # function-from-a-data-set
+# PSF Format - https://escholarship.org/content/qt723151vx/qt723151vx.pdf
+# PSF Information - https://gamma-astro-data-formats.readthedocs.io/en/v0.1/irfs/psf/index.html#psf-pdf
 # Radial Profiles - https://cxc.cfa.harvard.edu/ciao/why/radial_profile_correction.html
 # Radial Profiles - https://stackoverflow.com/questions/34965275/radial-profile-from-a-fits-image
 # Window Function - https://en.wikipedia.org/wiki/Window_function

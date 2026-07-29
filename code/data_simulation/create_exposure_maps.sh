@@ -83,5 +83,7 @@ conda deactivate
 # Fermitools Formats - https://fermi-hero.readthedocs.io/en/latest/galactic_center/science_tool_images.html
 # Fermitools Likelihood Tutorial - https://fermi.gsfc.nasa.gov/ssc/data/analysis/scitools/binned_likelihood_tutorial.
 # html
+# Fermitools Liklihood Tutorial - https://github.com/fermi-lat/AnalysisThreads/blob/master/SourceAnalysis/2.Unbinned
+# Likelihood/likelihood_tutorial.ipynb
 # Preparing Fermi Data - http://cta.irap.omp.eu/ctools/users/tutorials/howto/fermi/howto_fermi_prepare.html
 

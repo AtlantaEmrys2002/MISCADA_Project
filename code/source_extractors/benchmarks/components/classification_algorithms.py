@@ -168,7 +168,10 @@ def classifier_train(train_data, test_data, training_epochs=50, save_file="./ben
 # Dense Layers - https://apxml.com/courses/pytorch-for-tensorflow-developers/chapter-2-pytorch-nn-module-for-keras-
 # users/common-layer-types-pytorch-tf
 # Dense Layers 2 - https://discuss.pytorch.org/t/pytorch-torch-nn-equivalent-of-tensorflow-keras-dense-layers/133518
-# Fixing Nan Predictions - https://discuss.pytorch.org/t/outputing-nan-as-predictions-in-my-neural-network-training-loop/183151/2
+# Fixing Nan Predictions - https://discuss.pytorch.org/t/outputing-nan-as-predictions-in-my-neural-network-training-loop
+# /183151/2
 # Flatten with Linear - https://discuss.pytorch.org/t/should-i-flatten-before-the-linear-layer/43570
+# Nan Prediction Error - https://discuss.pytorch.org/t/outputing-nan-as-predictions-in-my-neural-network-training-loop/
+# 183151/2
 # Updating Learning Rate - https://stackoverflow.com/questions/48324152/how-to-change-the-learning-rate-of-an-optimizer-
 # at-any-given-moment-no-lr-sched

@@ -229,6 +229,8 @@ def unet_train(train_data, test_data, training_epochs=50, save_file="./benchmark
 # Pytorch Documentation - https://pytorch.org/get-started/locally/
 # Torch Types - https://stackoverflow.com/questions/70267810/pytorch-runtimeerror-expected-floating-point-type-for-
 # target-with-class-proba
+# Softmax Error - https://discuss.pytorch.org/t/implicit-dimension-choice-for-softmax-warning/12314/2
+# Training - https://docs.pytorch.org/tutorials/beginner/introyt/trainingyt.html
 # Training Loop - https://docs.pytorch.org/tutorials/beginner/introyt/trainingyt.html
 # Tutorial GitHub - https://github.com/AlessandroMondin/U-NET/blob/main/dataset.py
 # Tutorial GitHub - https://github.com/aladdinpersson/Machine-Learning-Collection/blob/master/ML/Pytorch/image_

@@ -443,3 +443,9 @@ def xml_parser_locations(xml_file: str, coordinate_system='G'):
     else:
 
         raise TypeError("Coordinate system not supported.")
+
+
+# REFERENCES
+
+# Delete Rows - https://stackoverflow.com/questions/40426697/is-there-any-way-to-delete-the-specific-elements-of-an-
+# numpy-array-in-place-in

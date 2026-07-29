@@ -186,4 +186,5 @@ def save_predictions(patch_ids, predicted_segmentations, predicted_locations, pr
 # REFERENCES
 
 # Order with Test Data - https://discuss.pytorch.org/t/maintaining-order-of-data-while-using-dataloader/32297/2
-
+# Pickle - https://stackoverflow.com/questions/20996267/how-to-save-2d-arrays-lists-in-python
+# Pickle - https://stackoverflow.com/questions/17225287/write-and-read-a-list-from-file
