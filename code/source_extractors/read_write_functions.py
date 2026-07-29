@@ -129,7 +129,7 @@ def read_real_data(num_patches, directory=str):
 
 
 def save_predictions(patch_ids, predicted_segmentations, predicted_locations, predicted_classes, actual_classes,
-                     directory: str, method: str):
+                     directory: str, method: str, real=False):
 
     # Create directory to store results
 
@@ -137,7 +137,13 @@ def save_predictions(patch_ids, predicted_segmentations, predicted_locations, pr
 
     Path(save_location).mkdir(parents=True, exist_ok=True)
 
-    patches_location = "./../data_simulation/simulated_data/patches/"
+    if real:
+
+        patches_location = "./real_data/real_patches/"
+
+    else:
+
+        patches_location = "./../data_simulation/simulated_data/patches/"
 
     # SAVE ACTUAL AND PREDICTED SEGMENTATIONS OF EACH PATCH
 

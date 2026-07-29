@@ -40,7 +40,7 @@ def image_cartesian_coordinates_to_galactic_coordinates(coordinates, patch_centr
 def normalise_sub_patches(sub_patches):
 
     # Assumes sub_patches are passed as array with shape [n, m, 5, 7, 7] where n is number of patches and m is num
-    # of subpatches within patch n
+    # of sub-patches within patch n
 
     # Normalises each patch independently - assume format of sub-patches is n patches each with m sub-patches
 
@@ -72,7 +72,7 @@ def normalise_sub_patches(sub_patches):
     return normalised_sub_patches_arr
 
 
-def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_data=True):
+def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_data=True, test=False):
 
     # Remove all patches with no predicted sources
     ids_to_remove = [p for p in range(len(patch_ids)) if len(predicted_locations[p]) == 0]
@@ -107,21 +107,26 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
             data.append([normalised_sub_boxes[patch][pred_source], vector_labels[patch][pred_source]])
 
     if len(data) == 0:
-
         raise RuntimeError("Not enough sources were localised - no data is available for the classifier to train on.")
 
-    # Reformat as DataSet
-    split = Subset(data, np.arange(0, len(data)))
+    if test:
 
-    if shuffle_data:
-
-        batches = DataLoader(split, batch_size=128, shuffle=True)
+        return data
 
     else:
 
-        batches = DataLoader(split, batch_size=128, shuffle=False)
+        # Reformat as DataSet
+        split = Subset(data, np.arange(0, len(data)))
 
-    return batches
+        if shuffle_data:
+
+            batches = DataLoader(split, batch_size=128, shuffle=True)
+
+        else:
+
+            batches = DataLoader(split, batch_size=128, shuffle=False)
+
+        return batches
 
 
 def source_boxes(patches, predicted_source_locations):

@@ -4,6 +4,48 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+def percentage_of_4fgl_source_correctly_classifier(actual_source_locations, predicted_source_locations, classifications,
+                                                   actual_classifications, separation_threshold=0.3):
+
+    # Convert predicted source_centres to sky coordinates
+    predicted_source_centres_sky = SkyCoord(ra=predicted_source_locations[:, 0] * u.degree,
+                                            dec=predicted_source_locations[:, 1] * u.degree, frame='icrs')
+
+    num_sources_correctly_classified = 0
+
+    classifications = classifications[:, 1]
+
+    print(len(classifications), len(predicted_source_locations))
+
+    num_detected_sources = 0
+
+    for a in range(len(actual_source_locations)):
+
+        actual_loc = actual_source_locations[a]
+
+        coordinate = SkyCoord(ra=actual_loc[0] * u.degree, dec=actual_loc[1] * u.degree, frame='icrs')
+
+        separations = coordinate.separation(predicted_source_centres_sky).degree
+
+        closest_predicted_index = np.argmin(separations)
+
+        separation_from_closest_predicted_source = separations[closest_predicted_index]
+
+        if separation_from_closest_predicted_source < separation_threshold:
+
+            num_detected_sources += 1
+
+            if classifications[closest_predicted_index] ==
+
+            relevant_closest_source = classifications[np.argmin(separations)]
+
+            # if np.all(np.equal(relevant_closest_source[0], relevant_closest_source[1])):
+            #
+            #     num_sources_correctly_classified += 1
+
+
+
+
 def percentage_of_4fgl_sources_detected(actual_source_locations, predicted_source_locations, separation_threshold=0.3):
 
     # Convert predicted source_centres to sky coordinates
@@ -16,7 +58,9 @@ def percentage_of_4fgl_sources_detected(actual_source_locations, predicted_sourc
 
         coordinate = SkyCoord(ra=a[0] * u.degree, dec=a[1] * u.degree, frame='icrs')
 
-        separation_from_closest_predicted_source = np.argmin(coordinate.separation(predicted_source_centres_sky).degree)
+        separations = coordinate.separation(predicted_source_centres_sky).degree
+
+        separation_from_closest_predicted_source = separations[np.argmin(separations)]
 
         if separation_from_closest_predicted_source < separation_threshold:
             num_sources_detected += 1
@@ -43,7 +87,9 @@ def plot_predictions_actual(actual_coordinates, predicted_coordinates, model):
 
         coordinate = SkyCoord(ra=a[0] * u.degree, dec=a[1] * u.degree, frame='icrs')
 
-        separation_from_closest_predicted_source = np.argmin(coordinate.separation(predicted_source_centres_sky).degree)
+        separations = coordinate.separation(predicted_source_centres_sky).degree
+
+        separation_from_closest_predicted_source = np.argmin(separations)
 
         if separation_from_closest_predicted_source < 0.3:
             correctly_detected_sources.append(a)
@@ -56,10 +102,11 @@ def plot_predictions_actual(actual_coordinates, predicted_coordinates, model):
 
         coordinate = SkyCoord(ra=p[0] * u.degree, dec=p[1] * u.degree, frame='icrs')
 
-        separation_from_closest_predicted_source = np.argmin(coordinate.separation(actual_source_centres_sky).degree)
+        separations = coordinate.separation(actual_source_centres_sky).degree
+
+        separation_from_closest_predicted_source = separations[np.argmin(separations)]
 
         if separation_from_closest_predicted_source > 0.3:
-
             candidate_sources_not_in_4fgl.append(p)
 
     correctly_detected_sources = np.array(correctly_detected_sources)
@@ -71,7 +118,6 @@ def plot_predictions_actual(actual_coordinates, predicted_coordinates, model):
     ax = fig.add_subplot(111, projection="mollweide")
 
     if correctly_detected_sources.shape[0] != 0:
-
         correctly_detected_ra = Angle(correctly_detected_sources[:, 0] * u.degree).wrap_at(180 * u.degree)
         correctly_detected_dec = Angle(correctly_detected_sources[:, 1] * u.degree)
 
@@ -79,7 +125,6 @@ def plot_predictions_actual(actual_coordinates, predicted_coordinates, model):
                    color="green", marker='P')
 
     if not_detected.shape[0] != 0:
-
         not_detected_ra = Angle(not_detected[:, 0] * u.degree).wrap_at(180 * u.degree)
         not_detected_dec = Angle(not_detected[:, 1] * u.degree)
 
@@ -87,7 +132,6 @@ def plot_predictions_actual(actual_coordinates, predicted_coordinates, model):
                    marker='o')
 
     if candidate_sources_not_in_4fgl.shape[0] != 0:
-
         candidate_sources_not_in_4fgl_ra = Angle(candidate_sources_not_in_4fgl[:, 0] * u.degree).wrap_at(180 * u.degree)
         candidate_sources_not_in_4fgl_dec = Angle(candidate_sources_not_in_4fgl[:, 1] * u.degree)
 
@@ -107,38 +151,3 @@ def plot_predictions_actual(actual_coordinates, predicted_coordinates, model):
     fig.tight_layout()
 
     plt.savefig("./../results/plots/source_discoveries_all_sky/{}_discoveries.png".format(model))
-
-
-
-
-    # actual_ra = Angle(actual_coordinates[:, 0] * u.degree).wrap_at(180 * u.degree)
-    #
-    # actual_dec = Angle(actual_coordinates[:, 1] * u.degree)
-    #
-    # predicted_ra = Angle(predicted_coordinates[:, 0] * u.degree).wrap_at(180 * u.degree)
-    #
-    # predicted_dec = Angle(predicted_coordinates[:, 1] * u.degree)
-    #
-    # fig = plt.figure(figsize=(8, 6))
-    #
-    # ax = fig.add_subplot(111, projection="mollweide")
-    #
-    # ax.scatter(not_detected_ra.radian, not_detected_dec.radian, label="Undetected 4FGL Sources", s=2, color='gray')
-    # ax.scatter(candidate_sources_not_in_4fgl_ra.radian, candidate_sources_not_in_4fgl_dec.radian,
-    #            label="Candidate Sources (not in 4FGL)", s=2, color='yellow', marker=(10, 1, 0))
-    #
-    # # ax.scatter(actual_ra.radian, actual_dec.radian, label="Actual 4FGL Sources", s=2, color='gray')
-    # #
-    # # ax.scatter(predicted_ra.radian, predicted_dec.radian, label="Predicted Sources", s=2, color='green')
-    #
-    # ax.legend()
-    #
-    # fig.tight_layout()
-    #
-    # ax.grid(True)
-    #
-    # plt.show()
-
-
-
-

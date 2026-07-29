@@ -67,9 +67,11 @@ if __name__ == "__main__":
     unsuccessful_algorithms = []
 
     try:
+        #
+        # (unek_predicted_segmentations, unek_predicted_locations, unek_classifier_predictions, actual_classes,
+        #  test_patch_ids) = unek_algorithm(train, valid, test)
 
-        (unek_predicted_segmentations, unek_predicted_locations, unek_classifier_predictions, actual_classes,
-         test_patch_ids) = unek_algorithm(train, valid, test)
+        print("HEL)")
 
     except RuntimeError:
 
@@ -79,10 +81,10 @@ if __name__ == "__main__":
     else:
 
         # Save predictions for test patches
-        save_predictions(patch_ids=test_patch_ids, predicted_segmentations=unek_predicted_segmentations,
-                         predicted_locations=unek_predicted_locations,
-                         predicted_classes=unek_classifier_predictions, actual_classes=actual_classes,
-                         directory=save_directory, method="UNEK")
+        # save_predictions(patch_ids=test_patch_ids, predicted_segmentations=unek_predicted_segmentations,
+        #                  predicted_locations=unek_predicted_locations,
+        #                  predicted_classes=unek_classifier_predictions, actual_classes=actual_classes,
+        #                  directory=save_directory, method="UNEK")
 
         successful_algorithms.append("UNEK")
 
@@ -95,7 +97,7 @@ if __name__ == "__main__":
         save_predictions(patch_ids=real_test_patch_ids, predicted_segmentations=real_unek_predicted_segmentations,
                          predicted_locations=real_unek_predicted_locations,
                          predicted_classes=real_unek_classifier_predictions, actual_classes=real_actual_classes,
-                         directory=real_data_save_directory, method="UNEK")
+                         directory=real_data_save_directory, method="UNEK", real=True)
 
     # UNEB
 
@@ -130,7 +132,7 @@ if __name__ == "__main__":
         save_predictions(patch_ids=real_test_patch_ids, predicted_segmentations=real_uneb_predicted_segmentations,
                          predicted_locations=real_uneb_predicted_locations,
                          predicted_classes=real_uneb_classifier_predictions, actual_classes=real_actual_classes,
-                         directory=real_data_save_directory, method="UNEB")
+                         directory=real_data_save_directory, method="UNEB", real=True)
 
     print("Successfully Trained Algorithms: {}".format(successful_algorithms))
     print("Unsucessfully Trained Algorithms: {}".format(unsuccessful_algorithms))

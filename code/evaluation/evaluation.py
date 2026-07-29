@@ -6,7 +6,8 @@ from utils import integral_photon_flux_agn, integral_photon_flux_pulsar
 from metrics.utils import image_cartesian_coordinates_to_physical_coordinates
 from metrics.classification_metrics import classification_confusion_matrix
 from metrics.localisation_metrics import chamfer_separation, num_sources_correctly_detected
-from metrics.real_data_application_metrics import percentage_of_4fgl_sources_detected, plot_predictions_actual
+from metrics.real_data_application_metrics import (percentage_of_4fgl_sources_detected, plot_predictions_actual,
+                                                   percentage_of_4fgl_source_correctly_classifier)
 from metrics.segmentation_metrics import (binary_balanced_accuracy, dice_coefficient, segmentation_precision,
                                           segmentation_recall)
 import numpy as np
@@ -53,6 +54,38 @@ def evaluate_detection(actual_segmentations, predicted_segmentations):
                           range(num_patches)]) / num_patches
 
     return average_binary_balanced_accuracy, average_dice_coefficient, average_precision, average_recall
+
+
+def get_classified_patches(predicted_locations_in_real_data_raw):
+    # see if it would have been classified or not (i.e. if it was too close to the edge. If it was too close to
+    # edge of 64 x 64 image, then remove.
+
+    predicted_locations_in_real_data = []
+
+    for p in range(len(predicted_locations_in_real_data_raw)):
+
+        tmp = []
+
+        for loc in predicted_locations_in_real_data_raw[p]:
+
+            x, y = loc[0], loc[1]
+
+            # Select 7 x 7 grid around predicted location
+            rows = np.arange(x - 3, x + 4)
+            cols = np.arange(y - 3, y + 4)
+
+            # if cannot create a 7 x 7 grid, ignore during classification
+            if rows[0] < 0 or cols[0] < 0 or rows[-1] > 64 or cols[-1] > 64:
+
+                continue
+
+            else:
+
+                tmp.append(loc)
+
+        predicted_locations_in_real_data.append(np.array(tmp))
+
+    return predicted_locations_in_real_data
 
 
 def evaluate_on_real_data(file_4fgl, real_data_results_directory, model):
@@ -141,19 +174,26 @@ def evaluate_on_real_data(file_4fgl, real_data_results_directory, model):
 
     actual_source_locations_4fgl = np.vstack((agn_celestial_coordinates, psr_celestial_coordinates))
 
+    actual_source_types = np.vstack((np.array([np.array([1., 0., 0.,]) for _ in range(len(agn_glon))]),
+                                     np.array([np.array([0., 1., 0.]) for _ in range(len(psr_glon))])))
+
     # RESULTS
 
     # Get the positions of each of the detected sources in the real data
 
     # Get predicted locations from model (in x, y coordinates in 64 x 64 image)
     with open("./../results/real/{}/predicted_locations.data".format(model), 'rb') as f:
-        predicted_locations_in_real_data = pickle.load(f)
+        predicted_locations_in_real_data_raw = pickle.load(f)
+
+    # only take sources that are not "on the edge" of 64 x 64 patches
+    predicted_locations_in_real_data = get_classified_patches(predicted_locations_in_real_data_raw)
 
     # Slightly different indexing here - assume that always 768 patches
     predicted_locations_in_real_data_celestial = [
         image_cartesian_coordinates_to_physical_coordinates(coordinates=predicted_locations_in_real_data[p],
                                                             patch_centre=patch_centres[p],
-                                                            coordinate_system='C') for p in range(768)]
+                                                            coordinate_system='C') if
+        len(predicted_locations_in_real_data[p]) != 0 else np.array([]) for p in range(768)]
 
     new = []
 
@@ -171,10 +211,25 @@ def evaluate_on_real_data(file_4fgl, real_data_results_directory, model):
 
     Path("./../results/plots/source_discoveries_all_sky/").mkdir(parents=True, exist_ok=True)
 
-    plot_predictions_actual(actual_coordinates=actual_source_locations_4fgl,
-                            predicted_coordinates=predicted_locations_in_real_data_celestial, model=model)
+
+    # ADD THIS LINE BACK AT THE END!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    # plot_predictions_actual(actual_coordinates=actual_source_locations_4fgl,
+    #                         predicted_coordinates=predicted_locations_in_real_data_celestial, model=model)
+
+    classifications = np.load("./../results/real/{}/classifications.npy".format(model))
 
 
+    # THIS FRACTION IS THE NUMBER OF SOURCES CORRECTLY CLASSIFIED OF THE NUMBER OF SOURCES CORRECTLY DETECTED
+    frac_correct_classed_sources = (
+        percentage_of_4fgl_source_correctly_classifier(actual_source_locations=actual_source_locations_4fgl,
+                                                       predicted_source_locations=
+                                                       predicted_locations_in_real_data_celestial, classifications=
+                                                       classifications), actual_classifications=actual_source_types)
+
+    # print(classifications.shape)
+    #
+    # print(len(predicted_locations_in_real_data_celestial), len(classifications))
 
 
 

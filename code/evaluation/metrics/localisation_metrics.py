@@ -29,7 +29,9 @@ def chamfer_separation(actual_source_centres, predicted_source_centres):
 
         coordinate = SkyCoord(ra=a[0] * u.degree, dec=a[1] * u.degree, frame='icrs')
 
-        separation_from_closest_predicted_source = np.argmin(coordinate.separation(predicted_source_centres_sky).degree)
+        separations = coordinate.separation(predicted_source_centres_sky).degree
+
+        separation_from_closest_predicted_source = separations[np.argmin(separations)]
 
         dist_ab += separation_from_closest_predicted_source
 
@@ -39,7 +41,9 @@ def chamfer_separation(actual_source_centres, predicted_source_centres):
 
         coordinate = SkyCoord(ra=p[0] * u.degree, dec=p[1] * u.degree, frame='icrs')
 
-        separation_from_closest_actual_source = np.argmin(coordinate.separation(actual_source_centres_sky).degree)
+        separations = coordinate.separation(actual_source_centres_sky).degree
+
+        separation_from_closest_actual_source = separations[np.argmin(separations)]
 
         dist_ba += separation_from_closest_actual_source
 
@@ -65,7 +69,9 @@ def num_sources_correctly_detected(actual_source_centres, predicted_source_centr
 
         coordinate = SkyCoord(ra=a[0] * u.degree, dec=a[1] * u.degree, frame='icrs')
 
-        separation_from_closest_predicted_source = np.argmin(coordinate.separation(predicted_source_centres_sky).degree)
+        separations = coordinate.separation(predicted_source_centres_sky).degree
+
+        separation_from_closest_predicted_source = separations[np.argmin(separations)]
 
         if separation_from_closest_predicted_source < separation_threshold:
             num_sources_detected += 1
