@@ -132,9 +132,6 @@ def catalog_data_preparation(file_name: str):
     # Find detection threshold of sources (characterised by minimum energy flux)
     source_detection_threshold = np.min(catalog["Energy_Flux100"].value)
 
-    # Used to determine the number of sources to generate
-    energy_fluxes_4fgl = catalog["Energy_Flux100"].value
-
     # Select relevant columns
     catalog = catalog[columns]
 
@@ -165,7 +162,7 @@ def catalog_data_preparation(file_name: str):
     pulsar_data["GLAT"] = pulsar_data["GLAT"].to(u.rad)
 
     # Separate into AGN and pulsars
-    return agn_data, pulsar_data, source_detection_threshold, energy_fluxes_4fgl
+    return agn_data, pulsar_data, source_detection_threshold
 
 
 def pulsar_xml_writer(sources, root, xml):

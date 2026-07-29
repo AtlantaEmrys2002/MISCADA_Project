@@ -1,12 +1,32 @@
-from . agn_spectral_parameters import agn_flux_density, agn_spectral_slope, energy_flux_agn
+"""
+Methods for generating a series of realistic simulated AGN whose luminosity function resembles that of the 4FGL catalog.
+"""
+
+from .agn_spectral_parameters import agn_flux_density, agn_spectral_slope, energy_flux_agn
 from astropy.table import QTable
-from math import floor
 import numpy as np
+from .utils import luminosity_function_calculator
 
 
-# GENERATE FIXED NUMBER OF AGNS WITHIN GIVEN ENERGY FLUX RANGE FOR FLAT EXTRAPOLATION AT LOWER ENERGY FLUXES
-def agn_generator(agn_stats, energy_flux_low=0., energy_flux_high=1000.):
+def agn_generator(agn_stats, energy_flux_low: np.float64 = 0., energy_flux_high: np.float64 = 1000.):
+    """
+    Generates the realistic spectral and spatial parameters of an AGN, sampling from the derived distributions of each
+    parameter. The AGN must have a resultant integral energy flux of between energy_flux_low and energy_flux_high to be
+    returned.
 
+    Parameters
+    ----------
+    agn_stats : ndarray
+        Array of stats specifying the mean and standard deviation of the pivot energies of the 4FGL AGNs, as well as all
+        the possible values of spectral curvature (beta).
+
+    energy_flux_low:
+        Lowest possible energy flux the simulated AGN may have.
+
+    energy_flux_high
+        Highest possible energy flux the simulated pulsar may have.
+
+    """
     # Default is effectively source with any energy flux
 
     (mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn) = agn_stats
@@ -21,7 +41,7 @@ def agn_generator(agn_stats, energy_flux_low=0., energy_flux_high=1000.):
         # log-normal distribution fits pivot energies much better than their recommended Gaussian (and this makes sense
         # as differential flux density and pivot energy are correlated). Therefore, I have changed the way pivot
         # energies are randomly generated (and now use a log-normal distribution)
-        pivot_energy = np.random.lognormal(mean=mean_log_pivot_energy_agn, sigma=std_log_pivot_energy_agn, size=1)[0]
+        pivot_energy = np.random.lognormal(mean=mean_log_pivot_energy_agn, sigma=std_log_pivot_energy_agn)
 
         # Flux densities and pivot energies are correlated and depend on one another - therefore, I fitted a polynomial
         # relationship to the log of both values and add noise to improve data realism instead of randomly sampling
@@ -42,7 +62,6 @@ def agn_generator(agn_stats, energy_flux_low=0., energy_flux_high=1000.):
         energy_flux = energy_flux_agn(pivot_energy, flux_density, spectral_slope, beta)
 
         if (energy_flux >= energy_flux_low) and (energy_flux < energy_flux_high) and (~np.isnan(energy_flux)):
-
             # SPATIAL PARAMETERS
 
             # longitude
@@ -55,10 +74,11 @@ def agn_generator(agn_stats, energy_flux_low=0., energy_flux_high=1000.):
             return np.array([pivot_energy, flux_density, spectral_slope, beta, energy_flux, longitude, latitude])
 
 
-def luminosity_function_agn(catalog: str, detection_threshold):
+def luminosity_function_agn(catalog: str, detection_threshold: np.float64):
+    """ Determines the number of sources to generate within a given energy flux - i.e. ensures that the luminosity
+    function of simulated AGN resembles that of the 4FGL.
 
-    # Used to build luminosity function of the simulated AGNs
-
+    """
     # Read 4FGL Catalog
     catalog = QTable.read(catalog, format='fits', hdu=1)['CLASS1', 'Energy_Flux100']
 
@@ -74,70 +94,29 @@ def luminosity_function_agn(catalog: str, detection_threshold):
     # Number of sources in the lowest energy flux bin
     n_min = np.random.uniform(low=50, high=250)
 
-    # The minimum energy flux of our generated sources is an order of magnitude less than the 4FGL
-    our_threshold = detection_threshold / 10
-
-    # Following method detailed in ID8
-
-    # Bin 4FGL data
-    min_bin_val = np.log10(np.min(energy_fluxes_4fgl))
-    max_bin_val = np.log10(np.max(energy_fluxes_4fgl))
-
-    log_linspace = np.linspace(min_bin_val, max_bin_val)
-
-    bin_edges = 10 ** log_linspace
-    counts, bin_intervals = np.histogram(energy_fluxes_4fgl, bins=bin_edges)
-
-    # Calculate width of bins
-    bin_width = log_linspace[1] - log_linspace[0]
-
-    # FLAT EXTRAPOLATION TO FAINTER DETECTION THRESHOLD
-
-    # Extend to one order of magnitude less than the detection threshold of the 4FGL (similar premise to ID8) -
-    # assume constant below given threshold (not Gaussian)
-
-    # Number of bins between current lowest energy bin and our faint source threshold
-    num_extra_bins = floor((np.log10(bin_intervals[0]) - np.log10(our_threshold)) / bin_width)
-
-    extra_intervals = [10 ** (np.log10(bin_intervals[0]) - (bin_width * x)) for x in range(num_extra_bins, 0, -1)]
-
-    # Create extra bin intervals
-
-    # Calculate number of random
-
-    # Find bin with the most AGNs
-    peak = np.argmax(counts)
-
-    # For any bin to the right of the peak that has 0 or 1 expected counts, set to 2
-    for k in range(peak, len(counts)):
-        if counts[k] == 1 or counts[k] == 0:
-            counts[k] = 2
-
-    # Generate random numbers for number of energy flux bins to the right of the peak
-    n_noise = list(np.random.uniform(low=0.8, high=1.3, size=len(bin_intervals) - 1 - peak))
-
-    # Create some noise in energy bins greater than peak
-    for k in range(peak, len(n_noise)):
-        counts[k + peak] = counts[k + peak] * n_noise[k]
-
-    bin_intervals = np.array(extra_intervals + list(bin_intervals))
-
-    # Set number of counts equal to peak for original 4FGL bins to the left of the peak
-    for k in range(0, peak):
-        counts[k] = n_min
-
-    counts = [n_min for _ in range(num_extra_bins)] + list(counts)
-
-    # Convert counts to int
-    counts = [int(k) for k in counts]
-
-    peak = peak + num_extra_bins
-
-    return np.array([counts])[0], np.array(bin_intervals), peak
+    return luminosity_function_calculator(energy_fluxes_4fgl=energy_fluxes_4fgl, n_min=n_min,
+                                          detection_threshold=detection_threshold)
 
 
-def generate_mock_agn_catalog(catalog, agn_data, detection_threshold=np.float64(1.0 * 10 ** (-12))):
+def generate_mock_agn_catalog(catalog: str, agn_data, detection_threshold: np.float64 = np.float64(1.0 * 10 ** (-12))):
+    """Generates an array of simulated AGN sources with realistic energy spectra and spatial locations within the sky.
 
+    Parameters
+    ----------
+    catalog: str
+        Name of file in which FITS-formatted 4FGL catalog is stored.
+    agn_data
+        Dataframe with parameter values for all AGN in 4FGL catalog.
+    detection_threshold
+        Integral energy flux below which the luminosity function of faint sources must be extrapolated.
+
+    Returns
+    -------
+
+    ndarray
+        m x 7 array detailing the 7 spectral and spatial parameters of each of the m AGNs.
+
+    """
     # Changed threshold from 2.0 * 10 ** -12 TO 1.0 * 10 ** -12 as threshold recommended by 4FGL DR4 (ID22) paper for
     # outside galactic plane and detection threshold has decreased since ID8 was published
 
@@ -160,6 +139,8 @@ def generate_mock_agn_catalog(catalog, agn_data, detection_threshold=np.float64(
     target_counts, target_bin_intervals, target_peak = luminosity_function_agn(catalog=catalog,
                                                                                detection_threshold=detection_threshold)
 
+    num_intervals = len(target_bin_intervals)
+
     actual_counts = np.zeros_like(target_counts)
 
     parameters = []
@@ -176,10 +157,9 @@ def generate_mock_agn_catalog(catalog, agn_data, detection_threshold=np.float64(
 
         idx = np.digitize(new_source[4], target_bin_intervals)
 
-        if 0 < idx < len(target_bin_intervals):
+        if 0 < idx < num_intervals:
 
             if actual_counts[idx] < target_counts[idx]:
-
                 parameters.append(np.array(new_source))
                 actual_counts[idx] += 1
 
@@ -193,7 +173,6 @@ def generate_mock_agn_catalog(catalog, agn_data, detection_threshold=np.float64(
             print("AGN: {}".format(len(parameters)))
 
     return np.array(parameters)
-
 
 # REFERENCES
 

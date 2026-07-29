@@ -7,17 +7,13 @@
 
 
 from astropy.table import QTable
-from astropy import units as u
 from math import floor
 import numpy as np
 from . pulsar_spectral_parameters import energy_flux_pulsar, pulsar_flux_density
-from . utils import split_normal
-from scipy.optimize import curve_fit
-from scipy.stats import Mixture, Normal, cauchy
+from scipy.stats import cauchy
 
-import matplotlib.pyplot as plt
 
-def pulsar_generator(pulsar_stats, energy_flux_low, energy_flux_high, cauchy_params):
+def pulsar_generator(pulsar_stats, energy_flux_low, energy_flux_high):
 
     # sigma_1 and sigma_2 are the fitted standard deviations of Gaussian distribution
 
@@ -241,7 +237,7 @@ def generate_mock_pulsar_catalog(catalog: str, pulsars, detection_threshold):
 
         # Due to uncomplimentary functionality - need max of intervals[:-1] - see reference to Digitize Error
         new_source = pulsar_generator(pulsar_stats, energy_flux_low=np.min(target_bin_intervals),
-                                      energy_flux_high=np.max(target_bin_intervals[:-1]), cauchy_params=cauchy_params)
+                                      energy_flux_high=np.max(target_bin_intervals[:-1]))
 
         idx = np.digitize(new_source[5], target_bin_intervals)
 
@@ -263,7 +259,6 @@ def generate_mock_pulsar_catalog(catalog: str, pulsars, detection_threshold):
     parameters = np.array(parameters)
 
     return parameters
-
 
 # REFERENCES
 

@@ -304,7 +304,7 @@ if __name__ == "__main__":
     print("READ DATA: ", end='')
 
     # Read in catalog data
-    agn_4fgl, pulsar_4fgl, source_detection_threshold, fluxes_4fgl = catalog_data_preparation(file)
+    agn_4fgl, pulsar_4fgl, source_detection_threshold = catalog_data_preparation(file)
 
     print("DONE")
 
