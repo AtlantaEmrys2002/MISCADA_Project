@@ -7,7 +7,8 @@ from metrics.utils import image_cartesian_coordinates_to_physical_coordinates
 from metrics.classification_metrics import classification_confusion_matrix
 from metrics.localisation_metrics import chamfer_separation, num_sources_correctly_detected
 from metrics.real_data_application_metrics import (percentage_of_4fgl_sources_detected, plot_predictions_actual,
-                                                   percentage_of_4fgl_source_correctly_classifier)
+                                                   percentage_of_4fgl_source_correctly_classifier,
+                                                   save_candidate_sources)
 from metrics.segmentation_metrics import (binary_balanced_accuracy, dice_coefficient, segmentation_precision,
                                           segmentation_recall)
 import numpy as np
@@ -225,13 +226,14 @@ def evaluate_on_real_data(file_4fgl, real_data_results_directory, model):
         percentage_of_4fgl_source_correctly_classifier(actual_source_locations=actual_source_locations_4fgl,
                                                        predicted_source_locations=
                                                        predicted_locations_in_real_data_celestial, classifications=
-                                                       classifications), actual_classifications=actual_source_types)
+                                                       classifications, actual_classifications=actual_source_types))
 
-    # print(classifications.shape)
-    #
-    # print(len(predicted_locations_in_real_data_celestial), len(classifications))
+    save_candidate_sources(actual_source_locations=actual_source_locations_4fgl,
+                           predicted_source_locations=predicted_locations_in_real_data_celestial,
+                           classifications=classifications, model=model)
 
 
+    return frac_of_4fgl_sources_detected, frac_correct_classed_sources
 
 
 
