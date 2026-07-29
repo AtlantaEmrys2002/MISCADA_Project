@@ -252,6 +252,19 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
 
 
 def plot_parameter_distributions(sources, source_type: str, directory: str):
+    """Plots the histogram a parameter's binned values and then over-plots common PDFs to determine the best method for
+    sampling a realistic population of sources.
+
+    Parameters
+    ----------
+    sources
+        Columns of spectral and spatial parameters in frame
+    source_type : str
+        Type of gamma-ray source being analysed (used in figure title)
+    directory : str
+        File in which to store final plot
+
+    """
     num_parameters = sources.shape[1]
 
     # CREATE PLOTS
@@ -321,6 +334,21 @@ def plot_parameter_distributions(sources, source_type: str, directory: str):
 
 
 def plot_parameter_relationships(sources, source_type: str, directory: str):
+    """Plots relationships of each possible parameter combination - this is to complement the correlation coefficients
+    to ensure there is no mistake in determining two parameters' correlation (for example, the curvature of an AGN's
+    spectrum is not correlated with other parameters - it can just only have certain values and 80% of those values are
+    the same, indicating correlation where there isn't any).
+
+    Parameters
+    ----------
+    sources
+        Columns of spectral and spatial parameters in frame
+    source_type : str
+        Type of gamma-ray source being analysed (used in figure title)
+    directory : str
+        File in which to store final plot
+
+    """
     # Find all possible combinations of parameters
     variable_combinations = list(combinations(list(sources.columns), 2))
 
