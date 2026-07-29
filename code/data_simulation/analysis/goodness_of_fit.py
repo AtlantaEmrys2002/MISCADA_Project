@@ -3,7 +3,6 @@ from scipy.stats import cauchy, chi2, kstest, lognorm, Normal
 
 
 def chi_squared_test(values, num_bins: int, distribution: str) -> None:
-
     parameter_name = values.name
 
     # bin data and record number of agns with values within each interval

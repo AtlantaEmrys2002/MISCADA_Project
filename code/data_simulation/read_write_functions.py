@@ -1,22 +1,36 @@
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.table import QTable
-import healpy as hp
 import numpy as np
 from pathlib import Path
-from source_generation.agn_spectral_parameters import integral_photon_flux_agn, energy_flux_agn
-from source_generation.pulsar_spectral_parameters import integral_photon_flux_pulsar, energy_flux_pulsar
-from xml.dom import minidom, Node
+from source_generation.agn_spectral_parameters import integral_photon_flux_agn
+from source_generation.pulsar_spectral_parameters import integral_photon_flux_pulsar
+from xml.dom import minidom  #, Node
 
 
 def agn_xml_writer(sources, root, xml):
+    """Writes a 2D m x 7 array representing an AGN's spectral and spatial parameters to an XML format consistent with
+    fermitools.
 
+    Parameters
+    ----------
+    sources : ndarray
+        2D m x 7 array representing the spectral and spatial parameters of m AGNs.
+    root :
+        Root node in XML document that will contain the XML generated in the following code.
+    xml:
+        Node in which each source's XML will be stored
+    """
     # ADD SOURCES
 
     num_sources = len(sources)
 
-    # Ranges are taken from https://git.io/JO5FP - i.e. recommended by ID8
+    print(num_sources, sources.shape[0])
+
+    # Names of AGN parameters when stored in XML format
     agn_parameters = ["norm", "alpha", "Eb", "beta"]
+
+    # Ranges are taken from https://git.io/JO5FP - i.e. recommended by ID8
     ranges_of_agn_parameters = [("0.001", "1000.0"), ("-5000.0", "1000.0"), ("0.0000001", "10000000000000.0"),
                                 ("-100.0", "100")]
 
@@ -49,7 +63,6 @@ def agn_xml_writer(sources, root, xml):
             param.setAttribute("name", agn_parameters[x])
 
             if x % 2 != 0:
-                # CHANGED THIS LINE HERE - FROM -1.0 to 1.0
                 param.setAttribute("scale", "1.0")
                 if x == 1:
                     param.setAttribute("value", str(sources[k][2]))
@@ -96,91 +109,15 @@ def agn_xml_writer(sources, root, xml):
         source.appendChild(spatial)
 
 
-# def agn_xml_writer(sources, root, xml):
-#
-#     # ADD SOURCES
-#
-#     # Ranges are taken from https://git.io/JO5FP - i.e. recommended by ID8
-#     agn_parameters = ["norm", "alpha", "Eb", "beta"]
-#     ranges_of_agn_parameters = [("0.001", "1000.0"), ("-5000.0", "1000.0"), ("0.0000001", "10000000000000.0"),
-#                                 ("-100.0", "100")]
-#
-#     for k in range(len(sources)):
-#
-#         source = root.createElement("source")
-#
-#         source.setAttribute("name", "AGN_" + str(k))
-#         source.setAttribute("type", "PointSource")
-#
-#         xml.appendChild(source)
-#
-#         # SPECTRAL
-#
-#         spectrum = root.createElement("spectrum")
-#
-#         spectrum.setAttribute("type", "LogParabola")
-#
-#         for x in range(len(agn_parameters)):
-#
-#             param = root.createElement("parameter")
-#             param.setAttribute("free", "1")
-#             param.setAttribute("max", str(ranges_of_agn_parameters[x][1]))
-#             param.setAttribute("min", str(ranges_of_agn_parameters[x][0]))
-#             param.setAttribute("name", agn_parameters[x])
-#
-#             if x % 2 != 0:
-#                 # CHANGED THIS LINE HERE - FROM -1.0 to 1.0
-#                 param.setAttribute("scale", "1.0")
-#                 if x == 1:
-#                     param.setAttribute("value", str(sources[k][2]))
-#                 else:
-#                     param.setAttribute("value", str(sources[k][3]))
-#             elif x == 2:
-#                 param.setAttribute("scale", "1.0")
-#                 param.setAttribute("value", str(sources[k][0]))
-#             else:
-#                 param.setAttribute("scale", str(sources[k][1]))
-#                 param.setAttribute("value", str(1))
-#
-#             spectrum.appendChild(param)
-#
-#         source.appendChild(spectrum)
-#
-#         # SPATIAL
-#
-#         spatial = root.createElement("spatialModel")
-#
-#         spatial.setAttribute("type", "SkyDirFunction")
-#
-#         ra = root.createElement("parameter")
-#         dec = root.createElement("parameter")
-#
-#         ra.setAttribute("free", "0")
-#         ra.setAttribute("max", "360.")
-#         ra.setAttribute("min", "-360.")
-#         ra.setAttribute("name", "RA")
-#         ra.setAttribute("scale", "1.0")
-#
-#         dec.setAttribute("free", "0")
-#         dec.setAttribute("max", "90.")
-#         dec.setAttribute("min", "-90.")
-#         dec.setAttribute("name", "DEC")
-#         dec.setAttribute("scale", "1.0")
-#
-#         # Convert galactic coordinates to equatorial
-#         ra_dec = SkyCoord(l=sources[k][5] * u.rad, b=sources[k][6] * u.rad, frame='galactic').transform_to('icrs')
-#
-#         ra.setAttribute("value", str(ra_dec.ra.to_value(u.degree)))
-#         dec.setAttribute("value", str(ra_dec.dec.to_value(u.degree)))
-#
-#         spatial.appendChild(ra)
-#         spatial.appendChild(dec)
-#
-#         source.appendChild(spatial)
-
-
 def catalog_data_preparation(file_name: str):
+    """Extract and format the relevant parameters from the 4FGL catalog, separating them according to source type.
 
+    Parameters
+    ----------
+    file_name : str
+        Name of file in which 4FGL catalog is stored in FITS format.
+
+    """
     # Access 4FGL catalog - note, file originally called gll_psc_v35.fit
     # Read catalog data and format as astropy QTable (allowing for units to be associated with each column, if necessary
     # Assume catalog data conforms to standard NASA format
@@ -229,29 +166,42 @@ def catalog_data_preparation(file_name: str):
     return agn_data, pulsar_data, source_detection_threshold, energy_fluxes_4fgl
 
 
-def cleanEmptyTextNodes(node):
-    # THIS RECURSIVE FUNCTION COMES FROM HERE - https://stackoverflow.com/questions/10034747/python-issue-using-xml-dom
-    # -minidom-document-extra-empty-lines-between-child-ele
-
-    for child in node.childNodes:
-
-        if child.nodeType == Node.TEXT_NODE:
-            child.data = ''
-
-        elif child.nodeType == Node.ELEMENT_NODE:
-
-            cleanEmptyTextNodes(child)
-
-    node.normalize()
+# def cleanEmptyTextNodes(node):
+#     # THIS RECURSIVE FUNCTION COMES FROM HERE - https://stackoverflow.com/questions/10034747/python-issue-using-xml-dom
+#     # -minidom-document-extra-empty-lines-between-child-ele
+#
+#     for child in node.childNodes:
+#
+#         if child.nodeType == Node.TEXT_NODE:
+#             child.data = ''
+#
+#         elif child.nodeType == Node.ELEMENT_NODE:
+#
+#             cleanEmptyTextNodes(child)
+#
+#     node.normalize()
 
 
 def pulsar_xml_writer(sources, root, xml):
+    """Writes a 2D m x 9 array representing a pulsar's spectral and spatial parameters to an XML format consistent with
+    fermitools.
 
+    sources : ndarray
+        2D m x 9 array representing the spectral and spatial parameters of m pulsars.
+    root :
+        Root node in XML document that will contain the XML generated in the following code.
+    xml :
+        Node in which each source's XML will be stored
+    """
     # PARAMETERS
 
-    num_bins = len(sources)
+    num_sources = len(sources)
+
+    print(num_sources, sources.shape[0])
 
     pulsar_parameters = ["Prefactor", "Index1", "Scale", "Expfactor", "Index2"]
+
+    num_parameters = len(pulsar_parameters)
 
     # Ranges are taken from https://git.io/JO5FP - i.e. recommended by ID8
     ranges_of_pulsar_parameters = [("0.00000001", "1000000000.0"), ("-50000.0", "5000.0"),
@@ -260,9 +210,9 @@ def pulsar_xml_writer(sources, root, xml):
     # Convert galactic coordinates to equatorial
     ra_dec = SkyCoord(l=sources[:, -2] * u.rad, b=sources[:, -1] * u.rad, frame='galactic').transform_to('icrs')
 
-    ra_dec = [(str(ra_dec[k].ra.to_value(u.degree)), str(ra_dec[k].dec.to_value(u.degree))) for k in range(num_bins)]
+    ra_dec = [(str(ra_dec[k].ra.to_value(u.degree)), str(ra_dec[k].dec.to_value(u.degree))) for k in range(num_sources)]
 
-    for k in range(num_bins):
+    for k in range(num_sources):
 
         source = root.createElement("source")
 
@@ -277,7 +227,7 @@ def pulsar_xml_writer(sources, root, xml):
 
         spectrum.setAttribute("type", "PLSuperExpCutoff2")
 
-        for x in range(len(pulsar_parameters)):
+        for x in range(num_parameters):
 
             param = root.createElement("parameter")
 
@@ -287,7 +237,7 @@ def pulsar_xml_writer(sources, root, xml):
 
             if x == 0:
 
-                # FLUX DENSITY OR PREFACTOR
+                # FLUX DENSITY OR PRE-FACTOR
 
                 param.setAttribute("free", "1")
                 param.setAttribute("scale", str(sources[k][1]))
@@ -359,141 +309,20 @@ def pulsar_xml_writer(sources, root, xml):
         source.appendChild(spatial)
 
 
-# def pulsar_xml_writer(sources, root, xml):
-#
-#     # PARAMETERS
-#
-#     pulsar_parameters = ["Prefactor", "Index1", "Scale", "Expfactor", "Index2"]
-#
-#     # Ranges are taken from https://git.io/JO5FP - i.e. recommended by ID8
-#     ranges_of_pulsar_parameters = [("0.00000001", "1000000000.0"), ("-50000.0", "5000.0"),
-#                                    ("-3000000.0", "3000000000000.0"), ("-100000000", "1000000"), ("0", "20")]
-#
-#     for k in range(len(sources)):
-#
-#         source = root.createElement("source")
-#
-#         source.setAttribute("name", "PSR_" + str(k))
-#         source.setAttribute("type", "PointSource")
-#
-#         xml.appendChild(source)
-#
-#         # SPECTRAL
-#
-#         spectrum = root.createElement("spectrum")
-#
-#         spectrum.setAttribute("type", "PLSuperExpCutoff2")
-#
-#         for x in range(len(pulsar_parameters)):
-#
-#             param = root.createElement("parameter")
-#
-#             param.setAttribute("max", str(ranges_of_pulsar_parameters[x][1]))
-#             param.setAttribute("min", str(ranges_of_pulsar_parameters[x][0]))
-#             param.setAttribute("name", pulsar_parameters[x])
-#
-#             if x == 0:
-#
-#                 # FLUX DENSITY OR PREFACTOR
-#
-#                 param.setAttribute("free", "1")
-#                 param.setAttribute("scale", str(sources[k][1]))
-#                 param.setAttribute("value", "1")
-#
-#             elif x == 1:
-#
-#                 # SPECTRAL SLOPE OR GAMMA OR INDEX1
-#
-#                 param.setAttribute("free", "1")
-#                 param.setAttribute("scale", "1.0")
-#                 param.setAttribute("value", str(sources[k][2]))
-#
-#             elif x == 2:
-#
-#                 # SCALE Eb OR PIVOT ENERGY
-#
-#                 param.setAttribute("free", "0")
-#                 param.setAttribute("scale", "1.0")
-#                 param.setAttribute("value", str(sources[k][0]))
-#
-#             elif x == 3:
-#
-#                 # EXPONENTIAL FACTOR A
-#
-#                 param.setAttribute("free", "1")
-#                 param.setAttribute("scale", "1.0")
-#                 param.setAttribute("value", str(sources[k][4]))
-#
-#             else:
-#
-#                 # INDEX2 OR B OR EXPONENTIAL INDEX
-#
-#                 param.setAttribute("free", "0")
-#                 param.setAttribute("scale", "1")
-#                 param.setAttribute("value", str(sources[k][3]))
-#
-#             spectrum.appendChild(param)
-#
-#         source.appendChild(spectrum)
-#
-#         # SPATIAL
-#
-#         spatial = root.createElement("spatialModel")
-#
-#         spatial.setAttribute("type", "SkyDirFunction")
-#
-#         ra = root.createElement("parameter")
-#         dec = root.createElement("parameter")
-#
-#         ra.setAttribute("free", "0")
-#         ra.setAttribute("max", "360.")
-#         ra.setAttribute("min", "-360.")
-#         ra.setAttribute("name", "RA")
-#         ra.setAttribute("scale", "1.0")
-#
-#         dec.setAttribute("free", "0")
-#         dec.setAttribute("max", "90.")
-#         dec.setAttribute("min", "-90.")
-#         dec.setAttribute("name", "DEC")
-#         dec.setAttribute("scale", "1.0")
-#
-#         # Convert galactic coordinates to equatorial
-#
-#         ra_dec = SkyCoord(l=sources[k][-2] * u.rad, b=sources[k][-1] * u.rad, frame='galactic').transform_to('icrs')
-#
-#         ra.setAttribute("value", str(ra_dec.ra.to_value(u.degree)))
-#         dec.setAttribute("value", str(ra_dec.dec.to_value(u.degree)))
-#
-#         spatial.appendChild(ra)
-#         spatial.appendChild(dec)
-#
-#         source.appendChild(spatial)
-
-
-# def save_count_maps(count_maps, directory, catalog_id):
-#
-#     num_bins = len(count_maps)
-#
-#     path = directory + "map{}/".format(catalog_id)
-#
-#     # Create directory if it does not already exist
-#     Path(path).mkdir(parents=True, exist_ok=True)
-#
-#     for c in range(num_bins):
-#
-#         filename = "count_map_bin_{}.png".format(c)
-#
-#         count_map = count_maps[c]
-#
-#         hp.fitsfunc.write_map(filename=path + filename, m=count_map, nest=False, coord="G", dtype=np.float64,
-#                               overwrite=True)
-#
-#
-#     # NOT FINISHED
-
-
-
 def save_catalog(simulated_agns, simulated_pulsars, file_name: str):
+    """Saves a series of simulated AGN and parameters (as described by their spectral and spatial parameters) to an XML
+    file formatted for compatibility with fermitools.
+
+    Parameters
+    ----------
+    simulated_agns : ndarray
+        An m x 7 array describing the 7 spectral and spatial parameters of m AGNs.
+    simulated_pulsars : ndarray
+        An n x 9 array describing the 9 spectral and spatial parameters of n AGNs.
+    file_name : str
+        The name and location of the XML in which the gamma-ray source descriptions will be saved.
+
+    """
     # XML FOR AGN
 
     root_agn = minidom.Document()
@@ -537,19 +366,28 @@ def save_catalog(simulated_agns, simulated_pulsars, file_name: str):
 
 
 def xml_parser_locations(xml_file: str, coordinate_system='G'):
+    """Fetches the location and unique ID of each source stored in a given XML file.
 
-    # COULD CALL THIS FROM OTHER FUNCTION MAYBE??
+    Parameters
+    ----------
+    xml_file : str
+        Name of XML file in which coordinates and IDs of sources are stored.
+    coordinate_system : str, optional
+        Coordinate system that coordinates should be formatted in - celestial and galactic are supported.
 
+    """
     # GET NAME AND LOCATION OF SOURCE IN SKY
 
     docs = minidom.parse(xml_file)
 
     sources = docs.getElementsByTagName("source")
 
+    num_sources = len(sources)
+
     coordinates = []
 
     # Remove diffuse sources - only processing point sources with this function
-    sources = [sources[k] for k in range(len(sources)) if sources[k].getAttribute("type") != "DiffuseSource"]
+    sources = [sources[k] for k in range(num_sources) if sources[k].getAttribute("type") != "DiffuseSource"]
 
     source_ids = []
 
@@ -557,8 +395,6 @@ def xml_parser_locations(xml_file: str, coordinate_system='G'):
     for source in sources:
 
         source_ids.append(source.getAttribute("name"))
-
-        source_type = source.getAttribute("name")[:3]
 
         # PARSE SPATIAL PARAMETERS
 
@@ -585,7 +421,7 @@ def xml_parser_locations(xml_file: str, coordinate_system='G'):
 
     if coordinate_system == 'G':
 
-        # if want in galactic coordinates then convert
+        # Return coordinates in galactic format (requires conversion)
 
         # Get coordinates into numpy array then separate into list of lats and lons
 
@@ -597,8 +433,7 @@ def xml_parser_locations(xml_file: str, coordinate_system='G'):
 
     elif coordinate_system == "C":
 
-        # if want celestial coordinates, just return
-
+        # Return coordinates in celestial format
         return coordinates, source_ids
 
     else:
@@ -607,7 +442,20 @@ def xml_parser_locations(xml_file: str, coordinate_system='G'):
 
 
 def xml_parser(energy_bins, xml_file: str, give_ids=False):
+    """ Fetches the location, integral photon flux, and (optionally) unique ID of each source stored in a given XML
+    file.
 
+    Parameters
+    ----------
+    energy_bins : ndarray
+        The photon energy bins over which to calculate the binned integral photon fluxes of each source.
+    xml_file : str
+        The name of the XML file from which the spectral parameters, locations, and unique IDs of the sources can be
+        fetched.
+    give_ids : bool, optional
+        Indicates whether the unique IDs of the sources should be returned.
+
+    """
     # Read XML files to get latitude and longitude of each source (separate into AGN, pulsars, and background - if they
     # are in the same file), as well as the flux of the source
 
@@ -615,13 +463,15 @@ def xml_parser(energy_bins, xml_file: str, give_ids=False):
 
     sources = docs.getElementsByTagName("source")
 
+    num_sources = len(sources)
+
     num_bins = energy_bins.shape[0]
 
     coordinates = []
     fluxes = []
 
     # Remove diffuse sources - only processing point sources with this function
-    sources = [sources[k] for k in range(len(sources)) if sources[k].getAttribute("type") != "DiffuseSource"]
+    sources = [sources[k] for k in range(num_sources) if sources[k].getAttribute("type") != "DiffuseSource"]
 
     source_ids = []
 
@@ -694,14 +544,13 @@ def xml_parser(energy_bins, xml_file: str, give_ids=False):
 
             # For each energy interval, calculate corresponding flux
             for f in range(num_bins - 1):
-
                 # N.B. Integral photon flux is not the same as energy flux
                 flux = integral_photon_flux_pulsar(pivot_energy=spectral_parameter_dictionary["Scale"],
-                                          flux_density=spectral_parameter_dictionary["Prefactor"],
-                                          spectral_slope=spectral_parameter_dictionary["Index1"],
-                                          exponential_index=spectral_parameter_dictionary["Index2"],
-                                          exponential_factor=spectral_parameter_dictionary["Expfactor"],
-                                          min_energy=energy_bins[f], max_energy=energy_bins[f + 1])
+                                                   flux_density=spectral_parameter_dictionary["Prefactor"],
+                                                   spectral_slope=spectral_parameter_dictionary["Index1"],
+                                                   exponential_index=spectral_parameter_dictionary["Index2"],
+                                                   exponential_factor=spectral_parameter_dictionary["Expfactor"],
+                                                   min_energy=energy_bins[f], max_energy=energy_bins[f + 1])
 
                 binned_fluxes.append(flux)
 
@@ -719,10 +568,8 @@ def xml_parser(energy_bins, xml_file: str, give_ids=False):
 
     coordinates = SkyCoord(ra=coordinates[:, 0] * u.degree, dec=coordinates[:, 1] * u.degree, frame='icrs').galactic
 
+    # Convert to galactic coordinates
     coordinates = np.array([coordinates.l.value, coordinates.b.value]).T
-
-    # Get coordinates into numpy array then separate into list of lats and lons
-    # coordinates = np.array([[c.l.value, c.b.value] for c in coordinates])
 
     # Convert fluxes to numpy
     fluxes = np.array(fluxes)
