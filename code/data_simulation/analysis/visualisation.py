@@ -1,3 +1,7 @@
+"""
+Functions for visualising the analysis conducted on 4FGL sources' spectral and spatial parameters.
+"""
+
 from itertools import combinations, product
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,8 +29,19 @@ units = {"LP_Flux_Density": "[ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$", "Pivot_Energy":
          "PLEC_ExpfactorS": "", "GLAT": "[rad]"}
 
 
-def plot_correlation_matrices(sources, source_type, directory):
+def plot_correlation_matrices(sources, source_type: str, directory: str):
+    """Plot all possible parameter combinations' correlations - both Pearson (for linear) and Kendall (for non-linear)
+    coefficients should be shown in the same plot.
 
+    Parameters
+    ----------
+    sources
+        Columns of spectral and spatial parameters in frame
+    source_type : str
+        Type of gamma-ray source being analysed (used in figure title)
+    directory : str
+        File in which to store final plot
+    """
     # CREATE PLOT
 
     plt.rcParams["figure.figsize"] = (27, 11)
@@ -58,6 +73,24 @@ def plot_correlation_matrices(sources, source_type, directory):
 
 
 def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, directory: str, logarithmic_fit=True):
+    """Function attempts to identify any correlations between any spectral and spatial parameter combinations - these
+    correlations may take the form of polynomials relating the logarithm of both parameters (this polynomial may be
+    linear, quadratic, cubic, quartic). It also attempts to identify any directly logarithmic relationships.
+
+    Parameters
+    ----------
+    var1
+        The values of a given spectral parameter for each of the sources
+    var2
+        The values of another given spectral parameter for each of the sources
+    source_type : str
+        Type of gamma-ray source being analysed (used in figure title)
+    directory : str
+        File in which to store final plot
+    logarithmic_fit : bool, optional
+        Indicates whether to attempt a logarithmic fit to the parameters
+
+    """
     # N.B. when calculating the least squares fit - in case variables need to be normally distributed, we know that log
     # of E_0 and log of F_0 are both normally distributed (log-normal distribution)
 
@@ -93,20 +126,23 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
 
     colours = ["red", "green", "orange", "purple"]
 
+    linestyles = ['-.', ':', '--', (0, (3, 1, 1, 1, 1, 1))]
+
     residuals = []
 
     for degree in range(1, 5):
-
         idx = degree - 1
 
         polynomial = np.polynomial.Polynomial.fit(log_var1, log_var2, deg=degree)
 
         ax[0].plot(x_values, np.exp(polynomial(log_x_values)), color=colours[idx], label="Log {}".format(labels[idx]),
-                   linestyle='-.')
-        ax[1].plot(log_x_values, polynomial(log_x_values), color=colours[idx], label=labels[idx], linestyle="-.")
+                   linestyle=linestyles[degree - 1])
+        ax[1].plot(log_x_values, polynomial(log_x_values), color=colours[idx], label=labels[idx],
+                   linestyle=linestyles[degree - 1])
 
         polynomial_log = polynomial(log_var1)
 
+        # Prints the coefficient values of the best fitting polynomial to the parameters
         print(["{} : {}".format(chr((degree - x) + 97), polynomial.convert().coef[x]) for x in range(degree, -1, -1)])
         print("RMSE of {} Fit: {}".format(labels[idx], root_mean_squared_error(log_var2, polynomial_log)))
 
@@ -124,9 +160,8 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
     # Logarithmic Fit
 
     if logarithmic_fit is True:
-
-        # This paper states that the spectral index depends linearly on ln E - https://journals-aps-org.ezphost.dur.ac.uk/
-        # prd/abstract/10.1103/k5dp-5str
+        # This paper states that the spectral index depends linearly on ln E
+        # - https://journals-aps-org.ezphost.dur.ac.uk/prd/abstract/10.1103/k5dp-5str
 
         polynomial = np.polynomial.Polynomial.fit(log_var1, var2, deg=1)
         ax[0].plot(x_values, polynomial(log_x_values), color="black", label="Logarithmic")
@@ -154,15 +189,26 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
 
     ax[0].set_xlabel("{} {}".format(mathematical_notation[var1.name], units[var1.name]))
     ax[0].set_ylabel("{} {}".format(mathematical_notation[var2.name], units[var2.name]))
-    ax[0].set_title("{} vs {}".format(axis_labels[var1.name], axis_labels[var2.name]))
+
+    title_0 = "{} vs {}".format(axis_labels[var1.name], axis_labels[var2.name])
+
+    ax[0].set_title(title_0)
     ax[0].legend()
+
+    if len(axis_labels[var1.name]) + len(axis_labels[var2.name]) > 20:
+        new_line = '\n'
+    else:
+        new_line = ''
+
+    title_1 = "Log-Log Plot of {} {} vs {}".format(new_line, axis_labels[var1.name], axis_labels[var2.name])
 
     ax[1].set_xlabel("log {}".format(mathematical_notation[var1.name]))
     ax[1].set_ylabel("log {}".format(mathematical_notation[var2.name]))
-    ax[1].set_title("Log-Log Plot of {} vs {}".format(axis_labels[var1.name], axis_labels[var2.name]))
+    ax[1].set_title(title_1)
     ax[1].legend()
 
-    fig.suptitle("Fitting {} {} - {} Dependency".format(source_type, mathematical_notation[var1.name], mathematical_notation[var2.name]))
+    fig.suptitle("Fitting {} {} - {} Dependency".format(source_type, mathematical_notation[var1.name],
+                                                        mathematical_notation[var2.name]))
 
     fig.tight_layout()
 
@@ -179,7 +225,6 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
     fig2, ax2 = plt.subplots(1, len(labels))
 
     for a in range(len(residuals)):
-
         residuals_std = np.std(residuals[a], ddof=1)
 
         normalised_residuals = residuals[a] / residuals_std
@@ -198,15 +243,15 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
 
     fig2.tight_layout()
 
-    fig2.savefig(directory + "/fitted_{}_{}_{}_relationship_residuals.png".
-                format(source_type.lower(), axis_labels[var1.name].lower().replace(" ", "_"),
-                       axis_labels[var2.name].lower().replace(" ", "_")))
+    (fig2.savefig
+     (directory + "/fitted_{}_{}_{}_relationship_residuals.png"
+      .format(source_type.lower(), axis_labels[var1.name].lower().replace(" ", "_"),
+              axis_labels[var2.name].lower().replace(" ", "_"))))
 
     plt.close()
 
 
 def plot_parameter_distributions(sources, source_type: str, directory: str):
-
     num_parameters = sources.shape[1]
 
     # CREATE PLOTS
@@ -237,8 +282,6 @@ def plot_parameter_distributions(sources, source_type: str, directory: str):
         # Calculate distribution parameters of data
         mean, sigma = np.mean(values), np.std(values, ddof=1)
         scale, s = log_normal_parameter(values)
-        # logistic_scale = sigma * (np.sqrt(3) / np.pi)
-        # log_logistic_scale = np.std(np.log(values), ddof=1) * (np.sqrt(3) / np.pi)
 
         # Plot Gaussian using mean and standard deviation of data
         x_values = np.linspace(np.min(values), np.max(values), 1000)
@@ -248,14 +291,6 @@ def plot_parameter_distributions(sources, source_type: str, directory: str):
         # any of the other AGN parameters)
         subplot.plot(x_values, lognorm.pdf(x_values, s=s, scale=scale), color='red', label='Log-Normal',
                      linestyle='--')
-
-        # Plot Logistic distribution using mean and standard deviation of data (I noted similarity of shapes)
-        # subplot.plot(x_values, logistic.pdf(x_values, loc=mean, scale=logistic_scale), color='purple', label='Logistic',
-        #              linestyle=":")
-
-        # Plot log-logistic distribution using mean and standard deviation of data (I noted similarity of shapes)
-        # subplot.plot(x_values, fisk.pdf(x_values, scale=np.exp(np.mean(np.log(x_values))), c=1 / log_logistic_scale),
-        #              color='green', label='Log-Logistic')
 
         cauchy_params = cauchy.fit(values, floc=0)
 
@@ -286,7 +321,6 @@ def plot_parameter_distributions(sources, source_type: str, directory: str):
 
 
 def plot_parameter_relationships(sources, source_type: str, directory: str):
-
     # Find all possible combinations of parameters
     variable_combinations = list(combinations(list(sources.columns), 2))
 
@@ -342,7 +376,6 @@ def plot_parameter_relationships(sources, source_type: str, directory: str):
 
         # Subplot formatting
         for a in [ax, ax2]:
-
             a[row, col].set_title(mathematical_notation[var1] + ' against ' + mathematical_notation[var2], fontsize=12)
 
             a[row, col].set_xlabel("{} {}".format(mathematical_notation[var2], units[var2]))
@@ -362,7 +395,6 @@ def plot_parameter_relationships(sources, source_type: str, directory: str):
     fig2.savefig(directory + "/{}_logarithmic_parameter_relationships.png".format(source_type.lower()))
 
     plt.close()
-
 
 # REFERENCES
 
