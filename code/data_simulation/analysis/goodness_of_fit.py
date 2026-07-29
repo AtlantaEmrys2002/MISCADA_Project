@@ -1,8 +1,25 @@
+"""
+Methods for determining the goodness of fit of well-known PDFs to the histograms of various 4FGL parameters.
+"""
+
 import numpy as np
 from scipy.stats import cauchy, chi2, kstest, lognorm, Normal
 
 
 def chi_squared_test(values, num_bins: int, distribution: str) -> None:
+    """Applies chi-squared test, fitting a specified distribution to a series of observations, to determine if the PDF
+    is suitable for modelling the distribution of the histogram of values.
+
+    Parameters
+    ----------
+    values
+        Parameter values to fit a PDF to.
+    distribution : str
+        PDF that user believes would fit parameter values well.
+    num_bins :
+        Number of bins in which to bin value data to create histogram.
+
+    """
     parameter_name = values.name
 
     # bin data and record number of agns with values within each interval
@@ -69,7 +86,7 @@ def chi_squared_test(values, num_bins: int, distribution: str) -> None:
 
         test_statistic = np.sum(((observed_counts - expected_counts) ** 2) / expected_counts)
 
-        reduced_chi_squared_min = test_statistic/degrees_of_freedom
+        reduced_chi_squared_min = test_statistic / degrees_of_freedom
 
         chi_squared_distribution = chi2(df=degrees_of_freedom)
 
@@ -100,7 +117,19 @@ def chi_squared_test(values, num_bins: int, distribution: str) -> None:
 
 
 def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05) -> None:
+    """Applies K-S test, fitting a specified distribution to a series of observations, to determine if the PDF is
+    suitable for modelling the distribution of the histogram of values.
 
+    Parameters
+    ----------
+    values
+        Parameter values to fit a PDF to.
+    distribution : str
+        PDF that user believes would fit parameter values well.
+    alpha : float, optional
+        Probability at which the null hypothesis is rejected.
+
+    """
     # N.B. This tutorial was consulted when creating this function:
     # https://www.geeksforgeeks.org/machine-learning/kolmogorov-smirnov-test-ks-test/
 
@@ -161,7 +190,6 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05) -> None:
 
     print("-" * 60)
 
-
 # REFERENCES
 
 # Adding Noise to Simulated Data - https://medium.com/@ms_somanna/guide-to-adding-noise-to-your-data-using-python-
@@ -172,7 +200,7 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05) -> None:
 # Chi-Squared Polyfit - https://stackoverflow.com/questions/5477359/chi-square-numpy-polyfit-numpy
 # Chi-Squared Test - https://en.wikipedia.org/wiki/Chi-squared_test
 # Chi-Squared - https://www.scribbr.com/statistics/chi-square-goodness-of-fit/
-# Chi-Squred with Zero Expected Counts - https://stats.stackexchange.com/questions/78101/chi-squared-test-with-0-
+# Chi-Squared with Zero Expected Counts - https://stats.stackexchange.com/questions/78101/chi-squared-test-with-0-
 # expected-values
 # Distributions - https://civil.colorado.edu/~balajir/CVEN5454/lectures/Ang-n-Tang-Chap7-Goodness-of-fit-PDFs-test.pdf
 # Fitting Distributions - https://cseweb.ucsd.edu/~dasgupta/291w22/distributions-handout.pdf
@@ -186,7 +214,7 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05) -> None:
 # K-S Table - https://real-statistics.com/statistics-tables/kolmogorov-smirnov-table/
 # K-S Test Tutorial - https://www.geeksforgeeks.org/machine-learning/kolmogorov-smirnov-test-ks-test/
 # K-S Test Unexpected Values - https://stackoverflow.com/questions/51902996/scipy-kstest-used-on-scipy-lognormal-
-# distrubtion
+# distribution
 # K-S Tutorial - https://www.geeksforgeeks.org/machine-learning/kolmogorov-smirnov-test-ks-test/
 # Log-Normals - https://stackoverflow.com/questions/8747761/scipy-lognormal-distribution-parameters
 # Log-Normals - https://www.reddit.com/r/AskStatistics/comments/110rprt/scale_location_and_shape_of_a_lognormal/

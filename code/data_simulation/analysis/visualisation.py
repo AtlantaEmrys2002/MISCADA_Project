@@ -29,7 +29,7 @@ units = {"LP_Flux_Density": "[ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$", "Pivot_Energy":
          "PLEC_ExpfactorS": "", "GLAT": "[rad]"}
 
 
-def plot_correlation_matrices(sources, source_type: str, directory: str):
+def plot_correlation_matrices(sources, source_type: str, directory: str) -> None:
     """Plot all possible parameter combinations' correlations - both Pearson (for linear) and Kendall (for non-linear)
     coefficients should be shown in the same plot.
 
@@ -72,7 +72,8 @@ def plot_correlation_matrices(sources, source_type: str, directory: str):
     plt.close()
 
 
-def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, directory: str, logarithmic_fit=True):
+def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, directory: str, logarithmic_fit=True) -> \
+        None:
     """Function attempts to identify any correlations between any spectral and spatial parameter combinations - these
     correlations may take the form of polynomials relating the logarithm of both parameters (this polynomial may be
     linear, quadratic, cubic, quartic). It also attempts to identify any directly logarithmic relationships.
@@ -251,7 +252,7 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
     plt.close()
 
 
-def plot_parameter_distributions(sources, source_type: str, directory: str):
+def plot_parameter_distributions(sources, source_type: str, directory: str) -> None:
     """Plots the histogram a parameter's binned values and then over-plots common PDFs to determine the best method for
     sampling a realistic population of sources.
 
@@ -333,7 +334,7 @@ def plot_parameter_distributions(sources, source_type: str, directory: str):
     plt.close()
 
 
-def plot_parameter_relationships(sources, source_type: str, directory: str):
+def plot_parameter_relationships(sources, source_type: str, directory: str) -> None:
     """Plots relationships of each possible parameter combination - this is to complement the correlation coefficients
     to ensure there is no mistake in determining two parameters' correlation (for example, the curvature of an AGN's
     spectrum is not correlated with other parameters - it can just only have certain values and 80% of those values are
