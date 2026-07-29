@@ -78,6 +78,13 @@ def luminosity_function_agn(catalog: str, detection_threshold: np.float64):
     """ Determines the number of sources to generate within a given energy flux - i.e. ensures that the luminosity
     function of simulated AGN resembles that of the 4FGL.
 
+    Parameters
+    ----------
+    catalog: str
+        Name of file in which FITS-formatted catalog resides.
+    detection_threshold: np.float64
+         Integral energy flux below which the luminosity function of faint sources must be extrapolated.
+
     """
     # Read 4FGL Catalog
     catalog = QTable.read(catalog, format='fits', hdu=1)['CLASS1', 'Energy_Flux100']
@@ -139,7 +146,7 @@ def generate_mock_agn_catalog(catalog: str, agn_data, detection_threshold: np.fl
     target_counts, target_bin_intervals, target_peak = luminosity_function_agn(catalog=catalog,
                                                                                detection_threshold=detection_threshold)
 
-    num_intervals = len(target_bin_intervals)
+    num_intervals = target_bin_intervals.shape[0]
 
     actual_counts = np.zeros_like(target_counts)
 
