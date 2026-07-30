@@ -2,6 +2,8 @@
 Utility functions used when creating all-sky maps.
 """
 
+from astropy.coordinates import SkyCoord
+import astropy.units as u
 import healpy as hp
 import numpy as np
 from scipy.integrate import quad
@@ -34,6 +36,53 @@ def angle_to_healpix_pixels(coordinates, nside: int):
     pixels = hp.pixelfunc.ang2pix(nside=nside, theta=longitudes, phi=latitudes, lonlat=True)
 
     return pixels
+
+
+def coordinates_galactic_to_celestial(coordinates):
+    """Wrapper that allows a series of galactic coordinates (in degrees) to be converted efficiently to celestial
+    coordinates (also in degrees).
+
+    Parameters
+    ----------
+    coordinates : ndarray
+        2D array of coordinates to be converted to celestial coordinates
+
+    Returns
+    -------
+    ndarray
+        A 2D array of the coordinates converted to celestial coordinates.
+
+    """
+    # Converts list of coordinates in l,b format to ra, dec format
+
+    celestial = SkyCoord(l=coordinates[:, 0] * u.degree, b=coordinates[:, 1] * u.degree, frame='galactic').icrs
+
+    new_coordinates = np.array([celestial.ra.value, celestial.dec.value]).T
+
+    return new_coordinates
+
+
+def coordinates_celestial_to_galactic(coordinates):
+    """Wrapper that allows a series of galactic coordinates (in degrees) to be converted efficiently to celestial
+    coordinates (also in degrees).
+
+    Parameters
+    ----------
+    coordinates : ndarray
+        2D array of coordinates to be converted to celestial coordinates
+
+    Returns
+    -------
+    ndarray
+        A 2D array of the coordinates converted to celestial coordinates.
+
+    """
+
+    coordinates = SkyCoord(ra=coordinates[:, 0] * u.degree, dec=coordinates[:, 1] * u.degree, frame='icrs').galactic
+
+    new_coordinates = np.array([coordinates.l.value, coordinates.b.value]).T
+
+    return new_coordinates
 
 
 def get_nside(healpix_map) -> int:
@@ -94,7 +143,7 @@ def integrate_over_energy(maps, energy_bins, num_bins: int, energy_weighted=Fals
         The maximum photon energy to which the new energy bins are to get to.
 
     """
-    # Add a map to the end - for straight line extrapolation
+    # Extrapolate a map for the upper energy bin to ensure maps and energy bins have the same size
 
     m = ((maps[-1] - maps[-2]) /
          (energy_bins[-1] - energy_bins[-2]))
@@ -111,8 +160,10 @@ def integrate_over_energy(maps, energy_bins, num_bins: int, energy_weighted=Fals
     # This is used when integrating over exposure maps
     if energy_weighted is True:
 
+        exponential_values = exponential_func(energy_bins)
+
         for k in range(maps.shape[0]):
-            maps[k] *= (energy_bins[k] ** -2.4)
+            maps[k] *= exponential_values[k]
 
     # Use the trapezium rule for numerical integration here
 
@@ -221,6 +272,7 @@ def integrate_over_energy(maps, energy_bins, num_bins: int, energy_weighted=Fals
 
 # REFERENCES
 
+# Co-latitude and Longitude - https://mathworld.wolfram.com/SphericalCoordinates.html
 # New Position - https://math.stackexchange.com/questions/143932/calculate-point-given-x-y-angle-and-distance/
 # 3534251#3534251
 # Trapezoidal Rule - https://en.wikipedia.org/wiki/Trapezoidal_rule

@@ -1,31 +1,15 @@
-from astropy.coordinates import SkyCoord
+# from astropy.coordinates import SkyCoord
 from astropy.io import fits
-import astropy.units as u
+# import astropy.units as u
 from astropy.wcs import WCS
-import copy
 import healpy as hp
-from map_generation.utils import angle_to_healpix_pixels
+from .utils import angle_to_healpix_pixels, coordinates_celestial_to_galactic, coordinates_galactic_to_celestial
 import numpy as np
 from psfs.utils import monte_carlo_sampler_2, dual_function, monte_carlo_sampler
-# from reproject import reproject_to_healpix
 import reproject
 from scipy.stats import loguniform
 from scipy.integrate import quad
 from .utils import integrate_over_energy
-
-
-def create_expected_counts_map(infinite_counts_map):
-    binned_count_maps = []
-
-    num_bins = len(infinite_counts_map)
-
-    for b in range(num_bins):
-        # Poisson sample each pixel in the infinite statistics count map to get a count map c
-        sampled_counts = np.random.poisson(lam=infinite_counts_map[b])
-
-        binned_count_maps.append(sampled_counts)
-
-    return np.array(binned_count_maps)
 
 
 def create_diffuse_source_map(expected_counts_isotropic_background, expected_counts_diffuse_background, psfs):
@@ -87,8 +71,8 @@ def create_diffuse_background(diffuse_background_file, exposure_map, nside, to_c
 
             data, _ = reproject.reproject_to_healpix((data, new_header), 'galactic', nside=nside)
 
-            # N.B. May have to do the same thing for galactic diffuse background - PSF IS NOT DONE THE SAME WAY AS IN THE ABOVE
-            # PAPER SO IT IS NOT IN sr^-1 and EXPOSURE IS IN cm2s
+            # N.B. May have to do the same thing for galactic diffuse background - PSF IS NOT DONE THE SAME WAY AS IN
+            # THE ABOVE PAPER SO IT IS NOT IN sr^-1 and EXPOSURE IS IN cm^2s
             n_pix = (12 * nside ** 2)
 
             data *= (4 * np.pi / n_pix)
@@ -128,34 +112,6 @@ def create_exposure_map(exposure_file: str, num_bins_to_create=5):
     return exposure_maps, energy_bins
 
 
-# def create_infinite_statistics_map(exposure_maps, fluxes, pixels):
-#
-#     # Pixel x corresponds to location of source x in the sky with flux x
-#
-#     binned_infinite_statistics = []
-#
-#     num_bins = len(exposure_maps)
-#
-#     for b in range(num_bins):
-#
-#         healpix_exposure_map = exposure_maps[b]
-#
-#         # Copy for infinite statistics
-#         infinite_statistics_counts = np.zeros_like(healpix_exposure_map)
-#
-#         # Calculate infinite statistics realisation of sky (c bar)
-#         for x in range(len(pixels)):
-#             pixel = pixels[x]
-#
-#             # Important to add - Poisson value is additive
-#             infinite_statistics_counts[pixel] += healpix_exposure_map[pixel] * fluxes[x, b]
-#
-#         # Add infinite statistics bin to list
-#         binned_infinite_statistics.append(infinite_statistics_counts)
-#
-#     return np.array(binned_infinite_statistics)
-
-
 def isotropic_func(energy, m_val, c_val):
     return (energy ** m_val) * (np.e ** c_val)
 
@@ -175,10 +131,10 @@ def create_isotropic_background(isotropic_background_file: str, nside: int, expo
     central_energies = lines[0]
     differential_flux = lines[1]
 
-    # Convert differential fluxes from per steradian to per pixel - https://arxiv.org/html/2302.01947v2
+    # Convert differential fluxes from per steradians to per pixel - https://arxiv.org/html/2302.01947v2
 
     # N.B. May have to do the same thing for galactic diffuse background - PSF IS NOT DONE THE SAME WAY AS IN THE ABOVE
-    # PAPER SO IT IS NOT IN sr^-1 and EXPOSURE IS IN cm2s
+    # PAPER SO IT IS NOT IN sr^-1 and EXPOSURE IS IN cm^2s
     n_pix = (12 * nside ** 2)
 
     differential_flux *= (4 * np.pi / n_pix)
@@ -203,9 +159,9 @@ def create_isotropic_background(isotropic_background_file: str, nside: int, expo
 
     return np.array(isotropic_maps)
 
-    # THINK I'VE SOLVED THIS ONE - NEED TO INTEGRATE OUT SOLID ANGLE (GO FROM DIRECTIONAL FLUX TO FLUX - DIFFUSE SOURCES HAVE sr^-1 ASPECT)
-    # NEED TO INTEGRATE OUT ENERGY DEPENDENCY BY INTEGRATING OVER BIN
-    #
+    # THINK I'VE SOLVED THIS ONE - NEED TO INTEGRATE OUT SOLID ANGLE (GO FROM DIRECTIONAL FLUX TO FLUX - DIFFUSE SOURCES
+    # HAVE sr^-1 ASPECT) NEED TO INTEGRATE OUT ENERGY DEPENDENCY BY INTEGRATING OVER BIN
+
     # NOT FINISHED YET
 
 
@@ -232,32 +188,6 @@ def new_coordinate(ra, dec, radius, angle):
     return np.array([new_ra, new_dec])
 
 
-def coordinates_galactic_to_celestial(coordinates):
-    # Converts list of coordinates in l,b format to ra, dec format - ALL IN DEGREES
-
-    ls = coordinates.T[0]
-    bs = coordinates.T[1]
-
-    celestial = SkyCoord(l=ls * u.degree, b=bs * u.degree, frame='galactic').icrs
-
-    new_coordinates = np.array([celestial.ra.value, celestial.dec.value]).T
-
-    return new_coordinates
-
-
-def coordinates_celestial_to_galactic(coordinates):
-    # Converts list of coordinates in ra, dec format to l, b format - ALL IN DEGREES
-
-    ras = coordinates.T[0]
-    decs = coordinates.T[1]
-
-    coordinates = SkyCoord(ra=ras * u.degree, dec=decs * u.degree, frame='icrs').galactic
-
-    new_coordinates = np.array([coordinates.l.value, coordinates.b.value]).T
-
-    return new_coordinates
-
-
 def create_infinite_counts_maps(source_pixels, exposure_maps, fluxes):
     # Calculates infinite counts map (to be Poisson sampled) for each catalog
 
@@ -275,68 +205,64 @@ def create_infinite_counts_maps(source_pixels, exposure_maps, fluxes):
     return infinite_counts_maps
 
 
-def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, nside):
-    num_bins = len(exposure_maps)
-    source_num = len(coordinates)
-
-    original_pixels = angle_to_healpix_pixels(coordinates, nside=nside)
-
-    point_source_maps = []
-
-    # Convert all galactic coordinates to celestial
-    celestial_coordinates = coordinates_galactic_to_celestial(coordinates)
-
-    for b in range(num_bins):
-
-        bin_fluxes = fluxes.T[b]
-        exposure_map = exposure_maps[b]
-        point_source_map = np.zeros_like(exposure_map)
-
-        # Calculate the number of photons to sample for each pixel
-
-        # infinite counts
-        infinite_cs = np.array(
-            [exposure_map[original_pixels[source]] * bin_fluxes[source] for source in range(source_num)])
-
-        # expected counts
-        cs = np.random.poisson(lam=infinite_cs)
-
-        for source in range(source_num):
-
-            c = cs[source]
-
-            if c > 0:
-
-                # SAMPLE DISPLACEMENT PARAMETERS
-
-                radial_angle_displacements = monte_carlo_sampler(dual_function, parameters=psf_parameters[b],
-                                                                 num_samples=c)
-                angles = np.random.uniform(low=0, high=2 * np.pi, size=c)
-
-                # Calculate new origins
-
-                new_positions = new_coordinate(ra=celestial_coordinates[source][0],
-                                               dec=celestial_coordinates[source][1],
-                                               radius=radial_angle_displacements, angle=angles).T
-
-                # Convert to longitude-latitude
-                new_positions_galactic = coordinates_celestial_to_galactic(new_positions)
-
-                new_pixels = angle_to_healpix_pixels(new_positions_galactic, nside=nside)
-
-                for p in new_pixels:
-                    point_source_map[p] += 1
-
-        point_source_maps.append(point_source_map)
-
-    return np.array(point_source_maps)
-
-
-import time
+# def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, nside):
+#     num_bins = len(exposure_maps)
+#     source_num = len(coordinates)
+#
+#     original_pixels = angle_to_healpix_pixels(coordinates, nside=nside)
+#
+#     point_source_maps = []
+#
+#     # Convert all galactic coordinates to celestial
+#     celestial_coordinates = coordinates_galactic_to_celestial(coordinates)
+#
+#     for b in range(num_bins):
+#
+#         bin_fluxes = fluxes.T[b]
+#         exposure_map = exposure_maps[b]
+#         point_source_map = np.zeros_like(exposure_map)
+#
+#         # Calculate the number of photons to sample for each pixel
+#
+#         # infinite counts
+#         infinite_cs = np.array(
+#             [exposure_map[original_pixels[source]] * bin_fluxes[source] for source in range(source_num)])
+#
+#         # expected counts
+#         cs = np.random.poisson(lam=infinite_cs)
+#
+#         for source in range(source_num):
+#
+#             c = cs[source]
+#
+#             if c > 0:
+#
+#                 # SAMPLE DISPLACEMENT PARAMETERS
+#
+#                 radial_angle_displacements = monte_carlo_sampler(dual_function, parameters=psf_parameters[b],
+#                                                                  num_samples=c)
+#                 angles = np.random.uniform(low=0, high=2 * np.pi, size=c)
+#
+#                 # Calculate new origins
+#
+#                 new_positions = new_coordinate(ra=celestial_coordinates[source][0],
+#                                                dec=celestial_coordinates[source][1],
+#                                                radius=radial_angle_displacements, angle=angles).T
+#
+#                 # Convert to longitude-latitude
+#                 new_positions_galactic = coordinates_celestial_to_galactic(new_positions)
+#
+#                 new_pixels = angle_to_healpix_pixels(new_positions_galactic, nside=nside)
+#
+#                 for p in new_pixels:
+#                     point_source_map[p] += 1
+#
+#         point_source_maps.append(point_source_map)
+#
+#     return np.array(point_source_maps)
 
 
 def create_count_map(coordinates, exposure_maps, psf_parameters, fluxes, nside, infinite_stats_file):
-    start = time.time()
 
     num_bins = exposure_maps.shape[0]
     source_num = coordinates.shape[0]
@@ -375,7 +301,6 @@ def create_count_map(coordinates, exposure_maps, psf_parameters, fluxes, nside, 
         sampled_counts = np.random.poisson(lam=c_per_bin)
 
         for b in range(num_bins):
-
             # Sample radial displacement
             radial_angle_displacements = monte_carlo_sampler_2(parameters=psf_parameters[b],
                                                                num_samples=sampled_counts[b])
@@ -394,8 +319,6 @@ def create_count_map(coordinates, exposure_maps, psf_parameters, fluxes, nside, 
 
             count_maps[b, new_pixels] += 1
 
-    print("TIME PER MAP: {}".format(time.time() - start))
-
     return count_maps
 
 # REFERENCES
@@ -405,6 +328,7 @@ def create_count_map(coordinates, exposure_maps, psf_parameters, fluxes, nside, 
 # Map Cube Formats - https://fermi.gsfc.nasa.gov/ssc/data/analysis/scitools/other_sources.html
 # Reproject Suggestion - https://stackoverflow.com/questions/54715123/converting-a-map-in-cartesian-projection-with-
 # spherical-coordinate-to-healix-p
-# Skycoords and Arrays - https://stackoverflow.com/questions/36146183/astropy-skycoord-extremely-slow-how-to-resovle-it
+# Sky-coordinates and Arrays - https://stackoverflow.com/questions/36146183/astropy-skycoord-extremely-slow-how-to-
+# resovle-it
 # Unique Counts - https://stackoverflow.com/questions/28663856/how-do-i-count-the-occurrence-of-a-certain-item-in-an-
 # ndarray
