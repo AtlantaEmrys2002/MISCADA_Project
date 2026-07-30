@@ -8,7 +8,7 @@ import healpy as hp
 from .utils import angle_to_healpix_pixels, coordinates_celestial_to_galactic, coordinates_galactic_to_celestial
 import numpy as np
 import numpy.typing as npt
-from psfs.utils import monte_carlo_sampler_2
+from psfs.utils import monte_carlo_sampler
 import reproject
 from scipy.stats import loguniform
 from scipy.integrate import quad
@@ -239,8 +239,9 @@ def create_infinite_counts_maps(source_pixels, exposure_maps, fluxes):
     return infinite_counts_maps
 
 
-def create_count_map(coordinates: npt.NDArray[np.float64], exposure_maps: npt.NDArray[np.float64], psf_parameters: list,
-                     fluxes: npt.NDArray[np.float64], nside: int, infinite_stats_file: str) -> npt.NDArray[np.float64]:
+def create_count_map(coordinates: npt.NDArray[np.float64], exposure_maps: npt.NDArray[np.float64],
+                     psf_parameters: npt.NDArray[np.float64], fluxes: npt.NDArray[np.float64], nside: int,
+                     infinite_stats_file: str) -> npt.NDArray[np.float64]:
     """Creates photon count map for point sources, provided that the galactic coordinates of the sources, their fluxes,
     the exposure maps calculated using fermitools, and PSF parameters (also calculated using a mixture of fermitools and
     custom code) are provided. These count maps will be binned and realistic.
@@ -303,8 +304,8 @@ def create_count_map(coordinates: npt.NDArray[np.float64], exposure_maps: npt.ND
 
         for b in range(num_bins):
             # Sample radial displacement
-            radial_angle_displacements = monte_carlo_sampler_2(parameters=psf_parameters[b],
-                                                               num_samples=sampled_counts[b])
+            radial_angle_displacements = monte_carlo_sampler(parameters=psf_parameters[b],
+                                                             num_samples=sampled_counts[b])
 
             angles = np.random.uniform(low=0, high=2 * np.pi, size=sampled_counts[b])
 

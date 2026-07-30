@@ -11,7 +11,6 @@ from map_generation.utils import angle_to_healpix_pixels, get_nside
 import numpy as np
 from pathlib import Path
 from psfs.fit_psf import fit_diffuse_source_psf, fit_point_source_psf
-# from psfs.visualisation import plot_fitted_point_source_psf
 from read_write_functions import save_count_maps, xml_parser
 from verification.visualisation import plot_all_sky_map, plot_fitted_point_source_psf
 import time
