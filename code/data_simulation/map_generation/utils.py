@@ -270,9 +270,55 @@ def integrate_over_energy(maps, energy_bins, num_bins: int, energy_weighted=Fals
 
     return integrated_maps, new_energy_bins
 
+
+def isotropic_func(energy, m_val: np.float64, c_val: np.float64):
+    """Function utilised when energy-integrating over isotropic diffuse background.
+
+    Parameters
+    ----------
+    energy : ndarray
+        Energy values to calculate differential flux density from.
+    m_val : np.float64
+        Gradient of line showing relationship between photon energy and flux density.
+    c_val : np.float64
+        y-Intercept of line showing relationship between photon energy and flux density.
+
+    """
+    return (energy ** m_val) * (np.e ** c_val)
+
+
+def new_coordinate(ra: np.float64, dec: np.float64, radius, angle):
+    """Calculates new celestial coordinate origin of a photon, given a radial displacement and the angle from its
+    originally presumed celestial coordinate origin.
+
+    Parameters
+    ----------
+    ra : np.float64
+        Original RA (in degrees) of photon origin
+    dec : np.float64
+        Original Dec (in degrees) of photon origin
+    radius : ndarray
+        Radial displacement of photon from presumed origin
+    angle : ndarray
+        Angle from presumed photon origin to actual photon origin.
+
+    """
+    # Make sure you have converted lat, lon to ra, dec before passing to this function
+
+    # Equations taken from New Position reference below
+
+    # Angle must be in radians
+    new_ra = (ra + (radius * np.cos(angle))) % 360  # % 360 to ensure wrap-around
+    new_dec = (((dec + (radius * np.sin(angle))) + 90) % 180) - 90  # ensure wrap-around
+
+    # COORDINATES ALSO RETURNED IN RA DEC FORMAT - REMEMBER TO CONVERT
+
+    return np.array([new_ra, new_dec])
+
 # REFERENCES
 
 # Co-latitude and Longitude - https://mathworld.wolfram.com/SphericalCoordinates.html
 # New Position - https://math.stackexchange.com/questions/143932/calculate-point-given-x-y-angle-and-distance/
 # 3534251#3534251
+# PSF Function
 # Trapezoidal Rule - https://en.wikipedia.org/wiki/Trapezoidal_rule

@@ -1,31 +1,105 @@
-# from astropy.coordinates import SkyCoord
+"""
+Functions for creating exposure maps, infinite statistics count maps, and count maps for both diffuse and point sources.
+"""
+
 from astropy.io import fits
-# import astropy.units as u
 from astropy.wcs import WCS
 import healpy as hp
 from .utils import angle_to_healpix_pixels, coordinates_celestial_to_galactic, coordinates_galactic_to_celestial
 import numpy as np
-from psfs.utils import monte_carlo_sampler_2, dual_function, monte_carlo_sampler
+import numpy.typing as npt
+from psfs.utils import monte_carlo_sampler_2
 import reproject
 from scipy.stats import loguniform
 from scipy.integrate import quad
-from .utils import integrate_over_energy
+from .utils import isotropic_func, new_coordinate, integrate_over_energy
 
 
-def create_diffuse_source_map(expected_counts_isotropic_background, expected_counts_diffuse_background, psfs):
-    # MAPS PASSED IN HEALPIX FORMAT -
+def create_diffuse_infinite_statistics_background(diffuse_background_file: str, exposure_map: npt.NDArray[np.float64],
+                                                  nside: int, to_create_num_bins: int = 5) -> npt.NDArray[np.float64]:
+    """Returns infinite statistics mean count map for the diffuse galactic background (in photons per pixel).
 
-    # EXPECTED COUntS SMOOTHED BY PSF:
+    Parameters
+    ----------
+    diffuse_background_file : str
+        Location of FITS-formatted diffuse background differential flux map (N.B. the differential)
+    exposure_map : ndarray
+        HEALPix-formatted exposure maps
+    nside : int
+        Order of the exposure maps.
+    to_create_num_bins : int
+        Number of energy bins to create infinite statistics maps for (not necessarily the same energy bins as provided
+        in the file).
 
-    for k in range(expected_counts_diffuse_background.shape[0]):
-        expected_counts_isotropic_background[k] = hp.sphtfunc.smoothing(map_in=expected_counts_isotropic_background[k],
-                                                                        beam_window=psfs[k])
+    Returns
+    -------
+    ndarray
+        Binned diffuse galactic background infinite statistics maps.
 
-        expected_counts_diffuse_background[k] = hp.sphtfunc.smoothing(map_in=expected_counts_diffuse_background[k],
-                                                                      beam_window=psfs[k])
+    """
+    with fits.open(diffuse_background_file) as hdul:
+        energy_intervals = hdul[1].data.astype(np.float64)
 
-    # CLIP NEGATIVE VALUES (AS RECOMMENDED BY ID50)
+        num_bins = energy_intervals.shape[0]
 
+        n_pix = (12 * nside ** 2)
+
+        # Conversion to per pixel instead of per steradians
+        per_pixel_conversion = (4 * np.pi / n_pix)
+
+        new_header = WCS(hdul[0].header).sub(2)
+
+        data = hdul[0].data
+
+        healpix_data = np.array([reproject.reproject_to_healpix((data[b], new_header), 'galactic', nside=nside)[0]
+                                 for b in range(num_bins)])
+
+        healpix_data *= per_pixel_conversion
+
+        # Integrate over energy spectrum
+        diffuse_backgrounds, new_energy_bins = integrate_over_energy(maps=np.array(healpix_data),
+                                                                     energy_bins=energy_intervals,
+                                                                     num_bins=to_create_num_bins, predefined=True)
+
+        # Multiply by energy-averaged exposure
+        diffuse_backgrounds *= exposure_map
+
+    return np.array(diffuse_backgrounds)
+
+
+def create_diffuse_source_map(expected_counts_isotropic_background: npt.NDArray[np.float64],
+                              expected_counts_diffuse_background: npt.NDArray[np.float64], psfs: list) \
+        -> npt.NDArray[np.float64]:
+    """When passed binned HEALPix representations of the infinite statistics mean count map for the diffuse isotropic
+    background, applies (binned) PSF convolution to the maps, before multiplying backgrounds by normalisation constants
+    to vary brightness, then Poisson samples to get background count map for each energy bin.
+
+    Parameters
+    ----------
+    expected_counts_isotropic_background : ndarray
+        Binned infinite statistics expected counts of diffuse isotropic background in HEALPix format.
+    expected_counts_diffuse_background : ndarray
+        Binned infinite statistics expected counts of diffuse galactic background in HEALPix format.
+    psfs : list
+        Point spread function binned for application to different photon energies.
+
+    Returns
+    -------
+    ndarray
+        Energy-binned diffuse source count maps (both for isotropic and galactic diffuse sources).
+
+    """
+    num_bins = expected_counts_diffuse_background.shape[0]
+
+    expected_counts_isotropic_background = (
+        np.array([hp.sphtfunc.smoothing(map_in=expected_counts_isotropic_background[k], beam_window=psfs[k]) for k in
+                  range(num_bins)]))
+
+    expected_counts_diffuse_background = (
+        np.array([hp.sphtfunc.smoothing(map_in=expected_counts_diffuse_background[k], beam_window=psfs[k]) for k in
+                  range(num_bins)]))
+
+    # Clip negative values (ID50)
     expected_counts_isotropic_background = np.clip(a=expected_counts_isotropic_background, a_min=0, a_max=None)
     expected_counts_diffuse_background = np.clip(a=expected_counts_diffuse_background, a_min=0, a_max=None)
 
@@ -46,83 +120,66 @@ def create_diffuse_source_map(expected_counts_isotropic_background, expected_cou
     return np.array(background_realisation)
 
 
-def create_diffuse_background(diffuse_background_file, exposure_map, nside, to_create_num_bins=5):
-    with fits.open(diffuse_background_file) as hdul:
+def create_exposure_map(exposure_file: str, num_bins_to_create: int = 5) \
+        -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """Reads in and energy integrates (in MeV) over calculated exposure maps, binning into the specified number of bins.
 
-        # In MeV
-        energy_intervals = hdul[1].data
+    Parameters
+    ----------
+    exposure_file : str
+        Location of FITS-formatted exposure maps calculated using fermitools from real Fermi LAT data.
+    num_bins_to_create : int
+        Number of energy bins (and hence the number of exposure maps) to create.
 
-        energy_intervals = np.array([k[0] for k in energy_intervals])
+    Returns
+    -------
+    tuple
+        A tuple of the binned HEALPix-formatted exposure maps and corresponding energy bins.
 
-        num_bins = len(energy_intervals)
-
-        healpix_data = []
-
-        for b in range(num_bins):
-            data = hdul[0].data[b]
-
-            # REFORMAT USING REPROJECT
-
-            new_header = hdul[0].header
-
-            new_header = WCS(new_header).sub(2)
-
-            # data, _ = reproject_to_healpix((data, new_header), 'galactic', nside=nside)
-
-            data, _ = reproject.reproject_to_healpix((data, new_header), 'galactic', nside=nside)
-
-            # N.B. May have to do the same thing for galactic diffuse background - PSF IS NOT DONE THE SAME WAY AS IN
-            # THE ABOVE PAPER SO IT IS NOT IN sr^-1 and EXPOSURE IS IN cm^2s
-            n_pix = (12 * nside ** 2)
-
-            data *= (4 * np.pi / n_pix)
-
-            healpix_data.append(data)
-
-        # Integrate over energy spectrum
-        diffuse_backgrounds, new_energy_bins = integrate_over_energy(maps=np.array(healpix_data),
-                                                                     energy_bins=energy_intervals,
-                                                                     num_bins=to_create_num_bins, predefined=True)
-
-        # Multiply by ENERGY-AVERAGED exposure
-        for k in range(len(exposure_map)):
-            diffuse_backgrounds[k] *= exposure_map[k]
-
-    return np.array(diffuse_backgrounds)
-
-
-def create_exposure_map(exposure_file: str, num_bins_to_create=5):
-    # Num bins is the number of energy bins that to create (here, we want 5)
-
-    # Read and plot binned exposure files
-
+    """
     with fits.open(exposure_file) as hdul:
         num_bins = hdul[1].header["TFIELDS"] - 1
 
-        energy_bins = np.array([k[0] for k in hdul[2].data])
+        energy_bins = hdul[2].data.astype(np.float64)
 
+        # Read in exposure files
         exposure_maps = np.array([hp.read_map(exposure_file, hdu="HPXEXPOSURES", field=b) for b in range(num_bins)])
 
-        # EXPERIMENTATION BELOW
-
-        # Integrate over energy - see robust paper and arxiv paper as well
+        # Integrate over energy - removes energy dependence
         exposure_maps, energy_bins = integrate_over_energy(maps=exposure_maps, energy_bins=energy_bins,
                                                            num_bins=num_bins_to_create, energy_weighted=True)
 
     return exposure_maps, energy_bins
 
 
-def isotropic_func(energy, m_val, c_val):
-    return (energy ** m_val) * (np.e ** c_val)
+def create_isotropic_infinite_statistics_background(isotropic_background_file: str, nside: int,
+                                                    exposure_map: npt.NDArray[np.float64],
+                                                    energy_bins: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    """Returns infinite statistics mean count map for the diffuse isotropic background (in photons per pixel).
 
+    Parameters
+    ----------
+    isotropic_background_file : str
+        Location of FITS-formatted isotropic background differential flux map (N.B. the differential)
+    exposure_map : ndarray
+        HEALPix-formatted exposure maps
+    nside : int
+        Order of the exposure maps.
+    energy_bins : ndarray
+        Energy bins to create infinite statistics maps for (not necessarily the same energy bins as provided
+        in the file).
 
-def create_isotropic_background(isotropic_background_file: str, nside: int, exposure_map, energy_bins):
-    num_bins = len(energy_bins) - 1
+    Returns
+    -------
+    ndarray
+        Energy-binned, HEALPix-formatted infinite statistics maps for the isotropic background.
+
+    """
+    num_bins = energy_bins.shape[0] - 1
 
     # Shape tells you length of numpy array representing healpix maps - every pixel will be the same
 
     with open(isotropic_background_file) as f:
-
         lines = f.readlines()
 
     # Format
@@ -132,9 +189,6 @@ def create_isotropic_background(isotropic_background_file: str, nside: int, expo
     differential_flux = lines[1]
 
     # Convert differential fluxes from per steradians to per pixel - https://arxiv.org/html/2302.01947v2
-
-    # N.B. May have to do the same thing for galactic diffuse background - PSF IS NOT DONE THE SAME WAY AS IN THE ABOVE
-    # PAPER SO IT IS NOT IN sr^-1 and EXPOSURE IS IN cm^2s
     n_pix = (12 * nside ** 2)
 
     differential_flux *= (4 * np.pi / n_pix)
@@ -143,52 +197,33 @@ def create_isotropic_background(isotropic_background_file: str, nside: int, expo
     m, c = np.polyfit(np.log(central_energies), np.log(differential_flux), deg=1)
 
     # Integrate energy spectrum of isotropic background
+    isotropic_values = [quad(func=isotropic_func, a=float(energy_bins[b]), b=float(energy_bins[b + 1]), args=(m, c))[0]
+                        for b in range(num_bins)]
 
-    isotropic_values = []
+    isotropic_maps = np.array([isotropic_values[e_map] * exposure_map[e_map] for e_map in range(num_bins)])
 
-    for b in range(num_bins):
-        # integrate energy spectrum over energy range - CHECK THIS WITH ANTHONY
-        isotropic_constant = quad(func=isotropic_func, a=energy_bins[b], b=energy_bins[b + 1], args=(m, c))[0]
-
-        isotropic_values.append(isotropic_constant)
-
-    isotropic_maps = []
-
-    for e_map in range(num_bins):
-        isotropic_maps.append(isotropic_values[e_map] * exposure_map[e_map])
-
-    return np.array(isotropic_maps)
-
-    # THINK I'VE SOLVED THIS ONE - NEED TO INTEGRATE OUT SOLID ANGLE (GO FROM DIRECTIONAL FLUX TO FLUX - DIFFUSE SOURCES
-    # HAVE sr^-1 ASPECT) NEED TO INTEGRATE OUT ENERGY DEPENDENCY BY INTEGRATING OVER BIN
-
-    # NOT FINISHED YET
-
-
-def new_coordinate(ra, dec, radius, angle):
-    # N.B. Convert to celestial (RA/Dec coords for PSF) before passing to this function -
-    # https://iopscience.iop.org/article/10.1088/0067-0049/203/1/4/pdf
-
-    # Make sure you have converted lat, lon to ra, dec before passing to this function
-
-    # coordinates = SkyCoord(l=lat * u.degree, b=lon * u.degree, frame='galactic').icrs
-
-    # ra = coordinates.ra.value
-    # dec = coordinates.dec.value
-
-    # Calculate new position using equations from here https://math.stackexchange.com/questions/143932/calculate-point-
-    # given-x-y-angle-and-distance/3534251#3534251
-
-    # Angle must be in radians
-    new_ra = (ra + (radius * np.cos(angle))) % 360  # % 360 to ensure wrap-around
-    new_dec = (((dec + (radius * np.sin(angle))) + 90) % 180) - 90  # ensure wrap-around
-
-    # COORDINATES ALSO RETURNED IN RA DEC FORMAT - REMEMBER TO CONVERT
-
-    return np.array([new_ra, new_dec])
+    return isotropic_maps
 
 
 def create_infinite_counts_maps(source_pixels, exposure_maps, fluxes):
+    """Calculates an infinite statistics count map for a given type of point source, given the telescope exposure map,
+    as well as the location and flux of each source.
+
+    Parameters
+    ----------
+    source_pixels : ndarray
+        The location of each source in the HEALPix-formatted sky map
+    exposure_maps : ndarray
+        The HEALPix-formatted exposure maps of the sky, calculated using fermitools.
+    fluxes : ndarray
+        The corresponding fluxes of each source in source_pixels.
+
+    Returns
+    -------
+    ndarray
+        Array of binned infinite statistics in HEALPix format.
+
+    """
     # Calculates infinite counts map (to be Poisson sampled) for each catalog
 
     infinite_counts_maps = np.zeros_like(exposure_maps)
@@ -199,71 +234,34 @@ def create_infinite_counts_maps(source_pixels, exposure_maps, fluxes):
     for b in range(exposure_maps.shape[0]):
         # Calculate the number of photons of a given energy to sample for each pixel - we add as more than one source
         # may be in each pixel
-
         infinite_counts_maps[b, source_pixels] += exposure_maps[b, source_pixels] * fluxes[b]
 
     return infinite_counts_maps
 
 
-# def create_point_source_map(coordinates, exposure_maps, psf_parameters, fluxes, nside):
-#     num_bins = len(exposure_maps)
-#     source_num = len(coordinates)
-#
-#     original_pixels = angle_to_healpix_pixels(coordinates, nside=nside)
-#
-#     point_source_maps = []
-#
-#     # Convert all galactic coordinates to celestial
-#     celestial_coordinates = coordinates_galactic_to_celestial(coordinates)
-#
-#     for b in range(num_bins):
-#
-#         bin_fluxes = fluxes.T[b]
-#         exposure_map = exposure_maps[b]
-#         point_source_map = np.zeros_like(exposure_map)
-#
-#         # Calculate the number of photons to sample for each pixel
-#
-#         # infinite counts
-#         infinite_cs = np.array(
-#             [exposure_map[original_pixels[source]] * bin_fluxes[source] for source in range(source_num)])
-#
-#         # expected counts
-#         cs = np.random.poisson(lam=infinite_cs)
-#
-#         for source in range(source_num):
-#
-#             c = cs[source]
-#
-#             if c > 0:
-#
-#                 # SAMPLE DISPLACEMENT PARAMETERS
-#
-#                 radial_angle_displacements = monte_carlo_sampler(dual_function, parameters=psf_parameters[b],
-#                                                                  num_samples=c)
-#                 angles = np.random.uniform(low=0, high=2 * np.pi, size=c)
-#
-#                 # Calculate new origins
-#
-#                 new_positions = new_coordinate(ra=celestial_coordinates[source][0],
-#                                                dec=celestial_coordinates[source][1],
-#                                                radius=radial_angle_displacements, angle=angles).T
-#
-#                 # Convert to longitude-latitude
-#                 new_positions_galactic = coordinates_celestial_to_galactic(new_positions)
-#
-#                 new_pixels = angle_to_healpix_pixels(new_positions_galactic, nside=nside)
-#
-#                 for p in new_pixels:
-#                     point_source_map[p] += 1
-#
-#         point_source_maps.append(point_source_map)
-#
-#     return np.array(point_source_maps)
+def create_count_map(coordinates: npt.NDArray[np.float64], exposure_maps: npt.NDArray[np.float64], psf_parameters: list,
+                     fluxes: npt.NDArray[np.float64], nside: int, infinite_stats_file: str) -> npt.NDArray[np.float64]:
+    """Creates photon count map for point sources, provided that the galactic coordinates of the sources, their fluxes,
+    the exposure maps calculated using fermitools, and PSF parameters (also calculated using a mixture of fermitools and
+    custom code) are provided. These count maps will be binned and realistic.
 
+    Parameters
+    ----------
+    coordinates : ndarray
+        2D array of galactic coordinates of relevant point sources.
+    exposure_maps : ndarray
+        2D array of binned, HEALPix-formatted exposure maps.
+    psf_parameters : list
+        Energy-binned point spread function parameters that cause photons to be "smeared" across the sky when observed
+        by the telescope.
+    fluxes : ndarray
+        Array of integral photon fluxes of relevant point sources
+    nside : int
+        Order of the HEALPix maps
+    infinite_stats_file : str
+        Location of pre-computed infinite statistics mean count maps for relevant sources.
 
-def create_count_map(coordinates, exposure_maps, psf_parameters, fluxes, nside, infinite_stats_file):
-
+    """
     num_bins = exposure_maps.shape[0]
     source_num = coordinates.shape[0]
 
@@ -286,6 +284,9 @@ def create_count_map(coordinates, exposure_maps, psf_parameters, fluxes, nside, 
 
         source_pixel = original_pixels[source]
 
+        celestial_coord = celestial_coordinates[source]
+
+        # If only one source is in the pixel, take the infinite statistics map value
         if source_in_pixel[source_pixel] == 1:
 
             c_per_bin = infinite_stats_maps[:, source_pixel]
@@ -308,8 +309,7 @@ def create_count_map(coordinates, exposure_maps, psf_parameters, fluxes, nside, 
             angles = np.random.uniform(low=0, high=2 * np.pi, size=sampled_counts[b])
 
             # Calculate new origins
-            new_positions = new_coordinate(ra=celestial_coordinates[source, 0],
-                                           dec=celestial_coordinates[source, 1],
+            new_positions = new_coordinate(ra=celestial_coord[0], dec=celestial_coord[1],
                                            radius=radial_angle_displacements, angle=angles).T
 
             # Convert to longitude-latitude

@@ -4,15 +4,16 @@ based on a series of simulated gamma-ray source catalogs.
 """
 
 import argparse
-from map_generation.healpix_maps import (create_count_map, create_diffuse_background, create_diffuse_source_map,
-                                         create_exposure_map, create_infinite_counts_maps, create_isotropic_background)
+from map_generation.healpix_maps import (create_count_map, create_diffuse_infinite_statistics_background,
+                                         create_diffuse_source_map, create_exposure_map, create_infinite_counts_maps,
+                                         create_isotropic_infinite_statistics_background)
 from map_generation.utils import angle_to_healpix_pixels, get_nside
 import numpy as np
 from pathlib import Path
 from psfs.fit_psf import fit_diffuse_source_psf, fit_point_source_psf
-from psfs.visualisation import plot_fitted_point_source_psf
+# from psfs.visualisation import plot_fitted_point_source_psf
 from read_write_functions import save_count_maps, xml_parser
-from verification.visualisation import plot_all_sky_map
+from verification.visualisation import plot_all_sky_map, plot_fitted_point_source_psf
 import time
 
 if __name__ == "__main__":
@@ -115,11 +116,12 @@ if __name__ == "__main__":
 
     # Infinite statistics map of isotropic background (energy binned)
     infinite_statistics_isotropic_background = (
-        create_isotropic_background(isotropic_background_file=isotropic_background_file, nside=nside,
-                                    exposure_map=exposure_maps, energy_bins=energy_bins))
+        create_isotropic_infinite_statistics_background(isotropic_background_file=isotropic_background_file,
+                                                        nside=nside, exposure_map=exposure_maps,
+                                                        energy_bins=energy_bins))
 
     # Create infinite statistics map of diffuse background - can use for every count map
-    infinite_statistics_galactic_diffuse_backgrounds = create_diffuse_background(
+    infinite_statistics_galactic_diffuse_backgrounds = create_diffuse_infinite_statistics_background(
         diffuse_background_file=galactic_background_file, exposure_map=exposure_maps, nside=nside)
 
     print("Time to create infinite statistics background maps: {} s".format(time.time() - start_background_time))

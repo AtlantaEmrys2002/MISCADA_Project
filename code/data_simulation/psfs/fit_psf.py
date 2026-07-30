@@ -43,7 +43,6 @@ def fit_diffuse_source_psf(roi_count_map, nside=512):
         psfs = []
 
         for b in range(num_bins):
-
             counts = hdul[0].data[b]
 
             # Average x and y axis through point
