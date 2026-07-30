@@ -350,4 +350,5 @@ if __name__ == "__main__":
 # FITS Format of gtpsf Output - https://gamma-astro-data-formats.readthedocs.io/en/v0.1/irfs/psf/psf_gtpsf/
 # HEALPIX - https://gamma-astro-data-formats.readthedocs.io/en/latest/skymaps/healpix/
 # Info about PSF - https://docs.gammapy.org/0.20.1/tutorials/data/fermi_lat.html#PSF
+# Python Parallel - https://www.reddit.com/r/learnpython/comments/8f2p4d/call_a_function_with_multiple_arguments_with/
 # Visualisation Confirmation - https://nptfit.readthedocs.io/en/latest/Example1_Overview_of_the_Fermi_Data.html
