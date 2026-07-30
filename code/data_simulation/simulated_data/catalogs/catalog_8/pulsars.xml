@@ -1,0 +1,1719 @@
+<?xml version="1.0" ?>
+<source_library title="source library">
+	<source name="PSR_0" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.474294982586803e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.6615761686075095"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1244.1270022214878"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="1.1616048614281413"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3168346583843231"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="268.1646253167975"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-30.275677683070583"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_1" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.7170341584009586e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.0200497826409682"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1282.9674568718196"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.17705476620773788"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.30637288093566895"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="352.9371937306838"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="63.07826766215388"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_2" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.61273682066751e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.3212284353957946"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="2220.7745636297855"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.21565342764795914"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.24553878605365753"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="218.366890622222"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-62.413808326948065"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_3" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.791822587653221e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.381807491712239"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="2798.2347483691788"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.729432427070816"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3168346583843231"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="312.00908328321333"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="31.75466360101185"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_4" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="7.76444440753208e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.2960162289107813"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1926.4809400988352"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.5453305212192902"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3448866605758667"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="77.1669538705989"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="36.88658138747911"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_5" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.2669358095262926e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="1.970567312881382"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1169.1140251519655"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.5986516267477116"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="280.4443324066217"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-2.074373587593263"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_6" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="9.464297487845673e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.294038408838123"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="399.7840368171037"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.3412550708500001"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.4827994406223297"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="282.5749836280893"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-3.6566609097448612"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_7" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.4869717399824797e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.028558630822335"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1015.7482541014871"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.7241265749448325"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.30637288093566895"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="123.32477969264212"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-37.47273981550237"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_8" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.3086203823794973e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.642240936836518"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1381.1673449573532"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.5933952850485787"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.24553878605365753"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="178.27067505415943"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-61.032258217413"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_9" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="8.933172209273377e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="1.9978484425385836"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="915.4482990123415"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.45692988388664213"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.30637288093566895"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="296.5991866732986"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="25.271026740758614"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_10" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.2082344812571442e-11" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.2619806434633563"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1074.6862651727668"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.7305516678170506"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.25956687331199646"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="306.63973144244517"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="37.00162752285498"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_11" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="4.161943564497089e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.5817234724944758"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="2739.11387206847"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.12864100975561132"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.25956687331199646"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="228.93559229619026"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-59.05471211039317"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_12" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="7.781389844738448e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.166821604984821"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="824.9942893013374"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.34544997164684105"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.24553878605365753"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="286.2060934030847"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="7.878718761006213"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_13" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="4.879445209172917e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.610488247648679"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1251.5620613349981"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.3215682045600025"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.25956687331199646"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="301.67733359061236"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="32.856896516079544"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_14" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.8435902310739282e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.6312228733385328"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="2625.066116000952"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.39629647219971736"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="79.44794464244066"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="37.08116032572354"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_15" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="5.2463846013974505e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.126505598588851"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1036.4035649649425"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="1.5848780959559365"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.25956687331199646"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="155.00553949625484"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-56.88080598463397"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_16" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="5.625704680969303e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.0935582622280386"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1345.91506554313"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.27750380344918296"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.39103808999061584"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="283.4193541135443"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="4.532652382607794"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_17" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="7.484684166021553e-11" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.6218123710747876"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="290.33998278728427"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.4154990250484536"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.4922263026237488"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="319.05130762766333"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="47.789172070801605"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_18" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="3.1430565662070985e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.4870081696024884"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="887.8708267588031"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.06583490297119926"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.4922263026237488"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="34.298426379910964"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="59.965674002382876"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_19" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.1117154237065008e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.1288831605242438"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1758.5011242448381"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.18082662076775394"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3546541631221771"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="128.62117770447077"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-40.36393724401002"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_20" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.2960386474663595e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.107766564875107"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1301.5630062887194"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.25956078350564965"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.39103808999061584"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="96.78207944517723"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-1.4437431310527091"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_21" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.738571920248595e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.1821837406602502"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="3561.323978564396"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.5765811453292854"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="304.78210541059707"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="37.57498401209986"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_22" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.630511902747954e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.377047528689654"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="4371.007359559694"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.5167786663224702"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="104.18523266611537"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-3.5137982947331925"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_23" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="3.5042248908102986e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.36016777535391"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1211.0138424725942"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.40750798000315663"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3168346583843231"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="99.63493945938818"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="6.149107971976988"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_24" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.1294625662010536e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="1.9365175109267938"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1317.186244709895"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.8398136368783266"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.25956687331199646"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="258.7738886588437"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-39.92132615345726"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_25" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="3.0434647564229488e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.43943238459169"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1209.1204584804116"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.3373898534333221"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.24553878605365753"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="184.03561216057932"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-63.93182066206984"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_26" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="7.649748489882264e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.2417235645192046"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1252.3247912274253"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.2303836904879315"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.30637288093566895"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="82.86300186764849"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="31.164829166192963"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_27" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="8.694918542763267e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.4378977045170007"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="2732.172256936229"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.2383908429365374"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="70.83421335557294"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="42.13113037588259"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_28" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="3.553396180095465e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="1.921931555203087"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1290.62994304551"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.4833336710029663"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3168346583843231"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="101.55838089427998"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="1.8745585695548004"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_29" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="9.71427198509266e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.557689153339551"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1028.5984300063728"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.18925939925254467"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3448866605758667"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="119.81841337111027"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-29.67894141967853"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_30" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="6.73694892181699e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.0606768375624243"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="981.5606376873795"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.3928756373956488"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.25956687331199646"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="196.12389954648856"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-63.22119761574153"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_31" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="8.298363753529608e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.466309503474717"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1124.1730243668694"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.2653736402965313"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3168346583843231"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="308.9391366451585"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="40.08817399811838"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_32" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="7.35254100317966e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="1.934543593700119"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1134.9704932952604"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.5439396456349599"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3168346583843231"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="106.4608938508036"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-9.974184246623254"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_33" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="5.66990622381788e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="1.9116003458500301"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1653.8612491913614"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.32910967219425036"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3546541631221771"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="247.86044627906537"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-48.702281699918615"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_34" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="6.545193169216455e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="1.758632826824978"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="847.3795253832725"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.42682267114368744"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="123.67668171624187"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-21.161355215353723"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_35" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.7436252276735912e-11" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.3503979766370424"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="547.0467896642613"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.5740786276547261"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.30637288093566895"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="156.1064390747772"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-59.63119934411483"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_36" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.8088765525936245e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.069972766279148"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="875.0102005996185"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.4025078902024576"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.24553878605365753"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="262.3330857966951"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-42.253299245325124"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_37" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.3841495695414926e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.3133893705048436"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1885.7708358081857"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.24827629096936024"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.24553878605365753"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="175.2580230077433"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-62.14638962868312"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_38" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.3996197686151057e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.030959234391565"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="2268.899702433003"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.03372225072885511"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.25956687331199646"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="246.3478217519095"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-48.89104946815248"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_39" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="8.049269270492807e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.162628094330101"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1359.6031426131076"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.560706616393153"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.30637288093566895"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="150.63036075359236"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-59.779738641455964"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_40" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="4.497574959994087e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.353374197262478"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1588.5986495972115"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.4311978070961699"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="214.26813649177788"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-61.011174865208055"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_41" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="7.696785112738187e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.135383128448625"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="2417.7686486664984"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.5419133770089585"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="196.19897102761874"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-62.46193797797681"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_42" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.588544951708454e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="1.98431316472884"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="857.665997575784"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.29784301857143436"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="0.7230879125432259"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="62.57948652062361"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_43" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="5.892064405803957e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.255263844469411"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="641.2184372994584"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.18207303159224097"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="316.7246776095805"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="48.167580540898065"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_44" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.692307319969266e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.1861763237931178"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="822.7629842326352"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.3310300172834622"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.36368581652641296"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="282.5766008950223"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-15.560768257154377"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_45" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="4.636513988436466e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.0493438764345635"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="3163.969049570022"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.25294824906486035"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.24553878605365753"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="103.244345029315"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-12.123013546104119"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_46" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="3.2640032169201645e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.332395953192375"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="490.9896281787196"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.3718623457318221"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.4334447681903839"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="78.99212961979167"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="38.66808577844914"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_47" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="3.094472881025112e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.238489245430102"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="3626.881176437544"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.19444635214793163"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.25956687331199646"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="200.3614399828403"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-42.47548240781896"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_48" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="6.0794010182595474e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.116065976253883"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1092.659553162112"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.1856384859602211"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3168346583843231"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="77.67818382026074"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="38.0958696680344"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_49" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.100760113110085e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="1.961727726654649"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1312.5293764236283"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.25166206231072746"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3168346583843231"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="0.7380230573236827"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="58.02603587173771"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_50" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.0585554457330763e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.281229655259201"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1358.0493814911651"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.17765113039380698"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3546541631221771"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="271.33293379907326"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-23.233390804727144"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_51" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.2687390246298208e-11" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.2617201655725494"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="822.8227581132824"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.27824457120870655"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3168346583843231"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="163.0943685965012"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-58.93429812223972"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_52" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.032378038742265e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.1237597729332243"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1104.0321934902581"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.9007674030275284"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.24553878605365753"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="218.02773983359714"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-63.50159034400028"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_53" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.3474644905847526e-11" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.4272836894023233"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="446.89376986142287"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.32954069756809184"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3448866605758667"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="112.75890108410624"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-16.73329489129553"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_54" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="7.004210289879566e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.814053696266151"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="333.97277161695104"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.12020657973848936"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.6666666865348816"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="257.66205602643254"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-31.765400145299132"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_55" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="5.571880554398179e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.086245435393224"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="543.8984431460952"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.046324003571433264"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.6666666865348816"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="206.05585312992483"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-59.650895104862286"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_56" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.237511025187598e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.253493499724071"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="606.0192063459751"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="1.294857108395419"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="296.14000164020734"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="23.828140752124657"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_57" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.0563962493495372e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.4158118565195768"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1161.40957111722"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.3497748467395128"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="323.6874370134956"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="52.32141227153886"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_58" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="3.099796866726642e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.2646063941341867"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="582.4817563495732"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.33338361984306647"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3168346583843231"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="272.4536626769684"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-13.615071339340153"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_59" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.0119279889960651e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.508437823087328"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1368.1812333240425"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.34385996531020446"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.24553878605365753"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="313.46437761388927"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="33.469382558343"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_60" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="4.5382909645604057e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.4863643149822408"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1563.1222187455787"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.36501927854893346"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.25956687331199646"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="214.01895905675343"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-61.40372516733129"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_61" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.7216592128750617e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.20696700577538"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1118.711946063098"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.34038003039233294"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="281.2868524583448"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-3.419671804323422"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_62" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="3.5164187391071717e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="1.787144338537964"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="562.4942966862722"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.15359036369922915"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3546541631221771"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="33.45876339494375"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="58.99432150750696"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_63" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="7.288333068081033e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.5107959513559144"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="381.86300628026237"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.6571619397940451"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.24553878605365753"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="123.15819579335378"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-32.19985540656312"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_64" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.5442303755458154e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.1490682163565453"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1029.2828018832402"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.3060247884319147"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3168346583843231"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="294.5299982162508"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="17.219561004066584"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_65" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.4956236727918138e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.33714890022739"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="982.4452854054367"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.9012773084259065"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.24553878605365753"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="118.11796382039334"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-24.414049176857336"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_66" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.223064887161233e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="1.8834914591719847"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="996.9868350781055"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.3955574273685273"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.36368581652641296"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="107.27876580922111"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-15.674428766431038"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_67" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.440847676531629e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.075212160256021"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1690.9582298957037"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.1982995557249171"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3546541631221771"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="347.3759824715651"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="61.237330021189194"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_68" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.1779453643557201e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.427624723528542"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="958.899570358737"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.14392532662344212"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="290.16746587045805"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="14.780637832072063"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_69" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="8.936893793335948e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.0222438154971454"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1551.9941701113407"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.4996672859486717"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="150.88969066882893"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-52.91365730048135"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_70" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="6.414248334349639e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.5001336480588683"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1387.2366419718473"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.15171998556978755"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.36368581652641296"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="236.63850957691326"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-52.40528743558358"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_71" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="3.950298164470679e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.5475053838669073"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1248.3236832457578"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.27134039752372474"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="141.99237736989778"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-51.568977214677325"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_72" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="4.119479319484751e-11" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.210258207231957"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="230.6296150435818"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.13872301018259284"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.6666666865348816"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="94.55502568953905"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="17.715881027109532"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_73" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="8.215838148045368e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="1.9086257641871618"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1162.72388450169"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.22580718940140754"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.39103808999061584"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="199.00111112650495"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-51.36201844217102"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_74" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.8656938895156775e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.138826461388727"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="908.3439435407029"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.1731093082496478"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.24553878605365753"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="85.23420654059707"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="32.88291226423931"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_75" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.2773322991523288e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.4497599905086562"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="837.119803457905"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.4495681484426154"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.30637288093566895"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="39.80533654860364"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="61.955920655927535"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_76" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="8.701525079210704e-14" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.105075140650895"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="3393.1648809653943"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.32312300939054434"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.25956687331199646"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="271.63314137858384"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-31.391205424938786"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_77" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.8317935350041213e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.0129104243235516"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1131.7190694035144"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.32846661247601644"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="146.95900950723905"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-52.92744798076611"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_78" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="9.813588995589628e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.4054289081411513"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1156.1510296422653"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.5447229583487673"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="252.2414971287736"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-54.34638566033631"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_79" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="6.295452079088945e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.206309869694212"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1204.4580678829384"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.12736568406267748"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.24553878605365753"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="302.2283812515072"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="37.92461585841207"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_80" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.4954251550273913e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.531497516017782"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="700.6384133978931"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.15146747095531526"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="136.38688917100734"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-46.53179334910836"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_81" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.3640390565838102e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="1.8841949649893022"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1082.8113723229817"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.13471176401679846"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.25956687331199646"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="2.6681556384188547"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="58.49940710685054"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_82" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="6.183025225312215e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.0765724488067"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1123.145383549303"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.2759848450140377"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.30637288093566895"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="21.75248819903484"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="39.754512533061394"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_83" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.206317492569792e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.0122563546483287"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="908.8307022301233"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.28327097372524596"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.25956687331199646"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="97.64482530343183"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="11.614547616011198"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_84" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="6.621343994658868e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.0616485945454963"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="731.6960622552915"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.20869559929125214"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.39103808999061584"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="156.13292977596447"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-58.61574683435524"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_85" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="6.042911503200049e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="1.9550847334982773"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1236.608142551294"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.192285248225525"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.25956687331199646"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="122.96421007829491"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-27.131488086113816"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_86" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.4664973534285313e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.148049225230017"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="770.9284343642549"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.22905583951356856"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3448866605758667"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="280.6952151713258"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="2.3405150224335793"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_87" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.322392707329306e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.2481903542723205"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="609.556413749669"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.2599025609579982"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3546541631221771"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="142.68107743988926"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-58.138971051102736"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_88" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="4.945520438508566e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.187542451489698"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="451.6524625557342"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.32273613069038976"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.39103808999061584"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="8.618884972260211"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="61.86013807351515"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_89" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="6.9131356819748436e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="1.7482894491013792"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="471.7508858856467"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.8014228219019859"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.30637288093566895"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="78.02119051069116"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="37.38836948773488"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_90" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="8.274782949964603e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.045475075692166"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="485.83579716494717"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.0524063698324231"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.39103808999061584"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="26.88860032191408"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="60.54489133900349"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_91" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.2577842561905356e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.344169511844098"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="782.6646872732482"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.40231538167302283"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="110.10931000204432"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="66.36850961254441"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_92" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="4.560673442698248e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.420111490235043"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="537.1209687684044"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.8691499832837322"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.24553878605365753"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="263.370214968971"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-34.572947613783036"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_93" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="6.773250974674778e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.164310899033507"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1325.8337373552624"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.46963709144107724"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="289.84197270639123"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="14.239697948848812"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_94" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.375231461527861e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="1.98121625555769"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="557.5668387923625"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.2661408014071543"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.39103808999061584"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="85.63101843058044"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="31.470428594334454"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_95" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="6.74526366201256e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="1.8100915135196838"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1144.5860220544578"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.20350703825379887"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.25956687331199646"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="289.79624305684655"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="14.944271100161979"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_96" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.2745469799941582e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.182644584333667"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="964.0545144697086"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.19588303853600675"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.25956687331199646"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="299.229098330742"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="27.490416634990467"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_97" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.444934129176997e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.30278340292789"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="689.3941742936767"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.4967381018278225"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.24553878605365753"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="307.40443312258446"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="41.21020409710613"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_98" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.3140015065008095e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="1.8374057093974963"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1086.4931882825385"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.3014768103167228"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.24553878605365753"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="156.2630433550589"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-55.965861056156825"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_99" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="3.846596448160209e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.2088833700001063"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="477.5911330877545"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="1.2228241037596028"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="293.4116100379628"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="19.487239627773796"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_100" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="3.836188336516648e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.938196512002174"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="536.5148845814196"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.47911571498051425"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.24553878605365753"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="91.83531406517037"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="15.8131287172624"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_101" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.577127667109924e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.2152038981001043"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1549.8539742484315"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.21619255162373224"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.25956687331199646"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="280.66432108831935"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-4.0781385352115835"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_102" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="6.791673639044047e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.266477228814048"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="451.4693808101558"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.06444992657558322"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="94.04700152118554"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="31.626816120306756"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_103" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.077821194034571e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.426654401205893"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="479.3892828184327"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.17366274984436147"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3546541631221771"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="85.62307031236459"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="29.35705272627663"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_104" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="3.1723555991690485e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.519416764516994"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="560.4282511253515"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.776330510629377"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="299.2382272769617"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-3.354826997070652"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_105" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.2072789169541754e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="1.7537278910024376"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="744.9664024640695"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.3987374971828525"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="290.5290292500288"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="2.4607418606874987"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_106" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="4.849148458175915e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.6420213505867425"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="391.4023646481247"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.29227675708948414"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.30637288093566895"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="276.14542487894266"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-14.532700542085182"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_107" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="4.577007642187195e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.0137134380336588"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="957.5656178435775"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="1.2156926779828934"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="294.18069208155407"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="19.320064348922696"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_108" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="8.869569107799165e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.02442711113923"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="823.6690773073523"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.44878890250592723"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.25956687331199646"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="4.24982811363421"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="60.1465194129241"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_109" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.0379429561037793e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="1.8539582645773296"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1086.6477489687759"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.20553650799291226"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.25956687331199646"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="224.58203545860235"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-60.70948343283482"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_110" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="8.655303192975708e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.0032212104498095"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1023.5798896738073"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.8932952667840296"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="286.47145756018097"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="11.482683571918697"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_111" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="8.70114946132503e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.234373452450088"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="967.6296861310758"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.6488756663341188"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="122.78308963178115"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-32.999839802278245"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_112" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="4.357019571784743e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.308954057331757"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="829.9709228297569"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.18798877861060886"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3168346583843231"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="48.95283507369582"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="56.21835787018301"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_113" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.365749503004719e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.440052966322715"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="540.5765062212463"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.1650981418245597"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3546541631221771"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="100.39658493542517"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="6.270558537372492"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_114" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.7935620771496607e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.5793733291400565"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="415.1322913331511"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.5067098927874909"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.25956687331199646"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="245.3113096420487"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-54.59860348697276"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_115" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="9.11628164716395e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.0109903291466766"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="999.0650646657201"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.9159164605767339"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.24553878605365753"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="288.4213007948644"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="7.953535029724782"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_116" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="9.14234755353145e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="1.9197426852176465"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="796.3027146673123"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.73174271203396"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.24553878605365753"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="208.41521397817843"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-61.97163119133747"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_117" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="4.773218128397077e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.2146067092339363"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1382.0519628580018"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.6249736206145499"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="289.33961154251114"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="13.200961067457087"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_118" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="3.1347040022269945e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.196727576746465"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1295.809060559986"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.5892709119446659"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="118.70784561678506"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-30.248121665805492"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_119" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.611314026170675e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.019460332723527"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="744.5617568668731"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.4401550445674394"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.24553878605365753"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="265.0808934638196"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-27.383643928772837"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_120" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.3908852193433795e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.2477236442067143"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="567.0737412072472"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.2095369602721233"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.24553878605365753"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="57.560582960191056"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="60.266396769296605"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_121" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.6367246702688985e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.320281354283125"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="771.3197363365815"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.2884122267851955"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="161.87322177861282"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-62.49748976619229"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_122" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="3.127345455112651e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.245012487858331"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="696.6771774390244"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.2022296536435777"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.36368581652641296"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="277.24624005733006"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="32.60131098783788"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_123" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="9.633055307722104e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.144392943622232"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="839.0417924010103"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.17123647657750626"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.36368581652641296"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="354.83630568258656"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="60.66665905160285"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_124" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.504586753451908e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.3866261550211885"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="576.5617501850364"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.10210233102366625"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.30637288093566895"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="99.26288200235422"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="0.42193996747165485"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_125" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="1.5850202080523118e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="1.8918120063681805"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="774.9419745328761"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.4572099667557929"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.30637288093566895"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="252.96464926345803"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-42.50125260084474"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_126" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.045920500651184e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.0372094158875456"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="722.59017742352"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.970753823516782"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="168.20615665224156"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-61.14119738881089"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_127" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.854507263931926e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.2068396907346566"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="638.4615147676113"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.23170820847856596"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3448866605758667"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="54.27906488579947"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="55.4246718994844"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_128" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="6.451482926777174e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.2290291040485974"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1115.819320561591"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.21500642306785842"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.3546541631221771"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="94.48494967807426"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="16.255746852565192"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_129" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="2.1501773491675543e-12" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.082986904993928"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="616.987066180551"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.23977366031492955"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.24553878605365753"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="262.31370819833353"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-35.13787033352637"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_130" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="7.72076434769473e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.0163429868914453"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="1244.876508876575"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.6003128537178192"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.22730645537376404"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="192.85947789477606"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="27.128252414968035"/>
+		</spatialModel>
+	</source>
+	<source name="PSR_131" type="PointSource">
+		<spectrum type="PLSuperExpCutoff2">
+			<parameter max="1000000000.0" min="0.00000001" name="Prefactor" free="1" scale="9.341809364146947e-13" value="1"/>
+			<parameter max="5000.0" min="-50000.0" name="Index1" free="1" scale="1.0" value="2.19491430988144"/>
+			<parameter max="3000000000000.0" min="-3000000.0" name="Scale" free="0" scale="1.0" value="567.8383767014458"/>
+			<parameter max="1000000" min="-100000000" name="Expfactor" free="1" scale="1.0" value="0.2527247356450475"/>
+			<parameter max="20" min="0" name="Index2" free="0" scale="1" value="0.4922263026237488"/>
+		</spectrum>
+		<spatialModel type="SkyDirFunction">
+			<parameter free="0" max="360." min="-360." name="RA" scale="1.0" value="262.52814945637954"/>
+			<parameter free="0" max="90." min="-90." name="DEC" scale="1.0" value="-34.446843034070454"/>
+		</spatialModel>
+	</source>
+</source_library>

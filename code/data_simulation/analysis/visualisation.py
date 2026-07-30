@@ -19,7 +19,7 @@ axis_labels = {"LP_Flux_Density": "Differential Flux Density",
 
 # Used for mathematical descriptions - gives mathematical notation equivalent to variable
 mathematical_notation = {"Pivot_Energy": "$E_0$", "LP_Flux_Density": "$F_0$", "LP_Index": "$\\alpha$",
-                         "LP_beta": "$\\beta$", "PLEC_Flux_Density": "$F_0$", "PLEC_IndexS": "$\Gamma$",
+                         "LP_beta": "$\\beta$", "PLEC_Flux_Density": "$F_0$", "PLEC_IndexS": "$\\Gamma$",
                          "PLEC_Exp_Index": "$b$", "PLEC_ExpfactorS": "$a$", "GLAT": "Latitude"}
 
 # Used for indicating units
@@ -230,12 +230,12 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
 
         normalised_residuals = residuals[a] / residuals_std
 
-        ax2[a].scatter(log_var1, normalised_residuals, s=4, label="$\sigma =$ {0:.3f}".format(residuals_std))
+        ax2[a].scatter(log_var1, normalised_residuals, s=4, label="$\\sigma =$ {0:.3f}".format(residuals_std))
 
         # Formatting
         ax2[a].set_title("{} Fit to Log-Log Plot".format(labels[a]))
         ax2[a].set_xlabel("log {}".format(mathematical_notation[var1.name]))
-        ax2[a].set_ylabel("$y_i - \hat{y}_i$")
+        ax2[a].set_ylabel("$y_i - \\hat{y}_i$")
         ax2[a].legend()
 
     # FORMATTING
