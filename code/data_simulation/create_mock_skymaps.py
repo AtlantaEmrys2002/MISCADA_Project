@@ -244,6 +244,13 @@ if __name__ == "__main__":
                 plot_all_sky_map(healpix_maps=diffuse_source_background, energy_bins=energy_bins,
                                  title="Background Count", directory="./plots/all_sky_maps/", logarithmic=True)
 
+                actual_count_map = pulsar_point_source_map + agn_point_source_map + create_diffuse_source_map
+                plot_all_sky_map(healpix_maps=actual_count_map, energy_bins=energy_bins,
+                                 title="Count", directory="./plots/all_sky_maps/", logarithmic=True)
+
+
+
+
     print("Total time to create infinite statistics maps: {} s".format(av_time_infinite_stats_maps))
     print("Average time to create an infinite statistics map: {} s".format(av_time_infinite_stats_maps / num_catalogs))
 
