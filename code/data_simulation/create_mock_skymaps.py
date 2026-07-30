@@ -4,16 +4,21 @@ based on a series of simulated gamma-ray source catalogs.
 """
 
 import argparse
-from map_generation.healpix_maps import (create_count_map, create_diffuse_infinite_statistics_background,
-                                         create_diffuse_source_map, create_exposure_map, create_infinite_counts_maps,
+import copy
+
+from map_generation.healpix_maps import (create_diffuse_infinite_statistics_background,
+                                         create_exposure_map, create_infinite_counts_maps,
                                          create_isotropic_infinite_statistics_background)
 from map_generation.utils import angle_to_healpix_pixels, get_nside
+from multiprocessing import Pool
 import numpy as np
+import os
 from pathlib import Path
 from psfs.fit_psf import fit_diffuse_source_psf, fit_point_source_psf
 from read_write_functions import save_count_maps, xml_parser
 from verification.visualisation import plot_all_sky_map, plot_fitted_point_source_psf
 import time
+from create_maps import create_all_count_maps
 
 if __name__ == "__main__":
 
@@ -138,7 +143,6 @@ if __name__ == "__main__":
     # N.B. Can sample from these multiple times to create independent count maps (even though they have the same source
     # catalogs)
 
-    av_time = 0
     av_time_infinite_stats_maps = 0
 
     # Create one infinite count map per catalog
@@ -190,72 +194,156 @@ if __name__ == "__main__":
             plot_all_sky_map(healpix_maps=pulsar_infinite_counts_map, energy_bins=energy_bins,
                              title="Infinite Statistics Pulsar", directory="./plots/all_sky_maps/", logarithmic=True)
 
-        # CREATE COUNT MAPS
-
-        for m in range(num_maps_per_catalog):
-
-            start_count_maps_time = time.time()
-
-            print("Creating Count Map {}".format((c * num_maps_per_catalog) + m + 1))
-
-            # i.e. sample infinite counts map and convolve with PSFs
-
-            # Create background - convolve infinite statistics maps of isotropic and galactic backgrounds with diffuse
-            # PSF, then scale with randomly-generated normalisation constant, and Poisson sample to create unique
-            # background count map
-            diffuse_source_background = create_diffuse_source_map(
-                expected_counts_diffuse_background=infinite_statistics_galactic_diffuse_backgrounds,
-                expected_counts_isotropic_background=infinite_statistics_isotropic_background,
-                psfs=binned_diffuse_source_psf)
-
-            # Create AGN count maps (with PSF convolution and Poisson sampling
-            agn_point_source_map = (
-                create_count_map(coordinates=agn_coordinates, exposure_maps=exposure_maps,
-                                 psf_parameters=binned_point_source_psf_parameters, fluxes=agn_binned_fluxes,
-                                 nside=nside,
-                                 infinite_stats_file=infinite_statistics_directory + "/agn_infinite_counts_{}.fits"))
-
-            # Create pulsar count maps (with PSF convolution and Poisson sampling)
-            pulsar_point_source_map = (
-                create_count_map(coordinates=pulsar_coordinates, exposure_maps=exposure_maps,
-                                 psf_parameters=binned_point_source_psf_parameters, fluxes=pulsar_binned_fluxes,
-                                 nside=nside,
-                                 infinite_stats_file=infinite_statistics_directory + "/pulsar_infinite_counts_{}.fits"))
-
-            av_time += (time.time() - start_count_maps_time)
-
-            # SAVE COUNT MAPS
-
-            save_location = "./simulated_data/count_maps/skymap_{}".format((c * num_maps_per_catalog) + m + 1)
-
-            # Create directory to store simulated count maps in if it does not already exist
-            Path(save_location).mkdir(parents=True, exist_ok=True)
-
-            save_count_maps(diffuse_source_background, save_file=save_location + "/background_{}.fits")
-            save_count_maps(agn_point_source_map, save_file=save_location + "/agns_{}.fits")
-            save_count_maps(pulsar_point_source_map, save_file=save_location + "/pulsars_{}.fits")
-
-            # Save background
-            if c == 0 and m == 0:
-                plot_all_sky_map(healpix_maps=pulsar_point_source_map, energy_bins=energy_bins, title="Pulsar Count",
-                                 directory="./plots/all_sky_maps/", logarithmic=True)
-                plot_all_sky_map(healpix_maps=agn_point_source_map, energy_bins=energy_bins, title="AGN Count",
-                                 directory="./plots/all_sky_maps/", logarithmic=True)
-                plot_all_sky_map(healpix_maps=diffuse_source_background, energy_bins=energy_bins,
-                                 title="Background Count", directory="./plots/all_sky_maps/", logarithmic=True)
-
-                actual_count_map = pulsar_point_source_map + agn_point_source_map + create_diffuse_source_map
-                plot_all_sky_map(healpix_maps=actual_count_map, energy_bins=energy_bins,
-                                 title="Count", directory="./plots/all_sky_maps/", logarithmic=True)
-
-
-
-
     print("Total time to create infinite statistics maps: {} s".format(av_time_infinite_stats_maps))
     print("Average time to create an infinite statistics map: {} s".format(av_time_infinite_stats_maps / num_catalogs))
 
-    print("Total time to create count maps: {} s".format(av_time))
-    print("Average time to create a count map: {} s".format(av_time / (num_catalogs * num_maps_per_catalog)))
+    # Set up arguments for passing to create_all_count_maps to calculate the actual counts for the diffuse, AGN, and
+    # pulsar sources.
+    arguments = [[c, num_maps_per_catalog, copy.deepcopy(energy_bins), nside, copy.deepcopy(exposure_maps),
+                  copy.deepcopy(binned_point_source_psf_parameters), copy.deepcopy(binned_diffuse_source_psf),
+                  copy.deepcopy(infinite_statistics_galactic_diffuse_backgrounds),
+                  copy.deepcopy(infinite_statistics_isotropic_background)] for c in range(num_catalogs)]
+
+    start_count_time = time.time()
+
+    pool = Pool(processes=os.cpu_count())
+
+    pool.map(create_all_count_maps, arguments)
+
+    pool.terminate()
+
+    print("Total time to create count maps: {} s".format(time.time() - start_count_time))
+    print("Average time to create a count map: {} s".format((time.time() - start_count_time) /
+                                                            (num_catalogs * num_maps_per_catalog)))
+
+    # for c in range(num_catalogs):
+    #
+    #     create_all_count_maps(catalog_id=c, num_maps_per_catalog=num_maps_per_catalog,
+    #                           energy_bins=copy.deepcopy(energy_bins), nside=nside,
+    #                           exposure_maps=copy.deepcopy(exposure_maps),
+    #                           binned_point_source_psf_parameters=binned_point_source_psf_parameters,
+    #                           binned_diffuse_source_psf=binned_diffuse_source_psf,
+    #                           infinite_statistics_galactic_diffuse_backgrounds=
+    #                           infinite_statistics_galactic_diffuse_backgrounds,
+    #                           infinite_statistics_isotropic_background=infinite_statistics_isotropic_background)
+
+    # Create one infinite count map per catalog
+    # for c in range(num_catalogs):
+    #
+    #     catalog_file_location = "./simulated_data/catalogs/catalog_{}".format(c + 1)
+    #
+    #     # CREATE INFINITE STATISTICS MAPS FOR POINT SOURCES
+    #
+    #     print("Creating Infinite Statistics Count Map {}".format(c + 1))
+    #
+    #     catalog_file_location = "./simulated_data/catalogs/catalog_{}".format(c + 1)
+    #
+    #     infinite_statistics_directory = "./simulated_data/infinite_count_maps/infinite_count_map_{}".format(c + 1)
+    #
+    #     # Create directory to store infinite statistics map for each catalog
+    #     Path(infinite_statistics_directory).mkdir(parents=True, exist_ok=True)
+    #
+    #     start_infinite_time = time.time()
+    #
+    #     # Calculate coordinates and binned fluxes from each mock simulated catalog
+    #     agn_coordinates, agn_binned_fluxes = xml_parser(energy_bins, xml_file=catalog_file_location + "/agns.xml")
+    #     pulsar_coordinates, pulsar_binned_fluxes = (
+    #         xml_parser(energy_bins, xml_file=catalog_file_location + "/pulsars.xml"))
+    #
+    #     # Convert galactic coordinates of each source to pixel location in HEALPIX-formatted map
+    #     agn_pixels = angle_to_healpix_pixels(agn_coordinates, nside=nside)
+    #     pulsar_pixels = angle_to_healpix_pixels(pulsar_coordinates, nside=nside)
+    #
+    #     # Create binned infinite counts maps for each source type
+    #     agn_infinite_counts_map = create_infinite_counts_maps(source_pixels=agn_pixels, exposure_maps=exposure_maps,
+    #                                                           fluxes=agn_binned_fluxes)
+    #
+    #     pulsar_infinite_counts_map = create_infinite_counts_maps(source_pixels=pulsar_pixels,
+    #                                                              exposure_maps=exposure_maps,
+    #                                                              fluxes=pulsar_binned_fluxes)
+    #
+    #     av_time_infinite_stats_maps += (time.time() - start_infinite_time)
+    #
+    #     # Save infinite statistics count maps for the catalogs - can then sample them many times to create independent
+    #     # count maps
+    #     save_count_maps(agn_infinite_counts_map,
+    #                     save_file=infinite_statistics_directory + "/agn_infinite_counts_{}.fits")
+    #     save_count_maps(pulsar_infinite_counts_map,
+    #                     save_file=infinite_statistics_directory + "/pulsar_infinite_counts_{}.fits")
+    #
+    #     # Plot these maps if this is the first catalog being analysed
+    #     if c == 0:
+    #         plot_all_sky_map(healpix_maps=agn_infinite_counts_map, energy_bins=energy_bins,
+    #                          title="Infinite Statistics AGN", directory="./plots/all_sky_maps/", logarithmic=True)
+    #         plot_all_sky_map(healpix_maps=pulsar_infinite_counts_map, energy_bins=energy_bins,
+    #                          title="Infinite Statistics Pulsar", directory="./plots/all_sky_maps/", logarithmic=True)
+
+    #     # CREATE COUNT MAPS
+    #
+    #     for m in range(num_maps_per_catalog):
+    #
+    #         start_count_maps_time = time.time()
+    #
+    #         print("Creating Count Map {}".format((c * num_maps_per_catalog) + m + 1))
+    #
+    #         # i.e. sample infinite counts map and convolve with PSFs
+    #
+    #         # Create background - convolve infinite statistics maps of isotropic and galactic backgrounds with diffuse
+    #         # PSF, then scale with randomly-generated normalisation constant, and Poisson sample to create unique
+    #         # background count map
+    #         diffuse_source_background = create_diffuse_source_map(
+    #             expected_counts_diffuse_background=infinite_statistics_galactic_diffuse_backgrounds,
+    #             expected_counts_isotropic_background=infinite_statistics_isotropic_background,
+    #             psfs=binned_diffuse_source_psf)
+    #
+    #         # Create AGN count maps (with PSF convolution and Poisson sampling
+    #         agn_point_source_map = (
+    #             create_count_map(coordinates=agn_coordinates, exposure_maps=exposure_maps,
+    #                              psf_parameters=binned_point_source_psf_parameters, fluxes=agn_binned_fluxes,
+    #                              nside=nside,
+    #                              infinite_stats_file=infinite_statistics_directory + "/agn_infinite_counts_{}.fits"))
+    #
+    #         # Create pulsar count maps (with PSF convolution and Poisson sampling)
+    #         pulsar_point_source_map = (
+    #             create_count_map(coordinates=pulsar_coordinates, exposure_maps=exposure_maps,
+    #                              psf_parameters=binned_point_source_psf_parameters, fluxes=pulsar_binned_fluxes,
+    #                              nside=nside,
+    #                              infinite_stats_file=infinite_statistics_directory + "/pulsar_infinite_counts_{}.
+    #                              fits"))
+    #
+    #         av_time += (time.time() - start_count_maps_time)
+    #
+    #         # SAVE COUNT MAPS
+    #
+    #         save_location = "./simulated_data/count_maps/skymap_{}".format((c * num_maps_per_catalog) + m + 1)
+    #
+    #         # Create directory to store simulated count maps in if it does not already exist
+    #         Path(save_location).mkdir(parents=True, exist_ok=True)
+    #
+    #         save_count_maps(diffuse_source_background, save_file=save_location + "/background_{}.fits")
+    #         save_count_maps(agn_point_source_map, save_file=save_location + "/agns_{}.fits")
+    #         save_count_maps(pulsar_point_source_map, save_file=save_location + "/pulsars_{}.fits")
+    #
+    #         # Save background
+    #         if c == 0 and m == 0:
+    #             plot_all_sky_map(healpix_maps=pulsar_point_source_map, energy_bins=energy_bins, title="Pulsar Count",
+    #                              directory="./plots/all_sky_maps/", logarithmic=True)
+    #             plot_all_sky_map(healpix_maps=agn_point_source_map, energy_bins=energy_bins, title="AGN Count",
+    #                              directory="./plots/all_sky_maps/", logarithmic=True)
+    #             plot_all_sky_map(healpix_maps=diffuse_source_background, energy_bins=energy_bins,
+    #                              title="Background Count", directory="./plots/all_sky_maps/", logarithmic=True)
+    #
+    #             actual_count_map = pulsar_point_source_map + agn_point_source_map + diffuse_source_background
+    #             plot_all_sky_map(healpix_maps=actual_count_map, energy_bins=energy_bins,
+    #                              title="Count", directory="./plots/all_sky_maps/", logarithmic=True)
+    #
+    # print("Total time to create infinite statistics maps: {} s".format(av_time_infinite_stats_maps))
+    # print("Average time to create an infinite statistics map: {} s".format(av_time_infinite_stats_maps /
+    # num_catalogs))
+    #
+    # print("Total time to create count maps: {} s".format(av_time))
+    # print("Average time to create a count map: {} s".format(av_time / (num_catalogs * num_maps_per_catalog)))
+    #
 
 # REFERENCES
 
