@@ -5,6 +5,7 @@ I/O functions used during data simulation tasks.
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.table import QTable
+import healpy as hp
 import numpy as np
 from pathlib import Path
 from source_generation.agn_spectral_parameters import integral_photon_flux_agn
@@ -344,6 +345,26 @@ def save_catalog(simulated_agns, simulated_pulsars, file_name: str):
 
     with open(file_name + "pulsars.xml", "w") as f:
         f.write(pulsar_xml_str)
+
+
+def save_count_maps(binned_maps, save_file: str, n_bins: int = 5) -> None:
+    """Saves binned HEALPix formatted maps to specified FITS file. N.B. important to save according to galactic
+    coordinate system.
+
+    Parameters
+    ----------
+    binned_maps : ndarray
+        Binned Healpix maps in a 2D array to be saved to separate FITS files. All maps must have the same order and
+        ordering scheme.
+    save_file : str
+        File location to save maps to.
+    n_bins : int, optional
+        Number of energy bins the counts were binned into.
+
+    """
+    for n in range(n_bins):
+        hp.fitsfunc.write_map(filename=save_file.format(n), m=binned_maps[n], coord="G", dtype=np.float64,
+                              overwrite=True)
 
 
 def xml_parser_locations(xml_file: str, coordinate_system='G'):

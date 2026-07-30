@@ -1,8 +1,10 @@
 from astropy.table import QTable
-from map_generation.visualisation import format_scientific_notation_label
+from healpy.newvisufunc import projview
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
+from pathlib import Path
+import warnings
 
 axis_labels = {"LP_Flux_Density": "Differential Flux Density",
                "Pivot_Energy": "Pivot Energy", "LP_Index": "Spectral Slope",
@@ -20,6 +22,86 @@ units = {"LP_Flux_Density": "[ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$", "Pivot_Energy":
          "LP_beta": "",
          "PLEC_IndexS": "", "PLEC_Flux_Density": "[ph cm$^{-2}$ MeV$^{-1}$ s$^{-1}$", "PLEC_Exp_Index": "",
          "PLEC_ExpfactorS": "", "GLAT": "[rad]"}
+
+
+def format_scientific_notation_label(numbers) -> list[str]:
+    """Used for formatting very large or very small numbers into scientific notation, such that they can be neatly
+    plotted on graphs.
+
+    Parameters
+    ----------
+    numbers
+        Values to format into scientific notation
+
+    Returns
+    -------
+    list
+        Labels in scientific notation and as strings
+
+    """
+    # Formats numbers into scientific notation for inclusion on graphs
+
+    labels = []
+
+    for number in numbers:
+
+        scientific = str(np.format_float_scientific(number, precision=2, trim='0'))
+
+        base, exponent = scientific.split('e')
+
+        if exponent[0] == "+":
+            sign = ""
+        else:
+            sign = "-"
+
+        label = base + "$\\times 10^{" + sign + str(int(exponent[1:])) + "}$"
+
+        labels.append(label)
+
+    return labels
+
+
+def plot_all_sky_map(healpix_maps, energy_bins, title: str, directory: str, logarithmic=False):
+    # Create directory to store results
+    Path(directory).mkdir(parents=True, exist_ok=True)
+
+    # Format energy bins
+    energy_bin_labels = format_scientific_notation_label(energy_bins)
+
+    # Plot either raw or log of data
+    if logarithmic is True:
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            data = np.log(healpix_maps)
+
+            # Replace all log0 NaNs with 0
+            data = np.where(healpix_maps > 0, data, 0)
+
+    else:
+        data = healpix_maps
+
+    # Formatting
+    if len(title) > 10:
+        new_line = "\n"
+    else:
+        new_line = ""
+
+    for b in range(len(healpix_maps)):
+        label = "{} Map for {}{} - {} MeV".format(title, new_line, energy_bin_labels[b], energy_bin_labels[b + 1])
+
+        projview(
+            data[b], coord=["G"], graticule=True, graticule_labels=True, xlabel="Galactic Longitude [$\\degree$]",
+            ylabel="Galactic Latitude [$\\degree$]", cb_orientation="vertical", projection_type="aitoff", title=label,
+            sub=(3, 2, b + 1),
+        )
+
+    plt.tight_layout()
+
+    plt.savefig(directory + title.lower().replace(" ", "_") + "_map.png")
+
+    plt.close()
 
 
 def plot_correlation(catalog_4fgl: str, var1_name: str, var2_name: str, simulated_var1, simulated_var2,
@@ -199,8 +281,8 @@ def plot_spatial_distribution(galactic_longitudes, galactic_latitudes, source_ty
 
 # REFERENCES
 
-# Astropy Documentation - https://docs.astropy.org/en/stable/index_user_docs.html
-# Numpy Documentation - https://numpy.org/doc/stable/index.html
+
 # Numpy Typing - https://stackoverflow.com/questions/35673895/type-hinting-annotation-pep-484-for-numpy-ndarray
-# Pandas Documentation - https://pandas.pydata.org/docs/index.html
-# Scipy Documentation - https://docs.scipy.org/doc/scipy/index.html
+# Odd Number Subplots - https://stackoverflow.com/questions/28738836/how-to-create-an-odd-number-of-subplots
+# Scientific Notation in Plots - https://stackoverflow.com/questions/46735745/how-to-control-scientific-notation-in-
+# matplotlib
