@@ -1,10 +1,17 @@
+"""
+Main function for creating all-sky maps. Placed in separate file for ease of parallelization.
+"""
+
 from map_generation.healpix_maps import create_count_map, create_diffuse_source_map
 from pathlib import Path
 from read_write_functions import save_count_maps, xml_parser
 from verification.visualisation import plot_all_sky_map
 
 
-def create_all_count_maps(params):
+def create_all_count_maps(params: list) -> None:
+    """
+    Creates num_maps_per_catalog count maps for catalog catalog_id.
+    """
     (catalog_id, num_maps_per_catalog, energy_bins, nside, exposure_maps, binned_point_source_psf_parameters,
      binned_diffuse_source_psf, infinite_statistics_galactic_diffuse_backgrounds,
      infinite_statistics_isotropic_background) = params
