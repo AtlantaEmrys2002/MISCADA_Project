@@ -103,7 +103,7 @@ if __name__ == "__main__":
     # Parallel computation of maps - split catalogs between CPUs
     start_count_time = time.time()
 
-    pool = Pool(processes=os.cpu_count())
+    pool = Pool(processes=os.cpu_count() // 8)
 
     pool.map(create_patches_for_catalog, arguments)
 
@@ -130,3 +130,5 @@ if __name__ == "__main__":
 # REFERENCES
 
 # Indexing 3D Arrays stored as 1D - https://cplusplus.com/forum/general/137677/
+# Readlines - https://stackoverflow.com/questions/16222956/reading-a-file-line-by-line-into-elements-of-an-array-in-
+# python

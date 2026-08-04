@@ -79,10 +79,15 @@ def create_patches_for_catalog(params: list):
 
         for p in range(max_patches_per_catalog):
 
+            # Check if patch already exists
+
             # Unique identifier of patch being generated
             patch_id = catalog_id * num_maps_per_catalog * max_patches_per_catalog + m * max_patches_per_catalog + p
 
             print("PATCH: {}".format(patch_id))
+
+            # Create directory where patches stored
+            patch_directory = save_directory + "/patches/patch_{}/".format(patch_id)
 
             # CENTRE OF PATCH p
 
@@ -92,73 +97,6 @@ def create_patches_for_catalog(params: list):
             lat = latitude[p]
 
             patch_centre = np.array([lon, lat])
-
-            # PROJECT ROI OF COUNT MAP INTO CARTESIAN
-            # N.B. in previous code, they performed a solid angle ratio correction here (assume not needed, as
-            # already accounted for this in a previous step? - CHECK UNDERSTANDING)
-
-            binned_agn_patch = []
-            binned_pulsar_patch = []
-            binned_background_patch = []
-
-            plt.cla()
-            plt.clf()
-            plt.close("all")
-
-            for b in range(num_bins):
-                agn_patch_bin = hp.visufunc.cartview(binned_agn_map[b], rot=(lon, lat, 0.), coord='G',
-                                                     xsize=xsize_patch_generation, lonra=lb_range, latra=lb_range,
-                                                     return_projected_map=True)
-
-                binned_agn_patch.append(np.array(agn_patch_bin) * solid_area_ratio)
-
-                plt.cla()
-                plt.clf()
-                plt.close("all")
-
-                pulsar_patch_bin = hp.visufunc.cartview(binned_pulsar_map[b], rot=(lon, lat, 0.), coord='G',
-                                                        xsize=xsize_patch_generation, lonra=lb_range,
-                                                        latra=lb_range, return_projected_map=True)
-
-                binned_pulsar_patch.append(np.array(pulsar_patch_bin) * solid_area_ratio)
-                plt.cla()
-                plt.clf()
-                plt.close("all")
-
-                background_patch_bin = hp.visufunc.cartview(binned_background_map[b], rot=(lon, lat, 0.), coord='G',
-                                                            xsize=xsize_patch_generation, lonra=lb_range,
-                                                            latra=lb_range, return_projected_map=True)
-
-                binned_background_patch.append(np.array(background_patch_bin) * solid_area_ratio)
-
-                # Need these here (even though we are not showing the plots - this is because visufunc creates a
-                # plot - we only need the 2D array)
-                plt.cla()
-                plt.clf()
-                plt.close("all")
-
-            # Convert to numpy
-            binned_agn_patch = np.array(binned_agn_patch)
-            binned_pulsar_patch = np.array(binned_pulsar_patch)
-            binned_background_patch = np.array(binned_background_patch)
-
-            # Sum together to create patch
-            patch = binned_agn_patch + binned_pulsar_patch + binned_background_patch
-
-            # Create directory where patches stored
-            patch_directory = save_directory + "/patches/patch_{}/".format(patch_id)
-
-            Path(patch_directory).mkdir(parents=True, exist_ok=True)
-
-            # Create file for storing individual patches' metadata
-            # list for the csv files - stores information about each patch
-            individual_patch_header_line = "source_id,source_type,cartesian_y,cartesian_x\n"
-
-            f2 = open(os.path.join(patch_directory, "metadata.csv"), "w+")
-            f2.writelines(individual_patch_header_line)
-            f2.close()
-
-            np.save(patch_directory + "/patch.npy", patch)
 
             # GET NO. AGN AND PULSARS WITHIN PATCH, AS WELL AS THE CARTESIAN COORDINATES OF AGN AND PULSARS IN THE
             # PATCH
@@ -171,49 +109,122 @@ def create_patches_for_catalog(params: list):
              pulsar_patch_ids) = get_ps_info_128(patch_centre, agn_coordinates, pulsar_coordinates, agn_ids,
                                                  pulsar_ids)
 
-            # CREATE MASKS
+            # If patch has already been created
+            if (os.path.isfile(patch_directory + "patch.npy") and os.path.isfile(patch_directory + "mask.npy") and
+                    os.path.isfile(patch_directory + "metadata.csv")):
 
-            # Create blank masks which can be added to
-            grid2D_psf = np.zeros((xsize_patch_generation, xsize_patch_generation))
+                print("Patch already created")
 
-            source_info = []
+                # Metadata for all patches
+                patch_information.append(f"{patch_id},{catalog_id},{lat},{lon},{nagn},{npsr}\n")
 
-            # Add AGN masks iteratively
-            for i in range(nagn):
-                # Find the minimum of the position in the image and 127 (the maximum index of the image in the y or
-                # x-axis)
-                y = min(agn_pos_list[i][0], xsize_location - 1)
-                x = min(agn_pos_list[i][1], xsize_location - 1)
+            else:
 
-                grid2D_psf = psf_bck_mask(y // 2, x // 2, radius=2.5, psf_mask=grid2D_psf)
+                Path(patch_directory).mkdir(parents=True, exist_ok=True)
 
-                source_info.append(f"{agn_patch_ids[i]},AGN,{y},{x}\n")
+                # Create file for storing individual patches' metadata
+                # list for the csv files - stores information about each patch
+                individual_patch_header_line = "source_id,source_type,cartesian_y,cartesian_x\n"
 
-            for i in range(npsr):
-                y = min(psr_pos_list[i][0], xsize_location - 1)
-                x = min(psr_pos_list[i][1], xsize_location - 1)
+                f2 = open(os.path.join(patch_directory, "metadata.csv"), "w+")
+                f2.writelines(individual_patch_header_line)
+                f2.close()
 
-                grid2D_psf = psf_bck_mask(y // 2, x // 2, radius=2.5, psf_mask=grid2D_psf)
+                # PROJECT ROI OF COUNT MAP INTO CARTESIAN
 
-                source_info.append(f"{pulsar_patch_ids[i]},PSR,{y},{x}\n")
+                binned_agn_patch = []
+                binned_pulsar_patch = []
+                binned_background_patch = []
 
-            # Plot all patches generated from the first skymap
-            if catalog_id == 0 and m == 0:
-                plot_patch(binned_patches=patch, mask=grid2D_psf, unformatted_energy_bins=energy_bins,
-                           directory=patch_directory)
+                plt.cla()
+                plt.clf()
+                plt.close("all")
 
-            # Save masks
-            np.save(patch_directory + "/mask.npy", grid2D_psf)
+                for b in range(num_bins):
+                    agn_patch_bin = hp.visufunc.cartview(binned_agn_map[b], rot=(lon, lat, 0.), coord='G',
+                                                         xsize=xsize_patch_generation, lonra=lb_range, latra=lb_range,
+                                                         return_projected_map=True)
 
-            # SAVE METADATA CSV FILE FOR THIS PATCH AND THE MASK
+                    binned_agn_patch.append(np.array(agn_patch_bin) * solid_area_ratio)
 
-            # Individual metadata for this patch
-            f2 = open(os.path.join(patch_directory, "metadata.csv"), "a")
-            f2.writelines(source_info)
-            f2.close()
+                    plt.cla()
+                    plt.clf()
+                    plt.close("all")
 
-            # Metadata for all patches
-            patch_information.append(f"{patch_id},{catalog_id},{lat},{lon},{nagn},{npsr}\n")
+                    pulsar_patch_bin = hp.visufunc.cartview(binned_pulsar_map[b], rot=(lon, lat, 0.), coord='G',
+                                                            xsize=xsize_patch_generation, lonra=lb_range,
+                                                            latra=lb_range, return_projected_map=True)
+
+                    binned_pulsar_patch.append(np.array(pulsar_patch_bin) * solid_area_ratio)
+                    plt.cla()
+                    plt.clf()
+                    plt.close("all")
+
+                    background_patch_bin = hp.visufunc.cartview(binned_background_map[b], rot=(lon, lat, 0.), coord='G',
+                                                                xsize=xsize_patch_generation, lonra=lb_range,
+                                                                latra=lb_range, return_projected_map=True)
+
+                    binned_background_patch.append(np.array(background_patch_bin) * solid_area_ratio)
+
+                    # Need these here (even though we are not showing the plots - this is because visufunc creates a
+                    # plot - we only need the 2D array)
+                    plt.cla()
+                    plt.clf()
+                    plt.close("all")
+
+                # Convert to numpy
+                binned_agn_patch = np.array(binned_agn_patch)
+                binned_pulsar_patch = np.array(binned_pulsar_patch)
+                binned_background_patch = np.array(binned_background_patch)
+
+                # Sum together to create patch
+                patch = binned_agn_patch + binned_pulsar_patch + binned_background_patch
+
+                np.save(patch_directory + "/patch.npy", patch)
+
+                # CREATE MASKS
+
+                # Create blank masks which can be added to
+                grid2D_psf = np.zeros((xsize_patch_generation, xsize_patch_generation))
+
+                source_info = []
+
+                # Add AGN masks iteratively
+                for i in range(nagn):
+                    # Find the minimum of the position in the image and 127 (the maximum index of the image in the y or
+                    # x-axis)
+                    y = min(agn_pos_list[i][0], xsize_location - 1)
+                    x = min(agn_pos_list[i][1], xsize_location - 1)
+
+                    grid2D_psf = psf_bck_mask(y // 2, x // 2, radius=2.5, psf_mask=grid2D_psf)
+
+                    source_info.append(f"{agn_patch_ids[i]},AGN,{y},{x}\n")
+
+                for i in range(npsr):
+                    y = min(psr_pos_list[i][0], xsize_location - 1)
+                    x = min(psr_pos_list[i][1], xsize_location - 1)
+
+                    grid2D_psf = psf_bck_mask(y // 2, x // 2, radius=2.5, psf_mask=grid2D_psf)
+
+                    source_info.append(f"{pulsar_patch_ids[i]},PSR,{y},{x}\n")
+
+                # Plot all patches generated from the first skymap
+                if catalog_id == 0 and m == 0:
+                    plot_patch(binned_patches=patch, mask=grid2D_psf, unformatted_energy_bins=energy_bins,
+                               directory=patch_directory)
+
+                # Save masks
+                np.save(patch_directory + "/mask.npy", grid2D_psf)
+
+                # SAVE METADATA CSV FILE FOR THIS PATCH AND THE MASK
+
+                # Individual metadata for this patch
+                f2 = open(os.path.join(patch_directory, "metadata.csv"), "a")
+                f2.writelines(source_info)
+                f2.close()
+
+                # Metadata for all patches
+                patch_information.append(f"{patch_id},{catalog_id},{lat},{lon},{nagn},{npsr}\n")
 
     # SAVE PATCH METADATA
 

@@ -182,6 +182,9 @@ def unet_train(train_data, test_data, training_epochs=50, save_file="./benchmark
 
             _, inputs, labels = data[0], data[1], data[2]
 
+            # zero gradients for each batch
+            optimiser.zero_grad()
+
             # Make sure to zero gradients when calculating loss and don't update model
             output = unet(inputs)
 
