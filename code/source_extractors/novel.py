@@ -108,7 +108,7 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                         validation_batches_class = (
                             prepare_classifier_data(patches=validation_maps,
                                                     predicted_locations=validation_source_locations,
-                                                    patch_ids=validation_patch_ids))
+                                                    patch_ids=validation_patch_ids, shuffle_data=False))
 
                         test_batches_class = prepare_classifier_data(patches=testing_maps,
                                                                      predicted_locations=test_source_locations,

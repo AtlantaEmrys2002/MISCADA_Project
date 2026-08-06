@@ -1,6 +1,8 @@
 from astropy.coordinates import SkyCoord
 from astropy import units as u
+import copy
 import numpy as np
+from operator import itemgetter
 import pandas as pd
 from torch.utils.data import DataLoader, Subset
 from ..utils import get_lb_from_pixel, pixel_id
@@ -128,7 +130,7 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
     # Remove all patches with no predicted sources
     ids_to_remove = [p for p in range(patch_ids.shape[0]) if len(predicted_locations[p]) == 0]
 
-    predicted_locations = [predicted_locations[p] for p in range(len(patch_ids)) if p not in ids_to_remove]
+    predicted_locations = [predicted_locations[p] for p in range(patch_ids.shape[0]) if p not in ids_to_remove]
     patches = np.delete(patches, np.array(ids_to_remove).astype(int), 0)
     patch_ids = np.delete(patch_ids, np.array(ids_to_remove).astype(int), 0)
 
@@ -140,6 +142,8 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
 
     # Get labels for each patch (i.e. AGN, PSR, FAKE)
     labels = source_box_labels(patch_ids=patch_ids, predicted_source_locations=predicted_locations)
+
+    # print(np.unique(np.array(labels), return_counts=True))
 
     # Format labels such that they are in vector format, e.g. AGN is equivalent to [1., 0., 0.]
     vector_labels = str_labels_to_vector_labels(labels)
@@ -190,31 +194,22 @@ def source_boxes(patches, predicted_source_locations):
     boxes_for_each_patch = []
 
     for n in range(num_patches):
-
-        classification_sub_patches = []
-
         predicted_locations_in_patch = predicted_source_locations[n].astype(int)
 
         patch = patches[n]
 
-        for loc in predicted_locations_in_patch:
+        xs = predicted_locations_in_patch[:, 0]
+        ys = predicted_locations_in_patch[:, 1]
 
-            x, y = loc[0], loc[1]
+        # Check if a 7 x 7 grid can be made with x, y at centre for each source location (i.e. check detected source is
+        # not too close to edge of patch).
+        mask = np.logical_not(((xs - 3) < 0) | ((xs + 4) > 63) | ((ys - 3) < 0) | ((ys + 4) > 63))
 
-            # Select 7 x 7 grid around predicted location
-            rows = np.arange(x - 3, x + 4)
-            cols = np.arange(y - 3, y + 4)
+        locs = np.stack((copy.deepcopy(xs[mask]), copy.deepcopy(ys[mask]))).T
 
-            # if cannot create a 7 x 7 grid, ignore during classification
-            if rows[0] < 0 or cols[0] < 0 or rows[-1] > 63 or cols[-1] > 63:
-
-                continue
-
-            else:
-
-                new_patch = patch[:, rows, :][:, :, cols]
-
-                classification_sub_patches.append(new_patch)
+        classification_sub_patches = (
+            np.array([copy.deepcopy(patch[:, np.arange(l[0] - 3, l[0] + 4), :][:, :, np.arange(l[1] - 3, l[1] + 4)])
+                      for l in locs]))
 
         boxes_for_each_patch.append(np.array(classification_sub_patches))
 
@@ -404,29 +399,9 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
 def str_labels_to_vector_labels(labels):
     num_patches = len(labels)
 
-    vector_labels = []
+    str_to_vector = {"AGN": np.array([1., 0., 0.]), "PSR": np.array([0., 1., 0.]), "FAKE": np.array([0., 0., 1.])}
 
-    for n in range(num_patches):
-
-        patch = labels[n]
-
-        patch_labels = []
-
-        for p in patch:
-
-            if p == "AGN":
-
-                patch_labels.append(np.array([1., 0., 0.]))
-
-            elif p == "PSR":
-
-                patch_labels.append(np.array([0., 1., 0.]))
-
-            else:
-
-                patch_labels.append(np.array([0., 0., 1.]))
-
-        vector_labels.append(np.array(patch_labels))
+    vector_labels = [np.array(itemgetter(*labels[n])(str_to_vector)) for n in range(num_patches)]
 
     return vector_labels
 
@@ -502,3 +477,5 @@ def xml_parser_locations(xml_file: str, coordinate_system='G'):
 
 # Delete Rows - https://stackoverflow.com/questions/40426697/is-there-any-way-to-delete-the-specific-elements-of-an-
 # numpy-array-in-place-in
+# Dictionary Mapping - https://stackoverflow.com/questions/63145423/how-to-create-a-numpy-array-based-on-the-values-of-
+# another-numpy-array

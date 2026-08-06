@@ -155,7 +155,6 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
 
 def classification_neural_network(train_data, validation_data, test_data, pretrained=False,
                                   save_file="./algorithms/pre_trained_models/classifier.pt"):
-
     device = torch.device("mps")
     print("Using Device: ", device)
 

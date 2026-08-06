@@ -118,7 +118,11 @@ def k_means_clustering(binary_segments, max_num_centroids=50):
 
             s_k = 0
 
-            k_centroids = KMeans(n_clusters=k, random_state=0).fit(V_D)
+            # Elkan is more efficient, but cannot be applied when k = 1
+            if k == 1:
+                k_centroids = KMeans(n_clusters=k, random_state=0).fit(V_D)
+            else:
+                k_centroids = KMeans(n_clusters=k, random_state=0, algorithm='elkan').fit(V_D)
 
             # Round cluster centres (as indexing onto an image)
             cluster_centres = np.round(k_centroids.cluster_centers_)

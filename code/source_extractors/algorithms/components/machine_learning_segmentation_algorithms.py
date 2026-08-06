@@ -22,8 +22,9 @@ def random_forest_segmentation(training_maps, training_masks, validation_maps, t
     features_func = partial(
         feature.multiscale_basic_features,
         intensity=True,
-        edges=False,
-        texture=True,
+        workers=4,
+        edges=True,
+        texture=False,
         sigma_min=sigma_min,
         sigma_max=sigma_max,
         channel_axis=0,
@@ -48,9 +49,6 @@ def random_forest_segmentation(training_maps, training_masks, validation_maps, t
         clf = future.fit_segmenter(training_masks, training_maps, clf)
 
         # GET PREDICTIONS
-
-        # train_data_predictions = future.predict_segmenter(training_maps, clf)
-        # test_data_predictions = future.predict_segmenter(testing_maps, clf)
 
         # SAVE TRAINED SEGMENTATION ALGORITHM
         with open(save_file, "wb") as f:
