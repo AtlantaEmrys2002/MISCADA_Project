@@ -63,6 +63,8 @@ when reading in background emission models provided by Fermi LAT Collaboration).
 mathematical calculations in a computationally efficient manner. This project has primarily made use of the ``stats``
 submodule for analysing 4FGL data, the ``optimize`` submodule for fitting functions to data, the ``spatial`` submodule
 for calculating metrics, and the ``integrate`` submodule for performing calculus.
+- [scikit-image Documentation](https://scikit-image.org/docs/stable/auto_examples/segmentation/plot_trainable_segmentation.html#id4) - 
+a library of image processing functions that can be used alongside traditional ML algorithms implemented in ``sklearn``.
 - [skLearn Documentation](https://scikit-learn.org/stable/index.html) - includes machine learning and statistics 
 functionality.
 

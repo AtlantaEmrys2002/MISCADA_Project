@@ -81,7 +81,7 @@ def blob_detection(binary_segments):
     return centres
 
 
-def k_means_clustering(binary_segments):
+def k_means_clustering(binary_segments, max_num_centroids=50):
     # IMPLEMENTED FOLLOWING PSEUDOCODE IN ID8 (MY OWN IMPLEMENTATION)
 
     source_centres_in_each_image = []
@@ -109,8 +109,10 @@ def k_means_clustering(binary_segments):
         # Centre of each cluster determined by k_best
         best_centres = []
 
-        # Determine the number of sources/clusters present in the image
-        for k in range(1, 50):
+        # Determine the number of sources/clusters present in the image - do not attempt to fit more clusters than there
+        # are pixels classified as source
+
+        for k in range(1, min(max_num_centroids, int(V_D.shape[0]))):
 
             D_tmp = copy.deepcopy(D)
 

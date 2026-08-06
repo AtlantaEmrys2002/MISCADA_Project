@@ -37,8 +37,59 @@ def image_cartesian_coordinates_to_galactic_coordinates(coordinates, patch_centr
         raise TypeError("Coordinate system not supported.")
 
 
-def normalise_sub_patches(sub_patches):
+def ml_segmentation_data_prep(train_data, validation_data, test_data):
+    # Formats count map patches and masks for compatibility with ML (as opposed to DL) segmentation algorithms.
 
+    # EXTRACT TRAINING DATA
+    train_patch_ids = []
+    training_maps = []
+    training_masks = []
+
+    for i, x in enumerate(train_data):
+
+        for k in range(x[0].shape[0]):
+            train_patch_ids.append(x[0][k])
+
+        for k in range(x[1].shape[0]):
+            training_maps.append(x[1][k])
+
+        for j in range(x[2].shape[0]):
+            training_masks.append(x[2][j][0])
+
+    train_patch_ids = np.array(train_patch_ids).astype(int)
+    training_maps = np.array(training_maps)
+    training_masks = np.array(training_masks)
+
+    # EXTRACT VALIDATION DATA
+    validation_patch_ids = []
+    validation_maps = []
+    validation_masks = []
+
+    for i, x in enumerate(validation_data):
+
+        for k in range(x[0].shape[0]):
+            validation_patch_ids.append(x[0][k])
+
+        for k in range(x[1].shape[0]):
+            validation_maps.append(x[1][k])
+
+        for j in range(x[2].shape[0]):
+            validation_masks.append(x[2][j][0])
+
+    validation_patch_ids = np.array(validation_patch_ids).astype(int)
+    validation_maps = np.array(validation_maps)
+    validation_masks = np.array(validation_masks)
+
+    # EXTRACT TEST DATA
+    test_patch_ids = np.array([k[0] for k in test_data])
+    testing_maps = np.array([k[1] for k in test_data])
+    testing_masks = np.array([k[2][0] for k in test_data])
+
+    return (train_patch_ids, training_maps, training_masks, validation_patch_ids, validation_maps, validation_masks,
+            test_patch_ids, testing_maps, testing_masks)
+
+
+def normalise_sub_patches(sub_patches):
     # Assumes sub_patches are passed as array with shape [n, m, 5, 7, 7] where n is number of patches and m is num
     # of sub-patches within patch n
 
@@ -75,7 +126,7 @@ def normalise_sub_patches(sub_patches):
 def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_data=True, test=False):
 
     # Remove all patches with no predicted sources
-    ids_to_remove = [p for p in range(len(patch_ids)) if len(predicted_locations[p]) == 0]
+    ids_to_remove = [p for p in range(patch_ids.shape[0]) if len(predicted_locations[p]) == 0]
 
     predicted_locations = [predicted_locations[p] for p in range(len(patch_ids)) if p not in ids_to_remove]
     patches = np.delete(patches, np.array(ids_to_remove).astype(int), 0)
@@ -103,8 +154,10 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
 
         num_predicted_sources = len(sub_boxes[patch])
 
+        # N.B. conversion to float 32 from float 64 - Apple GPUs cannot work with float64
         for pred_source in range(num_predicted_sources):
-            data.append([normalised_sub_boxes[patch][pred_source], vector_labels[patch][pred_source]])
+            data.append([normalised_sub_boxes[patch][pred_source].astype(np.float32),
+                         vector_labels[patch][pred_source].astype(np.float32)])
 
     if len(data) == 0:
         raise RuntimeError("Not enough sources were localised - no data is available for the classifier to train on.")
@@ -153,7 +206,7 @@ def source_boxes(patches, predicted_source_locations):
             cols = np.arange(y - 3, y + 4)
 
             # if cannot create a 7 x 7 grid, ignore during classification
-            if rows[0] < 0 or cols[0] < 0 or rows[-1] > 64 or cols[-1] > 64:
+            if rows[0] < 0 or cols[0] < 0 or rows[-1] > 63 or cols[-1] > 63:
 
                 continue
 

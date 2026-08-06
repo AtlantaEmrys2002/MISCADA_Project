@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from torch import nn
 
@@ -150,6 +151,43 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
                 g['lr'] /= 2
 
     return classifier, best_epoch
+
+
+def classification_neural_network(train_data, validation_data, test_data, pretrained=False,
+                                  save_file="./algorithms/pre_trained_models/classifier.pt"):
+
+    device = torch.device("mps")
+    print("Using Device: ", device)
+
+    # INITIALISE CLASSIFIER
+    if not pretrained:
+
+        # Train classifier on data
+        classifier_model, best_epoch_classifier = classifier_train(train_data=train_data, test_data=validation_data,
+                                                                   device=device, save_file=save_file)
+
+        print("BEST EPOCH: {}".format(best_epoch_classifier))
+
+    else:
+
+        # Use pre-trained model
+        classifier_model = SourceClassifier().to(device)
+        classifier_model.load_state_dict(torch.load(save_file, weights_only=True, map_location=device))
+
+    # Set to model evaluation model to ensure not accidentally continuing training
+    classifier_model.eval()
+
+    # EXTRACT TEST DATA
+
+    testing_patches = np.array([i[0] for i in test_data])
+    actual_labels = np.array([i[1] for i in test_data])
+
+    with torch.no_grad():
+        classifier_predictions = classifier_model(torch.from_numpy(testing_patches).to(device))
+
+    classifier_predictions = classifier_predictions.detach().cpu().numpy()
+
+    return actual_labels, classifier_predictions
 
 # REFERENCES
 

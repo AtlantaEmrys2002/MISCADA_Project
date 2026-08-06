@@ -1,7 +1,6 @@
 import argparse
-from algorithms.uneb import uneb_algorithm
 from algorithms.unek import unek_algorithm
-from algorithms.novel import novel_source_extraction_algorithms
+from novel import novel_source_extraction_algorithms
 from pathlib import Path
 from read_write_functions import read_patches, save_predictions, read_real_data
 
@@ -40,13 +39,14 @@ if __name__ == "__main__":
 
     # CHANGE THIS BACK AT THE END
 
-    train, valid, test = read_patches(num_patches=200, directory=patches_directory)
+    train, valid, test = read_patches(num_patches=400, directory=patches_directory)
 
     # CHANGE BELOW TO 768 ONCE CONFIRMED IT IS WORKING
 
     real_data = read_real_data(num_patches=768, directory="./real_data/real_patches/patches")
 
-    novel_source_extraction_algorithms(training_data=train, validation_data=valid, testing_data=test)
+    novel_source_extraction_algorithms(training_data=train, validation_data=valid, testing_data=test,
+                                       real_data=real_data, save_directory=save_directory)
 
 
 
