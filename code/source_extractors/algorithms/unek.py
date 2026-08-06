@@ -8,8 +8,8 @@ import torch
 
 def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_detector=False,
                    use_pretrained_classifier=False,
-                   pretrained_model_file="./benchmarks/pre_trained_models/unet.pt",
-                   pretrained_classifier_file="./benchmarks/pre_trained_models/classifier.pt"):
+                   pretrained_model_file="./algorithms/pre_trained_models/unet.pt",
+                   pretrained_classifier_file="./algorithms/pre_trained_models/classifier.pt"):
 
     device = torch.device("mps")
     print("Using Device: ", device)
@@ -29,10 +29,11 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_
 
     else:
 
-        device = torch.device('cpu')
+        # device = torch.device('cpu')
 
         # Use pre-trained model
-        model = UNET(5, 16, 1, padding=1, downhill=4)
+        model = UNET(5, 16, 1, padding=1, downhill=4).to(device)
+        # model.load_state_dict(torch.load(pretrained_model_file, weights_only=True, map_location=device))
         model.load_state_dict(torch.load(pretrained_model_file, weights_only=True, map_location=device))
 
     # Set to model evaluation model to ensure not accidentally continuing training
@@ -58,11 +59,22 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_
 
         # unet_predictions = np.array([model(i) for i in testing_inputs][0])
 
-        unet_predictions = np.array(model(torch.from_numpy(np.array(testing_inputs)).to(device)).detach().cpu())
+        # unet_predictions = np.array(model(torch.from_numpy(np.array(testing_inputs))))
+
+        # unet_predictions = np.array(model(torch.from_numpy(np.array(testing_inputs)).to(device)))
+
+        unet_predictions = model(torch.from_numpy(np.array(testing_inputs)).to(device)).cpu().numpy()
+
+        # unet_predictions = np.array(model(torch.from_numpy(np.array(testing_inputs)).to(device)).detach().cpu())
 
         # unet_predictions = model(torch.from_numpy(np.array(testing_inputs)).to(device)).detach().cpu().numpy()
 
     # CLUSTERING (SOURCE LOCALISATION)
+
+    # print(np.sum(unet_predictions))
+    # print(np.sum(np.array(testing_inputs)[:, 1]))
+
+    print(unet_predictions.shape)
 
     unet_predictions = torch.from_numpy(unet_predictions)
 
@@ -187,7 +199,7 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_
 
     actual_classes = testing_actual_labels
 
-    print(np.array(testing_inputs_class).shape)
+    # print(np.array(testing_inputs_class).shape)
 
     with torch.no_grad():
 

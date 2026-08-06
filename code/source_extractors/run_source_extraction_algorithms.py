@@ -1,6 +1,7 @@
 import argparse
-from benchmarks.uneb import uneb_algorithm
-from benchmarks.unek import unek_algorithm
+from algorithms.uneb import uneb_algorithm
+from algorithms.unek import unek_algorithm
+from algorithms.novel import novel_source_extraction_algorithms
 from pathlib import Path
 from read_write_functions import read_patches, save_predictions, read_real_data
 
@@ -8,7 +9,7 @@ if __name__ == "__main__":
     # PROCESS USER INPUT
 
     parser = argparse.ArgumentParser(description="Reads in a collection of specified patches and formats them to be "
-                                                 "passed to benchmark algorithms. These benchmarks are then applied and"
+                                                 "passed to benchmark algorithms. These algorithms are then applied and"
                                                  "the parameters of the 'best' versions of them are saved.")
 
     parser.add_argument("--patch_location", required=True, type=str, help="The directory in which the"
@@ -35,12 +36,17 @@ if __name__ == "__main__":
 
     print("Reading in and formatting patches...")
 
-    train, valid, test = read_patches(num_patches=num_patches, directory=patches_directory)
+    # train, valid, test = read_patches(num_patches=num_patches, directory=patches_directory)
+
+    # CHANGE THIS BACK AT THE END
+
+    train, valid, test = read_patches(num_patches=200, directory=patches_directory)
 
     # CHANGE BELOW TO 768 ONCE CONFIRMED IT IS WORKING
 
     real_data = read_real_data(num_patches=768, directory="./real_data/real_patches/patches")
 
+    novel_source_extraction_algorithms(training_data=train, validation_data=valid, testing_data=test)
 
 
 
@@ -66,42 +72,42 @@ if __name__ == "__main__":
     successful_algorithms = []
     unsuccessful_algorithms = []
 
-    try:
+    # try:
 
         # (unek_predicted_segmentations, unek_predicted_locations, unek_classifier_predictions, actual_classes,
         #  test_patch_ids) = unek_algorithm(train, valid, test)
 
-        (unek_predicted_segmentations, unek_predicted_locations, unek_classifier_predictions, actual_classes,
-         test_patch_ids) = unek_algorithm(train, valid, test, use_pretrained_detector=True)
+    (unek_predicted_segmentations, unek_predicted_locations, unek_classifier_predictions, actual_classes,
+     test_patch_ids) = unek_algorithm(train, valid, test)
 
-    except RuntimeError:
+    # except RuntimeError:
+    #
+    #     print("Not enough data to train classifier for " + "UNEK")
+    #     unsuccessful_algorithms.append("UNEK")
 
-        print("Not enough data to train classifier for " + "UNEK")
-        unsuccessful_algorithms.append("UNEK")
+    # else:
 
-    else:
+    # Save predictions for test patches
+    save_predictions(patch_ids=test_patch_ids, predicted_segmentations=unek_predicted_segmentations,
+                     predicted_locations=unek_predicted_locations,
+                     predicted_classes=unek_classifier_predictions, actual_classes=actual_classes,
+                     directory=save_directory, method="UNEK")
 
-        # Save predictions for test patches
-        save_predictions(patch_ids=test_patch_ids, predicted_segmentations=unek_predicted_segmentations,
-                         predicted_locations=unek_predicted_locations,
-                         predicted_classes=unek_classifier_predictions, actual_classes=actual_classes,
-                         directory=save_directory, method="UNEK")
+    successful_algorithms.append("UNEK")
 
-        successful_algorithms.append("UNEK")
+    # Apply to real Fermi LAT data
 
-        # Apply to real Fermi LAT data
+    (real_unek_predicted_segmentations, real_unek_predicted_locations, real_unek_classifier_predictions,
+     real_actual_classes, real_test_patch_ids) = unek_algorithm([], [],
+                                                                testing_data=real_data,
+                                                                use_pretrained_detector=True,
+                                                                use_pretrained_classifier=True)
 
-        (real_unek_predicted_segmentations, real_unek_predicted_locations, real_unek_classifier_predictions,
-         real_actual_classes, real_test_patch_ids) = unek_algorithm([], [],
-                                                                    testing_data=real_data,
-                                                                    use_pretrained_detector=True,
-                                                                    use_pretrained_classifier=True)
-
-        # Save predictions for real data
-        save_predictions(patch_ids=real_test_patch_ids, predicted_segmentations=real_unek_predicted_segmentations,
-                         predicted_locations=real_unek_predicted_locations,
-                         predicted_classes=real_unek_classifier_predictions, actual_classes=real_actual_classes,
-                         directory=real_data_save_directory, method="UNEK", real=True)
+    # Save predictions for real data
+    save_predictions(patch_ids=real_test_patch_ids, predicted_segmentations=real_unek_predicted_segmentations,
+                     predicted_locations=real_unek_predicted_locations,
+                     predicted_classes=real_unek_classifier_predictions, actual_classes=real_actual_classes,
+                     directory=real_data_save_directory, method="UNEK", real=True)
 
     # UNEB
 

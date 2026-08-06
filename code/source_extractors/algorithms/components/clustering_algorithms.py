@@ -88,7 +88,13 @@ def k_means_clustering(binary_segments):
 
     for segment in binary_segments:
 
-        D = segment[0].detach().numpy()
+        if type(segment[0]) != np.ndarray:
+
+            D = segment[0].detach().numpy()
+
+        else:
+
+            D = segment[0]
 
         l_sth = 0.2
         l_snn = -10

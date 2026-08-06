@@ -1,18 +1,19 @@
 """
 Segmentation algorithms used to distinguish between the foreground and background of photon count maps. N.B. includes
 the training loops of deep learning-based methods.
+
+This author consulted and adapted code from this tutorial - https://medium.com/@alessandromondin/semantic-segmentation-
+with-pytorch-u-net-from-scratch-502d6565910a. This author also consulted the GitHub implementation here -
+https://github.com/AlessandroMondin/U-NET. This author adjusted their implementation to be compatible with the dataset
+created and processed inputs with layer sizes and pooling determined by the architecture presented in ID8 (Panes et al.
+in report). This author also created their own training loop.
+
 """
 
 import torch
 from torch import nn
 from torchvision.transforms.functional import center_crop
 
-
-# Consulted this tutorial when building the U-Net class -  https://medium.com/@alessandromondin/semantic-segmentation-
-# with-pytorch-u-net-from-scratch-502d6565910a. Also consulted the author's GitHub implementation -
-# https://github.com/AlessandroMondin/U-NET. Adjusted the implementation such that it was compatible with the dataset I
-# have created (and the one created by ID8) and processed inputs with layer sizes and pooling identical to that outlined
-# in ID8.
 
 class CNNBlock(nn.Module):
 
@@ -189,7 +190,7 @@ class UNET(nn.Module):
 
 
 def unet_train(train_data, test_data, device, training_epochs: int = 50,
-               save_file: str = "./benchmarks/pre_trained_models/unet.pt"):
+               save_file: str = "./algorithms/pre_trained_models/unet.pt"):
     """Trains a U-Net on provided data then evaluates the loss function on the validation data (here, called test data).
 
     Parameters
@@ -256,7 +257,7 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
 
         with torch.no_grad():
             for i, vdata in enumerate(test_data):
-                vid, vinputs, vlabels = vdata[0].to(device), vdata[1].to(device), vdata[2].to(device)
+                _, vinputs, vlabels = vdata[0], vdata[1].to(device), vdata[2].to(device)
 
                 voutputs = unet(vinputs)
 

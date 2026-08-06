@@ -7,9 +7,8 @@ class CategoricalCrossEntropy(nn.Module):
     def __init__(self):
         super(CategoricalCrossEntropy, self).__init__()
 
-
-    def forward(self, predictions, targets):
-
+    @staticmethod
+    def forward(predictions, targets):
         N = len(predictions)
 
         # return nn.NLLLoss()(torch.log(predictions), targets)
@@ -30,13 +29,13 @@ class SourceClassifier(nn.Module):
         self.batch_norm = nn.BatchNorm2d(num_features=5)
 
         self.conv_layers = nn.Sequential(
-            nn.Conv2d(in_channels=5, out_channels=8, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(in_channels=5, out_channels=8, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels=16, out_channels=16, kernel_size=3, stride=2, padding=0),
+            nn.Conv2d(in_channels=16, out_channels=16, kernel_size=3, stride=2),
             nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1),
             nn.ReLU(inplace=True)
         )
 
@@ -72,9 +71,8 @@ class SourceClassifier(nn.Module):
         return x
 
 
-def classifier_train(train_data, test_data, device, training_epochs=50, save_file="./benchmarks/pre_trained_models/"
-                                                                          "classifier.pt"):
-
+def classifier_train(train_data, test_data, device, training_epochs=50, save_file="./algorithms/pre_trained_models/"
+                                                                                  "classifier.pt"):
     classifier = SourceClassifier().to(device)
 
     # Define loss function
@@ -115,7 +113,6 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
 
         with torch.no_grad():
             for i, vdata in enumerate(test_data):
-
                 vinputs, vlabels = vdata[0].to(device), vdata[1].to(device)
 
                 voutputs = classifier(vinputs)
@@ -153,7 +150,6 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
                 g['lr'] /= 2
 
     return classifier, best_epoch
-
 
 # REFERENCES
 

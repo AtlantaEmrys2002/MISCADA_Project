@@ -8,8 +8,8 @@ import torch
 
 def uneb_algorithm(training_data, validation_data, testing_data, use_pretrained_detector=False,
                    use_pretrained_classifier=False,
-                   pretrained_model_file="./benchmarks/pre_trained_models/unet.pt",
-                   pretrained_classifier_file="./benchmarks/pre_trained_models/classifier.pt"):
+                   pretrained_model_file="./algorithms/pre_trained_models/unet.pt",
+                   pretrained_classifier_file="./algorithms/pre_trained_models/classifier.pt"):
 
     # SEMANTIC SEGMENTATION
 
