@@ -11,7 +11,6 @@ from torch.utils.data import DataLoader, Subset
 
 
 def read_patches(num_patches=int, directory=str):
-
     # Read in patches
     patches = (np.array([np.load("{}/patch_{}/patch.npy".format(directory, n)) for n in range(num_patches)])
                .astype(np.float32))
@@ -27,7 +26,6 @@ def read_patches(num_patches=int, directory=str):
     types = []
 
     for n in range(num_patches):
-
         file_name = "{}/patch_{}/metadata.csv".format(directory, n)
 
         df = pd.read_csv(file_name)
@@ -70,18 +68,17 @@ def read_patches(num_patches=int, directory=str):
 
     # Create batches
     train_batches = DataLoader(train_split, batch_size=128, shuffle=True)
-    validation_batches = DataLoader(validation_split, batch_size=128, shuffle=True)
+    validation_batches = DataLoader(validation_split, batch_size=128, shuffle=False)
     # test_batches = DataLoader(test_split, batch_size=128, shuffle=False)
 
     # N.B. Only need the IDs of each test patch and make sure not to shuffle the test patches
 
-    data_for_testing = [test_data[k] for k in test_indices] # test_data[test_indices.astype(int)]
+    data_for_testing = [test_data[k] for k in test_indices]  # test_data[test_indices.astype(int)]
 
     return train_batches, validation_batches, data_for_testing  # test_batches
 
 
 def read_real_data(num_patches, directory=str):
-
     # READ IN REAL DATA
 
     # Read in patches

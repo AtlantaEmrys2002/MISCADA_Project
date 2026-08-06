@@ -1,6 +1,12 @@
+"""
+Segmentation algorithms used to distinguish between the foreground and background of photon count maps. N.B. includes
+the training loops of deep learning-based methods.
+"""
+
 import torch
 from torch import nn
 from torchvision.transforms.functional import center_crop
+
 
 # Consulted this tutorial when building the U-Net class -  https://medium.com/@alessandromondin/semantic-segmentation-
 # with-pytorch-u-net-from-scratch-502d6565910a. Also consulted the author's GitHub implementation -
@@ -8,12 +14,10 @@ from torchvision.transforms.functional import center_crop
 # have created (and the one created by ID8) and processed inputs with layer sizes and pooling identical to that outlined
 # in ID8.
 
-
 class CNNBlock(nn.Module):
 
     # Changed here, as padding must = 1 to get the correct shapes of outputs indicated in ID8
     def __init__(self, in_chan, out_chan, kernel_size=3, stride=1, padding=1):
-
         super(CNNBlock, self).__init__()
 
         self.seq_block = nn.Sequential(
@@ -24,6 +28,13 @@ class CNNBlock(nn.Module):
         )
 
     def forward(self, x):
+        """Returns the output of the block when passed data.
+
+        Parameters
+        ----------
+        x
+            Data to evaluate.
+        """
         x = self.seq_block(x)
 
         return x
@@ -42,7 +53,13 @@ class CNNBlocks(nn.Module):
             in_chan = out_chan
 
     def forward(self, x):
+        """Returns the output of the blocks when passed data.
 
+        Parameters
+        ----------
+        x
+            Data to evaluate.
+        """
         for layer in self.layers:
             x = layer(x)
 
@@ -69,7 +86,13 @@ class Encoder(nn.Module):
         self.enc_layers.append(CNNBlocks(n_conv=2, in_chan=in_chan, out_chan=out_chan, padding=padding))
 
     def forward(self, x):
+        """Returns the output of the encoder when passed data.
 
+        Parameters
+        ----------
+        x
+            Data to evaluate.
+        """
         route_connection = []
 
         for layer in self.enc_layers:
@@ -95,7 +118,6 @@ class Decoder(nn.Module):
         self.layers = nn.ModuleList()
 
         for i in range(uphill):
-
             self.layers += [
                 nn.ConvTranspose2d(in_chan, out_chan, kernel_size=2, stride=2),
                 CNNBlocks(n_conv=2, in_chan=in_chan, out_chan=out_chan, padding=padding),
@@ -106,7 +128,7 @@ class Decoder(nn.Module):
 
         # I changed this here to explicitly indicate padding = 0
         self.layers.append(
-            nn.Conv2d(in_chan, exit_chan, kernel_size=1, padding=0),
+            nn.Conv2d(in_chan, exit_chan, kernel_size=1),
         )
 
         # This is introduced in ID8 such that binary classification of each pixel may be performed
@@ -115,6 +137,15 @@ class Decoder(nn.Module):
         )
 
     def forward(self, x, routes_connection):
+        """Returns the output of the decoder when passed data.
+
+        Parameters
+        ----------
+        x
+            Data to evaluate.
+        routes_connection
+            Outputs of previous layers to concatenate with outputs of later layers as a skip connection.
+        """
 
         routes_connection.pop(-1)
 
@@ -143,21 +174,45 @@ class UNET(nn.Module):
                                padding=padding, uphill=downhill)
 
     def forward(self, x):
+        """Returns the output of the U-Net when passed data.
+
+        Parameters
+        ----------
+        x
+            Data to evaluate.
+        """
+
         enc_out, routes = self.encoder(x)
         out = self.decoder(enc_out, routes)
 
         return out
 
 
-def unet_train(train_data, test_data, training_epochs=50, save_file="./benchmarks/pre_trained_models/unet.pt"):
+def unet_train(train_data, test_data, device, training_epochs: int = 50,
+               save_file: str = "./benchmarks/pre_trained_models/unet.pt"):
+    """Trains a U-Net on provided data then evaluates the loss function on the validation data (here, called test data).
 
+    Parameters
+    ----------
+    train_data
+        Data upon which to train the U-Net.
+    test_data
+        Data upon which to validate the loss function.
+    device
+        Indicates whether to use CPU or GPU.
+    training_epochs : int
+        The number of epochs for which to train the U-Net.
+    save_file : str
+        The file in which to save the weights of the best model.
+
+    """
     # Adapted this code from https://docs.pytorch.org/tutorials/beginner/introyt/trainingyt.html
 
     # HAD TO ADD IN PADDING = 1 FOR THIS TO WORK AND MATCH NO. CHANNELS AND IM SIZE GIVEN IN DIAGRAM IN ID8
     # EVEN THOUGH ORIGINAL PAPER SAID NO PADDING
 
     # Create U-Net model - padding = 1 ("same convolution") to match no. channels and output sizes given in ID8 diagram
-    unet = UNET(5, 16, 1, padding=1, downhill=4)
+    unet = UNET(5, 16, 1, padding=1, downhill=4).to(device)
 
     # TRAINING
 
@@ -176,11 +231,10 @@ def unet_train(train_data, test_data, training_epochs=50, save_file="./benchmark
 
         print("EPOCH {}".format(epoch))
 
-        unet.train(True)
+        unet.train()
 
         for i, data in enumerate(train_data):
-
-            _, inputs, labels = data[0], data[1], data[2]
+            _, inputs, labels = data[0], data[1].to(device), data[2].to(device)
 
             # zero gradients for each batch
             optimiser.zero_grad()
@@ -202,8 +256,7 @@ def unet_train(train_data, test_data, training_epochs=50, save_file="./benchmark
 
         with torch.no_grad():
             for i, vdata in enumerate(test_data):
-
-                vid, vinputs, vlabels = vdata[0], vdata[1], vdata[2]
+                vid, vinputs, vlabels = vdata[0].to(device), vdata[1].to(device), vdata[2].to(device)
 
                 voutputs = unet(vinputs)
 
@@ -215,7 +268,6 @@ def unet_train(train_data, test_data, training_epochs=50, save_file="./benchmark
 
         # if this is the best model (in terms of loss) found so far, save model
         if avg_vloss < best_vloss:
-
             best_vloss = avg_vloss
             best_epoch = epoch
 
@@ -225,7 +277,6 @@ def unet_train(train_data, test_data, training_epochs=50, save_file="./benchmark
         scheduler.step(avg_vloss)
 
     return unet, best_epoch
-
 
 # REFERENCES
 # Convolutional Layers - https://en.wikipedia.org/wiki/Convolutional_layer

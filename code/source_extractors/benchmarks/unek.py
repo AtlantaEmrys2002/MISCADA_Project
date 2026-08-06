@@ -10,6 +10,10 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_
                    use_pretrained_classifier=False,
                    pretrained_model_file="./benchmarks/pre_trained_models/unet.pt",
                    pretrained_classifier_file="./benchmarks/pre_trained_models/classifier.pt"):
+
+    device = torch.device("mps")
+    print("Using Device: ", device)
+
     # SEMANTIC SEGMENTATION
 
     # Pre-trained parameter determines if we should use a U-Net I have already trained on data on create a new U-Net
@@ -19,15 +23,17 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_
 
         # Train U-Net on data
         model, best_epoch = unet_train(train_data=training_data, test_data=validation_data,
-                                       save_file=pretrained_model_file)
+                                       save_file=pretrained_model_file, device=device)
 
         print("BEST EPOCH: {}".format(best_epoch))
 
     else:
 
+        device = torch.device('cpu')
+
         # Use pre-trained model
         model = UNET(5, 16, 1, padding=1, downhill=4)
-        model.load_state_dict(torch.load(pretrained_model_file, weights_only=True))
+        model.load_state_dict(torch.load(pretrained_model_file, weights_only=True, map_location=device))
 
     # Set to model evaluation model to ensure not accidentally continuing training
     model.eval()
@@ -43,7 +49,6 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_
     #     testing_inputs.append(vdata[1])
 
     for i in testing_data:
-
         test_patch_ids.append(i[0])
         testing_inputs.append(i[1])
 
@@ -53,14 +58,22 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_
 
         # unet_predictions = np.array([model(i) for i in testing_inputs][0])
 
-        unet_predictions = np.array(model(torch.from_numpy(np.array(testing_inputs))))
+        unet_predictions = np.array(model(torch.from_numpy(np.array(testing_inputs)).to(device)).detach().cpu())
+
+        # unet_predictions = model(torch.from_numpy(np.array(testing_inputs)).to(device)).detach().cpu().numpy()
 
     # CLUSTERING (SOURCE LOCALISATION)
 
     unet_predictions = torch.from_numpy(unet_predictions)
 
+    print(unet_predictions)
+
     # Determine the number of sources present within each U-Net segmented image and return the location of their centres
     predicted_source_locations = k_means_clustering(unet_predictions)
+
+    print(len(predicted_source_locations))
+
+    print(len(predicted_source_locations[0]))
 
     # CLASSIFICATION OF SOURCES
 
@@ -120,15 +133,17 @@ def unek_algorithm(training_data, validation_data, testing_data, use_pretrained_
         # Train classifier on data
         classifier_model, best_epoch_classifier = classifier_train(train_data=train_batches_class,
                                                                    test_data=validation_batches_class,
-                                                                   save_file=pretrained_classifier_file)
+                                                                   save_file=pretrained_classifier_file, device=device)
 
         print("BEST EPOCH: {}".format(best_epoch_classifier))
 
     else:
 
+        cpu = torch.device('cpu')
+
         # Use pre-trained model
         classifier_model = SourceClassifier()
-        classifier_model.load_state_dict(torch.load(pretrained_classifier_file, weights_only=True))
+        classifier_model.load_state_dict(torch.load(pretrained_classifier_file, weights_only=True, map_location=cpu))
 
     # TEST CLASSIFIER
 

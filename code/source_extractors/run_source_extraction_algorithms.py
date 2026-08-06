@@ -67,11 +67,12 @@ if __name__ == "__main__":
     unsuccessful_algorithms = []
 
     try:
-        #
+
         # (unek_predicted_segmentations, unek_predicted_locations, unek_classifier_predictions, actual_classes,
         #  test_patch_ids) = unek_algorithm(train, valid, test)
 
-        print("HEL)")
+        (unek_predicted_segmentations, unek_predicted_locations, unek_classifier_predictions, actual_classes,
+         test_patch_ids) = unek_algorithm(train, valid, test, use_pretrained_detector=True)
 
     except RuntimeError:
 
@@ -81,17 +82,20 @@ if __name__ == "__main__":
     else:
 
         # Save predictions for test patches
-        # save_predictions(patch_ids=test_patch_ids, predicted_segmentations=unek_predicted_segmentations,
-        #                  predicted_locations=unek_predicted_locations,
-        #                  predicted_classes=unek_classifier_predictions, actual_classes=actual_classes,
-        #                  directory=save_directory, method="UNEK")
+        save_predictions(patch_ids=test_patch_ids, predicted_segmentations=unek_predicted_segmentations,
+                         predicted_locations=unek_predicted_locations,
+                         predicted_classes=unek_classifier_predictions, actual_classes=actual_classes,
+                         directory=save_directory, method="UNEK")
 
         successful_algorithms.append("UNEK")
 
         # Apply to real Fermi LAT data
 
-        (real_unek_predicted_segmentations, real_unek_predicted_locations, real_unek_classifier_predictions, real_actual_classes,
-         real_test_patch_ids) = unek_algorithm([], [], testing_data=real_data, use_pretrained_detector=True, use_pretrained_classifier=True)
+        (real_unek_predicted_segmentations, real_unek_predicted_locations, real_unek_classifier_predictions,
+         real_actual_classes, real_test_patch_ids) = unek_algorithm([], [],
+                                                                    testing_data=real_data,
+                                                                    use_pretrained_detector=True,
+                                                                    use_pretrained_classifier=True)
 
         # Save predictions for real data
         save_predictions(patch_ids=real_test_patch_ids, predicted_segmentations=real_unek_predicted_segmentations,
@@ -123,16 +127,16 @@ if __name__ == "__main__":
     #
     #     successful_algorithms.append("UNEB")
 
-        # Apply to real Fermi LAT data
-
-        (real_uneb_predicted_segmentations, real_uneb_predicted_locations, real_uneb_classifier_predictions, real_actual_classes,
-         real_test_patch_ids) = uneb_algorithm([], [], testing_data=real_data, use_pretrained_detector=True, use_pretrained_classifier=True)
-
-        # Save predictions for real data
-        save_predictions(patch_ids=real_test_patch_ids, predicted_segmentations=real_uneb_predicted_segmentations,
-                         predicted_locations=real_uneb_predicted_locations,
-                         predicted_classes=real_uneb_classifier_predictions, actual_classes=real_actual_classes,
-                         directory=real_data_save_directory, method="UNEB", real=True)
+        # # Apply to real Fermi LAT data
+        #
+        # (real_uneb_predicted_segmentations, real_uneb_predicted_locations, real_uneb_classifier_predictions, real_actual_classes,
+        #  real_test_patch_ids) = uneb_algorithm([], [], testing_data=real_data, use_pretrained_detector=True, use_pretrained_classifier=True)
+        #
+        # # Save predictions for real data
+        # save_predictions(patch_ids=real_test_patch_ids, predicted_segmentations=real_uneb_predicted_segmentations,
+        #                  predicted_locations=real_uneb_predicted_locations,
+        #                  predicted_classes=real_uneb_classifier_predictions, actual_classes=real_actual_classes,
+        #                  directory=real_data_save_directory, method="UNEB", real=True)
 
     print("Successfully Trained Algorithms: {}".format(successful_algorithms))
     print("Unsucessfully Trained Algorithms: {}".format(unsuccessful_algorithms))

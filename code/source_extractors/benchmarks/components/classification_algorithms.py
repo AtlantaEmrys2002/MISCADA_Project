@@ -72,10 +72,10 @@ class SourceClassifier(nn.Module):
         return x
 
 
-def classifier_train(train_data, test_data, training_epochs=50, save_file="./benchmarks/pre_trained_models/"
+def classifier_train(train_data, test_data, device, training_epochs=50, save_file="./benchmarks/pre_trained_models/"
                                                                           "classifier.pt"):
 
-    classifier = SourceClassifier()
+    classifier = SourceClassifier().to(device)
 
     # Define loss function
 
@@ -96,8 +96,7 @@ def classifier_train(train_data, test_data, training_epochs=50, save_file="./ben
         classifier.train()
 
         for i, data in enumerate(train_data):
-
-            inputs, labels = data[0], data[1]
+            inputs, labels = data[0].to(device), data[1].to(device)
 
             # Make sure to zero gradients when calculating loss and don't update model
             output = classifier(inputs)
@@ -117,7 +116,7 @@ def classifier_train(train_data, test_data, training_epochs=50, save_file="./ben
         with torch.no_grad():
             for i, vdata in enumerate(test_data):
 
-                vinputs, vlabels = vdata[0], vdata[1]
+                vinputs, vlabels = vdata[0].to(device), vdata[1].to(device)
 
                 voutputs = classifier(vinputs)
 
