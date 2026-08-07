@@ -69,16 +69,16 @@ if __name__ == "__main__":
 
     # Results when applied to the TEST data (not the train or validation data)
 
-    successful_algorithms = []
-    unsuccessful_algorithms = []
+    # successful_algorithms = []
+    # unsuccessful_algorithms = []
 
     # try:
 
         # (unek_predicted_segmentations, unek_predicted_locations, unek_classifier_predictions, actual_classes,
         #  test_patch_ids) = unek_algorithm(train, valid, test)
 
-    (unek_predicted_segmentations, unek_predicted_locations, unek_classifier_predictions, actual_classes,
-     test_patch_ids) = unek_algorithm(train, valid, test)
+    # (unek_predicted_segmentations, unek_predicted_locations, unek_classifier_predictions, actual_classes,
+    #  test_patch_ids) = unek_algorithm(train, valid, test)
 
     # except RuntimeError:
     #
@@ -88,26 +88,26 @@ if __name__ == "__main__":
     # else:
 
     # Save predictions for test patches
-    save_predictions(patch_ids=test_patch_ids, predicted_segmentations=unek_predicted_segmentations,
-                     predicted_locations=unek_predicted_locations,
-                     predicted_classes=unek_classifier_predictions, actual_classes=actual_classes,
-                     directory=save_directory, method="UNEK")
+    # save_predictions(patch_ids=test_patch_ids, predicted_segmentations=unek_predicted_segmentations,
+    #                  predicted_locations=unek_predicted_locations,
+    #                  predicted_classes=unek_classifier_predictions, actual_classes=actual_classes,
+    #                  directory=save_directory, method="UNEK")
 
-    successful_algorithms.append("UNEK")
+    # successful_algorithms.append("UNEK")
 
     # Apply to real Fermi LAT data
 
-    (real_unek_predicted_segmentations, real_unek_predicted_locations, real_unek_classifier_predictions,
-     real_actual_classes, real_test_patch_ids) = unek_algorithm([], [],
-                                                                testing_data=real_data,
-                                                                use_pretrained_detector=True,
-                                                                use_pretrained_classifier=True)
-
-    # Save predictions for real data
-    save_predictions(patch_ids=real_test_patch_ids, predicted_segmentations=real_unek_predicted_segmentations,
-                     predicted_locations=real_unek_predicted_locations,
-                     predicted_classes=real_unek_classifier_predictions, actual_classes=real_actual_classes,
-                     directory=real_data_save_directory, method="UNEK", real=True)
+    # (real_unek_predicted_segmentations, real_unek_predicted_locations, real_unek_classifier_predictions,
+    #  real_actual_classes, real_test_patch_ids) = unek_algorithm([], [],
+    #                                                             testing_data=real_data,
+    #                                                             use_pretrained_detector=True,
+    #                                                             use_pretrained_classifier=True)
+    #
+    # # Save predictions for real data
+    # save_predictions(patch_ids=real_test_patch_ids, predicted_segmentations=real_unek_predicted_segmentations,
+    #                  predicted_locations=real_unek_predicted_locations,
+    #                  predicted_classes=real_unek_classifier_predictions, actual_classes=real_actual_classes,
+    #                  directory=real_data_save_directory, method="UNEK", real=True)
 
     # UNEB
 
@@ -144,8 +144,8 @@ if __name__ == "__main__":
         #                  predicted_classes=real_uneb_classifier_predictions, actual_classes=real_actual_classes,
         #                  directory=real_data_save_directory, method="UNEB", real=True)
 
-    print("Successfully Trained Algorithms: {}".format(successful_algorithms))
-    print("Unsucessfully Trained Algorithms: {}".format(unsuccessful_algorithms))
+    # print("Successfully Trained Algorithms: {}".format(successful_algorithms))
+    # print("Unsucessfully Trained Algorithms: {}".format(unsuccessful_algorithms))
 
 # REFERENCES
 
