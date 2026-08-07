@@ -2,7 +2,7 @@ import copy
 import cv2
 from itertools import product
 import numpy as np
-from sklearn.cluster import KMeans
+from sklearn.cluster import DBSCAN, KMeans
 
 
 def pixels_in_radius(coordinate, R):
@@ -81,6 +81,36 @@ def blob_detection(binary_segments):
     return centres
 
 
+def dbscan_clustering(binary_segments, threshold=0.2):
+    source_centres_in_each_image = []
+
+    for segment in binary_segments:
+
+        if isinstance(segment[0], np.ndarray):
+
+            D = segment[0]
+
+        else:
+
+            D = segment[0].detach().numpy()
+
+        # As we have used SoftMax, our image isn't exactly binary - this will make it so
+        source_pixels = np.argwhere(D > threshold)
+
+        # Labels stating where element n indicates the cluster pixel n is assigned to
+        labelled_source_pixels = DBSCAN(eps=5).fit(source_pixels).labels_
+
+        num_clusters_found = np.max(labelled_source_pixels)
+
+        cluster_centres = [np.round(np.mean(np.array([k[0] for k in source_pixels[
+            np.argwhere(labelled_source_pixels == c)]]).T, axis=1)).astype(int) for c in range(1,
+                                                                                               num_clusters_found)]
+
+        source_centres_in_each_image.append(np.array(cluster_centres))
+
+    return source_centres_in_each_image
+
+
 def k_means_clustering(binary_segments, max_num_centroids=50):
     # IMPLEMENTED FOLLOWING PSEUDOCODE IN ID8 (MY OWN IMPLEMENTATION)
 
@@ -88,13 +118,13 @@ def k_means_clustering(binary_segments, max_num_centroids=50):
 
     for segment in binary_segments:
 
-        if type(segment[0]) != np.ndarray:
+        if isinstance(segment[0], np.ndarray):
 
-            D = segment[0].detach().numpy()
+            D = segment[0]
 
         else:
 
-            D = segment[0]
+            D = segment[0].detach().numpy()
 
         l_sth = 0.2
         l_snn = -10
@@ -128,7 +158,6 @@ def k_means_clustering(binary_segments, max_num_centroids=50):
             cluster_centres = np.round(k_centroids.cluster_centers_)
 
             for c in cluster_centres:
-
                 # REPLACE THIS WITH PIXELS IN RADIUS FUNCTION
 
                 # find pixels of D inside R
@@ -142,23 +171,21 @@ def k_means_clustering(binary_segments, max_num_centroids=50):
 
                 distances_from_centre_coord = np.linalg.norm(potential_coords - c, ord=2, axis=1)
 
-                p_c = potential_coords[(distances_from_centre_coord < R)].astype(int)
+                p_c = potential_coords[(distances_from_centre_coord < R)].astype(int).T
 
                 # Update s_k
-                s_k += np.sum(D_tmp[p_c[:, 0], p_c[:, 1]])
+                s_k += np.sum(D_tmp[p_c[0], p_c[1]])
 
                 # Redefine scores such that if the points are included in another cluster, the score is penalised
-                for p_c_coord in p_c:
-                    D_tmp[p_c_coord[0], p_c_coord[1]] = l_snn
+                D_tmp[p_c[0], p_c[1]] = l_snn
 
             if s_k > s_k_max:
                 s_k_max = s_k
                 best_centres = cluster_centres
 
-        source_centres_in_each_image.append(best_centres)
+        source_centres_in_each_image.append(np.array(best_centres))
 
     return source_centres_in_each_image
-
 
 # REFERENCES
 
@@ -169,6 +196,7 @@ def k_means_clustering(binary_segments, max_num_centroids=50):
 # Blob Detection Thresholds - https://opencv.org/blob-detection-using-opencv/#h-filtering-blobs
 # Blob Detection Tutorials - https://opencv.org/blob-detection-using-opencv/
 # Blob Detection - https://www.geeksforgeeks.org/python/blob-detection-using-opencv/
+# Centroids of DBSCAN - https://stackoverflow.com/questions/62215910/how-to-get-the-centroids-in-dbscan-sklearn
 # Copy - https://stackoverflow.com/questions/37593013/deep-copy-of-a-np-array-of-np-array
 # Extracting Cartesian Coordinates from OpenCV - https://stackoverflow.com/questions/35884409/how-to-extract-x-y-
 # Filter Numpy - https://stackoverflow.com/questions/19821425/how-can-i-filter-numpy-array-by-list-of-indices
@@ -176,7 +204,11 @@ def k_means_clustering(binary_segments, max_num_centroids=50):
 # ID8 and ID25 - see references
 # Indexing with array of indices - https://stackoverflow.com/questions/19821425/how-can-i-filter-numpy-array-by-list-of-
 # indices
+# isinstance - https://www.w3schools.com/python/ref_func_isinstance.asp
 # Itertools - https://stackoverflow.com/questions/33282369/convert-itertools-array-into-numpy-array
+# Mean of Rows - https://stackoverflow.com/questions/67348256/compute-the-mean-of-each-row-in-a-numpy-matrix
+# Modify - https://stackoverflow.com/questions/7761393/how-to-modify-a-2d-numpy-array-at-specific-locations-without-a-
+# loop
 # Numpy Array Size - https://stackoverflow.com/questions/11295609/how-can-i-check-whether-a-numpy-array-is-empty-or-not
 # Numpy Documentation - https://numpy.org/devdocs/reference/generated/numpy.array_equal.html
 # Numpy and OpenCV Datatypes - https://stackoverflow.com/questions/7587490/converting-numpy-array-to-opencv-array
@@ -187,3 +219,4 @@ def k_means_clustering(binary_segments, max_num_centroids=50):
 # Row Selection - https://stackoverflow.com/questions/58079075/numpy-select-rows-based-on-condition
 # Setting Blob Detection Thresholds - https://stackoverflow.com/questions/32973537/what-is-the-use-of-minrepeatability-
 # parameter-of-simpleblobdetector-in-opencv
+# Speed Up K-Means - https://stackoverflow.com/questions/46515481/how-to-speed-up-k-means-from-scikit-learn

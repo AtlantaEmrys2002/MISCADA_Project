@@ -1,5 +1,5 @@
 from algorithms.components.classification_algorithms import classification_neural_network
-from algorithms.components.clustering_algorithms import k_means_clustering
+from algorithms.components.clustering_algorithms import dbscan_clustering, k_means_clustering
 from algorithms.components.machine_learning_segmentation_algorithms import random_forest_segmentation
 from algorithms.components.data_preparation import ml_segmentation_data_prep, prepare_classifier_data
 import copy
@@ -30,7 +30,7 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
 
     segmentation_algorithms = ["random_forest"]
 
-    localisation_algorithms = ["kmeans"]
+    localisation_algorithms = ["dbscan", "kmeans"]
 
     classification_algorithms = ["cnn"]
 
@@ -88,6 +88,23 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                         validation_source_locations = k_means_clustering(validation_segmentation_predictions)
                         test_source_locations = k_means_clustering(test_segmentation_predictions)
                         real_source_locations = k_means_clustering(real_segmentation_predictions)
+
+                    print("Localisation Algorithm Applied")
+
+                case "dbscan":
+
+                    if segment != "unet":
+
+                        train_source_locations = dbscan_clustering(train_segmentation_predictions)
+                        validation_source_locations = dbscan_clustering(validation_segmentation_predictions)
+                        test_source_locations = dbscan_clustering(test_segmentation_predictions)
+                        real_source_locations = dbscan_clustering(real_segmentation_predictions)
+
+                    else:
+                        train_source_locations = dbscan_clustering(train_segmentation_predictions)
+                        validation_source_locations = dbscan_clustering(validation_segmentation_predictions)
+                        test_source_locations = dbscan_clustering(test_segmentation_predictions)
+                        real_source_locations = dbscan_clustering(real_segmentation_predictions)
 
                     print("Localisation Algorithm Applied")
 

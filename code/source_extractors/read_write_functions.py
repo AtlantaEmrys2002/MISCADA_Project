@@ -95,7 +95,6 @@ def read_real_data(num_patches, directory=str):
     types = []
 
     for n in range(num_patches):
-
         file_name = "{}/patch_{}/metadata.csv".format(directory, n)
 
         df = pd.read_csv(file_name)
