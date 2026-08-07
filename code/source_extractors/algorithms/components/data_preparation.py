@@ -156,8 +156,10 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
 
         # N.B. conversion to float 32 from float 64 - Apple GPUs cannot work with float64
         for pred_source in range(num_predicted_sources):
-            data.append([normalised_sub_boxes[patch][pred_source].astype(np.float32),
-                         vector_labels[patch][pred_source].astype(np.float32)])
+            if isinstance(vector_labels[patch][pred_source], np.ndarray):
+
+                data.append([normalised_sub_boxes[patch][pred_source].astype(np.float32),
+                             vector_labels[patch][pred_source].astype(np.float32)])
 
     if len(data) == 0:
         raise RuntimeError("Not enough sources were localised - no data is available for the classifier to train on.")

@@ -2,7 +2,7 @@ import copy
 import cv2
 from itertools import product
 import numpy as np
-from sklearn.cluster import DBSCAN, KMeans
+from sklearn.cluster import DBSCAN, KMeans, SpectralClustering
 
 
 def pixels_in_radius(coordinate, R):
@@ -186,6 +186,27 @@ def k_means_clustering(binary_segments, max_num_centroids=50):
         source_centres_in_each_image.append(np.array(best_centres))
 
     return source_centres_in_each_image
+
+
+# def spectral_clustering(binary_segments, max_num_centroids=20, threshold=0.2):
+#
+#     source_centres_in_each_image = []
+#
+#     for segment in binary_segments:
+#
+#         if isinstance(segment[0], np.ndarray):
+#
+#             D = segment[0]
+#
+#         else:
+#
+#             D = segment[0].detach().numpy()
+#
+#         # As we have used SoftMax, our image isn't exactly binary - this will make it so
+#         source_pixels = np.argwhere(D > threshold)
+#
+#         # Labels stating where element n indicates the cluster pixel n is assigned to
+#         labelled_source_pixels = SpectralClustering
 
 # REFERENCES
 
