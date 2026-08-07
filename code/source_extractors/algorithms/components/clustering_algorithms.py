@@ -97,16 +97,22 @@ def dbscan_clustering(binary_segments, threshold=0.2):
         # As we have used SoftMax, our image isn't exactly binary - this will make it so
         source_pixels = np.argwhere(D > threshold)
 
-        # Labels stating where element n indicates the cluster pixel n is assigned to
-        labelled_source_pixels = DBSCAN(eps=5).fit(source_pixels).labels_
+        if source_pixels.size != 0:
 
-        num_clusters_found = np.max(labelled_source_pixels)
+            # Labels stating where element n indicates the cluster pixel n is assigned to
+            labelled_source_pixels = DBSCAN(eps=5).fit(source_pixels).labels_
 
-        cluster_centres = [np.round(np.mean(np.array([k[0] for k in source_pixels[
-            np.argwhere(labelled_source_pixels == c)]]).T, axis=1)).astype(int) for c in range(1,
-                                                                                               num_clusters_found)]
+            num_clusters_found = np.max(labelled_source_pixels)
 
-        source_centres_in_each_image.append(np.array(cluster_centres))
+            cluster_centres = [np.round(np.mean(np.array([k[0] for k in source_pixels[
+                np.argwhere(labelled_source_pixels == c)]]).T, axis=1)).astype(int) for c in range(1,
+                                                                                                   num_clusters_found)]
+
+            source_centres_in_each_image.append(np.array(cluster_centres))
+
+        else:
+
+            source_centres_in_each_image.append(np.array([]))
 
     return source_centres_in_each_image
 

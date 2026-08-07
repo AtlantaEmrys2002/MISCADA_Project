@@ -431,10 +431,13 @@ def xml_parser_locations(xml_file: str, coordinate_system='G'):
 
 # REFERENCES
 
+# Check if Empty - https://stackoverflow.com/questions/11295609/how-can-i-check-whether-a-numpy-array-is-empty-or-not
 # Delete Rows - https://stackoverflow.com/questions/40426697/is-there-any-way-to-delete-the-specific-elements-of-an-
 # numpy-array-in-place-in
 # Dictionary Mapping - https://stackoverflow.com/questions/63145423/how-to-create-a-numpy-array-based-on-the-values-of-
 # another-numpy-array
 # Dictionary Mapping - https://stackoverflow.com/questions/18453566/get-list-of-values-for-list-of-keys
+# Error Debugging - https://stackoverflow.com/questions/76494637/pytorch-dataloader-runtimeerror-stack-expects-each-
+# tensor-to-be-equal-size
 # Match vs If-Else - https://www.reddit.com/r/learnpython/comments/1by6vht/should_i_use_match_case_instead_of_if_else/
 # Partial Func - https://stackoverflow.com/questions/15331726/how-does-functools-partial-do-what-it-does
