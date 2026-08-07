@@ -128,14 +128,15 @@ def normalise_sub_patches(sub_patches):
 def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_data=True, test=False):
 
     # Remove all patches with no predicted sources
-    ids_to_remove = [p for p in range(patch_ids.shape[0]) if len(predicted_locations[p]) == 0]
+    # ids_to_remove = [p for p in range(patch_ids.shape[0]) if len(predicted_locations[p]) == 0]
+    ids_to_remove = [p for p in range(patch_ids.shape[0]) if predicted_locations[p].shape[0] == 0]
 
     predicted_locations = [predicted_locations[p] for p in range(patch_ids.shape[0]) if p not in ids_to_remove]
     patches = np.delete(patches, np.array(ids_to_remove).astype(int), 0)
     patch_ids = np.delete(patch_ids, np.array(ids_to_remove).astype(int), 0)
 
     # Get 7 x 7 boxes around each predicted source in each patch
-    sub_boxes = source_boxes(patches, predicted_locations)
+    sub_boxes, predicted_locations = source_boxes(patches, predicted_locations)
 
     # Normalise each patch (normalise each energy bin separately)
     normalised_sub_boxes = normalise_sub_patches(sub_boxes)
@@ -143,7 +144,7 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
     # Get labels for each patch (i.e. AGN, PSR, FAKE)
     labels = source_box_labels(patch_ids=patch_ids, predicted_source_locations=predicted_locations)
 
-    # print(np.unique(np.array(labels), return_counts=True))
+
 
     # Format labels such that they are in vector format, e.g. AGN is equivalent to [1., 0., 0.]
     vector_labels = str_labels_to_vector_labels(labels)
@@ -162,6 +163,21 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
         for pred_source in range(num_predicted_sources):
             data.append([normalised_sub_boxes[patch][pred_source].astype(np.float32),
                          vector_labels[patch][pred_source].astype(np.float32)])
+
+    # final_sub_boxes = []
+    #
+    # for p in range(num_patches):
+    #
+    #     for pred_source in range(sub_boxes[p].shape[0]):
+    #
+    #         final_sub_boxes.append(normalised_sub_boxes[patch][pred_source].astype(np.float32))
+    #
+    # data = list(zip(final_sub_boxes, vector_labels.astype(np.float32)))
+
+
+
+
+
 
     if len(data) == 0:
         raise RuntimeError("Not enough sources were localised - no data is available for the classifier to train on.")
@@ -189,11 +205,11 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
 def source_boxes(patches, predicted_source_locations):
     # Select 7 x 7 boxes around each patch location - all in Cartesian coordinates
 
-    num_patches = patches.shape[0]
-
     boxes_for_each_patch = []
 
-    for n in range(num_patches):
+    new_predicted_locations = []
+
+    for n in range(patches.shape[0]):
         predicted_locations_in_patch = predicted_source_locations[n].astype(int)
 
         patch = patches[n]
@@ -211,17 +227,18 @@ def source_boxes(patches, predicted_source_locations):
             np.array([copy.deepcopy(patch[:, np.arange(l[0] - 3, l[0] + 4), :][:, :, np.arange(l[1] - 3, l[1] + 4)])
                       for l in locs]))
 
-        boxes_for_each_patch.append(np.array(classification_sub_patches))
+        boxes_for_each_patch.append(classification_sub_patches)
 
-    return boxes_for_each_patch
+        # As we are not necessarily constructing box around each patch - may disqualify some sources
+        new_predicted_locations.append(copy.deepcopy(predicted_locations_in_patch[mask]))
+
+    return boxes_for_each_patch, new_predicted_locations
 
 
 def source_box_labels(patch_ids, predicted_source_locations, localisation_threshold=0.3):
     catalog_directory = "./../data_simulation/simulated_data/catalogs/catalog_{}/{}.xml"
     patches_metadata_file = "./../data_simulation/simulated_data/patches/patch_metadata.csv"
     individual_patch_metadata_file = "./../data_simulation/simulated_data/patches/patch_{}/metadata.csv"
-
-    num_patches = patch_ids.shape[0]
 
     source_information = pd.read_csv(patches_metadata_file)
 
@@ -257,7 +274,7 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
 
     labels = []
 
-    for n in range(num_patches):
+    for n in range(patch_ids.shape[0]):
 
         patch_id = patch_ids[n]
 
@@ -303,6 +320,64 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
 
         # Convert the predicted locations of sources from coordinates within 64 x 64 patch to RA-DEC
 
+        # if len(predicted_source_locations[n]) > 0:
+        #
+        #     predicted_locs_for_patch_celestial = (
+        #         image_cartesian_coordinates_to_galactic_coordinates(predicted_source_locations[n],
+        #                                                             patch_centre=center_of_patch,
+        #                                                             coordinate_system='C'))
+        #
+        # else:
+        #
+        #     predicted_locs_for_patch_celestial = np.array([])
+        #
+        # # FIND SEPARATION OF PREDICTED AND GALACTIC COORDINATES
+        #
+        # # Iterate over predictions and return whether they are AGN, PSR, FAKE - N.B. NEED NUMBER SYSTEM FOR THIS
+        #
+        # labels_for_patch = []
+        #
+        # for pred in predicted_locs_for_patch_celestial:
+        #
+        #     pred_skycoord = SkyCoord(ra=pred[0] * u.degree, dec=pred[1] * u.degree, frame="icrs")
+        #
+        #     # Calculate distance between this predicted source and all other sources in the source
+        #
+        #     if num_agn_in_patch == 0 and num_psr_in_patch == 0:
+        #         labels_for_patch.append("FAKE")
+        #
+        #     elif num_agn_in_patch == 0:
+        #         separation_psr = pred_skycoord.separation(actual_psr_locations_in_celestial).degree
+        #
+        #         if separation_psr[np.argmin(separation_psr)] < localisation_threshold:
+        #             labels_for_patch.append("PSR")
+        #         else:
+        #             labels_for_patch.append("FAKE")
+        #
+        #     elif num_psr_in_patch == 0:
+        #         separation_agn = pred_skycoord.separation(actual_agn_locations_in_celestial).degree
+        #
+        #         if separation_agn[np.argmin(separation_agn)] < localisation_threshold:
+        #             labels_for_patch.append("AGN")
+        #         else:
+        #             labels_for_patch.append("FAKE")
+        #     else:
+        #
+        #         separation_psr = pred_skycoord.separation(actual_psr_locations_in_celestial).degree
+        #         separation_agn = pred_skycoord.separation(actual_agn_locations_in_celestial).degree
+        #
+        #         closest_agn = separation_agn[np.argmin(separation_agn)]
+        #         closest_psr = separation_psr[np.argmin(separation_psr)]
+        #
+        #         if closest_agn < closest_psr and closest_agn < localisation_threshold:
+        #             labels_for_patch.append("AGN")
+        #         elif closest_psr < closest_agn and closest_psr < localisation_threshold:
+        #             labels_for_patch.append("PSR")
+        #         else:
+        #             labels_for_patch.append("FAKE")
+        #
+        #     labels.append(labels_for_patch)
+
         if len(predicted_source_locations[n]) > 0:
 
             predicted_locs_for_patch_celestial = (
@@ -310,86 +385,142 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
                                                                     patch_centre=center_of_patch,
                                                                     coordinate_system='C'))
 
-        else:
+        # else:
+        #
+        #     predicted_locs_for_patch_celestial = np.array([])
 
-            predicted_locs_for_patch_celestial = np.array([])
+            # FIND SEPARATION OF PREDICTED AND GALACTIC COORDINATES
 
-        # FIND SEPARATION OF PREDICTED AND GALACTIC COORDINATES
+            # Iterate over predictions and return whether they are AGN, PSR, FAKE - N.B. NEED NUMBER SYSTEM FOR THIS
 
-        # Iterate over predictions and return whether they are AGN, PSR, FAKE - N.B. NEED NUMBER SYSTEM FOR THIS
+            labels_for_patch = []
 
-        labels_for_patch = []
+            for pred in predicted_locs_for_patch_celestial:
 
-        for pred in predicted_locs_for_patch_celestial:
+                pred_skycoord = SkyCoord(ra=pred[0] * u.degree, dec=pred[1] * u.degree, frame="icrs")
 
-            pred_skycoord = SkyCoord(ra=pred[0] * u.degree, dec=pred[1] * u.degree, frame="icrs")
+                # Calculate distance between this predicted source and all other sources in the source
 
-            # Calculate distance between this predicted source and all other sources in the source
+                if num_agn_in_patch == 0 and num_psr_in_patch == 0:
+                    labels_for_patch.append("FAKE")
 
-            if num_agn_in_patch > 0:
+                elif num_agn_in_patch == 0:
+                    separation_psr = pred_skycoord.separation(actual_psr_locations_in_celestial).degree
 
-                separation_agn = pred_skycoord.separation(actual_agn_locations_in_celestial).degree
-
-            else:
-
-                separation_agn = np.array([])
-
-            if num_psr_in_patch > 0:
-
-                separation_psr = pred_skycoord.separation(actual_psr_locations_in_celestial).degree
-
-            else:
-
-                separation_psr = np.array([])
-
-            if separation_agn.shape[0] == 0 and separation_psr.shape[0] == 0:
-
-                labels_for_patch.append("FAKE")
-
-            else:
-
-                if separation_agn.shape[0] == 0:
-
-                    closest_psr = np.argmin(separation_psr)
-
-                    if separation_psr[closest_psr] < localisation_threshold:
-
+                    if separation_psr[np.argmin(separation_psr)] < localisation_threshold:
                         labels_for_patch.append("PSR")
-
                     else:
-
                         labels_for_patch.append("FAKE")
 
-                elif separation_psr.shape[0] == 0:
+                elif num_psr_in_patch == 0:
+                    separation_agn = pred_skycoord.separation(actual_agn_locations_in_celestial).degree
 
-                    closest_agn = np.argmin(separation_agn)
-
-                    if separation_agn[closest_agn] < localisation_threshold:
-
+                    if separation_agn[np.argmin(separation_agn)] < localisation_threshold:
                         labels_for_patch.append("AGN")
-
                     else:
-
                         labels_for_patch.append("FAKE")
-
                 else:
 
-                    closest_psr = np.argmin(separation_psr)
-                    closest_agn = np.argmin(separation_agn)
+                    separation_psr = pred_skycoord.separation(actual_psr_locations_in_celestial).degree
+                    separation_agn = pred_skycoord.separation(actual_agn_locations_in_celestial).degree
 
-                    if (separation_psr[closest_psr] < separation_agn[closest_agn] and separation_psr[closest_psr] <
-                            localisation_threshold):
+                    closest_agn = separation_agn[np.argmin(separation_agn)]
+                    closest_psr = separation_psr[np.argmin(separation_psr)]
 
-                        labels_for_patch.append("PSR")
-
-                    elif (separation_agn[closest_agn] < separation_psr[closest_psr] and separation_agn[closest_agn] <
-                          localisation_threshold):
-
+                    if closest_agn < closest_psr and closest_agn < localisation_threshold:
                         labels_for_patch.append("AGN")
-
+                    elif closest_psr < closest_agn and closest_psr < localisation_threshold:
+                        labels_for_patch.append("PSR")
                     else:
-
                         labels_for_patch.append("FAKE")
+
+        else:
+
+            labels_for_patch = np.array([])
+
+        labels.append(labels_for_patch)
+
+
+
+
+
+
+
+
+
+
+
+            #
+            #
+            #
+            #
+            #
+            #
+            #
+            # if num_agn_in_patch > 0:
+            #
+            #     separation_agn = pred_skycoord.separation(actual_agn_locations_in_celestial).degree
+            #
+            # else:
+            #
+            #     separation_agn = np.array([])
+            #
+            # if num_psr_in_patch > 0:
+            #
+            #     separation_psr = pred_skycoord.separation(actual_psr_locations_in_celestial).degree
+            #
+            # else:
+            #
+            #     separation_psr = np.array([])
+            #
+            # if separation_agn.shape[0] == 0 and separation_psr.shape[0] == 0:
+            #
+            #     labels_for_patch.append("FAKE")
+            #
+            # else:
+            #
+            #     if separation_agn.shape[0] == 0:
+            #
+            #         closest_psr = np.argmin(separation_psr)
+            #
+            #         if separation_psr[closest_psr] < localisation_threshold:
+            #
+            #             labels_for_patch.append("PSR")
+            #
+            #         else:
+            #
+            #             labels_for_patch.append("FAKE")
+            #
+            #     elif separation_psr.shape[0] == 0:
+            #
+            #         closest_agn = np.argmin(separation_agn)
+            #
+            #         if separation_agn[closest_agn] < localisation_threshold:
+            #
+            #             labels_for_patch.append("AGN")
+            #
+            #         else:
+            #
+            #             labels_for_patch.append("FAKE")
+            #
+            #     else:
+            #
+            #         closest_psr = np.argmin(separation_psr)
+            #         closest_agn = np.argmin(separation_agn)
+            #
+            #         if (separation_psr[closest_psr] < separation_agn[closest_agn] and separation_psr[closest_psr] <
+            #                 localisation_threshold):
+            #
+            #             labels_for_patch.append("PSR")
+            #
+            #         elif (separation_agn[closest_agn] < separation_psr[closest_psr] and separation_agn[closest_agn] <
+            #               localisation_threshold):
+            #
+            #             labels_for_patch.append("AGN")
+            #
+            #         else:
+            #
+            #             labels_for_patch.append("FAKE")
 
         labels.append(np.array(labels_for_patch))
 
@@ -401,7 +532,8 @@ def str_labels_to_vector_labels(labels):
 
     str_to_vector = {"AGN": np.array([1., 0., 0.]), "PSR": np.array([0., 1., 0.]), "FAKE": np.array([0., 0., 1.])}
 
-    vector_labels = [np.array(itemgetter(*labels[n])(str_to_vector)) for n in range(num_patches)]
+    vector_labels = [np.array(itemgetter(*labels[n])(str_to_vector)) if len(labels[n]) > 0 else np.array([])
+                     for n in range(num_patches)]
 
     return vector_labels
 
