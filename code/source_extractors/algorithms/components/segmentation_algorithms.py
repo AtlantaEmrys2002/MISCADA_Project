@@ -245,7 +245,7 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
     # Define loss function and optimiser - changed from that proposed in ID11 and ID8
     # loss_fn = torch.nn.BCEWithLogitsLoss().to(device)
 
-    loss_fn = torch.nn.CrossEntropyLoss()
+    loss_fn = torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, 100])).to(device)
 
     # optimiser = torch.optim.Adam(unet_model.parameters(), lr=1.e-4)
     optimiser = torch.optim.SGD(unet_model.parameters(), lr=1.e-2)
@@ -340,8 +340,13 @@ def unet(training_maps, validation_maps, testing_maps, pretrained=False, real=Fa
     if not pretrained:
 
         # Train classifier on data
+        # model, best_epoch = unet_train(train_data=training_maps, test_data=validation_maps,
+        #                                save_file=save_file, device=device)
+
+        # CHANGE BACK LATER
+
         model, best_epoch = unet_train(train_data=training_maps, test_data=validation_maps,
-                                       save_file=save_file, device=device)
+                                       save_file=save_file, device=device, training_epochs=10)
 
         print("BEST EPOCH: {}".format(best_epoch))
 
@@ -363,6 +368,12 @@ def unet(training_maps, validation_maps, testing_maps, pretrained=False, real=Fa
         with torch.no_grad():
             # test_data_predictions = model(torch.from_numpy(real_maps).to(device)).detach().cpu().numpy()
 
+            # test_data_predictions = []
+            #
+            # for k in range(0, real_maps.shape[0], 10000):
+            #
+            #     test_data_predictions.append(torch.argmax(model(torch.from_numpy(real_maps).to(device)).detach().cpu(), dim=1).numpy())
+            #
             test_data_predictions = torch.argmax(model(torch.from_numpy(real_maps).to(device)).detach().cpu(), dim=1).numpy()
 
             # test_data_predictions = torch.argmax(test_data_predictions, dim=1)
@@ -382,9 +393,12 @@ def unet(training_maps, validation_maps, testing_maps, pretrained=False, real=Fa
             # validation_data_predictions = model(torch.from_numpy(validation_maps).to(device)).detach().cpu().numpy()
             # test_data_predictions = model(torch.from_numpy(testing_maps).to(device)).detach().cpu().numpy()
 
-            train_data_predictions = torch.argmax(model(torch.from_numpy(training_maps).to(device)).detach().cpu(), dim=1).numpy()
-            validation_data_predictions = torch.argmax(model(torch.from_numpy(validation_maps).to(device)).detach().cpu(), dim=1).numpy()
-            test_data_predictions = torch.argmax(model(torch.from_numpy(testing_maps).to(device)).detach().cpu(), dim=1).numpy()
+            train_data_predictions = torch.argmax(model(torch.from_numpy(training_maps).to(device)).detach().cpu(),
+                                                  dim=1).numpy()
+            validation_data_predictions = torch.argmax(model(
+                torch.from_numpy(validation_maps).to(device)).detach().cpu(), dim=1).numpy()
+            test_data_predictions = torch.argmax(model(torch.from_numpy(testing_maps).to(device)).detach().cpu(),
+                                                 dim=1).numpy()
 
         return train_data_predictions, validation_data_predictions, test_data_predictions
 

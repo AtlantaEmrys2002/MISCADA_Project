@@ -30,7 +30,7 @@ def blob_detection(binary_segments):
     # Set to 78 as that is the maximum value a pixel could hold
     params.maxThreshold = 78
     params.filterByArea = True
-    # 5 pixels recommended by paper
+    # 5 pixels recommended by paper ID25
     params.minArea = 5
     params.filterByCircularity = False
     params.filterByConvexity = False
@@ -45,38 +45,31 @@ def blob_detection(binary_segments):
 
         # PREPARE DATA
 
-        D = segment[0].detach().numpy().astype(np.uint8)
+        D = segment[0]
+
+        if not isinstance(D, np.ndarray):
+            D = D.detach().numpy()
 
         # Threshold image (target is 0s and 1s)
 
         # This is important - need to "invert" image https://stackoverflow.com/questions/53064534/simple-blob-detector-
         # does-not-detect-blobs.
-        D = np.where(D < 0.5, 1, 0)
+        D = np.where(D < 0.5, 1, 0).astype(np.uint8)
 
         # Closeness to disk centre grading
-        grade = np.zeros_like(D)
+        grade = np.zeros_like(D, dtype=np.uint8)
 
         # Pass kernel over images to sum all pixels within a given disk
         for i in range(64):
             for j in range(64):
-                pixels_to_sum = pixels_in_radius(np.array([i, j]), R=5)
-                grade[i, j] = np.sum([D[c[0], c[1]] for c in pixels_to_sum])
+                pixels_to_sum = pixels_in_radius(np.array([i, j]), R=5).T
+                grade[i, j] = np.sum(D[pixels_to_sum[0], pixels_to_sum[1]], dtype=np.uint8)
 
-        grade = grade.astype(np.uint8)
-
-        keypoints = detector.detect(grade)
-
-        source_centres_in_each_image.append(keypoints)
-
-    # Format centres - directly call x and y otherwise coordinates are formatted as (y, x)
-
-    centres = []
+        source_centres_in_each_image.append(detector.detect(grade))
 
     # N.B. we index 1 then 0, as coordinates are returned from p.pt in (y, x) format (rather than x, y)
-    for k in range(len(source_centres_in_each_image)):
-        centres.append(
-            np.round((np.array([np.array([p.pt[1], p.pt[0]]) for p in source_centres_in_each_image[k]]))).astype(
-                np.uint8))
+    centres = [np.round((np.array([[p.pt[1], p.pt[0]] for p in source_centres_in_each_image[k]]))).astype(
+        np.uint8) for k in range(len(source_centres_in_each_image))]
 
     return centres
 

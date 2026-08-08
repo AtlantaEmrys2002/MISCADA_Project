@@ -7,7 +7,7 @@ outputs of each combination of segmentation and localisation algorithm (this is 
 """
 
 from algorithms.components.classification_algorithms import classification_neural_network
-from algorithms.components.clustering_algorithms import dbscan_clustering, k_means_clustering
+from algorithms.components.clustering_algorithms import blob_detection, dbscan_clustering, k_means_clustering
 from algorithms.components.machine_learning_classification_algorithms import random_forest_classifier
 from algorithms.components.machine_learning_segmentation_algorithms import random_forest_segmentation
 from algorithms.components.segmentation_algorithms import unet
@@ -37,9 +37,9 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
 
     # ALGORITHMS
 
-    segmentation_algorithms = ["unet", "random_forest"]
+    segmentation_algorithms = ["random_forest", "unet"]
 
-    localisation_algorithms = ["kmeans", "dbscan"]
+    localisation_algorithms = ["blob_detection", "kmeans", "dbscan"]
 
     classification_algorithms = ["random_forest", "cnn"]
 
@@ -69,6 +69,18 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
 
                 _, _, real_segmentation_predictions = unet(training_maps=np.array([]), validation_maps=np.array([]),
                                                            testing_maps=real_data, pretrained=True, real=True)
+
+                import matplotlib.pyplot as plt
+
+                print(np.sum(train_segmentation_predictions[0] > 0.5))
+
+                plt.imshow((train_segmentation_predictions[0] > 0.5) * 200)
+
+                plt.show()
+
+                plt.imshow((train_segmentation_predictions[1] > 0.5) * 200)
+
+                plt.show()
 
             case "random_forest":
 
@@ -142,6 +154,21 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                         real_source_locations = dbscan_clustering(real_segmentation_predictions, threshold=0.5)
 
                     # print("Localisation Algorithm Applied")
+
+                case "blob_detection":
+
+                    if segment != "unet":
+
+                        train_source_locations = blob_detection(train_segmentation_predictions)
+                        validation_source_locations = blob_detection(validation_segmentation_predictions)
+                        test_source_locations = blob_detection(test_segmentation_predictions)
+                        real_source_locations = blob_detection(real_segmentation_predictions)
+
+                    else:
+                        train_source_locations = blob_detection(train_segmentation_predictions)
+                        validation_source_locations = blob_detection(validation_segmentation_predictions)
+                        test_source_locations = blob_detection(test_segmentation_predictions)
+                        real_source_locations = blob_detection(real_segmentation_predictions)
 
                 case _:
                     raise NameError("Localisation algorithm {} could not be found.".format(segment))
