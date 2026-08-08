@@ -8,7 +8,7 @@ outputs of each combination of segmentation and localisation algorithm (this is 
 
 from algorithms.components.classification_algorithms import classification_neural_network
 from algorithms.components.clustering_algorithms import blob_detection, dbscan_clustering, k_means_clustering
-from algorithms.components.machine_learning_classification_algorithms import random_forest_classifier
+from algorithms.components.machine_learning_classification_algorithms import random_forest_classifier, svm_classifier
 from algorithms.components.machine_learning_segmentation_algorithms import random_forest_segmentation
 from algorithms.components.segmentation_algorithms import unet
 from algorithms.components.data_preparation import ml_segmentation_data_prep, prepare_classifier_data
@@ -39,9 +39,9 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
 
     segmentation_algorithms = ["random_forest", "unet"]
 
-    localisation_algorithms = ["blob_detection", "kmeans", "dbscan"]
+    localisation_algorithms = ["dbscan", "blob_detection", "kmeans"]
 
-    classification_algorithms = ["random_forest", "cnn"]
+    classification_algorithms = ["svm", "random_forest", "cnn"]
 
     algorithm_count = 1
 
@@ -72,7 +72,7 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
 
                 import matplotlib.pyplot as plt
 
-                print(np.sum(train_segmentation_predictions[0] > 0.5))
+                # print(np.sum(train_segmentation_predictions[0] > 0.5))
 
                 plt.imshow((train_segmentation_predictions[0] > 0.5) * 200)
 
@@ -242,7 +242,32 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                                                      save_file=save_file_classifier,
                                                      pretrained=True))
 
-                        # print("Classification Done.")
+                    case "svm":
+
+                        train_batches_class = (
+                            prepare_classifier_data(patches=training_maps,
+                                                    predicted_locations=train_source_locations,
+                                                    patch_ids=train_patch_ids, test=True))
+
+                        test_batches_class = prepare_classifier_data(patches=testing_maps,
+                                                                     predicted_locations=test_source_locations,
+                                                                     patch_ids=test_patch_ids, test=True)
+
+                        real_batches_class = prepare_classifier_data(patches=real_maps,
+                                                                     predicted_locations=real_source_locations,
+                                                                     patch_ids=real_patch_ids, test=True)
+
+                        save_file_classifier = ("./algorithms/pre_trained_models/svm_classifier_for_{}_and_{}.pt".
+                                                format(segment, local))
+
+                        actual_labels, classifier_predictions = (
+                            svm_classifier(train_data=train_batches_class, test_data=test_batches_class,
+                                           save_file=save_file_classifier))
+
+                        real_actual_labels, real_classifier_predictions = (
+                            svm_classifier(train_data=np.array([]), test_data=real_batches_class,
+                                           save_file=save_file_classifier,
+                                           pretrained=True))
 
                     case _:
                         raise NameError("Classification algorithm {} could not be found.".format(segment))
@@ -261,7 +286,7 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                                  predicted_classes=real_classifier_predictions, actual_classes=real_actual_labels,
                                  directory=real_data_save_directory, method=f"{segment}_{local}_{classifier}")
 
-                print("Novel Source Extraction Pipeline {}: {} + {} + {}".format(algorithm_count, segment, local,
-                                                                                 classifier))
+                print("Completed Novel Source Extraction Pipeline {}: {} + {} + {}".format(algorithm_count,
+                                                                                           segment, local, classifier))
 
                 algorithm_count += 1
