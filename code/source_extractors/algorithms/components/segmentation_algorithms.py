@@ -156,10 +156,10 @@ class Decoder(nn.Module):
             nn.Conv2d(in_chan, exit_chan, kernel_size=1),
         )
 
-        # # This is introduced in ID8 such that binary classification of each pixel may be performed
-        # self.layers.append(
-        #     nn.Softmax(dim=1)
-        # )
+        # This is introduced in ID8 such that binary classification of each pixel may be performed
+        self.layers.append(
+            nn.Softmax(dim=1)
+        )
 
     def forward(self, x, routes_connection):
         """Returns the output of the decoder when passed data.
@@ -237,23 +237,20 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
     # EVEN THOUGH ORIGINAL PAPER SAID NO PADDING
 
     # Create U-Net model - padding = 1 ("same convolution") to match no. channels and output sizes given in ID8 diagram
-    unet_model = UNET(5, 16, 1, padding=1, downhill=4).to(device)
-    # unet_model = UNET(5, 32, 1, padding=1, downhill=3).to(device)
+    # unet_model = UNET(5, 16, 1, padding=1, downhill=4).to(device)
+    unet_model = UNET(5, 16, 2, padding=1, downhill=3).to(device)
 
     # TRAINING
 
-    # Define loss function and optimiser - assume same as original U-Net paper and that of the Centroid-NET in ID8
-    # loss_fn = torch.nn.CrossEntropyLoss()
+    # Define loss function and optimiser - changed from that proposed in ID11 and ID8
+    # loss_fn = torch.nn.BCEWithLogitsLoss().to(device)
 
-    # loss_fn = LinearCombinationLoss()
+    loss_fn = torch.nn.CrossEntropyLoss()
 
-    loss_fn = torch.nn.BCEWithLogitsLoss().to(device)
+    # optimiser = torch.optim.Adam(unet_model.parameters(), lr=1.e-4)
+    optimiser = torch.optim.SGD(unet_model.parameters(), lr=1.e-2)
 
-    # optimiser = torch.optim.Adam(unet_model.parameters(), lr=0.01)
-    optimiser = torch.optim.Adam(unet_model.parameters(), lr=1.e-4)
-    # optimiser = torch.optim.SGD(unet_model.parameters(), lr=0.001)
-
-    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimiser, min_lr=10 ** -5)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimiser, min_lr=1.e-7)
 
     # Start with large value that is easily surpassed
     best_vloss = 100000000000000
@@ -268,26 +265,23 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
 
         for i, data in enumerate(train_data):
 
-            inputs, labels = data[1].to(device), data[2].to(device)
+            inputs, labels = data[1].to(device), data[2].to(device).squeeze(1)
 
-            # print(labels.shape)
-
-            # # zero gradients for each batch
-            # optimiser.zero_grad()
+            # inputs, labels = data[1].to(device), data[2].to(device).squeeze(1)
 
             # Make sure to zero gradients when calculating loss and don't update model
             output = unet_model(inputs)
 
             # print(output.shape)
 
-            # print(output)
-
-            # print(torch.sum(labels))
-
-            # print(labels)
-
             # Compute loss and gradients
             # loss = loss_fn(output, labels)
+
+            # output = torch.argmax(output.detach(), dim=1).type(torch.FloatTensor).to(device)
+            #
+            # output.requires_grad_()
+            #
+            # print(output.shape)
 
             loss = loss_fn(output, labels)
 
@@ -306,9 +300,15 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
 
         with torch.no_grad():
             for i, vdata in enumerate(test_data):
-                vinputs, vlabels = vdata[1].to(device), vdata[2].to(device)
+                # vinputs, vlabels = vdata[1].to(device), vdata[2].to(device)
+
+                vinputs, vlabels = vdata[1].to(device), vdata[2].to(device).squeeze(1)
 
                 voutputs = unet_model(vinputs)
+
+                # voutputs = torch.argmax(voutputs.detach(), dim=1).type(torch.FloatTensor).to(device)
+                #
+                # voutputs.requires_grad_()
 
                 vloss = loss_fn(voutputs, vlabels)
 
@@ -326,7 +326,7 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
             torch.save(unet_model.state_dict(), save_file)
 
         # Calling after validation loss - decrease learning rate if no improvement
-        # scheduler.step(avg_vloss)
+        scheduler.step(avg_vloss)
 
     return unet_model, best_epoch
 
@@ -348,7 +348,7 @@ def unet(training_maps, validation_maps, testing_maps, pretrained=False, real=Fa
     else:
 
         # Use pre-trained model
-        model = UNET(5, 16, 1, padding=1, downhill=4).to(device)
+        model = UNET(5, 16, 2, padding=1, downhill=3).to(device)
         model.load_state_dict(torch.load(save_file, weights_only=True, map_location=device))
 
     # Set to model evaluation model to ensure not accidentally continuing training
@@ -361,7 +361,11 @@ def unet(training_maps, validation_maps, testing_maps, pretrained=False, real=Fa
                                       test_data=copy.deepcopy(testing_maps)))
 
         with torch.no_grad():
-            test_data_predictions = model(torch.from_numpy(real_maps).to(device)).detach().cpu().numpy()
+            # test_data_predictions = model(torch.from_numpy(real_maps).to(device)).detach().cpu().numpy()
+
+            test_data_predictions = torch.argmax(model(torch.from_numpy(real_maps).to(device)).detach().cpu(), dim=1).numpy()
+
+            # test_data_predictions = torch.argmax(test_data_predictions, dim=1)
 
         return np.array([]), np.array([]), test_data_predictions
 
@@ -374,9 +378,13 @@ def unet(training_maps, validation_maps, testing_maps, pretrained=False, real=Fa
                                       test_data=testing_maps))
 
         with torch.no_grad():
-            train_data_predictions = model(torch.from_numpy(training_maps).to(device)).detach().cpu().numpy()
-            validation_data_predictions = model(torch.from_numpy(validation_maps).to(device)).detach().cpu().numpy()
-            test_data_predictions = model(torch.from_numpy(testing_maps).to(device)).detach().cpu().numpy()
+            # train_data_predictions = model(torch.from_numpy(training_maps).to(device)).detach().cpu().numpy()
+            # validation_data_predictions = model(torch.from_numpy(validation_maps).to(device)).detach().cpu().numpy()
+            # test_data_predictions = model(torch.from_numpy(testing_maps).to(device)).detach().cpu().numpy()
+
+            train_data_predictions = torch.argmax(model(torch.from_numpy(training_maps).to(device)).detach().cpu(), dim=1).numpy()
+            validation_data_predictions = torch.argmax(model(torch.from_numpy(validation_maps).to(device)).detach().cpu(), dim=1).numpy()
+            test_data_predictions = torch.argmax(model(torch.from_numpy(testing_maps).to(device)).detach().cpu(), dim=1).numpy()
 
         return train_data_predictions, validation_data_predictions, test_data_predictions
 
