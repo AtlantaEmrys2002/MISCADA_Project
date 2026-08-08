@@ -1,7 +1,16 @@
+"""
+This creates each novel extraction pipeline (each novel extraction pipeline is a combination of 1 segmentation
+algorithm, 1 localisation algorithm, and 1 classification algorithm). It also ensures that algorithms are only trained
+as needed - i.e. each segmentation algorithm requires training only once, whereas the localisation algorithms need to be
+trained on the outputs of each segmentation algorithm and the classification algorithms need to be trained on the
+outputs of each combination of segmentation and localisation algorithm (this is done through nested for loops).
+"""
+
 from algorithms.components.classification_algorithms import classification_neural_network
 from algorithms.components.clustering_algorithms import dbscan_clustering, k_means_clustering
 from algorithms.components.machine_learning_classification_algorithms import random_forest_classifier
 from algorithms.components.machine_learning_segmentation_algorithms import random_forest_segmentation
+from algorithms.components.segmentation_algorithms import unet
 from algorithms.components.data_preparation import ml_segmentation_data_prep, prepare_classifier_data
 import copy
 import numpy as np
@@ -9,11 +18,10 @@ from pathlib import Path
 from read_write_functions import save_predictions
 
 
-# NEED TO CHECK IF THIS THE FIRST TIME TRAINING EACH SEGMENTATION ALGORITHM - IF IT IS THEN TRAIN IF NOT USE PRETRAINED
 # SAVE EACH TRAINED CLASSIFIER AS [Name of classifier]_classifier_trained_on_[name of segmentation and localisation]_
 # detection
 
-# BALANCE DATASETS
+# BALANCE DATASETS!!!!!!!!!!!!!!!!!!
 
 
 def novel_source_extraction_algorithms(training_data, validation_data, testing_data, real_data, save_directory):
@@ -29,40 +37,61 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
 
     # ALGORITHMS
 
-    segmentation_algorithms = ["random_forest"]
+    segmentation_algorithms = ["unet", "random_forest"]
 
-    localisation_algorithms = ["dbscan", "kmeans"]
+    localisation_algorithms = ["kmeans", "dbscan"]
 
     classification_algorithms = ["random_forest", "cnn"]
+
+    algorithm_count = 1
+
+    # GET DATA IN USEFUL FORMAT - MAYBE MAKE SURE ONLY FORMAT FOR SEGMENTATION CLASSIFIER
+
+    (train_patch_ids, training_maps, training_masks,
+     validation_patch_ids, validation_maps, validation_masks,
+     test_patch_ids, testing_maps, testing_masks) = (
+        ml_segmentation_data_prep(train_data=copy.deepcopy(training_data),
+                                  validation_data=copy.deepcopy(validation_data),
+                                  test_data=copy.deepcopy(testing_data)))
+
+    _, _, _, _, _, _, real_patch_ids, real_maps, real_masks = (
+        ml_segmentation_data_prep(train_data=np.array([]), validation_data=np.array([]),
+                                  test_data=copy.deepcopy(real_data)))
 
     for segment in segmentation_algorithms:
 
         match segment:
 
+            case "unet":
+
+                (train_segmentation_predictions, validation_segmentation_predictions, test_segmentation_predictions) = (
+                    unet(training_maps=training_data, validation_maps=validation_data, testing_maps=testing_data))
+
+                _, _, real_segmentation_predictions = unet(training_maps=np.array([]), validation_maps=np.array([]),
+                                                           testing_maps=real_data, pretrained=True, real=True)
+
             case "random_forest":
 
-                (train_patch_ids, training_maps, training_masks,
-                 validation_patch_ids, validation_maps, validation_masks,
-                 test_patch_ids, testing_maps, testing_masks) = (
-                    ml_segmentation_data_prep(train_data=copy.deepcopy(training_data),
-                                              validation_data=copy.deepcopy(validation_data),
-                                              test_data=copy.deepcopy(testing_data)))
+                # (train_patch_ids, training_maps, training_masks,
+                #  validation_patch_ids, validation_maps, validation_masks,
+                #  test_patch_ids, testing_maps, testing_masks) = (
+                #     ml_segmentation_data_prep(train_data=copy.deepcopy(training_data),
+                #                               validation_data=copy.deepcopy(validation_data),
+                #                               test_data=copy.deepcopy(testing_data)))
 
                 (train_segmentation_predictions, validation_segmentation_predictions, test_segmentation_predictions) = \
                     (random_forest_segmentation(training_maps=training_maps, training_masks=training_masks,
                                                 validation_maps=validation_maps, testing_maps=testing_maps))
 
-                _, _, _, _, _, _, real_patch_ids, real_maps, real_masks = (
-                    ml_segmentation_data_prep(train_data=np.array([]), validation_data=np.array([]),
-                                              test_data=copy.deepcopy(real_data)))
+                # _, _, _, _, _, _, real_patch_ids, real_maps, real_masks = (
+                #     ml_segmentation_data_prep(train_data=np.array([]), validation_data=np.array([]),
+                #                               test_data=copy.deepcopy(real_data)))
 
                 _, _, real_segmentation_predictions = random_forest_segmentation(training_maps=np.array([]),
                                                                                  training_masks=np.array([]),
                                                                                  validation_maps=np.array([]),
                                                                                  testing_maps=real_maps,
                                                                                  pretrained=True, real=True)
-
-                print("Segmentation Algorithm Trained")
 
             case _:
 
@@ -77,37 +106,42 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                     if segment != "unet":
 
                         train_source_locations = k_means_clustering(train_segmentation_predictions,
-                                                                    max_num_centroids=20)
+                                                                    max_num_centroids=20, threshold=0.5)
                         validation_source_locations = k_means_clustering(validation_segmentation_predictions,
-                                                                         max_num_centroids=20)
-                        test_source_locations = k_means_clustering(test_segmentation_predictions, max_num_centroids=20)
+                                                                         max_num_centroids=20, threshold=0.5)
+                        test_source_locations = k_means_clustering(test_segmentation_predictions, max_num_centroids=20,
+                                                                   threshold=0.5)
 
-                        real_source_locations = k_means_clustering(real_segmentation_predictions, max_num_centroids=20)
+                        real_source_locations = k_means_clustering(real_segmentation_predictions, max_num_centroids=20,
+                                                                   threshold=0.5)
 
                     else:
-                        train_source_locations = k_means_clustering(train_segmentation_predictions)
-                        validation_source_locations = k_means_clustering(validation_segmentation_predictions)
-                        test_source_locations = k_means_clustering(test_segmentation_predictions)
-                        real_source_locations = k_means_clustering(real_segmentation_predictions)
+                        train_source_locations = k_means_clustering(train_segmentation_predictions, threshold=0.5)
+                        validation_source_locations = k_means_clustering(validation_segmentation_predictions,
+                                                                         threshold=0.5)
+                        test_source_locations = k_means_clustering(test_segmentation_predictions, threshold=0.5)
+                        real_source_locations = k_means_clustering(real_segmentation_predictions, threshold=0.5)
 
-                    print("Localisation Algorithm Applied")
+                    # print("Localisation Algorithm Applied")
 
                 case "dbscan":
 
                     if segment != "unet":
 
-                        train_source_locations = dbscan_clustering(train_segmentation_predictions)
-                        validation_source_locations = dbscan_clustering(validation_segmentation_predictions)
-                        test_source_locations = dbscan_clustering(test_segmentation_predictions)
-                        real_source_locations = dbscan_clustering(real_segmentation_predictions)
+                        train_source_locations = dbscan_clustering(train_segmentation_predictions, threshold=0.5)
+                        validation_source_locations = dbscan_clustering(validation_segmentation_predictions,
+                                                                        threshold=0.5)
+                        test_source_locations = dbscan_clustering(test_segmentation_predictions, threshold=0.5)
+                        real_source_locations = dbscan_clustering(real_segmentation_predictions, threshold=0.5)
 
                     else:
-                        train_source_locations = dbscan_clustering(train_segmentation_predictions)
-                        validation_source_locations = dbscan_clustering(validation_segmentation_predictions)
-                        test_source_locations = dbscan_clustering(test_segmentation_predictions)
-                        real_source_locations = dbscan_clustering(real_segmentation_predictions)
+                        train_source_locations = dbscan_clustering(train_segmentation_predictions, threshold=0.5)
+                        validation_source_locations = dbscan_clustering(validation_segmentation_predictions,
+                                                                        threshold=0.5)
+                        test_source_locations = dbscan_clustering(test_segmentation_predictions, threshold=0.5)
+                        real_source_locations = dbscan_clustering(real_segmentation_predictions, threshold=0.5)
 
-                    print("Localisation Algorithm Applied")
+                    # print("Localisation Algorithm Applied")
 
                 case _:
                     raise NameError("Localisation algorithm {} could not be found.".format(segment))
@@ -136,20 +170,20 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                                                                      predicted_locations=real_source_locations,
                                                                      patch_ids=real_patch_ids, test=True)
 
+                        save_file_classifier = ("./algorithms/pre_trained_models/cnn_classifier_for_{}_and_{}.pt".
+                                                format(segment, local))
+
                         # Train classifier on data
                         actual_labels, classifier_predictions = (
                             classification_neural_network(train_batches_class, validation_batches_class,
-                                                          test_batches_class,
-                                                          save_file="./algorithms/pre_trained_models/classifier_for_{}_"
-                                                                    "and_{}.pt".format(segment, local)))
+                                                          test_batches_class, save_file=save_file_classifier))
 
                         real_actual_labels, real_classifier_predictions = (
                             classification_neural_network(np.array([]), np.array([]),
                                                           real_batches_class, pretrained=True,
-                                                          save_file="./algorithms/pre_trained_models/cnn_classifier_for"
-                                                                    "_{}_and_{}.pt".format(segment, local)))
+                                                          save_file=save_file_classifier))
 
-                        print("Classification Done.")
+                        # print("Classification Done.")
 
                     case "random_forest":
 
@@ -169,18 +203,19 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                                                                      predicted_locations=real_source_locations,
                                                                      patch_ids=real_patch_ids, test=True)
 
+                        save_file_classifier = ("./algorithms/pre_trained_models/rf_classifier_for_{}_and_{}.pt".
+                                                format(segment, local))
+
                         actual_labels, classifier_predictions = (
                             random_forest_classifier(train_data=train_batches_class, test_data=test_batches_class,
-                                                     save_file="./algorithms/pre_trained_models/rf_classifier_for_{}_"
-                                                               "and_{}.pt".format(segment, local)))
+                                                     save_file=save_file_classifier))
 
                         real_actual_labels, real_classifier_predictions = (
                             random_forest_classifier(train_data=np.array([]), test_data=real_batches_class,
-                                                     save_file="./algorithms/pre_trained_models/rf_classifier_for_{}_"
-                                                               "and_{}.pt".format(segment, local),
+                                                     save_file=save_file_classifier,
                                                      pretrained=True))
 
-                        print("Classification Done.")
+                        # print("Classification Done.")
 
                     case _:
                         raise NameError("Classification algorithm {} could not be found.".format(segment))
@@ -198,3 +233,8 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                                  predicted_locations=real_source_locations,
                                  predicted_classes=real_classifier_predictions, actual_classes=real_actual_labels,
                                  directory=real_data_save_directory, method=f"{segment}_{local}_{classifier}")
+
+                print("Novel Source Extraction Pipeline {}: {} + {} + {}".format(algorithm_count, segment, local,
+                                                                                 classifier))
+
+                algorithm_count += 1

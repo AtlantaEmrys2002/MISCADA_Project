@@ -90,7 +90,7 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
     # Training epochs
     for epoch in range(training_epochs):
 
-        print("EPOCH {}".format(epoch))
+        # print("EPOCH {}".format(epoch))
 
         classifier.train()
 

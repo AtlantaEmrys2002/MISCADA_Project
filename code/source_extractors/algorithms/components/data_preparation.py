@@ -161,6 +161,8 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
                 data.append([normalised_sub_boxes[patch][pred_source].astype(np.float32),
                              vector_labels[patch][pred_source].astype(np.float32)])
 
+    # print([str(label) for patch in labels for label in patch])
+
     if len(data) == 0:
         raise RuntimeError("Not enough sources were localised - no data is available for the classifier to train on.")
 

@@ -100,7 +100,7 @@ def dbscan_clustering(binary_segments, threshold=0.2):
         if source_pixels.size != 0:
 
             # Labels stating where element n indicates the cluster pixel n is assigned to
-            labelled_source_pixels = DBSCAN(eps=5).fit(source_pixels).labels_
+            labelled_source_pixels = DBSCAN(eps=3).fit(source_pixels).labels_
 
             num_clusters_found = np.max(labelled_source_pixels)
 
@@ -117,7 +117,7 @@ def dbscan_clustering(binary_segments, threshold=0.2):
     return source_centres_in_each_image
 
 
-def k_means_clustering(binary_segments, max_num_centroids=50):
+def k_means_clustering(binary_segments, max_num_centroids=50, threshold=0.2):
     # IMPLEMENTED FOLLOWING PSEUDOCODE IN ID8 (MY OWN IMPLEMENTATION)
 
     source_centres_in_each_image = []
@@ -132,12 +132,12 @@ def k_means_clustering(binary_segments, max_num_centroids=50):
 
             D = segment[0].detach().numpy()
 
-        l_sth = 0.2
+        # l_sth = 0.2
         l_snn = -10
         R = 5
 
         # As we have used SoftMax, our image isn't exactly binary - this will make it so
-        V_D = np.argwhere(D > l_sth)
+        V_D = np.argwhere(D > threshold)
 
         # Best score so far
         s_k_max = 0

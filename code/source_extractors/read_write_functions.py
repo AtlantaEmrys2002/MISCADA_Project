@@ -19,6 +19,9 @@ def read_patches(num_patches=int, directory=str):
     masks = (np.array([[np.load("{}/patch_{}/mask.npy".format(directory, n))] for n in range(num_patches)])
              .astype(np.float32))
 
+    # masks = (np.array([np.array([np.load("{}/patch_{}/mask.npy".format(directory, n))]).T for n in range(num_patches)])
+    #          .astype(np.float32))
+
     # Read in metadata for each patch
 
     source_ids = []
@@ -42,7 +45,9 @@ def read_patches(num_patches=int, directory=str):
         types.append(df["source_type"].to_numpy())
 
     # Combine to create test data
-    test_data = [(k, torch.from_numpy(patches[k]), torch.from_numpy(masks[k])) for k in range(num_patches)]
+    # test_data = [(k, torch.from_numpy(patches[k]), torch.from_numpy(masks[k])) for k in range(num_patches)]
+
+    test_data = [(k, torch.tensor(patches[k]), torch.tensor(masks[k])) for k in range(num_patches)]
 
     # Select random samples
     train_set_size = math.floor(float(num_patches) * 0.7)
@@ -111,7 +116,8 @@ def read_real_data(num_patches, directory=str):
         types.append(df["source_type"].to_numpy())
 
     # Combine to create test data
-    test_data = [(k, torch.from_numpy(patches[k]), torch.from_numpy(masks[k])) for k in range(num_patches)]
+    # test_data = [(k, torch.from_numpy(patches[k]), torch.from_numpy(masks[k])) for k in range(num_patches)]
+    test_data = [(k, torch.tensor(patches[k]), torch.tensor(masks[k])) for k in range(num_patches)]
 
     # Split data into train, validation, and test sets
     # data = Subset(test_data, np.arange(0, num_patches))
