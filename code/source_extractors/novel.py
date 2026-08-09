@@ -7,7 +7,8 @@ outputs of each combination of segmentation and localisation algorithm (this is 
 """
 
 from algorithms.components.classification_algorithms import classification_neural_network
-from algorithms.components.clustering_algorithms import blob_detection, dbscan_clustering, k_means_clustering
+from algorithms.components.clustering_algorithms import (blob_detection, dbscan_clustering, k_means_clustering,
+                                                         spectral_clustering)
 from algorithms.components.machine_learning_classification_algorithms import random_forest_classifier, svm_classifier
 from algorithms.components.machine_learning_segmentation_algorithms import random_forest_segmentation
 from algorithms.components.segmentation_algorithms import unet
@@ -39,7 +40,7 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
 
     segmentation_algorithms = ["random_forest", "unet"]
 
-    localisation_algorithms = ["dbscan", "blob_detection", "kmeans"]
+    localisation_algorithms = ["spectral", "dbscan", "blob_detection", "kmeans"]
 
     classification_algorithms = ["svm", "random_forest", "cnn"]
 
@@ -134,8 +135,6 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                         test_source_locations = k_means_clustering(test_segmentation_predictions, threshold=0.5)
                         real_source_locations = k_means_clustering(real_segmentation_predictions, threshold=0.5)
 
-                    # print("Localisation Algorithm Applied")
-
                 case "dbscan":
 
                     if segment != "unet":
@@ -170,8 +169,26 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                         test_source_locations = blob_detection(test_segmentation_predictions)
                         real_source_locations = blob_detection(real_segmentation_predictions)
 
+                case "spectral":
+
+                    if segment != "unet":
+
+                        train_source_locations = spectral_clustering(train_segmentation_predictions, threshold=0.5)
+                        validation_source_locations = spectral_clustering(validation_segmentation_predictions,
+                                                                          threshold=0.5)
+                        test_source_locations = spectral_clustering(test_segmentation_predictions, threshold=0.5)
+
+                        real_source_locations = spectral_clustering(real_segmentation_predictions, threshold=0.5)
+
+                    else:
+                        train_source_locations = spectral_clustering(train_segmentation_predictions, threshold=0.5)
+                        validation_source_locations = spectral_clustering(validation_segmentation_predictions,
+                                                                          threshold=0.5)
+                        test_source_locations = spectral_clustering(test_segmentation_predictions, threshold=0.5)
+                        real_source_locations = spectral_clustering(real_segmentation_predictions, threshold=0.5)
+
                 case _:
-                    raise NameError("Localisation algorithm {} could not be found.".format(segment))
+                    raise NameError("Localisation algorithm {} could not be found.".format(local))
 
             for classifier in classification_algorithms:
 
@@ -270,7 +287,7 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                                            pretrained=True))
 
                     case _:
-                        raise NameError("Classification algorithm {} could not be found.".format(segment))
+                        raise NameError("Classification algorithm {} could not be found.".format(classifier))
 
                 # SAVE RESULTS FOR SOURCE EXTRACTION ALGORITHM
 

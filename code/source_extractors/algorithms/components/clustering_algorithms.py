@@ -3,6 +3,7 @@ import cv2
 from itertools import product
 import numpy as np
 from sklearn.cluster import DBSCAN, KMeans, SpectralClustering
+import warnings
 
 
 def pixels_in_radius(coordinate, R):
@@ -187,25 +188,98 @@ def k_means_clustering(binary_segments, max_num_centroids=50, threshold=0.2):
     return source_centres_in_each_image
 
 
-# def spectral_clustering(binary_segments, max_num_centroids=20, threshold=0.2):
-#
-#     source_centres_in_each_image = []
-#
-#     for segment in binary_segments:
-#
-#         if isinstance(segment[0], np.ndarray):
-#
-#             D = segment[0]
-#
-#         else:
-#
-#             D = segment[0].detach().numpy()
-#
-#         # As we have used SoftMax, our image isn't exactly binary - this will make it so
-#         source_pixels = np.argwhere(D > threshold)
-#
-#         # Labels stating where element n indicates the cluster pixel n is assigned to
-#         labelled_source_pixels = SpectralClustering
+def spectral_clustering(binary_segments, max_num_centroids=20, threshold=0.2):
+
+    source_centres_in_each_image = []
+
+    l_snn = -10
+    R = 5
+
+    count = 0
+
+    for segment in binary_segments:
+
+        print(count + 1)
+        count += 1
+
+        D = segment[0]
+
+        if not isinstance(D, np.ndarray):
+            D = D.detach().numpy()
+
+        # As we have used SoftMax, our image isn't exactly binary - this will make it so
+        V_D = np.argwhere(D > threshold).astype(np.float32)
+
+        # Best score so far
+        s_k_max = 0
+
+        # Centre of each cluster determined by k_best
+        best_centres = []
+
+        # Determine the number of sources/clusters present in the image - do not attempt to fit more clusters than there
+        # are pixels classified as source
+
+        for k in range(1, min(max_num_centroids, int(V_D.shape[0]))):
+
+            D_tmp = copy.deepcopy(D)
+
+            s_k = 0
+
+            try:
+
+                # Perform spectral clustering - chose cluster_qr, as it has no iterations or tuning parameters (and can
+                # outperform the K-means algorithm)
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    spectral_classifications = SpectralClustering(n_clusters=k, random_state=0, n_jobs=3,
+                                                                  assign_labels="cluster_qr").fit_predict(V_D)
+
+                # Get centre of each cluster
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    cluster_centres = np.array([np.round(np.mean(V_D[np.nonzero(spectral_classifications == x)].T, axis=1)) for x in range(k)])
+
+                if np.sum(np.isnan(cluster_centres)) > 0:
+
+                    continue
+
+                else:
+
+                    for c in cluster_centres:
+                        # REPLACE THIS WITH PIXELS IN RADIUS FUNCTION
+
+                        # find pixels of D inside R
+
+                        # Creates box around centre coordinate - we then look at circle with radius equal to half the len of the
+                        # box's width
+                        x_range = np.clip(np.arange(c[0] - R, c[0] + R), a_min=0, a_max=63)
+                        y_range = np.clip(np.arange(c[1] - R, c[1] + R), a_min=0, a_max=63)
+
+                        potential_coords = np.unique(np.array(list(product(x_range, y_range))), axis=0)
+
+                        distances_from_centre_coord = np.linalg.norm(potential_coords - c, ord=2, axis=1)
+
+                        p_c = potential_coords[(distances_from_centre_coord < R)].astype(int).T
+
+                        # Update s_k
+                        s_k += np.sum(D_tmp[p_c[0], p_c[1]])
+
+                        # Redefine scores such that if the points are included in another cluster, the score is penalised
+                        D_tmp[p_c[0], p_c[1]] = l_snn
+
+                    if s_k > s_k_max:
+                        s_k_max = s_k
+                        best_centres = cluster_centres
+
+            except ValueError:
+
+                continue
+
+        source_centres_in_each_image.append(np.array(best_centres))
+
+    print("DONE")
+
+    return source_centres_in_each_image
 
 # REFERENCES
 
