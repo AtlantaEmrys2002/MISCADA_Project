@@ -25,8 +25,8 @@ def create_patches_for_catalog(params: list):
         Metadata about each patch created.
 
     """
-    (save_directory, num_maps_per_catalog, catalog_id, energy_bins, max_patches_per_catalog, pix_sr, longitude,
-     latitude, xsize_patch_generation, xsize_location, solid_area_ratio) = params
+    (save_directory, num_maps_per_catalog, catalog_id, energy_bins, max_patches_per_catalog, longitude,
+     latitude, xsize_patch_generation, xsize_location) = params
 
     catalogs_directory = save_directory + "/catalogs/catalog_{}".format(catalog_id + 1)
 
