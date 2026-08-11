@@ -40,7 +40,7 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
 
     segmentation_algorithms = ["random_forest", "unet"]
 
-    localisation_algorithms = ["spectral", "dbscan", "blob_detection", "kmeans"]
+    localisation_algorithms = ["dbscan", "spectral", "blob_detection", "kmeans"]
 
     classification_algorithms = ["svm", "random_forest", "cnn"]
 

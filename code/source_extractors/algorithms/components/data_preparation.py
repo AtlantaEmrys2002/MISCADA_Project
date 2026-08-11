@@ -6,7 +6,64 @@ from operator import itemgetter
 import pandas as pd
 from torch.utils.data import DataLoader, Subset
 from ..utils import get_lb_from_pixel, pixel_id
+import warnings
 from xml.dom import minidom
+
+
+def balance_dataset(data):
+
+    num_sources = len(data)
+
+    agns = np.array([data[k][0] for k in range(num_sources) if np.all(np.equal(data[k][1], np.array([1., 0., 0.])))])
+    psrs = np.array([data[k][0] for k in range(num_sources) if np.all(np.equal(data[k][1], np.array([0., 1., 0.])))])
+    fakes = np.array([data[k][0] for k in range(num_sources) if np.all(np.equal(data[k][1], np.array([0., 0., 1.])))])
+
+    if agns.shape[0] == 0 or psrs.shape[0] == 0:
+        raise ValueError("No successful detections of specific source type. AGN in Dataset: {}. PSR in Dataset: {}".
+                         format(agns.shape[0], psrs.shape[0]))
+
+    if fakes.shape[0] == 0:
+        warnings.warn("No FAKE sources were detected - only genuine AGN and PSR. Segmentation and localisation was "
+                      "highly successful.")
+
+    if agns.shape[0] > psrs.shape[0] and agns.shape[0] > fakes.shape[0]:
+        num_sources_to_sample_of_each_type = agns.shape[0]
+    elif psrs.shape[0] > agns.shape[0] and psrs.shape[0] > fakes.shape[0]:
+        num_sources_to_sample_of_each_type = psrs.shape[0]
+    else:
+        num_sources_to_sample_of_each_type = fakes.shape[0]
+
+    num_agns_to_sample = num_sources_to_sample_of_each_type - agns.shape[0]
+    num_psrs_to_sample = num_sources_to_sample_of_each_type - psrs.shape[0]
+    num_fakes_to_sample = num_sources_to_sample_of_each_type - fakes.shape[0]
+
+    if num_agns_to_sample > 0:
+        indices_to_take = np.random.choice(agns.shape[0], size=num_agns_to_sample)
+        agns = np.vstack((agns, copy.deepcopy(agns[indices_to_take])))
+
+    if num_psrs_to_sample > 0:
+        indices_to_take = np.random.choice(psrs.shape[0], size=num_psrs_to_sample)
+        psrs = np.vstack((psrs, copy.deepcopy(psrs[indices_to_take])))
+
+    if num_fakes_to_sample > 0 and fakes.shape[0] > 0:
+        indices_to_take = np.random.choice(fakes.shape[0], size=num_fakes_to_sample)
+        fakes = np.stack((fakes, copy.deepcopy(fakes[indices_to_take])))
+
+    # Combine and return new dataset - no need to shuffle, as we are calling this before the end of
+    # prepare_classifier_data()
+
+    data = []
+
+    for k in agns:
+        data.append([k, np.array([1., 0., 0.])])
+
+    for k in psrs:
+        data.append([k, np.array([0., 1., 0.])])
+
+    for k in fakes:
+        data.append([k, np.array([0., 0., 1.])])
+
+    return data
 
 
 def image_cartesian_coordinates_to_galactic_coordinates(coordinates, patch_centre, coordinate_system='G'):
@@ -165,6 +222,15 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
 
     if len(data) == 0:
         raise RuntimeError("Not enough sources were localised - no data is available for the classifier to train on.")
+
+    # Balance dataset
+
+    data[3][1] = np.array([1., 0., 0.])
+    data[5][1] = np.array([1., 0., 0.])
+    data[7][1] = np.array([0., 1., 0.])
+    data[9][1] = np.array([0., 1., 0.])
+
+    data = balance_dataset(data)
 
     if test:
 

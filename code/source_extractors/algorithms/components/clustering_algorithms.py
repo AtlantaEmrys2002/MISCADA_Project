@@ -195,12 +195,7 @@ def spectral_clustering(binary_segments, max_num_centroids=20, threshold=0.2):
     l_snn = -10
     R = 5
 
-    count = 0
-
     for segment in binary_segments:
-
-        print(count + 1)
-        count += 1
 
         D = segment[0]
 
