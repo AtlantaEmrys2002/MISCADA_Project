@@ -40,9 +40,9 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
 
     segmentation_algorithms = ["random_forest", "unet"]
 
-    localisation_algorithms = ["dbscan", "spectral", "blob_detection", "kmeans"]
+    localisation_algorithms = ["dbscan", "kmeans", "spectral", "blob_detection"]
 
-    classification_algorithms = ["svm", "random_forest", "cnn"]
+    classification_algorithms = ["random_forest", "cnn", "svm"]
 
     algorithm_count = 1
 
@@ -72,8 +72,6 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                                                            testing_maps=real_data, pretrained=True, real=True)
 
                 import matplotlib.pyplot as plt
-
-                # print(np.sum(train_segmentation_predictions[0] > 0.5))
 
                 plt.imshow((train_segmentation_predictions[0] > 0.5) * 200)
 
@@ -105,6 +103,16 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                                                                                  validation_maps=np.array([]),
                                                                                  testing_maps=real_maps,
                                                                                  pretrained=True, real=True)
+
+                import matplotlib.pyplot as plt
+
+                plt.imshow((train_segmentation_predictions[0][0]) * 200)
+
+                plt.show()
+
+                plt.imshow((train_segmentation_predictions[1][0]) * 200)
+
+                plt.show()
 
             case _:
 

@@ -16,11 +16,11 @@ def read_patches(num_patches=int, directory=str):
                .astype(np.float32))
 
     # Read in masks
-    masks = (np.array([[np.load("{}/patch_{}/mask.npy".format(directory, n))] for n in range(num_patches)])
-             .astype(np.float32))
-
-    # masks = (np.array([np.array([np.load("{}/patch_{}/mask.npy".format(directory, n))]).T for n in range(num_patches)])
+    # masks = (np.array([[np.load("{}/patch_{}/mask_2.npy".format(directory, n))] for n in range(num_patches)])
     #          .astype(np.float32))
+
+    masks = (np.array([[np.load("{}/patch_{}/mask_2.npy".format(directory, n)).T] for n in range(num_patches)])
+             .astype(np.float32))
 
     # Read in metadata for each patch
 
@@ -29,7 +29,9 @@ def read_patches(num_patches=int, directory=str):
     types = []
 
     for n in range(num_patches):
-        file_name = "{}/patch_{}/metadata.csv".format(directory, n)
+        # file_name = "{}/patch_{}/metadata.csv".format(directory, n)
+
+        file_name = "{}/patch_{}/metadata_2.csv".format(directory, n)
 
         df = pd.read_csv(file_name)
 
@@ -45,8 +47,6 @@ def read_patches(num_patches=int, directory=str):
         types.append(df["source_type"].to_numpy())
 
     # Combine to create test data
-    # test_data = [(k, torch.from_numpy(patches[k]), torch.from_numpy(masks[k])) for k in range(num_patches)]
-
     test_data = [(k, torch.tensor(patches[k]), torch.tensor(masks[k])) for k in range(num_patches)]
 
     # Select random samples
@@ -74,13 +74,12 @@ def read_patches(num_patches=int, directory=str):
     # Create batches
     train_batches = DataLoader(train_split, batch_size=128, shuffle=True)
     validation_batches = DataLoader(validation_split, batch_size=128, shuffle=False)
-    # test_batches = DataLoader(test_split, batch_size=128, shuffle=False)
 
     # N.B. Only need the IDs of each test patch and make sure not to shuffle the test patches
 
-    data_for_testing = [test_data[k] for k in test_indices]  # test_data[test_indices.astype(int)]
+    data_for_testing = [test_data[k] for k in test_indices]
 
-    return train_batches, validation_batches, data_for_testing  # test_batches
+    return train_batches, validation_batches, data_for_testing
 
 
 def read_real_data(num_patches, directory=str):
@@ -132,7 +131,6 @@ def read_real_data(num_patches, directory=str):
 
 def save_predictions(patch_ids, predicted_segmentations, predicted_locations, predicted_classes, actual_classes,
                      directory: str, method: str, real=False):
-
     # Create directory to store results
 
     save_location = directory + "/{}/".format(method)
@@ -173,17 +171,6 @@ def save_predictions(patch_ids, predicted_segmentations, predicted_locations, pr
     classifications = [[actual_classes[k], predicted_classes[k]] for k in range(len(actual_classes))]
 
     np.save(save_location + "classifications", classifications)
-
-
-
-    # dfs = [pd.read_csv(patches_location + "patch_{}/metadata.csv".format(p)) for p in patch_ids]
-    #
-    # # N.B. I assume that the clustering algorithms return coordinates in form (x, y). Therefore, save locations as such!
-    #
-    # actual_locations = [df[['cartesian_x', 'cartesian_y']].to_numpy() for df in dfs]
-    #
-    # np.savez(save_location + "actual_locations.npy", actual_locations)
-
 
 # REFERENCES
 

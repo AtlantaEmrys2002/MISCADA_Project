@@ -189,7 +189,6 @@ def k_means_clustering(binary_segments, max_num_centroids=50, threshold=0.2):
 
 
 def spectral_clustering(binary_segments, max_num_centroids=20, threshold=0.2):
-
     source_centres_in_each_image = []
 
     l_snn = -10
@@ -232,7 +231,8 @@ def spectral_clustering(binary_segments, max_num_centroids=20, threshold=0.2):
                 # Get centre of each cluster
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    cluster_centres = np.array([np.round(np.mean(V_D[np.nonzero(spectral_classifications == x)].T, axis=1)) for x in range(k)])
+                    cluster_centres = np.array([np.round(np.mean(V_D[np.nonzero(spectral_classifications == x)].T,
+                                                                 axis=1)) for x in range(k)])
 
                 if np.sum(np.isnan(cluster_centres)) > 0:
 
@@ -290,6 +290,8 @@ def spectral_clustering(binary_segments, max_num_centroids=20, threshold=0.2):
 # Extracting Cartesian Coordinates from OpenCV - https://stackoverflow.com/questions/35884409/how-to-extract-x-y-
 # Filter Numpy - https://stackoverflow.com/questions/19821425/how-can-i-filter-numpy-array-by-list-of-indices
 # coordinates-from-opencv-cv2-keypoint-object
+# fit vs fit_predict - https://stackoverflow.com/questions/57234414/what-is-the-difference-between-fit-and-fit-predict-
+# in-spectralclustering
 # ID8 and ID25 - see references
 # Indexing with array of indices - https://stackoverflow.com/questions/19821425/how-can-i-filter-numpy-array-by-list-of-
 # indices
@@ -308,4 +310,7 @@ def spectral_clustering(binary_segments, max_num_centroids=20, threshold=0.2):
 # Row Selection - https://stackoverflow.com/questions/58079075/numpy-select-rows-based-on-condition
 # Setting Blob Detection Thresholds - https://stackoverflow.com/questions/32973537/what-is-the-use-of-minrepeatability-
 # parameter-of-simpleblobdetector-in-opencv
+# Spectral Error - https://stackoverflow.com/questions/38538608/sklearn-spectral-clustering-error-in-fit-predict-k-must-
+# be-between-1-and-the-o
 # Speed Up K-Means - https://stackoverflow.com/questions/46515481/how-to-speed-up-k-means-from-scikit-learn
+# Warnings - https://stackoverflow.com/questions/3891804/raise-warning-in-python-without-interrupting-program

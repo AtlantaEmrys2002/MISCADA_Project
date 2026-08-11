@@ -10,6 +10,9 @@ source gamma_source_detection/bin/activate
 
 python create_dataset.py --num_catalogs=10 --num_skymaps_per_catalog=10 --num_energy_bins=5 --patch_directory=./simulated_data
 
+# Sources with too-low energy fluxes removed
+# python create_dataset_flux_dependent.py --num_catalogs=10 --num_skymaps_per_catalog=10 --num_energy_bins=5 --patch_directory=./simulated_data
+
 deactivate
 
 

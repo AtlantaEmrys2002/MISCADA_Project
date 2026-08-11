@@ -8,7 +8,7 @@ UNLIKE create_dataset.py, THIS VERSION INCORPORATES ENERGY FLUXES OF SOURCES (EX
 
 import argparse
 import copy
-from create_patches import create_patches_for_catalog
+from create_patches_flux_dependent import create_patches_for_catalog_flux_dependent
 import healpy as hp
 from multiprocessing import Pool
 import numpy as np
@@ -80,9 +80,9 @@ if __name__ == "__main__":
     # Parallel computation of maps - split catalogs between CPUs
     start_count_time = time.time()
 
-    pool = Pool(processes=os.cpu_count() // 8)
+    pool = Pool(processes=os.cpu_count() // 2)
 
-    pool.map(create_patches_for_catalog, arguments)
+    pool.map(create_patches_for_catalog_flux_dependent, arguments)
 
     pool.terminate()
 

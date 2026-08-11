@@ -193,6 +193,8 @@ class UNET(nn.Module):
     def __init__(self, in_chan, first_out_chan, exit_chan, downhill, padding=0):
         super(UNET, self).__init__()
 
+        self.batch_norm = nn.BatchNorm2d(num_features=5)
+
         self.encoder = Encoder(in_chan, first_out_chan, padding=padding, downhill=downhill)
 
         self.decoder = Decoder(first_out_chan * (2 ** downhill), first_out_chan * (2 ** (downhill - 1)), exit_chan,
@@ -207,6 +209,7 @@ class UNET(nn.Module):
             Data to evaluate.
         """
 
+        x = self.batch_norm(x)
         enc_out, routes = self.encoder(x)
         out = self.decoder(enc_out, routes)
 
@@ -245,7 +248,7 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
     # Define loss function and optimiser - changed from that proposed in ID11 and ID8
     # loss_fn = torch.nn.BCEWithLogitsLoss().to(device)
 
-    loss_fn = torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, 100])).to(device)
+    loss_fn = torch.nn.CrossEntropyLoss(weight=torch.Tensor([1, 1])).to(device)
 
     # optimiser = torch.optim.Adam(unet_model.parameters(), lr=1.e-4)
     optimiser = torch.optim.SGD(unet_model.parameters(), lr=1.e-2)
@@ -264,6 +267,16 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
         unet_model.train()
 
         for i, data in enumerate(train_data):
+
+            # import matplotlib.pyplot as plt
+            #
+            # plt.imshow(data[1][2][0])
+            # plt.show()
+
+            # print(data[2].squeeze(1).shape)
+            #
+            # plt.imshow(data[2][0][0])
+            # plt.show()
 
             inputs, labels = data[1].to(device), data[2].to(device).squeeze(1)
 
@@ -346,7 +359,7 @@ def unet(training_maps, validation_maps, testing_maps, pretrained=False, real=Fa
         # CHANGE BACK LATER
 
         model, best_epoch = unet_train(train_data=training_maps, test_data=validation_maps,
-                                       save_file=save_file, device=device, training_epochs=10)
+                                       save_file=save_file, device=device, training_epochs=50)
 
         print("BEST EPOCH: {}".format(best_epoch))
 
@@ -374,7 +387,8 @@ def unet(training_maps, validation_maps, testing_maps, pretrained=False, real=Fa
             #
             #     test_data_predictions.append(torch.argmax(model(torch.from_numpy(real_maps).to(device)).detach().cpu(), dim=1).numpy())
             #
-            test_data_predictions = torch.argmax(model(torch.from_numpy(real_maps).to(device)).detach().cpu(), dim=1).numpy()
+            test_data_predictions = torch.argmax(model(torch.from_numpy(real_maps).to(device)).detach().cpu(),
+                                                 dim=1).numpy()
 
             # test_data_predictions = torch.argmax(test_data_predictions, dim=1)
 
@@ -403,15 +417,47 @@ def unet(training_maps, validation_maps, testing_maps, pretrained=False, real=Fa
         return train_data_predictions, validation_data_predictions, test_data_predictions
 
 # REFERENCES
+# Class Imbalance - https://stackoverflow.com/questions/56841451/why-is-my-neural-net-only-predicting-one-class-binary-
+# classification
+# Casting Tensor Types - https://discuss.pytorch.org/t/how-to-cast-a-tensor-to-another-type/2713
+# Class Weights - https://discuss.pytorch.org/t/using-class-weights-with-loss-function-for-train-val-test-splits/222696
 # Convolutional Layers - https://en.wikipedia.org/wiki/Convolutional_layer
+# Cross-Entropy Loss Segmentation - https://discuss.pytorch.org/t/use-crossentropyloss-in-multiclass-semantic-
+# segmentation/158141
+# GPU - https://stackoverflow.com/questions/61565293/issue-training-pytorch-model-on-gpu?rq=4
+# GPU Error - https://stackoverflow.com/questions/59013109/runtimeerror-input-type-torch-floattensor-and-weight-type-
+# torch-cuda-floatte
 # Pytorch Documentation - https://pytorch.org/get-started/locally/
 # Torch Types - https://stackoverflow.com/questions/70267810/pytorch-runtimeerror-expected-floating-point-type-for-
 # target-with-class-proba
+# Random Forest Classifier - https://stackoverflow.com/questions/49991677/using-randomforestclassifier-decision-path-how
+# -do-i-tell-which-samples-the-clas
+# Removing Channel Dimension - https://stackoverflow.com/questions/74764062/how-to-remove-the-channel-dimension-within-a
+# -pytorch-model
+# Segmentation Loss Function - https://discuss.pytorch.org/t/loss-function-for-segmentation/129703
+# Segmentation with Cross Entropy - https://discuss.pytorch.org/t/image-segmentation-with-cross-entropy-loss/79138/4
+# Softmax Dimension - https://stackoverflow.com/questions/52513802/pytorch-softmax-with-dim
 # Softmax Error - https://discuss.pytorch.org/t/implicit-dimension-choice-for-softmax-warning/12314/2
+# Spatial Dimensions - https://discuss.pytorch.org/t/runtimeerror-only-batches-of-spatial-targets-supported-3d-tensors-
+# but-got-targets-of-dimension-4/82098
+# Squeeze - https://stackoverflow.com/questions/60619886/torch-squeeze-and-the-batch-dimension
 # Training - https://docs.pytorch.org/tutorials/beginner/introyt/trainingyt.html
 # Training Loop - https://docs.pytorch.org/tutorials/beginner/introyt/trainingyt.html
+# Training Loss Plateau - https://stackoverflow.com/questions/76063234/pytorch-training-loss-is-0-00-and-validation-
+# accuracy-is-1-00-from-first-epoch
+# Training Loss Plateau - https://discuss.pytorch.org/t/loss-always-equal-to-zero-while-training-the-model/173676
+# Training Loss Plateau - https://stackoverflow.com/questions/55311932/loss-not-decreasing-pytorch
+# Training Loss Plateau - https://stackoverflow.com/questions/47813715/pytorch-loss-value-not-change
+# Training Loss Plateau - https://discuss.pytorch.org/t/sloved-why-my-loss-not-decreasing/15924
+# Training Loss Plateau - https://stackoverflow.com/questions/69352375/pytorch-is-running-natively-on-m1-macbook-but-
+# something-isnt-working-properly
+# Training Loss Plateau - https://discuss.pytorch.org/t/model-does-not-train-same-loss-in-every-epoch/121428/3
+# Training Loss Plateau - https://discuss.pytorch.org/t/loss-always-equal-to-zero-while-training-the-model/173676
+# Training Loss Plateau - https://discuss.pytorch.org/t/loss-not-updating-in-pytorch/169048
 # Tutorial GitHub - https://github.com/AlessandroMondin/U-NET/blob/main/dataset.py
 # Tutorial GitHub - https://github.com/aladdinpersson/Machine-Learning-Collection/blob/master/ML/Pytorch/image_
 # segmentation/semantic_segmentation_unet/model.py
 # U-Net Tutorial - https://medium.com/@alessandromondin/semantic-segmentation-with-pytorch-u-net-from-
 # scratch-502d6565910a
+# Weighted Loss Function - https://medium.com/@zergtant/use-weighted-loss-function-to-solve-imbalanced-data-
+# classification-problems-749237f38b75

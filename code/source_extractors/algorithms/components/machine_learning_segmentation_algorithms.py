@@ -44,7 +44,7 @@ def random_forest_segmentation(training_maps, training_masks, validation_maps, t
 
         # TRAIN RANDOM FOREST CLASSIFIER ON DATA
 
-        clf = RandomForestClassifier(n_estimators=50, n_jobs=-1, max_depth=10, max_samples=0.05)
+        clf = RandomForestClassifier(n_estimators=50, n_jobs=3, max_depth=6, max_samples=0.05)
 
         clf = future.fit_segmenter(training_masks, training_maps, clf)
 

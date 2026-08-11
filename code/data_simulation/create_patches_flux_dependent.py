@@ -10,7 +10,7 @@ import os
 from read_write_functions import xml_parser
 
 
-def create_patches_for_catalog(params: list):
+def create_patches_for_catalog_flux_dependent(params: list):
     """Creates patches from sky maps all created from the same simulated source catalog and returns information about
     those patches.
 
