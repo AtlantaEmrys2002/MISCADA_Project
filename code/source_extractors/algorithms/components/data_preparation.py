@@ -33,6 +33,8 @@ def balance_dataset(data):
     else:
         num_sources_to_sample_of_each_type = fakes.shape[0]
 
+    print("No. Each Source in Dataset: {}".format(num_sources_to_sample_of_each_type))
+
     num_agns_to_sample = num_sources_to_sample_of_each_type - agns.shape[0]
     num_psrs_to_sample = num_sources_to_sample_of_each_type - psrs.shape[0]
     num_fakes_to_sample = num_sources_to_sample_of_each_type - fakes.shape[0]
@@ -225,18 +227,14 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
 
     # Balance dataset
 
-    data[3][1] = np.array([1., 0., 0.])
-    data[5][1] = np.array([1., 0., 0.])
-    data[7][1] = np.array([0., 1., 0.])
-    data[9][1] = np.array([0., 1., 0.])
-
-    data = balance_dataset(data)
-
     if test:
 
         return data
 
     else:
+
+        # Only balance dataset if training or validating (not when testing or applying to real data).
+        data = balance_dataset(data)
 
         # Reformat as DataSet
         split = Subset(data, np.arange(0, len(data)))

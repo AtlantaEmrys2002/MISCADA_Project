@@ -8,8 +8,8 @@ from astropy.table import QTable
 import healpy as hp
 import numpy as np
 from pathlib import Path
-from source_generation.agn_spectral_parameters import integral_photon_flux_agn
-from source_generation.pulsar_spectral_parameters import integral_photon_flux_pulsar
+from source_generation.agn_spectral_parameters import energy_flux_agn, integral_photon_flux_agn
+from source_generation.pulsar_spectral_parameters import energy_flux_pulsar, integral_photon_flux_pulsar
 from xml.dom import minidom
 
 
@@ -443,7 +443,8 @@ def xml_parser_locations(xml_file: str, coordinate_system='G'):
         raise TypeError("Coordinate system not supported.")
 
 
-def xml_parser(energy_bins, xml_file: str, give_ids=False):
+def xml_parser(energy_bins, xml_file: str, give_ids=False, energy_flux_limited: bool = False,
+               flux_limit: float = 10 ** -13):
     """ Fetches the location, integral photon flux, and (optionally) unique ID of each source stored in a given XML
     file.
 
@@ -456,6 +457,8 @@ def xml_parser(energy_bins, xml_file: str, give_ids=False):
         fetched.
     give_ids : bool, optional
         Indicates whether the unique IDs of the sources should be returned.
+    energy_flux_limited : bool
+        Only returns sources with energy fluxes higher than given threshold.
 
     """
     # Read XML files to get latitude and longitude of each source (separate into AGN, pulsars, and background - if they
@@ -480,27 +483,27 @@ def xml_parser(energy_bins, xml_file: str, give_ids=False):
     # Parse XML
     for source in sources:
 
-        source_ids.append(source.getAttribute("name"))
+        # source_ids.append(source.getAttribute("name"))
 
         source_type = source.getAttribute("name")[:3]
 
-        # PARSE SPATIAL PARAMETERS
-
-        spatial_model = source.getElementsByTagName("spatialModel")[0]
-
-        parameters = spatial_model.getElementsByTagName("parameter")
-
-        coordinate = [0, 0]
-
-        for param in parameters:
-            name = param.getAttribute("name")
-
-            if name == "RA":
-                coordinate[0] = float(param.getAttribute("value"))
-            else:
-                coordinate[1] = float(param.getAttribute("value"))
-
-        coordinates.append(coordinate)
+        # # PARSE SPATIAL PARAMETERS
+        #
+        # spatial_model = source.getElementsByTagName("spatialModel")[0]
+        #
+        # spatial_parameters = spatial_model.getElementsByTagName("parameter")
+        #
+        # coordinate = [0, 0]
+        #
+        # for param in spatial_parameters:
+        #     name = param.getAttribute("name")
+        #
+        #     if name == "RA":
+        #         coordinate[0] = float(param.getAttribute("value"))
+        #     else:
+        #         coordinate[1] = float(param.getAttribute("value"))
+        #
+        # coordinates.append(coordinate)
 
         # PARSE SPECTRAL FEATURES AND CALCULATE FLUX
 
@@ -527,6 +530,15 @@ def xml_parser(energy_bins, xml_file: str, give_ids=False):
 
         if source_type == "AGN":
 
+            energy_flux = energy_flux_agn(pivot_energy=spectral_parameter_dictionary["Eb"],
+                                          flux_density=spectral_parameter_dictionary["norm"],
+                                          spectral_slope=spectral_parameter_dictionary["alpha"],
+                                          curvature=spectral_parameter_dictionary["beta"])
+
+            if energy_flux_limited:
+                if energy_flux < flux_limit:
+                    continue
+
             # Parse spectral parameters
 
             # For each energy interval, calculate corresponding flux
@@ -542,6 +554,16 @@ def xml_parser(energy_bins, xml_file: str, give_ids=False):
                 binned_fluxes.append(flux)
 
         elif source_type == "PSR":
+
+            energy_flux = energy_flux_pulsar(pivot_energy=spectral_parameter_dictionary["Scale"],
+                                             flux_density=spectral_parameter_dictionary["Prefactor"],
+                                             spectral_slope=spectral_parameter_dictionary["Index1"],
+                                             exponential_index=spectral_parameter_dictionary["Index2"],
+                                             exponential_factor=spectral_parameter_dictionary["Expfactor"],)
+
+            if energy_flux_limited:
+                if energy_flux < flux_limit:
+                    continue
 
             # For each energy interval, calculate corresponding flux
             for f in range(num_bins - 1):
@@ -559,6 +581,26 @@ def xml_parser(energy_bins, xml_file: str, give_ids=False):
 
             # Unrecognised point source type - allows for debugging when adding in new source types to simulation
             raise TypeError("Cannot recognise source type {}".format(source_type))
+
+        # PARSE SPATIAL PARAMETERS
+
+        spatial_model = source.getElementsByTagName("spatialModel")[0]
+
+        spatial_parameters = spatial_model.getElementsByTagName("parameter")
+
+        coordinate = [0, 0]
+
+        for param in spatial_parameters:
+            name = param.getAttribute("name")
+
+            if name == "RA":
+                coordinate[0] = float(param.getAttribute("value"))
+            else:
+                coordinate[1] = float(param.getAttribute("value"))
+
+        coordinates.append(coordinate)
+
+        source_ids.append(source.getAttribute("name"))
 
         fluxes.append(binned_fluxes)
 
