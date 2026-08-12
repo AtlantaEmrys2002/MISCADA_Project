@@ -41,7 +41,7 @@ def create_infinite_patches_for_catalog(params: list):
 
         # READ IN MAPS AND SPATIAL/SPECTRAL PARAMETERS
 
-        skymaps_directory = save_directory + "/count_maps/infinite_count_map_{}".format(catalog_id)
+        skymaps_directory = save_directory + "/infinite_count_maps/infinite_count_map_{}".format(catalog_id + 1)
 
         binned_agn_map = []
         binned_pulsar_map = []
@@ -52,7 +52,7 @@ def create_infinite_patches_for_catalog(params: list):
             # Read in binned all-sky count maps for AGN, pulsars, and background
             agns = hp.fitsfunc.read_map(filename=skymaps_directory + "/agn_infinite_counts_{}.fits".format(b),
                                         field=None)
-            pulsars = hp.fitsfunc.read_map(filename=skymaps_directory + "/pulsars_infinite_counts_{}.fits".format(b),
+            pulsars = hp.fitsfunc.read_map(filename=skymaps_directory + "/pulsar_infinite_counts_{}.fits".format(b),
                                            field=None)
 
             isotropic_background = np.load(save_directory +
@@ -100,7 +100,6 @@ def create_infinite_patches_for_catalog(params: list):
             Path(patch_directory).mkdir(parents=True, exist_ok=True)
 
             # PROJECT ROI OF COUNT MAP INTO CARTESIAN
-
             binned_agn_patch = []
             binned_pulsar_patch = []
             binned_isotropic_background_patch = []
@@ -161,12 +160,9 @@ def create_infinite_patches_for_catalog(params: list):
             # Sum together to create patch
             patch = binned_agn_patch + binned_pulsar_patch + binned_background_patch
 
-            np.save(patch_directory + "/patch.npy", patch)
-
             # Plot all patches generated from the first skymap
-            if catalog_id == 0 and m == 0:
-                plot_patch(binned_patches=patch, mask=np.zeros((64, 64)), unformatted_energy_bins=energy_bins,
-                           directory=patch_directory)
+            plot_patch(binned_patches=patch, mask=np.zeros((64, 64)), unformatted_energy_bins=energy_bins,
+                       directory=patch_directory)
 
 
 if __name__ == "__main__":
@@ -251,7 +247,7 @@ if __name__ == "__main__":
     # Parallel computation of maps - split catalogs between CPUs
     start_count_time = time.time()
 
-    pool = Pool(processes=os.cpu_count() // 8)
+    pool = Pool(processes=os.cpu_count() // 2)
 
     pool.map(create_infinite_patches_for_catalog, arguments)
 

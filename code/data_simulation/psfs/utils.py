@@ -63,7 +63,8 @@ def king_function(x: npt.ArrayLike, sigma: np.float64, gamma: np.float64) -> npt
     return result
 
 
-def monte_carlo_sampler(parameters: npt.NDArray[np.float64], num_samples: int) -> npt.NDArray[np.float64]:
+def monte_carlo_sampler(parameters: npt.NDArray[np.float64], num_samples: int, energy_bin_vals=False,
+                        energy_bin=0.) -> npt.NDArray[np.float64]:
     """Used to sample random values from PDF described by dual King Function.
 
     Parameters
@@ -102,14 +103,26 @@ def monte_carlo_sampler(parameters: npt.NDArray[np.float64], num_samples: int) -
     while len(samples) < num_samples:
 
         # "Throw dart" into bounding box
-        candidate_x = np.random.uniform(low=0, high=30)
+        if not energy_bin_vals:
+            candidate_x = np.random.uniform(low=0, high=30)
+        else:
+            if energy_bin == 0:
+                candidate_x = np.random.uniform(low=0, high=30 / np.sqrt(((3.5) ** 2) + (0.15 ** 2)))
+            else:
+                candidate_x = np.random.uniform(low=0, high=30 / np.sqrt(((3.5 * ((energy_bin / 100) ** (-0.8))) ** 2) +
+                                                                     (0.15 ** 2)))
+
         candidate_y = np.random.uniform(low=0, high=y_max)
 
         # If it is under the curve
         if candidate_y <= dual_function(candidate_x, sigma_core=np.float64(parameters[0]),
                                         gamma_core=np.float64(parameters[1]), sigma_tail=np.float64(parameters[2]),
                                         gamma_tail=np.float64(parameters[3]), f_core=np.float64(parameters[4])):
-            samples.append(candidate_x)
+
+            if not energy_bin_vals:
+                samples.append(candidate_x)
+            else:
+                samples.append(candidate_x * np.sqrt(((3.5 * ((energy_bin / 100) ** (-0.8))) ** 2) + (0.15 ** 2)))
 
     return np.array(samples).astype(np.float64)
 
@@ -168,7 +181,7 @@ def scale_psf(psf_values: npt.NDArray[np.float64], energy_bin: npt.NDArray[np.fl
     """
 
     # Calculate energy scale factor
-    scale_factor = np.sqrt(((c_0 * (energy_bin / 100) ** (-beta)) ** 2) + c_1)
+    scale_factor = np.sqrt(((c_0 * ((energy_bin / 100) ** (-beta))) ** 2) + (c_1 ** 2))
 
     # Scale PSF values
     psf_values /= scale_factor
