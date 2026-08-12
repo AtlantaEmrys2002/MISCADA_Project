@@ -9,7 +9,7 @@ import numpy as np
 from scipy.integrate import quad
 
 
-def angle_to_healpix_pixels(coordinates, nside: int):
+def angle_to_healpix_pixels(coordinates, nside: int = 256):
     """Wrapper for healpy function that takes list of galactic coordinates and converts them to the HEALPix pixel that
     encompasses that coordinate.
 

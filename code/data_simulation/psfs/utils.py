@@ -4,6 +4,7 @@ Utility functions when fitting and applying point spread functions (PSFs).
 
 import numpy as np
 import numpy.typing as npt
+
 import warnings
 
 
@@ -63,9 +64,10 @@ def king_function(x: npt.ArrayLike, sigma: np.float64, gamma: np.float64) -> npt
     return result
 
 
-def monte_carlo_sampler(parameters: npt.NDArray[np.float64], num_samples: int, energy_bin_vals=False,
-                        energy_bin=0.) -> npt.NDArray[np.float64]:
-    """Used to sample random values from PDF described by dual King Function.
+def monte_carlo_sampler(parameters: npt.NDArray[np.float64], num_samples: int) -> npt.NDArray[np.float64]:
+    """Used to sample random values from PDF described by dual King Function. Took inspiration from this code
+    (different method, but still useful) when implementing final Ratio of Uniforms code) -
+    https://github.com/scipy/scipy/blob/v1.18.0/scipy/stats/_sampling.py#L1130-L1319
 
     Parameters
     ----------
@@ -98,33 +100,47 @@ def monte_carlo_sampler(parameters: npt.NDArray[np.float64], num_samples: int, e
 
     # Uniformly sample this bounding box - if under the curve, include
 
-    samples = []
+    samples = np.zeros(num_samples)
 
-    while len(samples) < num_samples:
+    num_samples_generated = 0
+
+    while num_samples_generated < num_samples:
 
         # "Throw dart" into bounding box
-        if not energy_bin_vals:
-            candidate_x = np.random.uniform(low=0, high=30)
-        else:
-            if energy_bin == 0:
-                candidate_x = np.random.uniform(low=0, high=30 / np.sqrt(((3.5) ** 2) + (0.15 ** 2)))
-            else:
-                candidate_x = np.random.uniform(low=0, high=30 / np.sqrt(((3.5 * ((energy_bin / 100) ** (-0.8))) ** 2) +
-                                                                     (0.15 ** 2)))
+        # if not energy_bin_vals:
+        # candidate_x = np.random.uniform(low=0, high=30)
+        # else:
+        #     if energy_bin == 0:
+        #         candidate_x = np.random.uniform(low=0, high=30 / np.sqrt(((3.5) ** 2) + (0.15 ** 2)))
+        #     else:
+        #         candidate_x = np.random.uniform(low=0, high=30 / np.sqrt(((3.5 * ((energy_bin / 100) ** (-0.8))) ** 2) +
+        #                                                              (0.15 ** 2)))
 
-        candidate_y = np.random.uniform(low=0, high=y_max)
+            # if not energy_bin_vals:
+            #     samples.append(candidate_x)
+            # else:
+            #     samples.append(candidate_x * np.sqrt(((3.5 * ((energy_bin / 100) ** (-0.8))) ** 2) + (0.15 ** 2)))
 
-        # If it is under the curve
-        if candidate_y <= dual_function(candidate_x, sigma_core=np.float64(parameters[0]),
-                                        gamma_core=np.float64(parameters[1]), sigma_tail=np.float64(parameters[2]),
-                                        gamma_tail=np.float64(parameters[3]), f_core=np.float64(parameters[4])):
+            # samples.append(candidate_x)
 
-            if not energy_bin_vals:
-                samples.append(candidate_x)
-            else:
-                samples.append(candidate_x * np.sqrt(((3.5 * ((energy_bin / 100) ** (-0.8))) ** 2) + (0.15 ** 2)))
+            # samples.append(np.sin(np.deg2rad(candidate_x / 2)) * 2)
 
-    return np.array(samples).astype(np.float64)
+        candidate_xs = np.random.uniform(low=0, high=30, size=num_samples - num_samples_generated)
+        candidate_ys = np.random.uniform(low=0, high=y_max, size=num_samples - num_samples_generated)
+
+        mask = (candidate_ys < dual_function(candidate_xs, sigma_core=np.float64(parameters[0]),
+                                             gamma_core=np.float64(parameters[1]), sigma_tail=np.float64(parameters[2]),
+                                             gamma_tail=np.float64(parameters[3]), f_core=np.float64(parameters[4])))
+
+        num_new_vals = np.sum(mask)
+
+        samples[num_samples_generated: num_samples_generated + num_new_vals] = candidate_xs[mask]
+
+        num_samples_generated += num_new_vals
+
+    return samples.astype(np.float64)
+
+    # return np.array(samples).astype(np.float64)
 
 
 def normalise_psf(thetas: npt.NDArray[np.float64], psf_values: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
@@ -147,8 +163,10 @@ def normalise_psf(thetas: npt.NDArray[np.float64], psf_values: npt.NDArray[np.fl
         Normalised function values
 
     """
+    #
+    # probs = ((2 * np.pi * thetas) ** 2) * psf_values
 
-    probs = ((2 * np.pi * thetas) ** 2) * psf_values
+    probs = (2 * np.pi * thetas) * psf_values
 
     # Integrate over probs
     approx_integral = np.sum(np.array(
@@ -191,4 +209,5 @@ def scale_psf(psf_values: npt.NDArray[np.float64], energy_bin: npt.NDArray[np.fl
 # REFERENCES
 
 # Moffat Distribution - https://en.wikipedia.org/wiki/Moffat_distribution
+# Optimised Sampling - https://github.com/scipy/scipy/blob/v1.18.0/scipy/stats/_sampling.py#L1130-L1319
 # Ratio of Uniforms - https://en.wikipedia.org/wiki/Ratio_of_uniforms

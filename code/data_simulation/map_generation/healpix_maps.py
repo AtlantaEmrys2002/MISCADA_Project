@@ -243,7 +243,8 @@ def create_infinite_counts_maps(source_pixels, exposure_maps, fluxes):
 
 def create_count_map_2(coordinates: npt.NDArray[np.float64], exposure_maps: npt.NDArray[np.float64],
                        psf_parameters: npt.NDArray[np.float64], fluxes: npt.NDArray[np.float64], nside: int,
-                       infinite_stats_file: str, energy_bins=np.array([]), use_energy_bins=False) -> npt.NDArray[np.float64]:
+                       infinite_stats_file: str, energy_bins=np.array([]), use_energy_bins=False) -> npt.NDArray[
+    np.float64]:
     """Creates photon count map for point sources, provided that the galactic coordinates of the sources, their fluxes,
     the exposure maps calculated using fermitools, and PSF parameters (also calculated using a mixture of fermitools and
     custom code) are provided. These count maps will be binned and realistic.
@@ -291,7 +292,7 @@ def create_count_map_2(coordinates: npt.NDArray[np.float64], exposure_maps: npt.
 
         celestial_coord = celestial_coordinates[source]
 
-        # coord = SkyCoord(ra=celestial_coord[0] * u.deg, dec=celestial_coord[1] * u.deg, frame='icrs')
+        coord = SkyCoord(ra=celestial_coord[0] * u.deg, dec=celestial_coord[1] * u.deg, frame='icrs')
 
         # If only one source is in the pixel, take the infinite statistics map value
         if source_in_pixel[source_pixel] == 1:
@@ -308,31 +309,50 @@ def create_count_map_2(coordinates: npt.NDArray[np.float64], exposure_maps: npt.
         # Poisson sample infinite statistics map to get expected counts from each POINT source
         sampled_counts = np.random.poisson(lam=c_per_bin)
 
+        # for b in range(num_bins):
+        #     count_maps[b, source_pixel] += sampled_counts[b]
+
         for b in range(num_bins):
             # Sample radial displacement
-            if not use_energy_bins:
-                radial_angle_displacements = monte_carlo_sampler(parameters=psf_parameters[b],
-                                                                 num_samples=sampled_counts[b])
-            else:
+            # if not use_energy_bins:
+            #     radial_angle_displacements = monte_carlo_sampler(parameters=psf_parameters[b],
+            #                                                      num_samples=sampled_counts[b])
+            # else:
+            #
+            #     radial_angle_displacements = monte_carlo_sampler(parameters=psf_parameters[b],
+            #                                                      num_samples=sampled_counts[b], energy_bin_vals=True,
+            #                                                      energy_bin=energy_bins[b])
 
-                radial_angle_displacements = monte_carlo_sampler(parameters=psf_parameters[b],
-                                                             num_samples=sampled_counts[b], energy_bin_vals=True, energy_bin=energy_bins[b])
+            radial_angle_displacements = monte_carlo_sampler(parameters=psf_parameters[b],
+                                                             num_samples=sampled_counts[b])
+
+            # radial_angle_displacements = np.sin(np.deg2rad(radial_angle_displacements / 2)) * 2
+
+            # print(radial_angle_displacements)
 
             angles = np.random.uniform(low=0, high=2 * np.pi, size=sampled_counts[b])
 
-            # Calculate new origins
-            new_positions = new_coordinate(ra=celestial_coord[0], dec=celestial_coord[1],
-                                           radius=radial_angle_displacements, angle=angles).T
-
-            # Convert to longitude-latitude
-            new_positions_galactic = coordinates_celestial_to_galactic(new_positions)
-
-            # new_positions = coord.directional_offset_by(position_angle=angles * u.deg,
-            #                                             separation=radial_angle_displacements * u.deg).galactic
+            # # Calculate new origins
+            # new_positions = new_coordinate(ra=celestial_coord[0], dec=celestial_coord[1],
+            #                                radius=radial_angle_displacements, angle=angles).T
             #
-            # new_positions_galactic = np.array([new_positions.l.value, new_positions.b.value]).T
+            # # Convert to longitude-latitude
+            # new_positions_galactic = coordinates_celestial_to_galactic(new_positions)
 
-            new_pixels = angle_to_healpix_pixels(new_positions_galactic, nside=nside)
+            new_positions = coord.directional_offset_by(position_angle=angles * u.rad,
+                                                        separation=radial_angle_displacements * u.deg)
+
+            # print(celestial_coord, new_positions)
+
+            new_positions = new_positions.galactic
+
+            new_positions_galactic = np.array([new_positions.l.value, new_positions.b.value]).T
+
+            # new_pixels = angle_to_healpix_pixels(new_positions_galactic, nside=nside)
+
+            new_pixels = angle_to_healpix_pixels(new_positions_galactic)
+
+            # print(source_pixel, new_pixels)
 
             count_maps[b, new_pixels] += 1
 

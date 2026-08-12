@@ -219,7 +219,7 @@ def plot_fitted_point_source_psf(psf_file: str, function_parameters, directory: 
         random_values = monte_carlo_sampler(popt, 5000)
 
         # Plot sampled values
-        counts, bins = np.histogram(random_values, bins=250, density=True)
+        counts, bins = np.histogram(random_values, bins=200, density=True)
         flattened_axes[x].stairs(counts, bins, color="green", label="Random Samples")
 
     # Formatting
