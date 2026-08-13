@@ -2,7 +2,7 @@
 Main function for creating patches from skymaps. Placed in separate file for ease of parallelization.
 """
 
-from formatting.mask_creation import psf_bck_mask
+from formatting.mask_creation import create_mask
 from formatting.projection_tools import get_ps_info_128
 import healpy as hp
 from map_generation.utils import cartesian_patch
@@ -11,6 +11,7 @@ import numpy as np
 import os
 from pathlib import Path
 from read_write_functions import xml_parser
+import time
 from verification.visualisation import plot_patch
 
 
@@ -79,6 +80,8 @@ def create_patches_for_catalog_2(params: list):
         # Loop to generate each patch
 
         for p in range(max_patches_per_catalog):
+
+            start = time.time()
 
             # Check if patch already exists
 
@@ -184,31 +187,44 @@ def create_patches_for_catalog_2(params: list):
                 # CREATE MASKS
 
                 # Create blank masks which can be added to
-                grid2D_psf = np.zeros((xsize_patch_generation, xsize_patch_generation))
+                # grid2D_psf = np.zeros((xsize_patch_generation, xsize_patch_generation))
 
-                source_info = []
+                # source_info = []
 
-                # Add AGN masks iteratively
-                for i in range(nagn):
-                    # Find the minimum of the position in the image and 127 (the maximum index of the image in the y or
-                    # x-axis)
-                    y = min(agn_pos_list[i][0], xsize_location - 1)
-                    x = min(agn_pos_list[i][1], xsize_location - 1)
+                # ys_2 = []
+                # xs_2 = []
+                #
+                # # Add AGN masks iteratively
+                # for i in range(nagn):
+                #     # Find the minimum of the position in the image and 127 (the maximum index of the image in the y or
+                #     # x-axis)
+                #     y = min(agn_pos_list[i][0], xsize_location - 1)
+                #     x = min(agn_pos_list[i][1], xsize_location - 1)
+                #
+                #     # grid2D_psf = psf_bck_mask(y // 2, x // 2, radius=2.5, psf_mask=grid2D_psf)
+                #     ys_2.append(y // 2)
+                #     xs_2.append(x // 2)
+                #
+                #     source_info.append(f"{agn_patch_ids[i]},AGN,{y},{x}\n")
+                #
+                # for i in range(npsr):
+                #     y = min(psr_pos_list[i][0], xsize_location - 1)
+                #     x = min(psr_pos_list[i][1], xsize_location - 1)
+                #
+                #     ys_2.append(y // 2)
+                #     xs_2.append(x // 2)
+                #
+                #     # grid2D_psf = psf_bck_mask(y // 2, x // 2, radius=2.5, psf_mask=grid2D_psf)
+                #
+                #     source_info.append(f"{pulsar_patch_ids[i]},PSR,{y},{x}\n")
 
-                    grid2D_psf = psf_bck_mask(y // 2, x // 2, radius=2.5, psf_mask=grid2D_psf)
+                grid2D_psf, ys, xs = create_mask(agn_pos_list, psr_pos_list, xsize_location)
 
-                    source_info.append(f"{agn_patch_ids[i]},AGN,{y},{x}\n")
+                source_info = ([f"{agn_patch_ids[i]},AGN,{ys[i]},{xs[i]}\n" for i in range(nagn)] +
+                               [f"{pulsar_patch_ids[i]},PSR,{ys[i + nagn]},{xs[i + nagn]}\n" for i in range(npsr)])
 
-                for i in range(npsr):
-                    y = min(psr_pos_list[i][0], xsize_location - 1)
-                    x = min(psr_pos_list[i][1], xsize_location - 1)
-
-                    grid2D_psf = psf_bck_mask(y // 2, x // 2, radius=2.5, psf_mask=grid2D_psf)
-
-                    source_info.append(f"{pulsar_patch_ids[i]},PSR,{y},{x}\n")
-
-                # Plot all patches generated from the first skymap
-                if catalog_id == 0 and m == 0:
+                # Plot the first 100 patches - for verification and inclusion in report
+                if patch_id < 100:
                     plot_patch(binned_patches=patch, mask=grid2D_psf, unformatted_energy_bins=energy_bins,
                                directory=patch_directory)
 
@@ -224,6 +240,8 @@ def create_patches_for_catalog_2(params: list):
 
                 # Metadata for all patches
                 patch_information.append(f"{patch_id},{catalog_id},{lat},{lon},{nagn},{npsr}\n")
+
+            print("TIME TO CREATE PATCH: {}".format(time.time() - start))
 
     # SAVE PATCH METADATA
 
