@@ -14,6 +14,8 @@ from read_write_functions import xml_parser
 import time
 from verification.visualisation import plot_patch
 
+import copy
+
 
 def create_patches_for_catalog_2(params: list):
     """Creates patches from sky maps all created from the same simulated source catalog and returns information about
@@ -46,7 +48,8 @@ def create_patches_for_catalog_2(params: list):
 
         # READ IN MAPS AND SPATIAL/SPECTRAL PARAMETERS
 
-        skymaps_directory = save_directory + "/count_maps_2/skymap_{}".format((catalog_id * num_maps_per_catalog) + m + 1)
+        skymaps_directory = save_directory + "/count_maps_2/skymap_{}".format(
+            (catalog_id * num_maps_per_catalog) + m + 1)
 
         # Read in the coordinates and associated integral photon fluxes of each source in AGN and pulsar maps
 
@@ -126,19 +129,15 @@ def create_patches_for_catalog_2(params: list):
 
                 Path(patch_directory).mkdir(parents=True, exist_ok=True)
 
-                # Create file for storing individual patches' metadata
-                # list for the csv files - stores information about each patch
-                individual_patch_header_line = "source_id,source_type,cartesian_y,cartesian_x\n"
-
-                f2 = open(os.path.join(patch_directory, "metadata.csv"), "w+")
-                f2.writelines(individual_patch_header_line)
-                f2.close()
-
                 # PROJECT ROI OF COUNT MAP INTO CARTESIAN
 
                 binned_agn_patch = []
                 binned_pulsar_patch = []
                 binned_background_patch = []
+
+                # binned_agn_patch_2 = []
+                # binned_pulsar_patch_2 = []
+                # binned_background_patch_2 = []
 
                 plt.cla()
                 plt.clf()
@@ -148,7 +147,13 @@ def create_patches_for_catalog_2(params: list):
                     agn_patch_bin = cartesian_patch(count_map=binned_agn_map[b], lon=lon, lat=lat,
                                                     xsize=xsize_patch_generation, lonra=lb_range, latra=lb_range)
 
-                    binned_agn_patch.append(np.array(agn_patch_bin) * solid_area_ratio)
+                    # agn_patch_2 = copy.deepcopy(agn_patch_bin)
+                    #
+                    # binned_agn_patch.append(agn_patch_bin * solid_area_ratio)
+                    #
+                    # binned_agn_patch_2.append(agn_patch_2)
+
+                    binned_agn_patch.append(agn_patch_bin)
 
                     plt.cla()
                     plt.clf()
@@ -157,7 +162,13 @@ def create_patches_for_catalog_2(params: list):
                     pulsar_patch_bin = cartesian_patch(count_map=binned_pulsar_map[b], lon=lon, lat=lat,
                                                        xsize=xsize_patch_generation, lonra=lb_range, latra=lb_range)
 
-                    binned_pulsar_patch.append(np.array(pulsar_patch_bin) * solid_area_ratio)
+                    # pulsar_patch_2 = copy.deepcopy(pulsar_patch_bin)
+                    #
+                    # binned_pulsar_patch_2.append(pulsar_patch_2)
+
+                    # binned_pulsar_patch.append(pulsar_patch_bin * solid_area_ratio)
+
+                    binned_pulsar_patch.append(pulsar_patch_bin)
 
                     plt.cla()
                     plt.clf()
@@ -166,7 +177,13 @@ def create_patches_for_catalog_2(params: list):
                     background_patch_bin = cartesian_patch(count_map=binned_background_map[b], lon=lon, lat=lat,
                                                            xsize=xsize_patch_generation, lonra=lb_range, latra=lb_range)
 
-                    binned_background_patch.append(np.array(background_patch_bin) * solid_area_ratio)
+                    # background_patch_2 = copy.deepcopy(background_patch_bin)
+                    #
+                    # binned_background_patch_2.append(background_patch_2)
+
+                    # binned_background_patch.append(background_patch_bin * solid_area_ratio)
+
+                    binned_background_patch.append(background_patch_bin)
 
                     # Need these here (even though we are not showing the plots - this is because visufunc creates a
                     # plot - we only need the 2D array)
@@ -174,67 +191,38 @@ def create_patches_for_catalog_2(params: list):
                     plt.clf()
                     plt.close("all")
 
-                # Convert to numpy
-                binned_agn_patch = np.array(binned_agn_patch)
-                binned_pulsar_patch = np.array(binned_pulsar_patch)
-                binned_background_patch = np.array(binned_background_patch)
-
                 # Sum together to create patch
-                patch = binned_agn_patch + binned_pulsar_patch + binned_background_patch
+                # patch = np.array(binned_agn_patch) + np.array(binned_pulsar_patch) + np.array(binned_background_patch)
+
+                patch = (solid_area_ratio * (np.array(binned_agn_patch) + np.array(binned_pulsar_patch) +
+                                            np.array(binned_background_patch))).filled(0)
+
+                # print(np.all(np.isclose(patch, patch_2)))
+
 
                 np.save(patch_directory + "/patch.npy", patch)
 
                 # CREATE MASKS
 
-                # Create blank masks which can be added to
-                # grid2D_psf = np.zeros((xsize_patch_generation, xsize_patch_generation))
-
-                # source_info = []
-
-                # ys_2 = []
-                # xs_2 = []
-                #
-                # # Add AGN masks iteratively
-                # for i in range(nagn):
-                #     # Find the minimum of the position in the image and 127 (the maximum index of the image in the y or
-                #     # x-axis)
-                #     y = min(agn_pos_list[i][0], xsize_location - 1)
-                #     x = min(agn_pos_list[i][1], xsize_location - 1)
-                #
-                #     # grid2D_psf = psf_bck_mask(y // 2, x // 2, radius=2.5, psf_mask=grid2D_psf)
-                #     ys_2.append(y // 2)
-                #     xs_2.append(x // 2)
-                #
-                #     source_info.append(f"{agn_patch_ids[i]},AGN,{y},{x}\n")
-                #
-                # for i in range(npsr):
-                #     y = min(psr_pos_list[i][0], xsize_location - 1)
-                #     x = min(psr_pos_list[i][1], xsize_location - 1)
-                #
-                #     ys_2.append(y // 2)
-                #     xs_2.append(x // 2)
-                #
-                #     # grid2D_psf = psf_bck_mask(y // 2, x // 2, radius=2.5, psf_mask=grid2D_psf)
-                #
-                #     source_info.append(f"{pulsar_patch_ids[i]},PSR,{y},{x}\n")
-
                 grid2D_psf, ys, xs = create_mask(agn_pos_list, psr_pos_list, xsize_location)
 
-                source_info = ([f"{agn_patch_ids[i]},AGN,{ys[i]},{xs[i]}\n" for i in range(nagn)] +
-                               [f"{pulsar_patch_ids[i]},PSR,{ys[i + nagn]},{xs[i + nagn]}\n" for i in range(npsr)])
+                # Save masks
+                np.save(patch_directory + "/mask.npy", grid2D_psf)
 
                 # Plot the first 100 patches - for verification and inclusion in report
                 if patch_id < 100:
                     plot_patch(binned_patches=patch, mask=grid2D_psf, unformatted_energy_bins=energy_bins,
                                directory=patch_directory)
 
-                # Save masks
-                np.save(patch_directory + "/mask.npy", grid2D_psf)
-
                 # SAVE METADATA CSV FILE FOR THIS PATCH AND THE MASK
 
+                # Create file for storing individual patches' metadata
+                source_info = (["source_id,source_type,cartesian_y,cartesian_x\n"] +
+                               ([f"{agn_patch_ids[i]},AGN,{ys[i]},{xs[i]}\n" for i in range(nagn)] +
+                                [f"{pulsar_patch_ids[i]},PSR,{ys[i + nagn]},{xs[i + nagn]}\n" for i in range(npsr)]))
+
                 # Individual metadata for this patch
-                f2 = open(os.path.join(patch_directory, "metadata.csv"), "a")
+                f2 = open(os.path.join(patch_directory, "metadata.csv"), "w+")
                 f2.writelines(source_info)
                 f2.close()
 

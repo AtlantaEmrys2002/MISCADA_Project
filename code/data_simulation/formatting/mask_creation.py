@@ -57,10 +57,12 @@ from skimage.draw import disk
 def create_mask(agn_pos_list, psr_pos_list, xsize_location, radius=2.5):
     max_pixel = xsize_location - 1
 
+    # Find the minimum of the position in the image and 127 (the maximum index of the image in the y or
+    # x-axis)
     psr_ys = np.array([]) if psr_pos_list.shape[0] == 0 else np.where(psr_pos_list[:, 0] < max_pixel,
                                                                       psr_pos_list[:, 0], max_pixel)
-    psr_xs = np.array([]) if psr_pos_list.shape[0] == 0 else np.where(agn_pos_list[:, 1] < max_pixel,
-                                                                      agn_pos_list[:, 1], max_pixel)
+    psr_xs = np.array([]) if psr_pos_list.shape[0] == 0 else np.where(psr_pos_list[:, 1] < max_pixel,
+                                                                      psr_pos_list[:, 1], max_pixel)
 
     agn_ys = np.array([]) if agn_pos_list.shape[0] == 0 else np.where(agn_pos_list[:, 0] < max_pixel,
                                                                       agn_pos_list[:, 0], max_pixel)
@@ -71,7 +73,6 @@ def create_mask(agn_pos_list, psr_pos_list, xsize_location, radius=2.5):
     xs = np.concatenate((agn_xs, psr_xs)) // 2
 
     # Remove any sources that are too close to the edge of the image
-
     ys_in_range = np.logical_and(ys >= radius, ys <= 63 - radius)
     xs_in_range = np.logical_and(xs >= radius, xs <= 63 - radius)
 
@@ -85,6 +86,7 @@ def create_mask(agn_pos_list, psr_pos_list, xsize_location, radius=2.5):
 
     # Create mask
 
+    # Create blank mask which can be added to
     mask = np.zeros((64, 64))
 
     for d in disks:
