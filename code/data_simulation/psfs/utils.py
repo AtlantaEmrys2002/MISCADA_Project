@@ -67,7 +67,8 @@ def king_function(x: npt.ArrayLike, sigma: np.float64, gamma: np.float64) -> npt
 def monte_carlo_sampler(parameters: npt.NDArray[np.float64], num_samples: int) -> npt.NDArray[np.float64]:
     """Used to sample random values from PDF described by dual King Function. Took inspiration from this code
     (different method, but still useful) when implementing final Ratio of Uniforms code) -
-    https://github.com/scipy/scipy/blob/v1.18.0/scipy/stats/_sampling.py#L1130-L1319
+    https://github.com/scipy/scipy/blob/v1.18.0/scipy/stats/_sampling.py#L1130-L1319. Theory can be found here:
+    https://en.wikipedia.org/wiki/Ratio_of_uniforms.
 
     Parameters
     ----------
@@ -83,8 +84,6 @@ def monte_carlo_sampler(parameters: npt.NDArray[np.float64], num_samples: int) -
 
     """
     # Used to sample random values directly from PDF
-
-    # https://en.wikipedia.org/wiki/Ratio_of_uniforms
 
     # Find the upper bound of the interval from which we sample initial x - take initial maximum to be 30 degrees (as
     # that is our specified radius for diffuse sources - much greater than for this for our point sources)
@@ -140,8 +139,6 @@ def monte_carlo_sampler(parameters: npt.NDArray[np.float64], num_samples: int) -
 
     return samples.astype(np.float64)
 
-    # return np.array(samples).astype(np.float64)
-
 
 def normalise_psf(thetas: npt.NDArray[np.float64], psf_values: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
     """Normalises a function over solid angle. Recommendations taken from
@@ -166,16 +163,31 @@ def normalise_psf(thetas: npt.NDArray[np.float64], psf_values: npt.NDArray[np.fl
     #
     # probs = ((2 * np.pi * thetas) ** 2) * psf_values
 
-    probs = (2 * np.pi * thetas) * psf_values
+    # probs = (2 * np.pi * thetas) * psf_values
+    #
+    # # Integrate over probs
+    # approx_integral = np.sum(np.array(
+    #     [((probs[k + 1] + probs[k]) / 2) * (thetas[k + 1] - thetas[k]) for k in range(len(psf_values) - 1)]))
+    #
+
+    # Normalise such that the integral is 1
+    # probs /= approx_integral
+
+    tmp = (2 * np.pi * thetas) * psf_values
 
     # Integrate over probs
     approx_integral = np.sum(np.array(
-        [((probs[k + 1] + probs[k]) / 2) * (thetas[k + 1] - thetas[k]) for k in range(len(psf_values) - 1)]))
+        [((tmp[k + 1] + tmp[k]) / 2) * (thetas[k + 1] - thetas[k]) for k in range(len(psf_values) - 1)]))
 
-    # Normalise such that the integral is 1
-    probs /= approx_integral
+    # Normalise function
+    psf_values /= approx_integral
 
-    return probs
+    return psf_values
+
+
+
+
+    # return probs
 
 
 def scale_psf(psf_values: npt.NDArray[np.float64], energy_bin: npt.NDArray[np.float64], c_0: float = 3.5,

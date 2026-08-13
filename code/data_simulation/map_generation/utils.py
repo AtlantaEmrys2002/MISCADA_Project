@@ -5,6 +5,7 @@ Utility functions used when creating all-sky maps.
 from astropy.coordinates import SkyCoord
 import astropy.units as u
 import healpy as hp
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate import quad
 
@@ -285,6 +286,52 @@ def isotropic_func(energy, m_val: np.float64, c_val: np.float64):
 
     """
     return (energy ** m_val) * (np.e ** c_val)
+
+
+def cartesian_patch(count_map, lon, lat, xsize, lonra, latra):
+    """Please note that this code was directly adapted from healpy's cartview function found here -
+    https://github.com/healpy/healpy/blob/main/lib/healpy/visufunc.py#L689. To satisfy all proper referencing standards,
+    I will cite the HEALPix paper in my final report.
+
+    :param count_map:
+    :param lon:
+    :param lat:
+    :param xsize:
+    :param lonra:
+    :param latra:
+    :return:
+    """
+    # Ensure that the nside is valid
+
+    f = plt.figure(figsize=(8.5, 5.4))
+
+    # Starting to draw : turn interactive off
+
+    # count_map = hp.pixelfunc.ma_to_array(count_map)
+
+    ax = hp.projaxes.HpxCartesianAxes(
+        f, (0.075, 0.05, 0.85, 0.9), coord='G', rot=(lon, lat, 0.), format='%.3g', flipconv='astro'
+    )
+
+    img = ax.projmap(
+        hp.pixelfunc.ma_to_array(count_map),
+        nest=False,
+        coord='G',
+        vmin=None,
+        vmax=None,
+        xsize=xsize,
+        ysize=None,
+        lonra=lonra,
+        latra=latra,
+        cmap=None,
+        badcolor='gray',
+        bgcolor='white',
+        norm=None,
+        aspect=None,
+        alpha=None,
+    )
+
+    return img
 
 
 def new_coordinate(ra: np.float64, dec: np.float64, radius, angle):

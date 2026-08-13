@@ -5,6 +5,7 @@ Main function for creating patches from skymaps. Placed in separate file for eas
 from formatting.mask_creation import psf_bck_mask
 from formatting.projection_tools import get_ps_info_128
 import healpy as hp
+from map_generation.utils import cartesian_patch
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -141,9 +142,8 @@ def create_patches_for_catalog(params: list):
                 plt.close("all")
 
                 for b in range(num_bins):
-                    agn_patch_bin = hp.visufunc.cartview(binned_agn_map[b], rot=(lon, lat, 0.), coord='G',
-                                                         xsize=xsize_patch_generation, lonra=lb_range, latra=lb_range,
-                                                         return_projected_map=True)
+                    agn_patch_bin = cartesian_patch(count_map=binned_agn_map[b], lon=lon, lat=lat,
+                                                    xsize=xsize_patch_generation, lonra=lb_range, latra=lb_range)
 
                     binned_agn_patch.append(np.array(agn_patch_bin) * solid_area_ratio)
 
@@ -151,18 +151,16 @@ def create_patches_for_catalog(params: list):
                     plt.clf()
                     plt.close("all")
 
-                    pulsar_patch_bin = hp.visufunc.cartview(binned_pulsar_map[b], rot=(lon, lat, 0.), coord='G',
-                                                            xsize=xsize_patch_generation, lonra=lb_range,
-                                                            latra=lb_range, return_projected_map=True)
+                    pulsar_patch_bin = cartesian_patch(count_map=binned_pulsar_map[b], lon=lon, lat=lat,
+                                                       xsize=xsize_patch_generation, lonra=lb_range, latra=lb_range)
 
                     binned_pulsar_patch.append(np.array(pulsar_patch_bin) * solid_area_ratio)
                     plt.cla()
                     plt.clf()
                     plt.close("all")
 
-                    background_patch_bin = hp.visufunc.cartview(binned_background_map[b], rot=(lon, lat, 0.), coord='G',
-                                                                xsize=xsize_patch_generation, lonra=lb_range,
-                                                                latra=lb_range, return_projected_map=True)
+                    background_patch_bin = cartesian_patch(count_map=binned_background_map[b], lon=lon, lat=lat,
+                                                           xsize=xsize_patch_generation, lonra=lb_range, latra=lb_range)
 
                     binned_background_patch.append(np.array(background_patch_bin) * solid_area_ratio)
 
