@@ -7,14 +7,15 @@ from astropy.io import fits
 import astropy.units as u
 from astropy.wcs import WCS
 import healpy as hp
-from .utils import angle_to_healpix_pixels, coordinates_celestial_to_galactic, coordinates_galactic_to_celestial
+from .utils import (angle_to_healpix_pixels, coordinates_celestial_to_galactic, coordinates_galactic_to_celestial,
+                    isotropic_func, new_coordinate, integrate_over_energy)
 import numpy as np
 import numpy.typing as npt
 from psfs.utils import monte_carlo_sampler
 import reproject
 from scipy.stats import loguniform
 from scipy.integrate import quad
-from .utils import isotropic_func, new_coordinate, integrate_over_energy
+# from .utils import isotropic_func, new_coordinate, integrate_over_energy
 
 
 def create_diffuse_infinite_statistics_background(diffuse_background_file: str, exposure_map: npt.NDArray[np.float64],
@@ -328,11 +329,9 @@ def create_count_map_2(coordinates: npt.NDArray[np.float64], exposure_maps: npt.
 
             # radial_angle_displacements = np.sin(np.deg2rad(radial_angle_displacements / 2)) * 2
 
-            # print(radial_angle_displacements)
-
             angles = np.random.uniform(low=0, high=2 * np.pi, size=sampled_counts[b])
 
-            # # Calculate new origins
+            # # # Calculate new origins
             # new_positions = new_coordinate(ra=celestial_coord[0], dec=celestial_coord[1],
             #                                radius=radial_angle_displacements, angle=angles).T
             #
@@ -340,21 +339,15 @@ def create_count_map_2(coordinates: npt.NDArray[np.float64], exposure_maps: npt.
             # new_positions_galactic = coordinates_celestial_to_galactic(new_positions)
 
             new_positions = coord.directional_offset_by(position_angle=angles * u.rad,
-                                                        separation=radial_angle_displacements * u.deg)
-
-            # print(celestial_coord, new_positions)
-
-            new_positions = new_positions.galactic
+                                                        separation=radial_angle_displacements * u.deg).galactic
 
             new_positions_galactic = np.array([new_positions.l.value, new_positions.b.value]).T
 
-            # new_pixels = angle_to_healpix_pixels(new_positions_galactic, nside=nside)
-
             new_pixels = angle_to_healpix_pixels(new_positions_galactic)
 
-            # print(source_pixel, new_pixels)
+            indices, counts = np.unique(new_pixels, return_counts=True)
 
-            count_maps[b, new_pixels] += 1
+            count_maps[b, indices] += counts
 
     return count_maps
 

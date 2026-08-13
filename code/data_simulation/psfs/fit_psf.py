@@ -102,7 +102,7 @@ def fit_point_source_psf(file_name: str) -> npt.NDArray[np.float64]:
             psf_values = np.array(psf_data[b][2])
 
             # Scales out energy dependence
-            psf_values = scale_psf(psf_values, energy_value)
+            # psf_values = scale_psf(psf_values, energy_value)
 
             probs = normalise_psf(thetas, psf_values)
 

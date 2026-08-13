@@ -155,6 +155,7 @@ def create_patches_for_catalog_2(params: list):
                                                        xsize=xsize_patch_generation, lonra=lb_range, latra=lb_range)
 
                     binned_pulsar_patch.append(np.array(pulsar_patch_bin) * solid_area_ratio)
+
                     plt.cla()
                     plt.clf()
                     plt.close("all")

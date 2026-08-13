@@ -131,6 +131,10 @@ def monte_carlo_sampler(parameters: npt.NDArray[np.float64], num_samples: int) -
                                              gamma_core=np.float64(parameters[1]), sigma_tail=np.float64(parameters[2]),
                                              gamma_tail=np.float64(parameters[3]), f_core=np.float64(parameters[4])))
 
+        # mask = (candidate_xs < 0.4) & (candidate_ys < dual_function(candidate_xs, sigma_core=np.float64(parameters[0]),
+        #                                      gamma_core=np.float64(parameters[1]), sigma_tail=np.float64(parameters[2]),
+        #                                      gamma_tail=np.float64(parameters[3]), f_core=np.float64(parameters[4])))
+
         num_new_vals = np.sum(mask)
 
         samples[num_samples_generated: num_samples_generated + num_new_vals] = candidate_xs[mask]
