@@ -103,7 +103,7 @@ if __name__ == "__main__":
     # Parallel computation of maps - split catalogs between CPUs
     start_count_time = time.time()
 
-    pool = Pool(processes=os.cpu_count() // 8)
+    pool = Pool(processes=os.cpu_count() // 2)
 
     pool.map(create_patches_for_catalog, arguments)
 
@@ -120,7 +120,6 @@ if __name__ == "__main__":
     for c in range(num_catalogs):
         with open(save_directory + "/patches/catalog_{}_patch_metadata.csv".format(c)) as f3:
             lines = f3.readlines()
-
             new_lines += lines
 
     f1 = open(save_directory + "/patches/patch_metadata.csv", "a")
