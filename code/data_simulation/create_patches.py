@@ -45,7 +45,7 @@ def create_patches_for_catalog(params: list):
 
         # READ IN MAPS AND SPATIAL/SPECTRAL PARAMETERS
 
-        skymaps_directory = save_directory + "/count_maps_2/skymap_{}".format(
+        skymaps_directory = save_directory + "/count_maps/skymap_{}".format(
             (catalog_id * num_maps_per_catalog) + m + 1)
 
         # Read in the coordinates and associated integral photon fluxes of each source in AGN and pulsar maps
@@ -89,7 +89,7 @@ def create_patches_for_catalog(params: list):
             print("PATCH: {}".format(patch_id))
 
             # Create directory where patches stored
-            patch_directory = save_directory + "/patches_2/patch_{}/".format(patch_id)
+            patch_directory = save_directory + "/patches/patch_{}/".format(patch_id)
 
             # CENTRE OF PATCH p
 
@@ -200,7 +200,7 @@ def create_patches_for_catalog(params: list):
     # SAVE PATCH METADATA
 
     # N.B. important to have no header - ease of combining files later.
-    f1 = open(save_directory + "/patches_2/catalog_{}_patch_metadata_2.csv".format(catalog_id), "a")
+    f1 = open(save_directory + "/patches/catalog_{}_patch_metadata.csv".format(catalog_id), "a")
     f1.writelines(patch_information)
     f1.close()
 

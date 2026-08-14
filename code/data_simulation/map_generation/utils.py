@@ -291,7 +291,8 @@ def isotropic_func(energy, m_val: np.float64, c_val: np.float64):
 def cartesian_patch(count_map, lon, lat, xsize, lonra, latra):
     """Please note that this code was directly adapted from healpy's cartview function found here -
     https://github.com/healpy/healpy/blob/main/lib/healpy/visufunc.py#L689. To satisfy all proper referencing standards,
-    I will cite the HEALPix paper in my final report.
+    I will cite the HEALPix paper in my final report. This code projects the map into cartesian coordinates and selects
+    the 10 x 10 degree patch around lonra, latra
 
     :param count_map:
     :param lon:
@@ -301,13 +302,8 @@ def cartesian_patch(count_map, lon, lat, xsize, lonra, latra):
     :param latra:
     :return:
     """
-    # Ensure that the nside is valid
 
     f = plt.figure(figsize=(8.5, 5.4))
-
-    # Starting to draw : turn interactive off
-
-    # count_map = hp.pixelfunc.ma_to_array(count_map)
 
     ax = hp.projaxes.HpxCartesianAxes(
         f, (0.075, 0.05, 0.85, 0.9), coord='G', rot=(lon, lat, 0.), format='%.3g', flipconv='astro'
