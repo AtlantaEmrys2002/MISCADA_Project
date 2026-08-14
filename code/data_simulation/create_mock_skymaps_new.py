@@ -15,7 +15,7 @@ import os
 from psfs.fit_psf import fit_diffuse_source_psf, fit_point_source_psf
 from verification.visualisation import plot_fitted_point_source_psf
 import time
-from map_generation.healpix_maps import create_count_map_2, create_diffuse_source_map
+from map_generation.healpix_maps import create_count_map, create_diffuse_source_map
 from pathlib import Path
 from read_write_functions import save_count_maps, xml_parser
 from verification.visualisation import plot_all_sky_map
@@ -56,17 +56,17 @@ def create_all_count_maps(params: list) -> None:
 
         # Create AGN count maps (with PSF convolution and Poisson sampling
         agn_point_source_map = (
-            create_count_map_2(coordinates=agn_coordinates, exposure_maps=exposure_maps,
-                               psf_parameters=binned_point_source_psf_parameters, fluxes=agn_binned_fluxes,
-                               nside=nside, energy_bins=energy_bins, use_energy_bins=True,
-                               infinite_stats_file=infinite_statistics_directory + "/agn_infinite_counts_{}.fits"))
+            create_count_map(coordinates=agn_coordinates, exposure_maps=exposure_maps,
+                             psf_parameters=binned_point_source_psf_parameters, fluxes=agn_binned_fluxes,
+                             nside=nside,
+                             infinite_stats_file=infinite_statistics_directory + "/agn_infinite_counts_{}.fits"))
 
         # Create pulsar count maps (with PSF convolution and Poisson sampling)
         pulsar_point_source_map = (
-            create_count_map_2(coordinates=pulsar_coordinates, exposure_maps=exposure_maps,
-                               psf_parameters=binned_point_source_psf_parameters, fluxes=pulsar_binned_fluxes,
-                               nside=nside, energy_bins=energy_bins, use_energy_bins=True,
-                               infinite_stats_file=infinite_statistics_directory + "/pulsar_infinite_counts_{}.fits"))
+            create_count_map(coordinates=pulsar_coordinates, exposure_maps=exposure_maps,
+                             psf_parameters=binned_point_source_psf_parameters, fluxes=pulsar_binned_fluxes,
+                             nside=nside,
+                             infinite_stats_file=infinite_statistics_directory + "/pulsar_infinite_counts_{}.fits"))
 
         # SAVE COUNT MAPS
 

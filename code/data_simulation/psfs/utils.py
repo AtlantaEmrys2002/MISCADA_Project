@@ -225,5 +225,7 @@ def scale_psf(psf_values: npt.NDArray[np.float64], energy_bin: npt.NDArray[np.fl
 # REFERENCES
 
 # Moffat Distribution - https://en.wikipedia.org/wiki/Moffat_distribution
+# Normalisation - https://math.stackexchange.com/questions/4534722/what-does-normalizing-a-real-valued-function-mean
+# Normalisation - https://math.stackexchange.com/questions/4371044/normalizing-a-function-with-an-area
 # Optimised Sampling - https://github.com/scipy/scipy/blob/v1.18.0/scipy/stats/_sampling.py#L1130-L1319
 # Ratio of Uniforms - https://en.wikipedia.org/wiki/Ratio_of_uniforms

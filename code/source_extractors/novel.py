@@ -315,3 +315,7 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                                                                                            segment, local, classifier))
 
                 algorithm_count += 1
+
+# REFERENCES
+
+# Double List Comprehension - https://stackoverflow.com/questions/1198777/double-iteration-in-list-comprehension

@@ -417,6 +417,7 @@ def unet(training_maps, validation_maps, testing_maps, pretrained=False, real=Fa
         return train_data_predictions, validation_data_predictions, test_data_predictions
 
 # REFERENCES
+# All 1s or 0s - https://discuss.huggingface.co/t/binary-model-either-predicts-all-0s-or-all-1s/27871
 # Class Imbalance - https://stackoverflow.com/questions/56841451/why-is-my-neural-net-only-predicting-one-class-binary-
 # classification
 # Casting Tensor Types - https://discuss.pytorch.org/t/how-to-cast-a-tensor-to-another-type/2713
@@ -424,9 +425,16 @@ def unet(training_maps, validation_maps, testing_maps, pretrained=False, real=Fa
 # Convolutional Layers - https://en.wikipedia.org/wiki/Convolutional_layer
 # Cross-Entropy Loss Segmentation - https://discuss.pytorch.org/t/use-crossentropyloss-in-multiclass-semantic-
 # segmentation/158141
+# Early Convergence - https://stackoverflow.com/questions/55973335/best-way-to-overcome-early-convergence-for-machine-
+# learning-model
 # GPU - https://stackoverflow.com/questions/61565293/issue-training-pytorch-model-on-gpu?rq=4
 # GPU Error - https://stackoverflow.com/questions/59013109/runtimeerror-input-type-torch-floattensor-and-weight-type-
 # torch-cuda-floatte
+# GPU Transfer - https://stackoverflow.com/questions/63061779/pytorch-when-do-i-need-to-use-todevice-on-a-model-or-
+# tensor
+# Model Not Training - https://discuss.pytorch.org/t/model-not-training/5055
+# Multiclass Loss Function - https://discuss.pytorch.org/t/unet-multiclass-loss-function-selection/138106
+# Prediction with Model - https://discuss.pytorch.org/t/making-a-prediction-with-a-trained-model/2193
 # Pytorch Documentation - https://pytorch.org/get-started/locally/
 # Torch Types - https://stackoverflow.com/questions/70267810/pytorch-runtimeerror-expected-floating-point-type-for-
 # target-with-class-proba
@@ -451,6 +459,8 @@ def unet(training_maps, validation_maps, testing_maps, pretrained=False, real=Fa
 # Training Loss Plateau - https://discuss.pytorch.org/t/sloved-why-my-loss-not-decreasing/15924
 # Training Loss Plateau - https://stackoverflow.com/questions/69352375/pytorch-is-running-natively-on-m1-macbook-but-
 # something-isnt-working-properly
+# Training Loss Plateau - https://www.reddit.com/r/learnmachinelearning/comments/12g78fz/training_loss_literally_does_
+# not_change_help/
 # Training Loss Plateau - https://discuss.pytorch.org/t/model-does-not-train-same-loss-in-every-epoch/121428/3
 # Training Loss Plateau - https://discuss.pytorch.org/t/loss-always-equal-to-zero-while-training-the-model/173676
 # Training Loss Plateau - https://discuss.pytorch.org/t/loss-not-updating-in-pytorch/169048

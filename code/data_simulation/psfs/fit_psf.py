@@ -128,6 +128,7 @@ def fit_point_source_psf(file_name: str) -> npt.NDArray[np.float64]:
 # Approximation of Side Length -https://arxiv.org/html/2410.12951v1
 # Custom PDFs - https://math.stackexchange.com/questions/3614107/how-do-you-create-a-custom-probability-density-function
 # -from-a-discrete-distribu
+# Fermi IRF - http://cta.irap.omp.eu/ctools/users/user_manual/irf_lat.html
 # Function Fits - https://stackoverflow.com/questions/68523795/fit-a-custom-function-in-python
 # FWHM - https://stackoverflow.com/questions/8914491/finding-the-nearest-value-and-return-the-index-of-array-in-python
 # FWHM 2 - https://en.wikipedia.org/wiki/Full_width_at_half_maximum
@@ -142,4 +143,7 @@ def fit_point_source_psf(file_name: str) -> npt.NDArray[np.float64]:
 # PSF Information - https://gamma-astro-data-formats.readthedocs.io/en/v0.1/irfs/psf/index.html#psf-pdf
 # Radial Profiles - https://cxc.cfa.harvard.edu/ciao/why/radial_profile_correction.html
 # Radial Profiles - https://stackoverflow.com/questions/34965275/radial-profile-from-a-fits-image
+# Theory - https://gamma-astro-data-formats.readthedocs.io/en/v0.1/irfs/psf/index.html#psf-pdf
+# Theory - https://fermi.gsfc.nasa.gov/ssc/data/analysis/documentation/Cicerone/Cicerone_LAT_IRFs/IRF_PSF.html
+# Theory - https://gamma-astro-data-formats.readthedocs.io/en/latest/irfs/irf_components/index.html#psf-intro
 # Window Function - https://en.wikipedia.org/wiki/Window_function

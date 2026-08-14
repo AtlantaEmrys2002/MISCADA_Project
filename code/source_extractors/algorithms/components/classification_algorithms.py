@@ -203,7 +203,13 @@ def classification_neural_network(train_data, validation_data, test_data, pretra
 # Fixing Nan Predictions - https://discuss.pytorch.org/t/outputing-nan-as-predictions-in-my-neural-network-training-loop
 # /183151/2
 # Flatten with Linear - https://discuss.pytorch.org/t/should-i-flatten-before-the-linear-layer/43570
+# ML Image Classification - https://blog.hyperiondev.com/post/machine-learning/
 # Nan Prediction Error - https://discuss.pytorch.org/t/outputing-nan-as-predictions-in-my-neural-network-training-loop/
 # 183151/2
+# RF Classifier - https://www.geeksforgeeks.org/machine-learning/random-forest-for-image-classification-using-opencv/
+# #google_vignette
+# RF Classifier - https://machinelearningmastery.com/random-forest-for-image-classification-using-opencv/
+# SVM Classifier - https://machinelearningmastery.com/support-vector-machines-for-image-classification-and-detection-
+# using-opencv/
 # Updating Learning Rate - https://stackoverflow.com/questions/48324152/how-to-change-the-learning-rate-of-an-optimizer-
 # at-any-given-moment-no-lr-sched

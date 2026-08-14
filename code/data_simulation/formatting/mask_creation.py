@@ -96,6 +96,9 @@ def create_mask(agn_pos_list, psr_pos_list, xsize_location, radius=2.5):
 
 # REFERENCES
 
+# Array of Tuples - https://stackoverflow.com/questions/26634579/convert-array-of-lists-to-array-of-tuples-triple
+# Concatenate 1D Arrays - https://stackoverflow.com/questions/9236926/concatenating-two-one-dimensional-numpy-arrays
 # Modifying Array Locations - https://stackoverflow.com/questions/7761393/how-to-modify-a-2d-numpy-array-at-specific-loc
 # ations-without-a-loop
 # Selecting Certain Indices - https://stackoverflow.com/questions/30917753/subsetting-a-2d-numpy-array
+# Skimage Recommend - https://stackoverflow.com/questions/44865023/how-can-i-create-a-circular-mask-for-a-numpy-array

@@ -14,8 +14,6 @@ from read_write_functions import xml_parser
 import time
 from verification.visualisation import plot_patch
 
-import copy
-
 
 def create_patches_for_catalog_2(params: list):
     """Creates patches from sky maps all created from the same simulated source catalog and returns information about
@@ -135,10 +133,6 @@ def create_patches_for_catalog_2(params: list):
                 binned_pulsar_patch = []
                 binned_background_patch = []
 
-                # binned_agn_patch_2 = []
-                # binned_pulsar_patch_2 = []
-                # binned_background_patch_2 = []
-
                 plt.cla()
                 plt.clf()
                 plt.close("all")
@@ -146,12 +140,6 @@ def create_patches_for_catalog_2(params: list):
                 for b in range(num_bins):
                     agn_patch_bin = cartesian_patch(count_map=binned_agn_map[b], lon=lon, lat=lat,
                                                     xsize=xsize_patch_generation, lonra=lb_range, latra=lb_range)
-
-                    # agn_patch_2 = copy.deepcopy(agn_patch_bin)
-                    #
-                    # binned_agn_patch.append(agn_patch_bin * solid_area_ratio)
-                    #
-                    # binned_agn_patch_2.append(agn_patch_2)
 
                     binned_agn_patch.append(agn_patch_bin)
 
@@ -162,12 +150,6 @@ def create_patches_for_catalog_2(params: list):
                     pulsar_patch_bin = cartesian_patch(count_map=binned_pulsar_map[b], lon=lon, lat=lat,
                                                        xsize=xsize_patch_generation, lonra=lb_range, latra=lb_range)
 
-                    # pulsar_patch_2 = copy.deepcopy(pulsar_patch_bin)
-                    #
-                    # binned_pulsar_patch_2.append(pulsar_patch_2)
-
-                    # binned_pulsar_patch.append(pulsar_patch_bin * solid_area_ratio)
-
                     binned_pulsar_patch.append(pulsar_patch_bin)
 
                     plt.cla()
@@ -177,12 +159,6 @@ def create_patches_for_catalog_2(params: list):
                     background_patch_bin = cartesian_patch(count_map=binned_background_map[b], lon=lon, lat=lat,
                                                            xsize=xsize_patch_generation, lonra=lb_range, latra=lb_range)
 
-                    # background_patch_2 = copy.deepcopy(background_patch_bin)
-                    #
-                    # binned_background_patch_2.append(background_patch_2)
-
-                    # binned_background_patch.append(background_patch_bin * solid_area_ratio)
-
                     binned_background_patch.append(background_patch_bin)
 
                     # Need these here (even though we are not showing the plots - this is because visufunc creates a
@@ -191,14 +167,9 @@ def create_patches_for_catalog_2(params: list):
                     plt.clf()
                     plt.close("all")
 
-                # Sum together to create patch
-                # patch = np.array(binned_agn_patch) + np.array(binned_pulsar_patch) + np.array(binned_background_patch)
-
+                # Sum together to create patch - correct with solid area ratio
                 patch = (solid_area_ratio * (np.array(binned_agn_patch) + np.array(binned_pulsar_patch) +
-                                            np.array(binned_background_patch))).filled(0)
-
-                # print(np.all(np.isclose(patch, patch_2)))
-
+                                             np.array(binned_background_patch))).filled(0)
 
                 np.save(patch_directory + "/patch.npy", patch)
 
