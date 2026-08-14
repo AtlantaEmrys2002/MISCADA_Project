@@ -1,7 +1,7 @@
 .idea/
 *__pycache__*
 *.gif
-*.txt
 *.fits
 *DS_Store*
 *.par
+Previous_Work
