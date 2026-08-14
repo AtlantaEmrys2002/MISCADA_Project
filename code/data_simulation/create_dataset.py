@@ -11,6 +11,7 @@ import healpy as hp
 from multiprocessing import Pool
 import numpy as np
 import os
+from pathlib import Path
 import time
 
 if __name__ == "__main__":
@@ -83,6 +84,8 @@ if __name__ == "__main__":
     max_patches_per_catalog = len(longitude)
 
     # CREATE CSV FILE FOR STORING PATCH INFORMATION
+
+    Path(save_directory + "/patches/").mkdir(parents=True, exist_ok=True)
 
     # list for the csv files - stores information about each patch
     header_line = "patch_id,catalog_id,centre_lat,centre_lon,num_agn,num_psr\n"
