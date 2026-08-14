@@ -207,7 +207,7 @@ if __name__ == "__main__":
     # Parallel computation of maps - split catalogs between CPUs
     start_count_time = time.time()
 
-    pool = Pool(processes=os.cpu_count())
+    pool = Pool(processes=os.cpu_count() // 2)
 
     pool.map(create_all_count_maps, arguments)
 
