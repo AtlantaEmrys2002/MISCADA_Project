@@ -1,5 +1,5 @@
 """
-Main function for creating all-sky maps. Placed in separate file for ease of parallelization.
+Main function for creating all-sky maps. Placed in separate file for ease of parallelisation.
 """
 
 from map_generation.healpix_maps import create_count_map, create_diffuse_source_map
