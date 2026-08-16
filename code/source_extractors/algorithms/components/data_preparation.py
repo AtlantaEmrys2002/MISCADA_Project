@@ -49,7 +49,7 @@ def balance_dataset(data):
 
     if num_fakes_to_sample > 0 and fakes.shape[0] > 0:
         indices_to_take = np.random.choice(fakes.shape[0], size=num_fakes_to_sample)
-        fakes = np.stack((fakes, copy.deepcopy(fakes[indices_to_take])))
+        fakes = np.vstack((fakes, copy.deepcopy(fakes[indices_to_take])))
 
     # Combine and return new dataset - no need to shuffle, as we are calling this before the end of
     # prepare_classifier_data()
@@ -193,22 +193,6 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
     predicted_locations = [predicted_locations[p] for p in range(patch_ids.shape[0]) if p not in ids_to_remove]
     patches = np.delete(patches, np.array(ids_to_remove).astype(int), 0)
     patch_ids = np.delete(patch_ids, np.array(ids_to_remove).astype(int), 0)
-
-
-
-
-    # TRYING SOMETHING
-    # predicted_locations = np.array([[p[1], p[0]] for p in predicted_locations])
-
-    print(predicted_locations[0])
-
-
-
-
-
-
-
-
 
     # Get 7 x 7 boxes around each predicted source in each patch
     sub_boxes, predicted_locations = source_boxes(patches, predicted_locations)
@@ -369,7 +353,7 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
                                                       [actual_psr_in_patch[k]] for k in
                                                       range(num_psr_in_patch)])
 
-        print(actual_agn_locations_in_celestial)
+        # print(actual_agn_locations_in_celestial)
 
         # Convert to SkyCoords
 
@@ -393,7 +377,7 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
                                                                     patch_centre=center_of_patch,
                                                                     coordinate_system='C'))
 
-            print(predicted_locs_for_patch_celestial)
+            # print(predicted_locs_for_patch_celestial)
 
 
 
