@@ -137,7 +137,7 @@ if __name__ == "__main__":
     # Reformat CLASS1 column - remove empty spaces and make all lower case
     catalog["CLASS1"] = np.asarray([k.decode('utf-8').strip().lower() for k in catalog["CLASS1"].value.filled('-')])
 
-    # Reformat CLASS1 column - remove empty spaces and make all lower case
+    # Reformat source names (IDs) column - remove empty spaces and make all lower case
     catalog["Source_Name"] = np.asarray([k.decode('utf-8').strip().lower()[5:] for k in catalog["Source_Name"].value])
 
     # Select all rows that describe pulsars

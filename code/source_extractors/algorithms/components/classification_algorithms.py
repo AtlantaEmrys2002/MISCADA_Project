@@ -90,12 +90,14 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
     # Training epochs
     for epoch in range(training_epochs):
 
-        # print("EPOCH {}".format(epoch))
+        print("EPOCH {}".format(epoch))
 
         classifier.train()
 
         for i, data in enumerate(train_data):
-            inputs, labels = data[0].to(device), data[1].to(device)
+            inputs, labels = torch.tensor(data[0], dtype=torch.float32).to(device), torch.tensor(data[1], dtype=torch.float32).to(device)
+
+            optimiser.zero_grad()
 
             # Make sure to zero gradients when calculating loss and don't update model
             output = classifier(inputs)
@@ -114,7 +116,7 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
 
         with torch.no_grad():
             for i, vdata in enumerate(test_data):
-                vinputs, vlabels = vdata[0].to(device), vdata[1].to(device)
+                vinputs, vlabels = torch.tensor(vdata[0], dtype=torch.float32).to(device), torch.tensor(vdata[1], dtype=torch.float32).to(device)
 
                 voutputs = classifier(vinputs)
 
@@ -182,7 +184,7 @@ def classification_neural_network(train_data, validation_data, test_data, pretra
     actual_labels = np.array([i[1] for i in test_data])
 
     with torch.no_grad():
-        classifier_predictions = classifier_model(torch.from_numpy(testing_patches).to(device))
+        classifier_predictions = classifier_model(torch.tensor(testing_patches, dtype=torch.float32).to(device))
 
     classifier_predictions = classifier_predictions.detach().cpu().numpy()
 

@@ -1,3 +1,4 @@
+from astropy.table import QTable
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 import copy
@@ -185,7 +186,7 @@ def normalise_sub_patches(sub_patches, num_bins: int = 5):
     return normalised_sub_patches_arr
 
 
-def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_data=True, test=False):
+def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_data=True, test=False, real_data=False):
     # Remove all patches with no predicted sources
     # ids_to_remove = [p for p in range(patch_ids.shape[0]) if len(predicted_locations[p]) == 0]
     ids_to_remove = [p for p in range(patch_ids.shape[0]) if predicted_locations[p].shape[0] == 0]
@@ -201,7 +202,7 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
     normalised_sub_boxes = normalise_sub_patches(sub_boxes)
 
     # Get labels for each patch (i.e. AGN, PSR, FAKE)
-    labels = source_box_labels(patch_ids=patch_ids, predicted_source_locations=predicted_locations)
+    labels = source_box_labels(patch_ids=patch_ids, predicted_source_locations=predicted_locations, real_data=real_data)
 
     # Format labels such that they are in vector format, e.g. AGN is equivalent to [1., 0., 0.]
     vector_labels = str_labels_to_vector_labels(labels)
@@ -280,21 +281,39 @@ def source_boxes(patches, predicted_source_locations):
     return boxes_for_each_patch, new_predicted_locations
 
 
-def source_box_labels(patch_ids, predicted_source_locations, localisation_threshold=0.3):
-    catalog_directory = "./../data_simulation/simulated_data/catalogs/catalog_{}/{}.xml"
-    patches_metadata_file = "./../data_simulation/simulated_data/patches/patch_metadata.csv"
-    individual_patch_metadata_file = "./../data_simulation/simulated_data/patches/patch_{}/metadata.csv"
+def source_box_labels(patch_ids, predicted_source_locations, localisation_threshold:float=0.3, real_data: bool=False):
+
+    # GET PATCH INFORMATION
+
+    if real_data:
+
+        patches_metadata_file = "./real_data/real_patches/patches/patch_metadata.csv"
+        individual_patch_metadata_file = "./real_data/real_patches/patches/patch_{}/metadata.csv"
+
+    else:
+
+        patches_metadata_file = "./../data_simulation/simulated_data/patches/patch_metadata.csv"
+        individual_patch_metadata_file = "./../data_simulation/simulated_data/patches/patch_{}/metadata.csv"
 
     source_information = pd.read_csv(patches_metadata_file)
 
-    # Get catalog IDs for each patch
-    catalog_ids = (source_information["catalog_id"] + 1).to_numpy()
+    if real_data:
 
-    # Calculates the number of catalogs that patches are drawn from
-    num_catalogs = np.max(catalog_ids)
+        num_catalogs = 1
 
-    # Gives the ID of the catalog that each patch is drawn from
-    patch_catalogs = dict(zip(source_information["patch_id"].to_numpy(), catalog_ids))
+        patch_catalogs = dict(zip(source_information["patch_id"].to_numpy(), np.full(shape=len(source_information["patch_id"].to_numpy()), fill_value=1)))
+
+    else:
+
+
+        # Get catalog IDs for each patch
+        catalog_ids = (source_information["catalog_id"] + 1).to_numpy()
+
+        # Calculates the number of catalogs that patches are drawn from
+        num_catalogs = np.max(catalog_ids)
+
+        # Gives the ID of the catalog that each patch is drawn from
+        patch_catalogs = dict(zip(source_information["patch_id"].to_numpy(), catalog_ids))
 
     # Get centre of each patch
     patch_centres = (
@@ -304,18 +323,58 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
     nagn = source_information["num_agn"].to_numpy()
     npsr = source_information["num_psr"].to_numpy()
 
-    agn_coordinates_per_catalog = []
-    pulsar_coordinates_per_catalog = []
+    if real_data:
 
-    for catalog_id in range(1, num_catalogs + 1):
-        actual_agn_coordinates, actual_agn_ids = (
-            xml_parser_locations(xml_file=catalog_directory.format(catalog_id, "agns"), coordinate_system='C'))
+        catalog = QTable.read("/Volumes/T7/data/catalog/4FGL_DR4.fit", format='fits', hdu=1)
 
-        actual_psr_coordinates, actual_psr_ids = (
-            xml_parser_locations(xml_file=catalog_directory.format(catalog_id, "pulsars"), coordinate_system='C'))
+        columns = ("Source_Name", "CLASS1", "RAJ2000", "DEJ2000")
 
-        agn_coordinates_per_catalog.append(dict(zip(actual_agn_ids, actual_agn_coordinates)))
-        pulsar_coordinates_per_catalog.append(dict(zip(actual_psr_ids, actual_psr_coordinates)))
+        catalog = catalog[columns]
+
+        # Reformat CLASS1 column - remove empty spaces and make all lower case
+        catalog["CLASS1"] = np.asarray([k.decode('utf-8').strip().lower() for k in catalog["CLASS1"].value.filled('-')])
+
+        # Reformat source name column - remove empty spaces and make all lower case
+        catalog["Source_Name"] = np.asarray(
+            [k.decode('utf-8').strip().lower()[5:] for k in catalog["Source_Name"].value])
+
+        # Select all rows that describe pulsars
+        pulsar_mask = (catalog["CLASS1"] == "psr")
+
+        # Select all rows that describe AGN
+        agn_mask = np.isin(catalog["CLASS1"].data,
+                           np.array(["bcu", "sey", "ssrq", "bll", "fsrq", "rdg", "nlsy1", "agn"]))
+
+        agns = catalog[agn_mask]
+        psrs = catalog[pulsar_mask]
+
+        # Convert to pandas dataframes for covariance and correlation calculations, as well as plotting
+        agns = agns.to_pandas()
+        pulsars = psrs.to_pandas()
+
+        # Remove sources with NaN values
+        pulsars.dropna(inplace=True)
+        agns.dropna(inplace=True)
+
+        agn_coordinates_per_catalog = [dict(zip(agns["Source_Name"], agns[["RAJ2000", "DEJ2000"]].to_numpy()))]
+        pulsar_coordinates_per_catalog = [dict(zip(pulsars["Source_Name"], pulsars[["RAJ2000", "DEJ2000"]].to_numpy()))]
+
+    else:
+
+        catalog_directory = "./../data_simulation/simulated_data/catalogs/catalog_{}/{}.xml"
+
+        agn_coordinates_per_catalog = []
+        pulsar_coordinates_per_catalog = []
+
+        for catalog_id in range(1, num_catalogs + 1):
+            actual_agn_coordinates, actual_agn_ids = (
+                xml_parser_locations(xml_file=catalog_directory.format(catalog_id, "agns"), coordinate_system='C'))
+
+            actual_psr_coordinates, actual_psr_ids = (
+                xml_parser_locations(xml_file=catalog_directory.format(catalog_id, "pulsars"), coordinate_system='C'))
+
+            agn_coordinates_per_catalog.append(dict(zip(actual_agn_ids, actual_agn_coordinates)))
+            pulsar_coordinates_per_catalog.append(dict(zip(actual_psr_ids, actual_psr_coordinates)))
 
     labels = []
 
@@ -376,15 +435,6 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
                 image_cartesian_coordinates_to_galactic_coordinates(predicted_source_locations[n],
                                                                     patch_centre=center_of_patch,
                                                                     coordinate_system='C'))
-
-            # print(predicted_locs_for_patch_celestial)
-
-
-
-
-
-
-
 
             # FIND SEPARATION OF PREDICTED AND GALACTIC COORDINATES
 

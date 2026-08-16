@@ -115,16 +115,7 @@ def read_real_data(num_patches, directory=str):
         types.append(df["source_type"].to_numpy())
 
     # Combine to create test data
-    # test_data = [(k, torch.from_numpy(patches[k]), torch.from_numpy(masks[k])) for k in range(num_patches)]
     test_data = [(k, torch.tensor(patches[k]), torch.tensor(masks[k])) for k in range(num_patches)]
-
-    # Split data into train, validation, and test sets
-    # data = Subset(test_data, np.arange(0, num_patches))
-    #
-    # # Create batches
-    # batched_data = DataLoader(data, batch_size=128, shuffle=True)
-
-    # return batched_data
 
     return test_data
 

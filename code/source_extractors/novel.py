@@ -42,7 +42,7 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
 
     localisation_algorithms = ["dbscan", "kmeans", "spectral", "blob_detection"]
 
-    classification_algorithms = ["cnn", "random_forest", "svm"]
+    classification_algorithms = ["random_forest", "cnn", "svm"]
 
     algorithm_count = 1
 
@@ -214,7 +214,7 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
 
                         real_batches_class = prepare_classifier_data(patches=real_maps,
                                                                      predicted_locations=real_source_locations,
-                                                                     patch_ids=real_patch_ids, test=True)
+                                                                     patch_ids=real_patch_ids, test=True, real_data=True)
 
                         save_file_classifier = ("./algorithms/pre_trained_models/cnn_classifier_for_{}_and_{}.pt".
                                                 format(segment, local))
@@ -230,6 +230,18 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                                                           save_file=save_file_classifier))
 
                         # print("Classification Done.")
+
+                        total_num = len(actual_labels)
+
+                        print("RESULT")
+                        print(sum([1 for k in range(total_num) if
+                                   np.all(np.equal(actual_labels[k], classifier_predictions[k]))]) / total_num)
+
+                        total_num = len(real_actual_labels)
+
+                        print("REAL RESULT")
+                        print(sum([1 for k in range(total_num) if np.all(
+                            np.equal(real_actual_labels[k], real_classifier_predictions[k]))]) / total_num)
 
                     case "random_forest":
 
@@ -247,7 +259,7 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
 
                         real_batches_class = prepare_classifier_data(patches=real_maps,
                                                                      predicted_locations=real_source_locations,
-                                                                     patch_ids=real_patch_ids, test=True)
+                                                                     patch_ids=real_patch_ids, test=True, real_data=True)
 
                         save_file_classifier = ("./algorithms/pre_trained_models/rf_classifier_for_{}_and_{}.pt".
                                                 format(segment, local))
@@ -260,6 +272,17 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                             random_forest_classifier(train_data=np.array([]), test_data=real_batches_class,
                                                      save_file=save_file_classifier,
                                                      pretrained=True))
+
+                        total_num = len(actual_labels)
+
+                        print("RESULT")
+                        print(sum([1 for k in range(total_num) if np.all(np.equal(actual_labels[k], classifier_predictions[k]))]) / total_num)
+
+                        print("REAL RESULT")
+
+                        total_num = len(real_actual_labels)
+
+                        print(sum([1 for k in range(total_num) if np.all(np.equal(real_actual_labels[k], real_classifier_predictions[k]))]) / total_num)
 
                     case "svm":
 
@@ -274,7 +297,7 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
 
                         real_batches_class = prepare_classifier_data(patches=real_maps,
                                                                      predicted_locations=real_source_locations,
-                                                                     patch_ids=real_patch_ids, test=True)
+                                                                     patch_ids=real_patch_ids, test=True, real_data=True)
 
                         save_file_classifier = ("./algorithms/pre_trained_models/svm_classifier_for_{}_and_{}.pt".
                                                 format(segment, local))
@@ -287,6 +310,18 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                             svm_classifier(train_data=np.array([]), test_data=real_batches_class,
                                            save_file=save_file_classifier,
                                            pretrained=True))
+
+                        print("RESULT")
+
+                        total_num = len(actual_labels)
+
+                        print(sum([1 for k in range(total_num) if np.all(np.equal(actual_labels[k], classifier_predictions[k]))]) / total_num)
+                        print("REAL RESULT")
+
+                        total_num = len(real_actual_labels)
+
+                        print(sum([1 for k in range(total_num) if np.all(np.equal(real_actual_labels[k], real_classifier_predictions[k]))]) / total_num)
+
 
                     case _:
                         raise NameError("Classification algorithm {} could not be found.".format(classifier))
