@@ -19,7 +19,7 @@ def read_patches(num_patches=int, directory=str):
     # masks = (np.array([[np.load("{}/patch_{}/mask_2.npy".format(directory, n))] for n in range(num_patches)])
     #          .astype(np.float32))
 
-    masks = (np.array([[np.load("{}/patch_{}/mask_2.npy".format(directory, n)).T] for n in range(num_patches)])
+    masks = (np.array([[np.load("{}/patch_{}/mask_2.npy".format(directory, n))] for n in range(num_patches)])
              .astype(np.float32))
 
     # Read in metadata for each patch
@@ -72,8 +72,8 @@ def read_patches(num_patches=int, directory=str):
     # test_split = Subset(test_data, test_indices)
 
     # Create batches
-    train_batches = DataLoader(train_split, batch_size=128, shuffle=True)
-    validation_batches = DataLoader(validation_split, batch_size=128, shuffle=False)
+    train_batches = DataLoader(train_split, batch_size=64, shuffle=True)
+    validation_batches = DataLoader(validation_split, batch_size=64, shuffle=False)
 
     # N.B. Only need the IDs of each test patch and make sure not to shuffle the test patches
 

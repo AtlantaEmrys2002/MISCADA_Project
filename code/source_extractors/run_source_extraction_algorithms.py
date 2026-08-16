@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     # CHANGE THIS BACK AT THE END
 
-    train, valid, test = read_patches(num_patches=10000, directory=patches_directory)
+    train, valid, test = read_patches(num_patches=100, directory=patches_directory)
 
     # CHANGE BELOW TO 768 ONCE CONFIRMED IT IS WORKING
 
@@ -47,11 +47,6 @@ if __name__ == "__main__":
 
     novel_source_extraction_algorithms(training_data=train, validation_data=valid, testing_data=test,
                                        real_data=real_data, save_directory=save_directory)
-
-
-
-
-
 
     # NEED INFINITE COUNTS PATCH SO IT GOES PATCH ID, SOURCE ID, CARTESIAN LOCATION, RA/DEC LOCATION IN SKY, TYPE, FLUX IN RANGE 300-200000
     # FLUX IS THE ONE IN PHOTON cm^-2 s^-1 (I.E. PHOTON FLUX), NO. PHOTONS FROM SOURCE VS NO. PHOTONS FROM THAT PIXEL IN THE MAP

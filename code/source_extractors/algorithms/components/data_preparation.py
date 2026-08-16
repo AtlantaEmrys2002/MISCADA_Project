@@ -78,9 +78,13 @@ def image_cartesian_coordinates_to_galactic_coordinates(coordinates, patch_centr
     # We are calculating location in 128 x 128 instead of 64 x 64 image. Remember to keep this way round - x,y
     # becomes y,x for images. Then flattening the image into 1D array - this pixel value gives index into the
     # 1D array.
-    pixel_id_values = pixel_id(x_vals * 2, y_vals * 2, 128)
+    # pixel_id_values = pixel_id(x_vals * 2, y_vals * 2, 128)
+
+    pixel_id_values = pixel_id(y_vals * 2, x_vals * 2, 128)
 
     new_coords = get_lb_from_pixel(pixel_id_values, patch_centre)
+
+    # new_coords = np.array([get_lb_from_pixel(pixel_id_val, patch_centre) for pixel_id_val in pixel_id_values])
 
     if coordinate_system == 'G':
 
@@ -88,8 +92,7 @@ def image_cartesian_coordinates_to_galactic_coordinates(coordinates, patch_centr
 
     elif coordinate_system == 'C':
 
-        new_coords = (SkyCoord(l=new_coords[0] * u.degree, b=new_coords[1] * u.degree, frame='galactic').
-                      transform_to('icrs'))
+        new_coords = SkyCoord(l=new_coords[0] * u.degree, b=new_coords[1] * u.degree, frame='galactic').icrs
 
         return np.array([new_coords.ra.value, new_coords.dec.value]).T
 
@@ -190,6 +193,22 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
     predicted_locations = [predicted_locations[p] for p in range(patch_ids.shape[0]) if p not in ids_to_remove]
     patches = np.delete(patches, np.array(ids_to_remove).astype(int), 0)
     patch_ids = np.delete(patch_ids, np.array(ids_to_remove).astype(int), 0)
+
+
+
+
+    # TRYING SOMETHING
+    # predicted_locations = np.array([[p[1], p[0]] for p in predicted_locations])
+
+    print(predicted_locations[0])
+
+
+
+
+
+
+
+
 
     # Get 7 x 7 boxes around each predicted source in each patch
     sub_boxes, predicted_locations = source_boxes(patches, predicted_locations)
@@ -339,6 +358,8 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
 
         # N.B. FOR ABOVE - ITERATE OVER PREDICTED SOURCES
 
+        # print(len(actual_agn_in_patch), num_agn_in_patch)
+
         # Get celestial locations of AGN in patch
         actual_agn_locations_in_celestial = np.array([agn_coordinates_per_catalog[catalog_of_patch]
                                                       [actual_agn_in_patch[k]] for k in
@@ -347,6 +368,8 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
         actual_psr_locations_in_celestial = np.array([pulsar_coordinates_per_catalog[catalog_of_patch]
                                                       [actual_psr_in_patch[k]] for k in
                                                       range(num_psr_in_patch)])
+
+        print(actual_agn_locations_in_celestial)
 
         # Convert to SkyCoords
 
@@ -369,6 +392,15 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
                 image_cartesian_coordinates_to_galactic_coordinates(predicted_source_locations[n],
                                                                     patch_centre=center_of_patch,
                                                                     coordinate_system='C'))
+
+            print(predicted_locs_for_patch_celestial)
+
+
+
+
+
+
+
 
             # FIND SEPARATION OF PREDICTED AND GALACTIC COORDINATES
 

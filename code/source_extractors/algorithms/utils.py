@@ -33,18 +33,45 @@ def sph2xyz(r, theta, phi):
                      r * np.sin(np.radians(theta)) * np.sin(np.radians(phi)), r * np.cos(np.radians(theta))])
 
 
-def xyz2sph(x, y, z, is_lat=False):
+def xyz2sph(x, y, z):
     r = np.sqrt(x * x + y * y + z * z)
 
     phi = np.degrees(np.arctan2(y, x))
     lat = np.degrees(np.arctan2(z, np.sqrt(x * x + y * y)))
-    if is_lat:
-        return np.array([r, lat, phi])
-    else:
-        return np.array([r, 90. - lat, phi])
+
+    return np.array([r, lat, phi])
 
 
-def get_lb_from_pixel(pixel_id, lb_centre, xsize=128, is_lat=True):
+# def get_lb_from_pixel(pixel_id, lb_centre, xsize=128):
+#     ##if input angles are in degree use 'isdeg = True'
+#     ######### Generate (l,b) coordinate map of 10x10deg patch ######
+#
+#
+#     coord_range = np.linspace(-4.9609375, 4.9609375, xsize)
+#
+#     X, Y = np.meshgrid(coord_range, coord_range)
+#     lonlat_patch = list(zip(np.flip(X.flatten()), Y.flatten()))
+#     ######### Get rotation matrix used to rotate the original centre to (0., 0.) #########
+#     l_centre, b_centre = lb_centre
+#
+#     r = np.dot(RotMatrixY(-b_centre), RotMatrixZ(l_centre))
+#     #########
+#
+#     lon_PS_rotated, lat_PS_rotated = lonlat_patch[pixel_id]
+#
+#     xyz_PS_rotated = sph2xyz(1., 90. - lat_PS_rotated, lon_PS_rotated)
+#     x_PS, y_PS, z_PS = np.array(np.dot(r.T, xyz_PS_rotated), dtype='float32')
+#     r, b_PS, l_PS = xyz2sph(x_PS, y_PS, z_PS)
+#
+#     # if l_PS < 0:
+#     #     l_PS = 360 + l_PS
+#
+#     l_PS += 180  # to get to 0 - 360
+#
+#     return l_PS, b_PS
+#
+#
+def get_lb_from_pixel(pixel_id, lb_centre, xsize=128):
 
     # Ensures function works with arrays and scalars
     if type(pixel_id) is int or type(pixel_id) is np.int64:
@@ -72,11 +99,11 @@ def get_lb_from_pixel(pixel_id, lb_centre, xsize=128, is_lat=True):
 
     xyz_PS_rotated = sph2xyz(1., 90. - lat_PS_rotated, lon_PS_rotated)
     x_PS, y_PS, z_PS = np.array(np.dot(r.T, xyz_PS_rotated), dtype='float32')
-    r, b_PS, l_PS = xyz2sph(x_PS, y_PS, z_PS, is_lat=is_lat)
+    r, b_PS, l_PS = xyz2sph(x_PS, y_PS, z_PS)
 
     # N.B. FROM MHR - Fixed this bit - stored my coordinates for l_PS as -180 to 180 instead of 0 to 360 (cause of
     # HEALPIX SYSTEM)
-    l_PS += 180  # to get to 0 - 360
+    # l_PS += 180  # to get to 0 - 360
 
     out_of_range = np.logical_or(l_PS > 360, l_PS < 0)
 

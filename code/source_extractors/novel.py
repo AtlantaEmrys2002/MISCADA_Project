@@ -42,7 +42,7 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
 
     localisation_algorithms = ["dbscan", "kmeans", "spectral", "blob_detection"]
 
-    classification_algorithms = ["random_forest", "cnn", "svm"]
+    classification_algorithms = ["cnn", "random_forest", "svm"]
 
     algorithm_count = 1
 
@@ -83,36 +83,32 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
 
             case "random_forest":
 
-                # (train_patch_ids, training_maps, training_masks,
-                #  validation_patch_ids, validation_maps, validation_masks,
-                #  test_patch_ids, testing_maps, testing_masks) = (
-                #     ml_segmentation_data_prep(train_data=copy.deepcopy(training_data),
-                #                               validation_data=copy.deepcopy(validation_data),
-                #                               test_data=copy.deepcopy(testing_data)))
+                # (train_segmentation_predictions, validation_segmentation_predictions, test_segmentation_predictions) = \
+                #     (random_forest_segmentation(training_maps=training_maps, training_masks=training_masks,
+                #                                 validation_maps=validation_maps, testing_maps=testing_maps))
+
+
+                # CHNAGE BACK LATER
 
                 (train_segmentation_predictions, validation_segmentation_predictions, test_segmentation_predictions) = \
                     (random_forest_segmentation(training_maps=training_maps, training_masks=training_masks,
-                                                validation_maps=validation_maps, testing_maps=testing_maps))
+                                                validation_maps=validation_maps, testing_maps=testing_maps, pretrained=True))
 
-                # _, _, _, _, _, _, real_patch_ids, real_maps, real_masks = (
-                #     ml_segmentation_data_prep(train_data=np.array([]), validation_data=np.array([]),
-                #                               test_data=copy.deepcopy(real_data)))
+                # import matplotlib.pyplot as plt
+                #
+                # plt.imshow((train_segmentation_predictions[0][0] > 0.5) * 200)
+                #
+                # plt.show()
+                #
+                # plt.imshow(training_masks[0])
+                #
+                # plt.show()
 
                 _, _, real_segmentation_predictions = random_forest_segmentation(training_maps=np.array([]),
                                                                                  training_masks=np.array([]),
                                                                                  validation_maps=np.array([]),
                                                                                  testing_maps=real_maps,
                                                                                  pretrained=True, real=True)
-
-                import matplotlib.pyplot as plt
-
-                plt.imshow((train_segmentation_predictions[0][0]) * 200)
-
-                plt.show()
-
-                plt.imshow((train_segmentation_predictions[1][0]) * 200)
-
-                plt.show()
 
             case _:
 
@@ -159,8 +155,6 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                                                                         threshold=0.5)
                         test_source_locations = dbscan_clustering(test_segmentation_predictions, threshold=0.5)
                         real_source_locations = dbscan_clustering(real_segmentation_predictions, threshold=0.5)
-
-                    # print("Localisation Algorithm Applied")
 
                 case "blob_detection":
 

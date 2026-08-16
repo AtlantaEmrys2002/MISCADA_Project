@@ -3,7 +3,7 @@ Main function for creating MASKS from skymaps - this is due to energy flux being
 detected. Placed in separate file for ease of parallelization.
 """
 
-from formatting.mask_creation import psf_bck_mask
+from formatting.mask_creation import create_mask
 from formatting.projection_tools import get_ps_info_128
 import numpy as np
 import os
@@ -81,47 +81,65 @@ def create_patches_for_catalog_flux_dependent(params: list):
 
             # Create file for storing individual patches' metadata
             # list for the csv files - stores information about each patch
-            individual_patch_header_line = "source_id,source_type,cartesian_y,cartesian_x\n"
-
-            f2 = open(os.path.join(patch_directory, "metadata_2.csv"), "w+")
-            f2.writelines(individual_patch_header_line)
-            f2.close()
+            # individual_patch_header_line = "source_id,source_type,cartesian_y,cartesian_x\n"
+            #
+            # f2 = open(os.path.join(patch_directory, "metadata_2.csv"), "w+")
+            # f2.writelines(individual_patch_header_line)
+            # f2.close()
 
             # CREATE MASKS
 
             # Create blank masks which can be added to
-            grid2D_psf = np.zeros((xsize_patch_generation, xsize_patch_generation))
+            # grid2D_psf = np.zeros((xsize_patch_generation, xsize_patch_generation))
 
-            source_info = []
+            # source_info = []
 
-            # Add AGN masks iteratively
-            for i in range(nagn):
-                # Find the minimum of the position in the image and 127 (the maximum index of the image in the y or
-                # x-axis)
-                y = min(agn_pos_list[i][0], xsize_location - 1)
-                x = min(agn_pos_list[i][1], xsize_location - 1)
-
-                grid2D_psf = psf_bck_mask(y // 2, x // 2, radius=2.5, psf_mask=grid2D_psf)
-
-                source_info.append(f"{agn_patch_ids[i]},AGN,{y},{x}\n")
-
-            for i in range(npsr):
-                y = min(psr_pos_list[i][0], xsize_location - 1)
-                x = min(psr_pos_list[i][1], xsize_location - 1)
-
-                grid2D_psf = psf_bck_mask(y // 2, x // 2, radius=2.5, psf_mask=grid2D_psf)
-
-                source_info.append(f"{pulsar_patch_ids[i]},PSR,{y},{x}\n")
+            grid2D_psf, ys, xs = create_mask(agn_pos_list=agn_pos_list, psr_pos_list=psr_pos_list,
+                                             xsize_location=xsize_location)
+            #
+            # # Add AGN masks iteratively
+            # for i in range(nagn):
+            #     # Find the minimum of the position in the image and 127 (the maximum index of the image in the y or
+            #     # x-axis)
+            #     y = min(agn_pos_list[i][0], xsize_location - 1)
+            #     x = min(agn_pos_list[i][1], xsize_location - 1)
+            #
+            #     # grid2D_psf = psf_bck_mask(y // 2, x // 2, radius=2.5, psf_mask=grid2D_psf)
+            #
+            #     # grid2D_psf, ys, xs = create_mask(agn_pos_list=agn_pos_list, psr_pos_list=psr_pos_list,
+            #     #                          xsize_location=xsize_location)
+            #
+            #     source_info.append(f"{agn_patch_ids[i]},AGN,{y},{x}\n")
+            #
+            # for i in range(npsr):
+            #     y = min(psr_pos_list[i][0], xsize_location - 1)
+            #     x = min(psr_pos_list[i][1], xsize_location - 1)
+            #
+            #     grid2D_psf = psf_bck_mask(y // 2, x // 2, radius=2.5, psf_mask=grid2D_psf)
+            #
+            #     source_info.append(f"{pulsar_patch_ids[i]},PSR,{y},{x}\n")
 
             # Save masks
             np.save(patch_directory + "/mask_2.npy", grid2D_psf)
 
             # SAVE METADATA CSV FILE FOR THIS PATCH AND THE MASK
 
+            # Create file for storing individual patches' metadata
+            source_info = (["source_id,source_type,cartesian_y,cartesian_x\n"] +
+                           ([f"{agn_patch_ids[i]},AGN,{ys[i]},{xs[i]}\n" for i in range(nagn)] +
+                            [f"{pulsar_patch_ids[i]},PSR,{ys[i + nagn]},{xs[i + nagn]}\n" for i in range(npsr)]))
+
             # Individual metadata for this patch
-            f2 = open(os.path.join(patch_directory, "metadata_2.csv"), "a")
+            f2 = open(os.path.join(patch_directory, "metadata_2.csv"), "w+")
             f2.writelines(source_info)
             f2.close()
+
+            # SAVE METADATA CSV FILE FOR THIS PATCH AND THE MASK
+
+            # # Individual metadata for this patch
+            # f2 = open(os.path.join(patch_directory, "metadata_2.csv"), "a")
+            # f2.writelines(source_info)
+            # f2.close()
 
             # Metadata for all patches
             patch_information.append(f"{patch_id},{catalog_id},{lat},{lon},{nagn},{npsr}\n")

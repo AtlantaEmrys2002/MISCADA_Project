@@ -444,7 +444,7 @@ def xml_parser_locations(xml_file: str, coordinate_system='G'):
 
 
 def xml_parser(energy_bins, xml_file: str, give_ids=False, energy_flux_limited: bool = False,
-               flux_limit: float = 10 ** -13):
+               flux_limit: float = 10 ** -12):
     """ Fetches the location, integral photon flux, and (optionally) unique ID of each source stored in a given XML
     file.
 

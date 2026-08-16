@@ -54,7 +54,7 @@ from skimage.draw import disk
 #     return grid2D_psf
 
 
-def create_mask(agn_pos_list, psr_pos_list, xsize_location, radius=2.5):
+def create_mask(agn_pos_list, psr_pos_list, xsize_location: int, radius: float | int = 2.5):
     max_pixel = xsize_location - 1
 
     # Find the minimum of the position in the image and 127 (the maximum index of the image in the y or
