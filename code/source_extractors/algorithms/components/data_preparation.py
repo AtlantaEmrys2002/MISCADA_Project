@@ -186,7 +186,7 @@ def normalise_sub_patches(sub_patches, num_bins: int = 5):
     return normalised_sub_patches_arr
 
 
-def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_data=True, test=False, real_data=False):
+def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_data=True, test=False, real_data=False, ml_data = False):
     # Remove all patches with no predicted sources
     # ids_to_remove = [p for p in range(patch_ids.shape[0]) if len(predicted_locations[p]) == 0]
     ids_to_remove = [p for p in range(patch_ids.shape[0]) if predicted_locations[p].shape[0] == 0]
@@ -201,8 +201,23 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
     # Normalise each patch (normalise each energy bin separately)
     normalised_sub_boxes = normalise_sub_patches(sub_boxes)
 
+
+
+
+
+
+    # THINK IT IS BELOW FUNCTION WHERE THINGS ARE GOING WRONG
+
+
+
+
+
     # Get labels for each patch (i.e. AGN, PSR, FAKE)
     labels = source_box_labels(patch_ids=patch_ids, predicted_source_locations=predicted_locations, real_data=real_data)
+
+
+
+    # SOMETHING GOING WRONG BEFORE HERE - VECTOR LABELS SHOULD NOT BE EMPTY FOR ANY GIVEN PATCH EMPTY AS ALREADY TOOK OUT PATCHES WITH NO PREDICTIONS
 
     # Format labels such that they are in vector format, e.g. AGN is equivalent to [1., 0., 0.]
     vector_labels = str_labels_to_vector_labels(labels)
@@ -224,7 +239,6 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
                 data.append([normalised_sub_boxes[patch][pred_source].astype(np.float32),
                              vector_labels[patch][pred_source].astype(np.float32)])
 
-    # print([str(label) for patch in labels for label in patch])
 
     if len(data) == 0:
         raise RuntimeError("Not enough sources were localised - no data is available for the classifier to train on.")
@@ -232,6 +246,12 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
     # Balance dataset
 
     if test:
+
+        return data
+
+    elif ml_data:
+
+        data = balance_dataset(data)
 
         return data
 
@@ -297,6 +317,15 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
 
     source_information = pd.read_csv(patches_metadata_file)
 
+    # Get centre of each patch
+    patch_centres = (
+        np.stack((source_information["centre_lon"].to_numpy(), source_information["centre_lat"].to_numpy()),
+                 axis=1))
+
+    # Gen number of AGN and pulsars in each patch
+    nagn = source_information["num_agn"].to_numpy()
+    npsr = source_information["num_psr"].to_numpy()
+
     if real_data:
 
         num_catalogs = 1
@@ -315,13 +344,14 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
         # Gives the ID of the catalog that each patch is drawn from
         patch_catalogs = dict(zip(source_information["patch_id"].to_numpy(), catalog_ids))
 
-    # Get centre of each patch
-    patch_centres = (
-        np.stack((source_information["centre_lon"].to_numpy(), source_information["centre_lat"].to_numpy()), axis=1))
-
-    # Gen number of AGN and pulsars in each patch
-    nagn = source_information["num_agn"].to_numpy()
-    npsr = source_information["num_psr"].to_numpy()
+    # # Get centre of each patch
+    # patch_centres = (
+    #     np.stack((source_information["centre_lon"].to_numpy(), source_information["centre_lat"].to_numpy()),
+    #              axis=1))
+    #
+    # # Gen number of AGN and pulsars in each patch
+    # nagn = source_information["num_agn"].to_numpy()
+    # npsr = source_information["num_psr"].to_numpy()
 
     if real_data:
 
@@ -478,6 +508,11 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
                         labels_for_patch.append("PSR")
                     else:
                         labels_for_patch.append("FAKE")
+
+
+        else:
+
+            print("HI")
 
         labels.append(np.array(labels_for_patch))
 

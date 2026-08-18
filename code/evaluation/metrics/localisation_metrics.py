@@ -16,6 +16,9 @@ def chamfer_separation(actual_source_centres, predicted_source_centres):
     # A = Predicted source centres
     # B = Ground truth source centres
 
+    if actual_source_centres.shape[0] == 0 or predicted_source_centres.shape[0] == 0:
+        return 0
+
     # Convert predicted source_centres to sky coordinates
     predicted_source_centres_sky = SkyCoord(ra=predicted_source_centres[:, 0] * u.degree,
                                             dec=predicted_source_centres[:, 1] * u.degree, frame='icrs')
@@ -56,6 +59,10 @@ def num_sources_correctly_detected(actual_source_centres, predicted_source_centr
     # This determines how many sources in patch are correctly detected (it does not matter what source type they are,
     # but whether they are correctly detected and localised as a source). A fraction is returned - the proportion of
     # sources in patch actually detected.
+
+    if predicted_source_centres.shape[0] == 0:
+
+        return 0
 
     total_sources = len(actual_source_centres)
 

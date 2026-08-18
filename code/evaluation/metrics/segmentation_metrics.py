@@ -55,9 +55,16 @@ def segmentation_precision(actual_segmentation, predicted_segmentation):
 
     false_positives = np.sum(np.logical_and(actual_segmentation == 0, predicted_segmentation == 1))
 
-    precision = true_positives / (true_positives / false_positives)
+    if false_positives == 0:
 
-    return precision
+        # A method with only false negatives will be shown in the recall
+        return 1
+
+    else:
+
+        precision = true_positives / (true_positives / false_positives)
+
+        return precision
 
 
 def segmentation_recall(actual_segmentation, predicted_segmentation):
@@ -71,3 +78,5 @@ def segmentation_recall(actual_segmentation, predicted_segmentation):
 
 # REFERENCES
 # Dice-Sorenson Coefficient - https://en.wikipedia.org/wiki/Dice-Sørensen_coefficient
+# Precision and Recall - https://developers.google.com/machine-learning/crash-course/classification/accuracy-precision-
+# recall

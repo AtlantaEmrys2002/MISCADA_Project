@@ -1,13 +1,11 @@
-from astropy import units as u
-from astropy.coordinates import SkyCoord
 from astropy.table import QTable
 
-from utils import integral_photon_flux_agn, integral_photon_flux_pulsar
+from utils import integral_photon_flux_agn, integral_photon_flux_pulsar, get_catalog_data
 from metrics.utils import image_cartesian_coordinates_to_physical_coordinates
 from metrics.classification_metrics import classification_confusion_matrix
 from metrics.localisation_metrics import chamfer_separation, num_sources_correctly_detected
 from metrics.real_data_application_metrics import (percentage_of_4fgl_sources_detected, plot_predictions_actual,
-                                                   percentage_of_4fgl_source_correctly_classifier,
+                                                   percentage_of_4fgl_source_correctly_classified,
                                                    save_candidate_sources)
 from metrics.segmentation_metrics import (binary_balanced_accuracy, dice_coefficient, segmentation_precision,
                                           segmentation_recall)
@@ -72,11 +70,17 @@ def get_classified_patches(predicted_locations_in_real_data_raw):
             x, y = loc[0], loc[1]
 
             # Select 7 x 7 grid around predicted location
-            rows = np.arange(x - 3, x + 4)
-            cols = np.arange(y - 3, y + 4)
+            # rows = np.arange(x - 3, x + 4)
+            # cols = np.arange(y - 3, y + 4)
 
             # if cannot create a 7 x 7 grid, ignore during classification
-            if rows[0] < 0 or cols[0] < 0 or rows[-1] > 64 or cols[-1] > 64:
+            # if rows[0] < 0 or cols[0] < 0 or rows[-1] > 64 or cols[-1] > 64:
+
+            # if rows[0] < 0 or cols[0] < 0 or rows[-1] > 63 or cols[-1] > 63:
+
+            if x - 3 < 0 or y - 3 < 0 or x + 4 > 63 or y + 4 >63:
+
+            # mask = np.logical_not(((xs - 3) < 0) | ((xs + 4) > 63) | ((ys - 3) < 0) | ((ys + 4) > 63))
 
                 continue
 
@@ -89,94 +93,10 @@ def get_classified_patches(predicted_locations_in_real_data_raw):
     return predicted_locations_in_real_data
 
 
-def evaluate_on_real_data(file_4fgl, real_data_results_directory, model):
+def evaluate_on_real_data(file_4fgl, model):
+
     patch_centres = get_patch_centres(patches_metadata_file="./../source_extractors/real_data/real_patches/patches/"
                                                             "patch_metadata.csv")
-
-    catalog = QTable.read(file_4fgl, format='fits', hdu=1)
-
-    # Select relevant columns
-    columns = ("Source_Name", "Pivot_Energy", "LP_Flux_Density", "PLEC_Flux_Density", "LP_Index", "LP_beta",
-               "PLEC_IndexS", "PLEC_Exp_Index", "PLEC_ExpfactorS", "CLASS1", "GLAT", "GLON")
-
-    catalog = catalog[columns]
-
-    # Reformat CLASS1 column - remove empty spaces and make all lower case
-    catalog["CLASS1"] = np.asarray([k.decode('utf-8').strip().lower() for k in catalog["CLASS1"].value.filled('-')])
-
-    # Reformat Source_name column - remove empty spaces and make all lower case
-    catalog["Source_Name"] = np.asarray([k.decode('utf-8').strip().lower()[5:] for k in catalog["Source_Name"].value])
-
-    # Select all rows that describe pulsars
-    pulsar_mask = (catalog["CLASS1"] == "psr")
-
-    # Select all rows that describe AGN
-    agn_mask = np.isin(catalog["CLASS1"].data, np.array(["bcu", "sey", "ssrq", "bll", "fsrq", "rdg", "nlsy1", "agn"]))
-
-    # Delete unnecessary column
-    catalog.remove_column("CLASS1")
-
-    agn_data = catalog[agn_mask].copy()
-    pulsar_data = catalog[pulsar_mask].copy()
-
-    agn_data = (agn_data["Source_Name", "LP_Flux_Density", "Pivot_Energy", "LP_Index", "LP_beta", "GLAT", "GLON"].
-                to_pandas())
-
-    pulsar_data = pulsar_data[
-        ("Source_Name", "PLEC_Flux_Density", "Pivot_Energy", "PLEC_IndexS", "PLEC_Exp_Index", "PLEC_ExpfactorS", "GLAT",
-         "GLON")].to_pandas()
-
-    # Calculate the name, flux, and celestial coordinates of each source
-
-    agn_ids = agn_data["Source_Name"].to_numpy()
-
-    agn_pivot_energies = agn_data["Pivot_Energy"].to_numpy()
-    agn_flux_densities = agn_data["LP_Flux_Density"].to_numpy()
-    agn_spectral_slopes = agn_data["LP_Index"].to_numpy()  # alpha
-    agn_curvatures = agn_data["LP_beta"].to_numpy()  # beta
-
-    pulsar_pivot_energies = pulsar_data["Pivot_Energy"].to_numpy()
-    pulsar_flux_densities = pulsar_data["PLEC_Flux_Density"].to_numpy()
-    pulsar_spectral_slopes = pulsar_data["PLEC_IndexS"].to_numpy()  # gamma
-    pulsar_exponential_indices = pulsar_data["PLEC_Exp_Index"].to_numpy()
-    pulsar_exponential_factors = pulsar_data["PLEC_ExpfactorS"].to_numpy()
-
-    agn_integral_photon_fluxes = np.array([integral_photon_flux_agn(pivot_energy=agn_pivot_energies[s],
-                                                                    flux_density=agn_flux_densities[s],
-                                                                    spectral_slope=agn_spectral_slopes[s],
-                                                                    curvature=agn_curvatures[s], min_energy=300.,
-                                                                    max_energy=200000.)
-                                           for s in range(len(agn_pivot_energies))])
-
-    pulsar_integral_photon_fluxes = np.array([integral_photon_flux_pulsar(pivot_energy=pulsar_pivot_energies[s],
-                                                                          flux_density=pulsar_flux_densities[s],
-                                                                          spectral_slope=pulsar_spectral_slopes[s],
-                                                                          exponential_index=
-                                                                          pulsar_exponential_indices[s],
-                                                                          exponential_factor=
-                                                                          pulsar_exponential_factors[s])
-                                              for s in range(len(pulsar_pivot_energies))])
-
-    # N.B. THESE ARE PHOTON FLUXES, NOT ENERGY FLUXES!!!!!
-
-    agn_glon = agn_data["GLON"].to_numpy()
-    agn_glat = agn_data["GLAT"].to_numpy()
-
-    psr_glon = pulsar_data["GLON"].to_numpy()
-    psr_glat = pulsar_data["GLAT"].to_numpy()
-
-    agn_celestial_coordinates = SkyCoord(l=agn_glon * u.degree, b=agn_glat * u.degree, frame='galactic').icrs
-
-    agn_celestial_coordinates = np.array([agn_celestial_coordinates.ra.value, agn_celestial_coordinates.dec.value]).T
-
-    psr_celestial_coordinates = SkyCoord(l=psr_glon * u.degree, b=psr_glat * u.degree, frame='galactic').icrs
-
-    psr_celestial_coordinates = np.array([psr_celestial_coordinates.ra.value, psr_celestial_coordinates.dec.value]).T
-
-    actual_source_locations_4fgl = np.vstack((agn_celestial_coordinates, psr_celestial_coordinates))
-
-    actual_source_types = np.vstack((np.array([np.array([1., 0., 0.,]) for _ in range(len(agn_glon))]),
-                                     np.array([np.array([0., 1., 0.]) for _ in range(len(psr_glon))])))
 
     # RESULTS
 
@@ -186,20 +106,28 @@ def evaluate_on_real_data(file_4fgl, real_data_results_directory, model):
     with open("./../results/real/{}/predicted_locations.data".format(model), 'rb') as f:
         predicted_locations_in_real_data_raw = pickle.load(f)
 
-    # only take sources that are not "on the edge" of 64 x 64 patches
     predicted_locations_in_real_data = get_classified_patches(predicted_locations_in_real_data_raw)
 
+    # Read in locations of 4FGL sources
+    actual_source_locations_4fgl, actual_source_types = get_catalog_data(file_4fgl)
+
     # Slightly different indexing here - assume that always 768 patches
+    # predicted_locations_in_real_data_celestial = [
+    #     image_cartesian_coordinates_to_physical_coordinates(coordinates=predicted_locations_in_real_data[p],
+    #                                                         patch_centre=patch_centres[p],
+    #                                                         coordinate_system='C') if
+    #     predicted_locations_in_real_data[p].shape != 0 else np.array([]) for p in range(768)]
+
     predicted_locations_in_real_data_celestial = [
         image_cartesian_coordinates_to_physical_coordinates(coordinates=predicted_locations_in_real_data[p],
                                                             patch_centre=patch_centres[p],
-                                                            coordinate_system='C') if
-        len(predicted_locations_in_real_data[p]) != 0 else np.array([]) for p in range(768)]
+                                                            coordinate_system='C') for p in range(768) if
+        predicted_locations_in_real_data[p].shape != 0]
 
     new = []
 
-    for k in range(768):
-        for p in predicted_locations_in_real_data_celestial[k]:
+    for x in range(768):
+        for p in predicted_locations_in_real_data_celestial[x]:
             new.append(p)
 
     predicted_locations_in_real_data_celestial = np.array(new)
@@ -219,7 +147,7 @@ def evaluate_on_real_data(file_4fgl, real_data_results_directory, model):
 
     # THIS FRACTION IS THE NUMBER OF SOURCES CORRECTLY CLASSIFIED OF THE NUMBER OF SOURCES CORRECTLY DETECTED
     frac_correct_classed_sources = (
-        percentage_of_4fgl_source_correctly_classifier(actual_source_locations=actual_source_locations_4fgl,
+        percentage_of_4fgl_source_correctly_classified(actual_source_locations=actual_source_locations_4fgl,
                                                        predicted_source_locations=
                                                        predicted_locations_in_real_data_celestial, classifications=
                                                        classifications, actual_classifications=actual_source_types))
@@ -239,11 +167,27 @@ if __name__ == "__main__":
 
     # Add name of models here
     # models = ["UNEK", "UNEB"]
-    models = ["UNEK"]
+    # models = ["UNEK"]
 
-    detectors = {"UNEK": "U-NET", "UNEB": "U-NET"}
-    localisers = {"UNEK": "K-Means", "UNEB": "Blob Detection"}
-    classifiers = {"UNEK": "CNN", "UNEB": "CNN"}
+    # detectors = {"UNEK": "U-NET", "UNEB": "U-NET"}
+    # localisers = {"UNEK": "K-Means", "UNEB": "Blob Detection"}
+    # classifiers = {"UNEK": "CNN", "UNEB": "CNN"}
+
+    segmentation_algorithms = ["random_forest", "unet"]
+
+    localisation_algorithms = ["dbscan", "blob_detection", "kmeans", "spectral"]
+
+    classification_algorithms = ["random_forest", "cnn", "svm"]
+
+    models = []
+
+    for i in segmentation_algorithms:
+
+        for j in localisation_algorithms:
+
+            for k in classification_algorithms:
+
+                models.append("{}_{}_{}".format(i, j, k))
 
     results = []
 
@@ -332,12 +276,11 @@ if __name__ == "__main__":
         evaluate_classifiers(actual_class=actual_classes, predicted_class=predicted_classes, method_name=m,
                              directory=plot_directory)
 
-        evaluate_on_real_data(file_4fgl="/Volumes/T7/data/catalog/4FGL_DR4.fit",
-                              real_data_results_directory="./../results/real", model=m)
+        evaluate_on_real_data(file_4fgl="/Volumes/T7/data/catalog/4FGL_DR4.fit", model=m)
 
         # SAVE RESULTS
 
-        results.append(f"{model_id},{detectors[m]},{localisers[m]},{classifiers[m]},{av_bin_balanced_acc},{av_dice},"
+        results.append(f"{model_id},{m},{av_bin_balanced_acc},{av_dice},"
                        f"{av_prec},{av_rec},{av_chamfer_distance},{av_frac_sources_detected}\n")
 
         model_id += 1

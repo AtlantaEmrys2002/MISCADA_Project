@@ -199,22 +199,22 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                     case "cnn":
                         # Prepare detected sources for classification (effectively, data prep)
                         train_batches_class = (
-                            prepare_classifier_data(patches=training_maps,
-                                                    predicted_locations=train_source_locations,
-                                                    patch_ids=train_patch_ids))
+                            prepare_classifier_data(patches=copy.deepcopy(training_maps),
+                                                    predicted_locations=copy.deepcopy(train_source_locations),
+                                                    patch_ids=copy.deepcopy(train_patch_ids)))
 
                         validation_batches_class = (
-                            prepare_classifier_data(patches=validation_maps,
-                                                    predicted_locations=validation_source_locations,
-                                                    patch_ids=validation_patch_ids, shuffle_data=False))
+                            prepare_classifier_data(patches=copy.deepcopy(validation_maps),
+                                                    predicted_locations=copy.deepcopy(validation_source_locations),
+                                                    patch_ids=copy.deepcopy(validation_patch_ids), shuffle_data=False))
 
-                        test_batches_class = prepare_classifier_data(patches=testing_maps,
-                                                                     predicted_locations=test_source_locations,
-                                                                     patch_ids=test_patch_ids, test=True)
+                        test_batches_class = prepare_classifier_data(patches=copy.deepcopy(testing_maps),
+                                                                     predicted_locations=copy.deepcopy(test_source_locations),
+                                                                     patch_ids=copy.deepcopy(test_patch_ids), test=True)
 
-                        real_batches_class = prepare_classifier_data(patches=real_maps,
-                                                                     predicted_locations=real_source_locations,
-                                                                     patch_ids=real_patch_ids, test=True, real_data=True)
+                        real_batches_class = prepare_classifier_data(patches=copy.deepcopy(real_maps),
+                                                                     predicted_locations=copy.deepcopy(real_source_locations),
+                                                                     patch_ids=copy.deepcopy(real_patch_ids), test=True, real_data=True)
 
                         save_file_classifier = ("./algorithms/pre_trained_models/cnn_classifier_for_{}_and_{}.pt".
                                                 format(segment, local))
@@ -249,17 +249,17 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                         # sorted into batch loaders - that is a process only for data that will be fed to DL algorithms)
 
                         train_batches_class = (
-                            prepare_classifier_data(patches=training_maps,
-                                                    predicted_locations=train_source_locations,
-                                                    patch_ids=train_patch_ids, test=True))
+                            prepare_classifier_data(patches=copy.deepcopy(training_maps),
+                                                    predicted_locations=copy.deepcopy(train_source_locations),
+                                                    patch_ids=copy.deepcopy(train_patch_ids), test=False, ml_data=True))
 
-                        test_batches_class = prepare_classifier_data(patches=testing_maps,
-                                                                     predicted_locations=test_source_locations,
-                                                                     patch_ids=test_patch_ids, test=True)
+                        test_batches_class = prepare_classifier_data(patches=copy.deepcopy(testing_maps),
+                                                                     predicted_locations=copy.deepcopy(test_source_locations),
+                                                                     patch_ids=copy.deepcopy(test_patch_ids), test=True)
 
-                        real_batches_class = prepare_classifier_data(patches=real_maps,
-                                                                     predicted_locations=real_source_locations,
-                                                                     patch_ids=real_patch_ids, test=True, real_data=True)
+                        real_batches_class = prepare_classifier_data(patches=copy.deepcopy(real_maps),
+                                                                     predicted_locations=copy.deepcopy(real_source_locations),
+                                                                     patch_ids=copy.deepcopy(real_patch_ids), test=True, real_data=True)
 
                         save_file_classifier = ("./algorithms/pre_trained_models/rf_classifier_for_{}_and_{}.pt".
                                                 format(segment, local))
@@ -287,17 +287,17 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                     case "svm":
 
                         train_batches_class = (
-                            prepare_classifier_data(patches=training_maps,
-                                                    predicted_locations=train_source_locations,
-                                                    patch_ids=train_patch_ids, test=True))
+                            prepare_classifier_data(patches=copy.deepcopy(training_maps),
+                                                    predicted_locations=copy.deepcopy(train_source_locations),
+                                                    patch_ids=copy.deepcopy(train_patch_ids), test=False, ml_data=True))
 
-                        test_batches_class = prepare_classifier_data(patches=testing_maps,
-                                                                     predicted_locations=test_source_locations,
-                                                                     patch_ids=test_patch_ids, test=True)
+                        test_batches_class = prepare_classifier_data(patches=copy.deepcopy(testing_maps),
+                                                                     predicted_locations=copy.deepcopy(test_source_locations),
+                                                                     patch_ids=copy.deepcopy(test_patch_ids), test=True)
 
-                        real_batches_class = prepare_classifier_data(patches=real_maps,
-                                                                     predicted_locations=real_source_locations,
-                                                                     patch_ids=real_patch_ids, test=True, real_data=True)
+                        real_batches_class = prepare_classifier_data(patches=copy.deepcopy(real_maps),
+                                                                     predicted_locations=copy.deepcopy(real_source_locations),
+                                                                     patch_ids=copy.deepcopy(real_patch_ids), test=True, real_data=True)
 
                         save_file_classifier = ("./algorithms/pre_trained_models/svm_classifier_for_{}_and_{}.pt".
                                                 format(segment, local))

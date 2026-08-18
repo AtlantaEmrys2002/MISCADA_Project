@@ -5,7 +5,7 @@ import numpy as np
 import pickle
 
 
-def percentage_of_4fgl_source_correctly_classifier(actual_source_locations, predicted_source_locations, classifications,
+def percentage_of_4fgl_source_correctly_classified(actual_source_locations, predicted_source_locations, classifications,
                                                    actual_classifications, separation_threshold=0.3):
 
     # Convert predicted source_centres to sky coordinates
@@ -18,7 +18,7 @@ def percentage_of_4fgl_source_correctly_classifier(actual_source_locations, pred
 
     num_detected_sources = 0
 
-    for a in range(len(actual_source_locations)):
+    for a in range(actual_source_locations.shape[0]):
 
         actual_loc = actual_source_locations[a]
 
@@ -34,7 +34,7 @@ def percentage_of_4fgl_source_correctly_classifier(actual_source_locations, pred
 
             num_detected_sources += 1
 
-            if np.all(np.equal(classifications[closest_predicted_index],actual_classifications[a])):
+            if np.all(np.equal(classifications[closest_predicted_index], actual_classifications[a])):
 
                 num_sources_correctly_classified += 1
 
