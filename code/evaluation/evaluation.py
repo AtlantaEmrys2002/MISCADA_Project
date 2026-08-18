@@ -142,7 +142,21 @@ def evaluate_on_real_data(file_4fgl, model):
 
     predicted_locations_in_real_data_celestial = np.array(new)
 
-    classifications = np.load("./../results/real/{}/classifications.npy".format(model))
+    classifications_raw = np.load("./../results/real/{}/classifications.npy".format(model))
+
+    # One-hot encoding - some classifications are based on probabilities
+
+    classifications = []
+
+    for p in classifications_raw:
+
+        p_one_hot = np.zeros((3,))
+
+        p_one_hot[np.argmax(p)] = 1
+
+        classifications.append(p_one_hot)
+
+    classifications = np.array(classifications)
 
     frac_correct_classed_sources = (
         percentage_of_4fgl_source_correctly_classified(actual_source_locations=actual_source_locations_4fgl,

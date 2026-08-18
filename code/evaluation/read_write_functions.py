@@ -103,11 +103,17 @@ def vector_labels_to_str(labels):
 
     for p in labels:
 
-        if np.all(np.equal(p, agn_vector)):
+        # One-hot encording ensured - some classifications are based on probability
+
+        p_one_hot = np.zeros((3,))
+
+        p_one_hot[np.argmax(p)] = 1
+
+        if np.all(np.equal(p_one_hot, agn_vector)):
 
             str_labels.append("AGN")
 
-        elif np.all(np.equal(p, psr_vector)):
+        elif np.all(np.equal(p_one_hot, psr_vector)):
 
             str_labels.append("PSR")
 

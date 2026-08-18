@@ -74,12 +74,13 @@ class SourceClassifier(nn.Module):
 
 def classifier_train(train_data, test_data, device, training_epochs=50, save_file="./algorithms/pre_trained_models/"
                                                                                   "classifier.pt"):
+
     classifier = SourceClassifier().to(device)
 
     # Define loss function
 
     loss_fn = CategoricalCrossEntropy()
-    optimiser = torch.optim.Adam(classifier.parameters(), lr=1.e-6)
+    optimiser = torch.optim.Adam(classifier.parameters(), lr=1.e-5)
 
     # Start with large value that is easily surpassed
     best_vloss = 100000000000000
@@ -132,25 +133,23 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
             best_vloss = avg_vloss
             best_epoch = epoch
 
-            epochs_since_improvement = 0
-
             torch.save(classifier.state_dict(), save_file)
 
-        else:
-
-            epochs_since_improvement += 1
-
-        # if no improvement in loss for 50 epochs, stop training
-        if epochs_since_improvement == 50:
-
-            break
-
-        elif epochs_since_improvement == 5:
-
-            # Half the learning rate
-
-            for g in optimiser.param_groups:
-                g['lr'] /= 2
+        # else:
+        #
+        #     epochs_since_improvement += 1
+        #
+        # # if no improvement in loss for 50 epochs, stop training
+        # if epochs_since_improvement == 50:
+        #
+        #     break
+        #
+        # elif epochs_since_improvement == 5:
+        #
+        #     # Half the learning rate
+        #
+        #     for g in optimiser.param_groups:
+        #         g['lr'] /= 2
 
     return classifier, best_epoch
 

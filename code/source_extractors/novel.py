@@ -42,7 +42,7 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
 
     localisation_algorithms = ["dbscan", "kmeans", "spectral", "blob_detection"]
 
-    classification_algorithms = ["random_forest", "cnn", "svm"]
+    classification_algorithms = ["cnn", "random_forest", "svm"]
 
     algorithm_count = 1
 
@@ -234,14 +234,31 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                         total_num = len(actual_labels)
 
                         print("RESULT")
+
+                        classifier_predictions_one_hot = np.zeros_like(classifier_predictions)
+
+                        indices = np.argmax(classifier_predictions, axis=1)
+
+                        for k in range(classifier_predictions_one_hot.shape[0]):
+
+                            classifier_predictions_one_hot[k][indices[k]] = 1
+
                         print(sum([1 for k in range(total_num) if
-                                   np.all(np.equal(actual_labels[k], classifier_predictions[k]))]) / total_num)
+                                   np.all(np.equal(actual_labels[k], classifier_predictions_one_hot[k]))]) / total_num)
+
+                        print("REAL RESULT")
+
+                        classifier_predictions_one_hot = np.zeros_like(real_classifier_predictions)
+
+                        indices = np.argmax(real_classifier_predictions, axis=1)
+
+                        for k in range(classifier_predictions_one_hot.shape[0]):
+                            classifier_predictions_one_hot[k][indices[k]] = 1
 
                         total_num = len(real_actual_labels)
 
-                        print("REAL RESULT")
-                        print(sum([1 for k in range(total_num) if np.all(
-                            np.equal(real_actual_labels[k], real_classifier_predictions[k]))]) / total_num)
+                        print(sum([1 for k in range(total_num) if
+                                   np.all(np.equal(real_actual_labels[k], classifier_predictions_one_hot[k]))]) / total_num)
 
                     case "random_forest":
 

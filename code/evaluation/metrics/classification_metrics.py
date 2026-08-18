@@ -6,7 +6,11 @@ from sklearn.metrics import confusion_matrix
 
 def classification_confusion_matrix(ground_truth, predicted, classifier_name, directory):
 
-    labels = ["AGN", "Pulsar", "FAKE"]
+    plt.clf()
+    plt.cla()
+    plt.close()
+
+    labels = ["AGN", "PSR", "FAKE"]
 
     conf_matrix = confusion_matrix(ground_truth, predicted, labels=labels)
 

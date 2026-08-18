@@ -63,18 +63,9 @@ def percentage_of_4fgl_sources_detected(actual_source_locations, predicted_sourc
     return num_sources_detected / len(actual_source_locations)
 
 
-def plot_predictions_actual(actual_coordinates, predicted_coordinates, model):
+def plot_predictions_actual(actual_coordinates, predicted_coordinates, model, detection_threshold: float=0.3):
 
     # Find out which of the predicted coordinates correspond to actual sources
-
-    # print(actual_coordinates[:10])
-    # print(predicted_coordinates[:10])
-
-    # print(np.min(actual_coordinates[:, 0]), np.max(actual_coordinates[:, 0]))
-    # print(np.min(predicted_coordinates[:, 0]), np.max(predicted_coordinates[:, 0]))
-    #
-    # print(np.min(actual_coordinates[:, 1]), np.max(actual_coordinates[:, 1]))
-    # print(np.min(predicted_coordinates[:, 1]), np.max(predicted_coordinates[:, 1]))
 
     # Convert predicted source_centres to sky coordinates
     predicted_source_centres_sky = SkyCoord(ra=predicted_coordinates[:, 0] * u.degree,
@@ -95,7 +86,7 @@ def plot_predictions_actual(actual_coordinates, predicted_coordinates, model):
 
         separation_from_closest_predicted_source = separations[np.argmin(separations)]
 
-        if separation_from_closest_predicted_source < 0.3:
+        if separation_from_closest_predicted_source <= detection_threshold:
             correctly_detected_sources.append(a)
         else:
             not_detected.append(a)
@@ -110,7 +101,7 @@ def plot_predictions_actual(actual_coordinates, predicted_coordinates, model):
 
         separation_from_closest_predicted_source = separations[np.argmin(separations)]
 
-        if separation_from_closest_predicted_source > 0.3:
+        if separation_from_closest_predicted_source > detection_threshold:
             candidate_sources_not_in_4fgl.append(p)
 
     correctly_detected_sources = np.array(correctly_detected_sources)
@@ -127,7 +118,6 @@ def plot_predictions_actual(actual_coordinates, predicted_coordinates, model):
     colours = ["red", "gray", "blue"]
     markers = ['P', 'o', '*']
     sizes = [5, 2, 50]
-
     data_points = [correctly_detected_sources, not_detected, candidate_sources_not_in_4fgl]
 
     for x in range(len(data_points)):
@@ -139,46 +129,9 @@ def plot_predictions_actual(actual_coordinates, predicted_coordinates, model):
 
         ax.scatter(ra_rad, dec_rad, label=labels[x], color=colours[x], marker=markers[x], s=sizes[x])
 
-
-    #
-    #
-    #
-    # if correctly_detected_sources.shape[0] != 0:
-    #
-    #     coords = SkyCoord(ra=correctly_detected_sources[:, 0] * u.degree, dec=correctly_detected_sources[:, 1] * u.degree, frame='icrs')
-    #
-    #     ra_rad = coords.ra.wrap_at(180 * u.deg).radian
-    #     dec_rad = coords.dec.radian
-    #
-    #     ax.scatter(ra_rad, dec_rad, label="Detected 4FGL Sources", color="red", marker='P', s=2)
-    #
-    # if not_detected.shape[0] != 0:
-    #     coords = SkyCoord(ra=not_detected[:, 0] * u.degree, dec=not_detected[:, 1] * u.degree, frame='icrs')
-    #
-    #     ra_rad = coords.ra.wrap_at(180 * u.deg).radian
-    #     dec_rad = coords.dec.radian
-    #
-    #     ax.scatter(ra_rad, dec_rad, label="Undetected 4FGL Sources", s=2, color="gray", marker='o')
-    # #
-    # if candidate_sources_not_in_4fgl.shape[0] != 0:
-    #     candidate_sources_not_in_4fgl_ra = Angle(candidate_sources_not_in_4fgl[:, 0] * u.degree).wrap_at(180 * u.degree)
-    #     candidate_sources_not_in_4fgl_dec = Angle(candidate_sources_not_in_4fgl[:, 1] * u.degree)
-    #
-    #     ax.scatter(candidate_sources_not_in_4fgl_ra.radian, candidate_sources_not_in_4fgl_dec.radian,
-    #                label="New Candidate Sources", s=2, color="blue", marker='*')
-    #
-
-
-
-
-
-
-
-
     ax.set_xlabel("RA [$\\degree$]")
     ax.set_ylabel("Dec [$\\degree$]")
 
-    # ax.legend(bbox_to_anchor=(1.05, 1), loc='lower center')
     ax.legend(loc='lower center', bbox_to_anchor=(0.5, -.3))
 
     fig.suptitle("Plot of {} Algorithm Applied to Fermi-LAT Observations".format(model))
