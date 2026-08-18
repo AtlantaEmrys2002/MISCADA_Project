@@ -83,6 +83,8 @@ def get_classified_patches(predicted_locations_in_real_data_raw):
 
 def evaluate_on_real_data(file_4fgl, model):
 
+    print(model)
+
     patch_centres = get_patch_centres(patches_metadata_file="./../source_extractors/real_data/real_patches/patches/"
                                                             "patch_metadata.csv")
 

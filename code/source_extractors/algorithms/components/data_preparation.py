@@ -198,25 +198,31 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
     # Get 7 x 7 boxes around each predicted source in each patch
     sub_boxes, predicted_locations, patch_ids = source_boxes(patches, predicted_locations, patch_ids)
 
-    # ABOVE FUNCTION IS WHERE THINGS GO WRONG
-
-
-
+    # print(len(sub_boxes), len(predicted_locations))
 
     # Normalise each patch (normalise each energy bin separately)
     normalised_sub_boxes = normalise_sub_patches(sub_boxes)
 
+    # print(len(sub_boxes), len(predicted_locations))
+
     # Get labels for each patch (i.e. AGN, PSR, FAKE)
     labels = source_box_labels(patch_ids=patch_ids, predicted_source_locations=predicted_locations, real_data=real_data)
 
+    # print(len(normalised_sub_boxes), len(predicted_locations), len(labels))
+
     # Format labels such that they are in vector format, e.g. AGN is equivalent to [1., 0., 0.]
     vector_labels = str_labels_to_vector_labels(labels)
+    # print(vector_labels)
+
+    # print(len(normalised_sub_boxes), len(predicted_locations), len(vector_labels))
 
     data = []
 
     # Combine data such that each sub-patch is associated with its equivalent label
 
-    num_patches = len(sub_boxes)
+    num_patches = len(normalised_sub_boxes)
+
+    # print(len(normalised_sub_boxes), len(predicted_locations), len(vector_labels))
 
     for patch in range(num_patches):
 
@@ -225,10 +231,10 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
         # N.B. conversion to float 32 from float 64 - Apple GPUs cannot work with float64
         for pred_source in range(num_predicted_sources):
             if isinstance(vector_labels[patch][pred_source], np.ndarray):
-
                 data.append([normalised_sub_boxes[patch][pred_source].astype(np.float32),
                              vector_labels[patch][pred_source].astype(np.float32)])
 
+    # print(len(normalised_sub_boxes), len(predicted_locations), len(vector_labels), len(data))
 
     if len(data) == 0:
         raise RuntimeError("Not enough sources were localised - no data is available for the classifier to train on.")
@@ -477,6 +483,8 @@ def str_labels_to_vector_labels(labels):
 
     vector_labels = [np.array(itemgetter(*labels[n])(str_to_vector)) if len(labels[n]) > 0 else np.array([])
                      for n in range(num_patches)]
+
+    vector_labels = [k if k.size != 3 else np.array([k]) for k in vector_labels]
 
     return vector_labels
 

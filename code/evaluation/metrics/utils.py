@@ -155,11 +155,6 @@ def xyz2sph(x, y, z):
     return np.array([r, lat, phi])
 
 
-
-
-
-
-
 def get_lb_from_pixel(pixel_id, lb_centre, xsize=128):
 
     # Ensures function works with arrays and scalars
