@@ -116,13 +116,13 @@ def evaluate_on_real_data(file_4fgl, model):
     actual_source_locations_4fgl, actual_source_types = get_catalog_data(file_4fgl)
 
     frac_of_4fgl_sources_detected = percentage_of_4fgl_sources_detected(
-        actual_source_locations=actual_source_locations_4fgl,
+        actual_source_locations=copy.deepcopy(actual_source_locations_4fgl),
         predicted_source_locations=copy.deepcopy(predicted_locations_in_real_data_celestial))
 
     Path("./../results/plots/source_discoveries_all_sky/").mkdir(parents=True, exist_ok=True)
 
-    plot_predictions_actual(actual_coordinates=actual_source_locations_4fgl,
-                            predicted_coordinates=predicted_locations_in_real_data_celestial, model=model)
+    plot_predictions_actual(actual_coordinates=copy.deepcopy(actual_source_locations_4fgl),
+                            predicted_coordinates=copy.deepcopy(predicted_locations_in_real_data_celestial), model=model)
 
     # THIS FRACTION IS THE NUMBER OF SOURCES CORRECTLY CLASSIFIED OF THE NUMBER OF SOURCES CORRECTLY DETECTED
 
@@ -143,8 +143,6 @@ def evaluate_on_real_data(file_4fgl, model):
     predicted_locations_in_real_data_celestial = np.array(new)
 
     classifications = np.load("./../results/real/{}/classifications.npy".format(model))
-
-    print(len(predicted_locations_in_real_data_celestial), len(classifications))
 
     frac_correct_classed_sources = (
         percentage_of_4fgl_source_correctly_classified(actual_source_locations=actual_source_locations_4fgl,

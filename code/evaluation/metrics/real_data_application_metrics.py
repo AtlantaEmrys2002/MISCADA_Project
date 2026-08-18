@@ -67,6 +67,15 @@ def plot_predictions_actual(actual_coordinates, predicted_coordinates, model):
 
     # Find out which of the predicted coordinates correspond to actual sources
 
+    # print(actual_coordinates[:10])
+    # print(predicted_coordinates[:10])
+
+    # print(np.min(actual_coordinates[:, 0]), np.max(actual_coordinates[:, 0]))
+    # print(np.min(predicted_coordinates[:, 0]), np.max(predicted_coordinates[:, 0]))
+    #
+    # print(np.min(actual_coordinates[:, 1]), np.max(actual_coordinates[:, 1]))
+    # print(np.min(predicted_coordinates[:, 1]), np.max(predicted_coordinates[:, 1]))
+
     # Convert predicted source_centres to sky coordinates
     predicted_source_centres_sky = SkyCoord(ra=predicted_coordinates[:, 0] * u.degree,
                                             dec=predicted_coordinates[:, 1] * u.degree, frame='icrs')
@@ -84,7 +93,7 @@ def plot_predictions_actual(actual_coordinates, predicted_coordinates, model):
 
         separations = coordinate.separation(predicted_source_centres_sky).degree
 
-        separation_from_closest_predicted_source = np.argmin(separations)
+        separation_from_closest_predicted_source = separations[np.argmin(separations)]
 
         if separation_from_closest_predicted_source < 0.3:
             correctly_detected_sources.append(a)
@@ -108,38 +117,69 @@ def plot_predictions_actual(actual_coordinates, predicted_coordinates, model):
     not_detected = np.array(not_detected)
     candidate_sources_not_in_4fgl = np.array(candidate_sources_not_in_4fgl)
 
-    fig = plt.figure(figsize=(8, 7))
+    # PLOT
 
-    ax = fig.add_subplot(111, projection="mollweide")
+    fig, ax = plt.subplots(figsize=(12, 6.3), subplot_kw=dict(projection="aitoff"))
 
-    if correctly_detected_sources.shape[0] != 0:
-        correctly_detected_ra = Angle(correctly_detected_sources[:, 0] * u.degree).wrap_at(180 * u.degree)
-        correctly_detected_dec = Angle(correctly_detected_sources[:, 1] * u.degree)
+    ax.grid(True)
 
-        ax.scatter(correctly_detected_ra.radian, correctly_detected_dec.radian, label="Detected 4FGL Sources",
-                   color="green", marker='P')
+    labels = ["Detected 4FGL Sources", "Undetected 4FGL Sources", "New Candidate Sources"]
+    colours = ["red", "gray", "blue"]
+    markers = ['P', 'o', '*']
+    sizes = [5, 2, 50]
 
-    if not_detected.shape[0] != 0:
-        not_detected_ra = Angle(not_detected[:, 0] * u.degree).wrap_at(180 * u.degree)
-        not_detected_dec = Angle(not_detected[:, 1] * u.degree)
+    data_points = [correctly_detected_sources, not_detected, candidate_sources_not_in_4fgl]
 
-        ax.scatter(not_detected_ra.radian, not_detected_dec.radian, label="Undetected 4FGL Sources", s=2, color="gray",
-                   marker='o')
+    for x in range(len(data_points)):
 
-    if candidate_sources_not_in_4fgl.shape[0] != 0:
-        candidate_sources_not_in_4fgl_ra = Angle(candidate_sources_not_in_4fgl[:, 0] * u.degree).wrap_at(180 * u.degree)
-        candidate_sources_not_in_4fgl_dec = Angle(candidate_sources_not_in_4fgl[:, 1] * u.degree)
+        coords = SkyCoord(ra=data_points[x][:, 0] * u.degree, dec=data_points[x][:, 1] * u.degree, frame='icrs')
 
-        ax.scatter(candidate_sources_not_in_4fgl_ra.radian, candidate_sources_not_in_4fgl_dec.radian,
-                   label="New Candidate Sources", s=2, color="gold", marker='*')
+        ra_rad = coords.ra.wrap_at(180 * u.deg).radian
+        dec_rad = coords.dec.radian
+
+        ax.scatter(ra_rad, dec_rad, label=labels[x], color=colours[x], marker=markers[x], s=sizes[x])
+
+
+    #
+    #
+    #
+    # if correctly_detected_sources.shape[0] != 0:
+    #
+    #     coords = SkyCoord(ra=correctly_detected_sources[:, 0] * u.degree, dec=correctly_detected_sources[:, 1] * u.degree, frame='icrs')
+    #
+    #     ra_rad = coords.ra.wrap_at(180 * u.deg).radian
+    #     dec_rad = coords.dec.radian
+    #
+    #     ax.scatter(ra_rad, dec_rad, label="Detected 4FGL Sources", color="red", marker='P', s=2)
+    #
+    # if not_detected.shape[0] != 0:
+    #     coords = SkyCoord(ra=not_detected[:, 0] * u.degree, dec=not_detected[:, 1] * u.degree, frame='icrs')
+    #
+    #     ra_rad = coords.ra.wrap_at(180 * u.deg).radian
+    #     dec_rad = coords.dec.radian
+    #
+    #     ax.scatter(ra_rad, dec_rad, label="Undetected 4FGL Sources", s=2, color="gray", marker='o')
+    # #
+    # if candidate_sources_not_in_4fgl.shape[0] != 0:
+    #     candidate_sources_not_in_4fgl_ra = Angle(candidate_sources_not_in_4fgl[:, 0] * u.degree).wrap_at(180 * u.degree)
+    #     candidate_sources_not_in_4fgl_dec = Angle(candidate_sources_not_in_4fgl[:, 1] * u.degree)
+    #
+    #     ax.scatter(candidate_sources_not_in_4fgl_ra.radian, candidate_sources_not_in_4fgl_dec.radian,
+    #                label="New Candidate Sources", s=2, color="blue", marker='*')
+    #
+
+
+
+
+
+
+
 
     ax.set_xlabel("RA [$\\degree$]")
     ax.set_ylabel("Dec [$\\degree$]")
 
     # ax.legend(bbox_to_anchor=(1.05, 1), loc='lower center')
     ax.legend(loc='lower center', bbox_to_anchor=(0.5, -.3))
-
-    ax.grid(True)
 
     fig.suptitle("Plot of {} Algorithm Applied to Fermi-LAT Observations".format(model))
 
