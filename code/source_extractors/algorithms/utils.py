@@ -11,7 +11,46 @@
 
 # This code helps project the all-sky maps into Cartesian coordinates and slice them into 64 x 64 images.
 
+from astropy.table import QTable
 import numpy as np
+
+
+def get_catalog_data(catalog_file):
+    catalog = QTable.read(catalog_file, format='fits', hdu=1)
+
+    columns = ("Source_Name", "CLASS1", "RAJ2000", "DEJ2000")
+
+    catalog = catalog[columns]
+
+    # Reformat CLASS1 column - remove empty spaces and make all lower case
+    catalog["CLASS1"] = np.asarray([k.decode('utf-8').strip().lower() for k in catalog["CLASS1"].value.filled('-')])
+
+    # Reformat source name column - remove empty spaces and make all lower case
+    catalog["Source_Name"] = np.asarray(
+        [k.decode('utf-8').strip().lower()[5:] for k in catalog["Source_Name"].value])
+
+    # Select all rows that describe pulsars
+    pulsar_mask = (catalog["CLASS1"] == "psr")
+
+    # Select all rows that describe AGN
+    agn_mask = np.isin(catalog["CLASS1"].data,
+                       np.array(["bcu", "sey", "ssrq", "bll", "fsrq", "rdg", "nlsy1", "agn"]))
+
+    agns = catalog[agn_mask]
+    psrs = catalog[pulsar_mask]
+
+    # Convert to pandas dataframes for covariance and correlation calculations, as well as plotting
+    agns = agns.to_pandas()
+    pulsars = psrs.to_pandas()
+
+    # Remove sources with NaN values
+    pulsars.dropna(inplace=True)
+    agns.dropna(inplace=True)
+
+    agn_coordinates_per_catalog = [dict(zip(agns["Source_Name"], agns[["RAJ2000", "DEJ2000"]].to_numpy()))]
+    pulsar_coordinates_per_catalog = [dict(zip(pulsars["Source_Name"], pulsars[["RAJ2000", "DEJ2000"]].to_numpy()))]
+
+    return agn_coordinates_per_catalog, pulsar_coordinates_per_catalog
 
 
 # geometric utilities
@@ -42,35 +81,6 @@ def xyz2sph(x, y, z):
     return np.array([r, lat, phi])
 
 
-# def get_lb_from_pixel(pixel_id, lb_centre, xsize=128):
-#     ##if input angles are in degree use 'isdeg = True'
-#     ######### Generate (l,b) coordinate map of 10x10deg patch ######
-#
-#
-#     coord_range = np.linspace(-4.9609375, 4.9609375, xsize)
-#
-#     X, Y = np.meshgrid(coord_range, coord_range)
-#     lonlat_patch = list(zip(np.flip(X.flatten()), Y.flatten()))
-#     ######### Get rotation matrix used to rotate the original centre to (0., 0.) #########
-#     l_centre, b_centre = lb_centre
-#
-#     r = np.dot(RotMatrixY(-b_centre), RotMatrixZ(l_centre))
-#     #########
-#
-#     lon_PS_rotated, lat_PS_rotated = lonlat_patch[pixel_id]
-#
-#     xyz_PS_rotated = sph2xyz(1., 90. - lat_PS_rotated, lon_PS_rotated)
-#     x_PS, y_PS, z_PS = np.array(np.dot(r.T, xyz_PS_rotated), dtype='float32')
-#     r, b_PS, l_PS = xyz2sph(x_PS, y_PS, z_PS)
-#
-#     # if l_PS < 0:
-#     #     l_PS = 360 + l_PS
-#
-#     l_PS += 180  # to get to 0 - 360
-#
-#     return l_PS, b_PS
-#
-#
 def get_lb_from_pixel(pixel_id, lb_centre, xsize=128):
 
     # Ensures function works with arrays and scalars

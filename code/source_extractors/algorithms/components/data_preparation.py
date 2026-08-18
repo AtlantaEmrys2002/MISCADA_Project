@@ -6,7 +6,7 @@ import numpy as np
 from operator import itemgetter
 import pandas as pd
 from torch.utils.data import DataLoader, Subset
-from ..utils import get_lb_from_pixel, pixel_id
+from ..utils import get_catalog_data, get_lb_from_pixel, pixel_id
 import warnings
 from xml.dom import minidom
 
@@ -196,28 +196,18 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
     patch_ids = np.delete(patch_ids, np.array(ids_to_remove).astype(int), 0)
 
     # Get 7 x 7 boxes around each predicted source in each patch
-    sub_boxes, predicted_locations = source_boxes(patches, predicted_locations)
+    sub_boxes, predicted_locations, patch_ids = source_boxes(patches, predicted_locations, patch_ids)
+
+    # ABOVE FUNCTION IS WHERE THINGS GO WRONG
+
+
+
 
     # Normalise each patch (normalise each energy bin separately)
     normalised_sub_boxes = normalise_sub_patches(sub_boxes)
 
-
-
-
-
-
-    # THINK IT IS BELOW FUNCTION WHERE THINGS ARE GOING WRONG
-
-
-
-
-
     # Get labels for each patch (i.e. AGN, PSR, FAKE)
     labels = source_box_labels(patch_ids=patch_ids, predicted_source_locations=predicted_locations, real_data=real_data)
-
-
-
-    # SOMETHING GOING WRONG BEFORE HERE - VECTOR LABELS SHOULD NOT BE EMPTY FOR ANY GIVEN PATCH EMPTY AS ALREADY TOOK OUT PATCHES WITH NO PREDICTIONS
 
     # Format labels such that they are in vector format, e.g. AGN is equivalent to [1., 0., 0.]
     vector_labels = str_labels_to_vector_labels(labels)
@@ -268,12 +258,14 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
         return batches
 
 
-def source_boxes(patches, predicted_source_locations):
+def source_boxes(patches, predicted_source_locations, patch_ids):
     # Select 7 x 7 boxes around each patch location - all in Cartesian coordinates
 
     boxes_for_each_patch = []
 
     new_predicted_locations = []
+
+    patch_ids_to_remove = []
 
     for n in range(patches.shape[0]):
         predicted_locations_in_patch = predicted_source_locations[n].astype(int)
@@ -289,16 +281,24 @@ def source_boxes(patches, predicted_source_locations):
 
         locs = np.stack((copy.deepcopy(xs[mask]), copy.deepcopy(ys[mask]))).T
 
-        classification_sub_patches = (
-            np.array([copy.deepcopy(patch[:, np.arange(l[0] - 3, l[0] + 4), :][:, :, np.arange(l[1] - 3, l[1] + 4)])
-                      for l in locs]))
+        if predicted_locations_in_patch[mask].shape[0] != 0:
 
-        boxes_for_each_patch.append(classification_sub_patches)
+            classification_sub_patches = (
+                np.array([copy.deepcopy(patch[:, np.arange(l[0] - 3, l[0] + 4), :][:, :, np.arange(l[1] - 3, l[1] + 4)])
+                          for l in locs]))
 
-        # As we are not necessarily constructing box around each patch - may disqualify some sources
-        new_predicted_locations.append(copy.deepcopy(predicted_locations_in_patch[mask]))
+            boxes_for_each_patch.append(classification_sub_patches)
 
-    return boxes_for_each_patch, new_predicted_locations
+            # As we are not necessarily constructing box around each patch - may disqualify some sources
+            new_predicted_locations.append(copy.deepcopy(predicted_locations_in_patch[mask]))
+
+        else:
+
+            patch_ids_to_remove.append(n)
+
+    new_patch_ids = np.delete(patch_ids, np.array(patch_ids_to_remove).astype(int), 0)
+
+    return boxes_for_each_patch, new_predicted_locations, new_patch_ids
 
 
 def source_box_labels(patch_ids, predicted_source_locations, localisation_threshold:float=0.3, real_data: bool=False):
@@ -334,7 +334,6 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
 
     else:
 
-
         # Get catalog IDs for each patch
         catalog_ids = (source_information["catalog_id"] + 1).to_numpy()
 
@@ -344,50 +343,8 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
         # Gives the ID of the catalog that each patch is drawn from
         patch_catalogs = dict(zip(source_information["patch_id"].to_numpy(), catalog_ids))
 
-    # # Get centre of each patch
-    # patch_centres = (
-    #     np.stack((source_information["centre_lon"].to_numpy(), source_information["centre_lat"].to_numpy()),
-    #              axis=1))
-    #
-    # # Gen number of AGN and pulsars in each patch
-    # nagn = source_information["num_agn"].to_numpy()
-    # npsr = source_information["num_psr"].to_numpy()
-
     if real_data:
-
-        catalog = QTable.read("/Volumes/T7/data/catalog/4FGL_DR4.fit", format='fits', hdu=1)
-
-        columns = ("Source_Name", "CLASS1", "RAJ2000", "DEJ2000")
-
-        catalog = catalog[columns]
-
-        # Reformat CLASS1 column - remove empty spaces and make all lower case
-        catalog["CLASS1"] = np.asarray([k.decode('utf-8').strip().lower() for k in catalog["CLASS1"].value.filled('-')])
-
-        # Reformat source name column - remove empty spaces and make all lower case
-        catalog["Source_Name"] = np.asarray(
-            [k.decode('utf-8').strip().lower()[5:] for k in catalog["Source_Name"].value])
-
-        # Select all rows that describe pulsars
-        pulsar_mask = (catalog["CLASS1"] == "psr")
-
-        # Select all rows that describe AGN
-        agn_mask = np.isin(catalog["CLASS1"].data,
-                           np.array(["bcu", "sey", "ssrq", "bll", "fsrq", "rdg", "nlsy1", "agn"]))
-
-        agns = catalog[agn_mask]
-        psrs = catalog[pulsar_mask]
-
-        # Convert to pandas dataframes for covariance and correlation calculations, as well as plotting
-        agns = agns.to_pandas()
-        pulsars = psrs.to_pandas()
-
-        # Remove sources with NaN values
-        pulsars.dropna(inplace=True)
-        agns.dropna(inplace=True)
-
-        agn_coordinates_per_catalog = [dict(zip(agns["Source_Name"], agns[["RAJ2000", "DEJ2000"]].to_numpy()))]
-        pulsar_coordinates_per_catalog = [dict(zip(pulsars["Source_Name"], pulsars[["RAJ2000", "DEJ2000"]].to_numpy()))]
+        agn_coordinates_per_catalog, pulsar_coordinates_per_catalog = get_catalog_data("/Volumes/T7/data/catalog/4FGL_DR4.fit")
 
     else:
 
@@ -429,10 +386,6 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
         actual_agn_in_patch = patch_information[patch_information["source_type"] == "AGN"]["source_id"].to_numpy()
         actual_psr_in_patch = patch_information[patch_information["source_type"] == "PSR"]["source_id"].to_numpy()
 
-        # N.B. FOR ABOVE - ITERATE OVER PREDICTED SOURCES
-
-        # print(len(actual_agn_in_patch), num_agn_in_patch)
-
         # Get celestial locations of AGN in patch
         actual_agn_locations_in_celestial = np.array([agn_coordinates_per_catalog[catalog_of_patch]
                                                       [actual_agn_in_patch[k]] for k in
@@ -441,8 +394,6 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
         actual_psr_locations_in_celestial = np.array([pulsar_coordinates_per_catalog[catalog_of_patch]
                                                       [actual_psr_in_patch[k]] for k in
                                                       range(num_psr_in_patch)])
-
-        # print(actual_agn_locations_in_celestial)
 
         # Convert to SkyCoords
 

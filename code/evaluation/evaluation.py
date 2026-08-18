@@ -1,5 +1,5 @@
 from astropy.table import QTable
-
+import copy
 from utils import integral_photon_flux_agn, integral_photon_flux_pulsar, get_catalog_data
 from metrics.utils import image_cartesian_coordinates_to_physical_coordinates
 from metrics.classification_metrics import classification_confusion_matrix
@@ -63,32 +63,20 @@ def get_classified_patches(predicted_locations_in_real_data_raw):
 
     for p in range(len(predicted_locations_in_real_data_raw)):
 
-        tmp = []
+        loc_in_patch = predicted_locations_in_real_data_raw[p]
 
-        for loc in predicted_locations_in_real_data_raw[p]:
+        if loc_in_patch.shape[0] != 0:
 
-            x, y = loc[0], loc[1]
+            xs = loc_in_patch[:, 0]
+            ys = loc_in_patch[:, 1]
 
-            # Select 7 x 7 grid around predicted location
-            # rows = np.arange(x - 3, x + 4)
-            # cols = np.arange(y - 3, y + 4)
+            mask = np.logical_not(((xs - 3) < 0) | ((xs + 4) > 63) | ((ys - 3) < 0) | ((ys + 4) > 63))
 
-            # if cannot create a 7 x 7 grid, ignore during classification
-            # if rows[0] < 0 or cols[0] < 0 or rows[-1] > 64 or cols[-1] > 64:
+            predicted_locations_in_real_data.append(copy.deepcopy(predicted_locations_in_real_data_raw[p][mask]))
 
-            # if rows[0] < 0 or cols[0] < 0 or rows[-1] > 63 or cols[-1] > 63:
+        else:
 
-            if x - 3 < 0 or y - 3 < 0 or x + 4 > 63 or y + 4 >63:
-
-            # mask = np.logical_not(((xs - 3) < 0) | ((xs + 4) > 63) | ((ys - 3) < 0) | ((ys + 4) > 63))
-
-                continue
-
-            else:
-
-                tmp.append(loc)
-
-        predicted_locations_in_real_data.append(np.array(tmp))
+            predicted_locations_in_real_data.append(np.array([]))
 
     return predicted_locations_in_real_data
 
@@ -106,17 +94,37 @@ def evaluate_on_real_data(file_4fgl, model):
     with open("./../results/real/{}/predicted_locations.data".format(model), 'rb') as f:
         predicted_locations_in_real_data_raw = pickle.load(f)
 
-    predicted_locations_in_real_data = get_classified_patches(predicted_locations_in_real_data_raw)
+    predicted_locations_in_real_data_celestial = [
+        image_cartesian_coordinates_to_physical_coordinates(coordinates=copy.deepcopy(predicted_locations_in_real_data_raw[p]),
+                                                            patch_centre=patch_centres[p],
+                                                            coordinate_system='C') for p in range(768) if
+        predicted_locations_in_real_data_raw[p].shape != 0]
+
+    new = []
+
+    for x in range(768):
+        for p in predicted_locations_in_real_data_celestial[x]:
+            new.append(p)
+
+    predicted_locations_in_real_data_celestial = np.array(new)
+
+    # EVALUATE NUM oF 4FGL SOURCES DETECTED
 
     # Read in locations of 4FGL sources
     actual_source_locations_4fgl, actual_source_types = get_catalog_data(file_4fgl)
 
-    # Slightly different indexing here - assume that always 768 patches
-    # predicted_locations_in_real_data_celestial = [
-    #     image_cartesian_coordinates_to_physical_coordinates(coordinates=predicted_locations_in_real_data[p],
-    #                                                         patch_centre=patch_centres[p],
-    #                                                         coordinate_system='C') if
-    #     predicted_locations_in_real_data[p].shape != 0 else np.array([]) for p in range(768)]
+    frac_of_4fgl_sources_detected = percentage_of_4fgl_sources_detected(
+        actual_source_locations=actual_source_locations_4fgl,
+        predicted_source_locations=copy.deepcopy(predicted_locations_in_real_data_celestial))
+
+    Path("./../results/plots/source_discoveries_all_sky/").mkdir(parents=True, exist_ok=True)
+
+    plot_predictions_actual(actual_coordinates=actual_source_locations_4fgl,
+                            predicted_coordinates=predicted_locations_in_real_data_celestial, model=model)
+
+    # THIS FRACTION IS THE NUMBER OF SOURCES CORRECTLY CLASSIFIED OF THE NUMBER OF SOURCES CORRECTLY DETECTED
+
+    predicted_locations_in_real_data = get_classified_patches(predicted_locations_in_real_data_raw)
 
     predicted_locations_in_real_data_celestial = [
         image_cartesian_coordinates_to_physical_coordinates(coordinates=predicted_locations_in_real_data[p],
@@ -132,20 +140,10 @@ def evaluate_on_real_data(file_4fgl, model):
 
     predicted_locations_in_real_data_celestial = np.array(new)
 
-    # EVALUATE NUM oF 4FGL SOURCES DETECTED
-
-    frac_of_4fgl_sources_detected = percentage_of_4fgl_sources_detected(
-        actual_source_locations=actual_source_locations_4fgl,
-        predicted_source_locations=predicted_locations_in_real_data_celestial)
-
-    Path("./../results/plots/source_discoveries_all_sky/").mkdir(parents=True, exist_ok=True)
-
-    plot_predictions_actual(actual_coordinates=actual_source_locations_4fgl,
-                            predicted_coordinates=predicted_locations_in_real_data_celestial, model=model)
-
     classifications = np.load("./../results/real/{}/classifications.npy".format(model))
 
-    # THIS FRACTION IS THE NUMBER OF SOURCES CORRECTLY CLASSIFIED OF THE NUMBER OF SOURCES CORRECTLY DETECTED
+    print(len(predicted_locations_in_real_data_celestial), len(classifications))
+
     frac_correct_classed_sources = (
         percentage_of_4fgl_source_correctly_classified(actual_source_locations=actual_source_locations_4fgl,
                                                        predicted_source_locations=
