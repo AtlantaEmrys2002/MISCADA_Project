@@ -37,6 +37,7 @@ def classification_confusion_matrix(ground_truth, predicted, classifier_name, di
 
 # Annotating Seaborn - https://stackoverflow.com/questions/32723798/how-do-i-add-a-title-and-axis-labels-to-seaborn-
 # heatmap
+# Clear Plots - https://stackoverflow.com/questions/17106288/how-to-forget-previous-plots-how-can-i-flush-refresh
 # Plotting Confusion Matrix - https://stackoverflow.com/questions/35572000/how-can-i-plot-a-confusion-matrix
 # Scikit-Learn Documentation - https://scikit-learn.org/stable/modules/generated/sklearn.metrics.confusion_matrix.html
 # Seaborn Documentation - https://matplotlib.org/stable/users/explain/colors/colormaps.html

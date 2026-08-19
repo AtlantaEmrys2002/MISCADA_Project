@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     # CHANGE THIS BACK AT THE END
 
-    train, valid, test = read_patches(num_patches=5000, directory=patches_directory)
+    train, valid, test = read_patches(num_patches=75000, directory=patches_directory)
 
     # CHANGE BELOW TO 768 ONCE CONFIRMED IT IS WORKING
 

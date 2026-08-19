@@ -314,3 +314,5 @@ if __name__ == "__main__":
 
 # Cartesian Products - https://stackoverflow.com/questions/11144513/cartesian-product-of-x-and-y-array-points-into-
 # single-array-of-2d-points
+# One-Hot Encoding - https://stackoverflow.com/questions/20295046/numpy-change-max-in-each-row-to-1-all-other-numbers-to
+# -0

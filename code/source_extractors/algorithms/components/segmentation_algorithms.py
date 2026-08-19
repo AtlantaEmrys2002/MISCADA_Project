@@ -45,10 +45,12 @@ class CNNBlock(nn.Module):
         super(CNNBlock, self).__init__()
 
         self.seq_block = nn.Sequential(
+            # nn.Conv2d(in_channels=in_chan, out_channels=out_chan, kernel_size=kernel_size, stride=stride,
+            #           padding=padding, bias=False),
             nn.Conv2d(in_channels=in_chan, out_channels=out_chan, kernel_size=kernel_size, stride=stride,
-                      padding=padding, bias=False),
-            # nn.ReLU(inplace=True)
-            nn.ReLU()
+                      padding=padding, bias=True),
+            nn.ReLU(inplace=True)
+            # nn.ReLU()
         )
 
     def forward(self, x):
@@ -192,8 +194,6 @@ class UNET(nn.Module):
     def __init__(self, in_chan, first_out_chan, exit_chan, downhill, padding=0):
         super(UNET, self).__init__()
 
-        # self.batch_norm = nn.BatchNorm2d(num_features=5)
-
         self.encoder = Encoder(in_chan, first_out_chan, padding=padding, downhill=downhill)
 
         self.decoder = Decoder(first_out_chan * (2 ** downhill), first_out_chan * (2 ** (downhill - 1)), exit_chan,
@@ -239,20 +239,23 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
     # EVEN THOUGH ORIGINAL PAPER SAID NO PADDING
 
     # Create U-Net model - padding = 1 ("same convolution") to match no. channels and output sizes given in ID8 diagram
-    # unet_model = UNET(5, 16, 1, padding=1, downhill=4).to(device)
     unet_model = UNET(5, 16, 2, padding=1, downhill=4).to(device)
+
+    print(unet_model)
 
     # TRAINING
 
     # Define loss function and optimiser - changed from that proposed in ID11 and ID8
     # loss_fn = torch.nn.BCEWithLogitsLoss().to(device)
 
-    loss_fn = torch.nn.CrossEntropyLoss().to(device)
+    loss_fn = torch.nn.CrossEntropyLoss() #.to(device)
 
-    optimiser = torch.optim.Adam(unet_model.parameters(), lr=1.e-5)
+    optimiser = torch.optim.Adam(unet_model.parameters(), lr=1.e-6)
     # optimiser = torch.optim.SGD(unet_model.parameters(), lr=1.e-4, momentum=0.9)
 
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimiser, min_lr=1.e-6, patience=5)
+    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimiser, min_lr=1.e-6, patience=5)
+
+    scheduler = torch.optim.lr_scheduler.StepLR(optimiser, step_size=5, gamma=0.1)
 
     # Start with large value that is easily surpassed
     best_vloss = 100000000000000
@@ -267,40 +270,13 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
 
         for i, data in enumerate(train_data):
 
-            # import matplotlib.pyplot as plt
-            #
-            # plt.imshow(data[1][2][0])
-            # plt.show()
-
-            # print(data[2].squeeze(1).shape)
-            #
-            # plt.imshow(data[2][0][0])
-            # plt.show()
-
-            inputs, labels = data[1].to(device), data[2].to(device).squeeze(1)
-
-            # inputs, labels = data[1].to(device), data[2].to(device).squeeze(1)
+            inputs, labels = data[1].to(device), data[2].squeeze(1).to(device)
 
             # zero gradients for each batch
             optimiser.zero_grad()
 
             # Make sure to zero gradients when calculating loss and don't update model
             output = unet_model(inputs)
-
-            print(torch.sum(torch.argmax(output, dim=1)))
-
-
-
-            # print(output.shape)
-
-            # Compute loss and gradients
-            # loss = loss_fn(output, labels)
-
-            # output = torch.argmax(output.detach(), dim=1).type(torch.FloatTensor).to(device)
-            #
-            # output.requires_grad_()
-            #
-            # print(output.shape)
 
             loss = loss_fn(output, labels)
 
@@ -309,26 +285,21 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
             # Adjust weights
             optimiser.step()
 
-        running_vloss = 0.0
-
         # Set to evaluate mode
         unet_model.eval()
 
+        running_vloss = 0.0
+
         with torch.no_grad():
             for i, vdata in enumerate(test_data):
-                # vinputs, vlabels = vdata[1].to(device), vdata[2].to(device)
 
-                vinputs, vlabels = vdata[1].to(device), vdata[2].to(device).squeeze(1)
+                vinputs, vlabels = vdata[1].to(device), vdata[2].squeeze(1).to(device)
 
                 voutputs = unet_model(vinputs)
 
-                # voutputs = torch.argmax(voutputs.detach(), dim=1).type(torch.FloatTensor).to(device)
-                #
-                # voutputs.requires_grad_()
-
                 vloss = loss_fn(voutputs, vlabels)
 
-                running_vloss += vloss.item()
+                running_vloss += vloss
 
         avg_vloss = running_vloss / (i + 1)
 
@@ -342,7 +313,7 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
             torch.save(unet_model.state_dict(), save_file)
 
         # Calling after validation loss - decrease learning rate if no improvement
-        scheduler.step(avg_vloss)
+        scheduler.step()
 
     return unet_model, best_epoch
 
@@ -393,8 +364,6 @@ def unet(training_maps, validation_maps, testing_maps, pretrained=False, real=Fa
             test_data_predictions = torch.argmax(model(torch.from_numpy(real_maps).to(device)).detach().cpu(),
                                                  dim=1).numpy()
 
-            # test_data_predictions = torch.argmax(test_data_predictions, dim=1)
-
         return np.array([]), np.array([]), test_data_predictions
 
     else:
@@ -409,6 +378,9 @@ def unet(training_maps, validation_maps, testing_maps, pretrained=False, real=Fa
             # train_data_predictions = model(torch.from_numpy(training_maps).to(device)).detach().cpu().numpy()
             # validation_data_predictions = model(torch.from_numpy(validation_maps).to(device)).detach().cpu().numpy()
             # test_data_predictions = model(torch.from_numpy(testing_maps).to(device)).detach().cpu().numpy()
+
+            # train_tmp = model(torch.from_numpy(training_maps).to(device))
+
 
             train_data_predictions = torch.argmax(model(torch.from_numpy(training_maps).to(device)).detach().cpu(),
                                                   dim=1).numpy()
