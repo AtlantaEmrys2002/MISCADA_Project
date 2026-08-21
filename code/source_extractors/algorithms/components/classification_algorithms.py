@@ -135,22 +135,6 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
 
             torch.save(classifier.state_dict(), save_file)
 
-        # else:
-        #
-        #     epochs_since_improvement += 1
-        #
-        # # if no improvement in loss for 50 epochs, stop training
-        # if epochs_since_improvement == 50:
-        #
-        #     break
-        #
-        # elif epochs_since_improvement == 5:
-        #
-        #     # Half the learning rate
-        #
-        #     for g in optimiser.param_groups:
-        #         g['lr'] /= 2
-
     return classifier, best_epoch
 
 

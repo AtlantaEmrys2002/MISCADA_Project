@@ -38,7 +38,7 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
 
     # ALGORITHMS
 
-    segmentation_algorithms = ["random_forest", "unet"]
+    segmentation_algorithms = ["unet", "random_forest"]
 
     localisation_algorithms = ["dbscan", "kmeans", "spectral", "blob_detection"]
 
@@ -71,6 +71,8 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                 _, _, real_segmentation_predictions = unet(training_maps=np.array([]), validation_maps=np.array([]),
                                                            testing_maps=real_data, pretrained=True, real=True)
 
+                print(np.argmax(train_segmentation_predictions))
+
                 import matplotlib.pyplot as plt
 
                 plt.imshow((train_segmentation_predictions[0] > 0.5) * 200)
@@ -83,26 +85,9 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
 
             case "random_forest":
 
-                # (train_segmentation_predictions, validation_segmentation_predictions, test_segmentation_predictions) = \
-                #     (random_forest_segmentation(training_maps=training_maps, training_masks=training_masks,
-                #                                 validation_maps=validation_maps, testing_maps=testing_maps))
-
-
-                # CHNAGE BACK LATER
-
                 (train_segmentation_predictions, validation_segmentation_predictions, test_segmentation_predictions) = \
                     (random_forest_segmentation(training_maps=training_maps, training_masks=training_masks,
-                                                validation_maps=validation_maps, testing_maps=testing_maps, pretrained=True))
-
-                # import matplotlib.pyplot as plt
-                #
-                # plt.imshow((train_segmentation_predictions[0][0] > 0.5) * 200)
-                #
-                # plt.show()
-                #
-                # plt.imshow(training_masks[0])
-                #
-                # plt.show()
+                                                validation_maps=validation_maps, testing_maps=testing_maps))
 
                 _, _, real_segmentation_predictions = random_forest_segmentation(training_maps=np.array([]),
                                                                                  training_masks=np.array([]),
@@ -229,37 +214,6 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                                                           real_batches_class, pretrained=True,
                                                           save_file=save_file_classifier))
 
-                        # print("Classification Done.")
-
-                        total_num = len(actual_labels)
-
-                        print("RESULT")
-
-                        classifier_predictions_one_hot = np.zeros_like(classifier_predictions)
-
-                        indices = np.argmax(classifier_predictions, axis=1)
-
-                        for k in range(classifier_predictions_one_hot.shape[0]):
-
-                            classifier_predictions_one_hot[k][indices[k]] = 1
-
-                        print(sum([1 for k in range(total_num) if
-                                   np.all(np.equal(actual_labels[k], classifier_predictions_one_hot[k]))]) / total_num)
-
-                        print("REAL RESULT")
-
-                        classifier_predictions_one_hot = np.zeros_like(real_classifier_predictions)
-
-                        indices = np.argmax(real_classifier_predictions, axis=1)
-
-                        for k in range(classifier_predictions_one_hot.shape[0]):
-                            classifier_predictions_one_hot[k][indices[k]] = 1
-
-                        total_num = len(real_actual_labels)
-
-                        print(sum([1 for k in range(total_num) if
-                                   np.all(np.equal(real_actual_labels[k], classifier_predictions_one_hot[k]))]) / total_num)
-
                     case "random_forest":
 
                         # N.B. Here, we prepare classifier data as if it were all classifier data (to prevent in being
@@ -290,17 +244,6 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                                                      save_file=save_file_classifier,
                                                      pretrained=True))
 
-                        total_num = len(actual_labels)
-
-                        print("RESULT")
-                        print(sum([1 for k in range(total_num) if np.all(np.equal(actual_labels[k], classifier_predictions[k]))]) / total_num)
-
-                        print("REAL RESULT")
-
-                        total_num = len(real_actual_labels)
-
-                        print(sum([1 for k in range(total_num) if np.all(np.equal(real_actual_labels[k], real_classifier_predictions[k]))]) / total_num)
-
                     case "svm":
 
                         train_batches_class = (
@@ -327,18 +270,6 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                             svm_classifier(train_data=np.array([]), test_data=real_batches_class,
                                            save_file=save_file_classifier,
                                            pretrained=True))
-
-                        print("RESULT")
-
-                        total_num = len(actual_labels)
-
-                        print(sum([1 for k in range(total_num) if np.all(np.equal(actual_labels[k], classifier_predictions[k]))]) / total_num)
-                        print("REAL RESULT")
-
-                        total_num = len(real_actual_labels)
-
-                        print(sum([1 for k in range(total_num) if np.all(np.equal(real_actual_labels[k], real_classifier_predictions[k]))]) / total_num)
-
 
                     case _:
                         raise NameError("Classification algorithm {} could not be found.".format(classifier))
