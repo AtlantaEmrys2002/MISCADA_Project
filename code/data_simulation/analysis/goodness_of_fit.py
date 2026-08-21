@@ -4,9 +4,10 @@ Methods for determining the goodness of fit of well-known PDFs to the histograms
 
 import numpy as np
 from scipy.stats import cauchy, chi2, gumbel_r, kstest, lognorm, Normal
+import warnings
 
 
-def chi_squared_test(values, num_bins: int, distribution: str, significance=0.05) -> None:
+def chi_squared_test(values, num_bins: int, distribution: str, significance=0.05, verbose=False) -> list:
     """Applies chi-squared test, fitting a specified distribution to a series of observations, to determine if the PDF
     is suitable for modelling the distribution of the histogram of values.
 
@@ -27,17 +28,20 @@ def chi_squared_test(values, num_bins: int, distribution: str, significance=0.05
     # bin data and record number of agns with values within each interval
     observed_counts, bin_intervals = np.histogram(values, bins=num_bins, density=False)
 
-    # used for creating specific distribution
-    mean, sigma = np.mean(values), np.std(values, ddof=1)
-
     # create distribution to test observed values against
     match distribution:
 
         case "normal":
 
+            # used for creating specific distribution
+            mean, sigma = np.mean(values), np.std(values, ddof=1)
+
             X = Normal(mu=mean, sigma=sigma)
 
         case "lognorm":
+
+            # used for creating specific distribution
+            mean, sigma = np.mean(values), np.std(values, ddof=1)
 
             mean_square = mean ** 2
             std_square = sigma ** 2
@@ -53,8 +57,6 @@ def chi_squared_test(values, num_bins: int, distribution: str, significance=0.05
 
             X = cauchy(*params)
 
-        # NEW
-
         case "gumbel":
 
             params = gumbel_r.fit(values)
@@ -63,7 +65,8 @@ def chi_squared_test(values, num_bins: int, distribution: str, significance=0.05
 
         case _:
 
-            raise NameError("That probability distribution is not built in to chi_squared_test().")
+            raise NameError("The {} probability distribution is not built in to chi_squared_test().".
+                            format(distribution))
 
     # add 0 count for all < than bin_intervals[0] and for all > bin_intervals[len(bin_intervals)]
     observed_counts = list(observed_counts)
@@ -93,17 +96,25 @@ def chi_squared_test(values, num_bins: int, distribution: str, significance=0.05
 
         # MERGE BINS TO MEET MINIMUM ASSUMPTIONS OF CHI2
 
+        minimum = 1
+
         # Ensures sample size assumptions are met - https://sites.utexas.edu/sos/guided/inferential/categorical/univari
         # ate/chi2/ - merge bins that do not have enough counts
-        while np.min(expected_counts) < 1 and np.sum(expected_counts > 5)/expected_counts.shape[0] < 0.8:
+        while ((np.min(expected_counts) < 1 and np.sum(expected_counts > 5) / expected_counts.shape[0] < 0.8) and
+               expected_counts.shape[0] > 3):
 
             tmp_o = []
 
             tmp_e = []
 
+            # Switch to merging to 5
+            if np.min(expected_counts) >= 1:
+                minimum = 5
+
             for k in range(expected_counts.shape[0] - 1):
 
-                if expected_counts[k] < 1:
+                # if expected_counts[k] < 1:
+                if expected_counts[k] < minimum:
 
                     tmp_o.append(observed_counts[k] + observed_counts[k + 1])
                     tmp_e.append(expected_counts[k] + expected_counts[k + 1])
@@ -124,26 +135,33 @@ def chi_squared_test(values, num_bins: int, distribution: str, significance=0.05
                     tmp_o.append(observed_counts[k])
                     tmp_e.append(expected_counts[k])
 
+                # if k == expected_counts.shape[0] - 2 and expected_counts[k + 1] > 1:
+
                 if k == expected_counts.shape[0] - 2:
+                    if expected_counts[k + 1] > 1:
+                        tmp_o.append(observed_counts[k + 1])
+                        tmp_e.append(expected_counts[k + 1])
 
-                    tmp_o.append(observed_counts[k + 1])
-                    tmp_e.append(observed_counts[k + 1])
+                        expected_counts = np.array(tmp_e)
+                        observed_counts = np.array(tmp_o)
+                    else:
+                        tmp_o[-1] += observed_counts[k + 1]
+                        tmp_e[-1] += expected_counts[k + 1]
 
-                    expected_counts = np.array(tmp_e)
-                    observed_counts = np.array(tmp_o)
+                        expected_counts = np.array(tmp_e)
+                        observed_counts = np.array(tmp_o)
 
         if observed_counts.shape[0] < 5:
 
-            print("-" * 60)
-            print("The {} distribution cannot be fit, as there are less than 5 samples from which to include observed"
-                  "and expected counts (i.e. too many histogram bins had to be merged).".format(distribution))
-            print("-" * 60)
+            warnings.warn(f"The {distribution} PDF cannot be fit to the distribution of {parameter_name}, as there are less than 5 samples from "
+                          "which to include observed and expected counts (i.e. too many histogram bins had to be "
+                          "merged).")
+
+            return [np.nan, np.nan, np.nan, np.nan, False]
 
         else:
 
             # n.b. both normal, log-normal, gumbel, and cauchy have two free parameters to be fitted
-            # degrees_of_freedom = num_bins - 2 - 1
-
             degrees_of_freedom = observed_counts.shape[0] - 2 - 1
 
             test_statistic = np.sum(((observed_counts - expected_counts) ** 2) / expected_counts)
@@ -155,32 +173,39 @@ def chi_squared_test(values, num_bins: int, distribution: str, significance=0.05
             # Ideally about 0.5
             cdf_probability = 1 - chi_squared_distribution.cdf(test_statistic)
 
-            print("-" * 60)
-            print("Chi-Squared Goodness of Fit of {} Distribution to {}: ".format(distribution, parameter_name))
+            if verbose:
 
-            print("Degrees of Freedom: {}".format(degrees_of_freedom))
+                print("-" * 60)
+                print("Chi-Squared Goodness of Fit of {} Distribution to {}: ".format(distribution, parameter_name))
 
-            print("Chi Squared Min Test Statistic, X^2_min: {}".format(test_statistic))
-            print("P(X^2_min; {}) = {}".format(degrees_of_freedom, cdf_probability))
+                print("Degrees of Freedom: {}".format(degrees_of_freedom))
 
-            print("Reduced Chi-Squared Min Statistic: {}".format(reduced_chi_squared_min))
+                print("Chi Squared Min Test Statistic, X^2_min: {}".format(test_statistic))
+                print("P(X^2_min; {}) = {}".format(degrees_of_freedom, cdf_probability))
 
-            if cdf_probability < significance: # or reduced_chi_squared_min > 2:
-                print("Reject H_0: The {} distribution is not a good fit.".format(distribution))
-            else:
-                print("There is not sufficient evidence to reject {} distribution as a good fit.".format(distribution))
+                print("Reduced Chi-Squared Min Statistic: {}".format(reduced_chi_squared_min))
 
-            print("-" * 60)
+                if cdf_probability < significance:
+                    print("Reject H_0: The {} distribution is not a good fit.".format(distribution))
+                else:
+                    print("There is not sufficient evidence to reject {} distribution as a good fit.".
+                          format(distribution))
+
+                print("-" * 60)
+
+            return [degrees_of_freedom, test_statistic, reduced_chi_squared_min, cdf_probability,
+                    cdf_probability > significance]
 
     else:
 
-        print("-" * 60)
-        print("The {} distribution cannot be fit, as there are too many intervals in which the observed count is zero\n"
-              "and the expected count is non-zero.".format(distribution))
-        print("-" * 60)
+        warnings.warn("The {} PDF cannot be fit to the distribution of {}, as there are too many intervals in which the"
+                      " observed count is zero and the expected count is non-zero.".format(distribution,
+                                                                                           parameter_name))
+
+        return [np.nan, np.nan, np.nan, np.nan, False]
 
 
-def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05) -> None:
+def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05, verbose=False) -> list:
     """Applies K-S test, fitting a specified distribution to a series of observations, to determine if the PDF is
     suitable for modelling the distribution of the histogram of values.
 
@@ -212,12 +237,8 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05) -> None:
 
     test_values = values_tmp[num_samples:]
 
-    mean, sigma = np.mean(test_values), np.std(test_values, ddof=1)
-
-    # UNCOMMENT BELOW IF IT DOES NOT WORK
-
     # used for creating specific distribution
-    # mean, sigma = np.mean(values), np.std(values, ddof=1)
+    mean, sigma = np.mean(test_values), np.std(test_values, ddof=1)
 
     match distribution:
 
@@ -243,8 +264,6 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05) -> None:
 
             ks_stat, p_val = kstest(values, x.cdf)
 
-        # NEW
-
         case "gumbel":
 
             params = gumbel_r.fit(values)
@@ -255,26 +274,29 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05) -> None:
 
         case _:
 
-            raise NameError("That probability distribution is not built in to kolmogorov_smirnov_test().")
-    #
-    # number_of_sources = len(values)
+            raise NameError("The {} probability distribution is not built in to kolmogorov_smirnov_test().".
+                            format(distribution))
 
     # E.g. if 5% significance, critical value is 1.358
     critical_val = np.sqrt(-1 * np.log(alpha / 2) * 0.5) * np.sqrt(2 / np.sqrt(num_samples))
 
-    print("-" * 60)
-    print("K-S Goodness of Fit of {} Distribution to {}: ".format(distribution, parameter_name))
-    print("Test Stat, K: {}".format(ks_stat))
-    print("P(K < {}) = {}".format(ks_stat, p_val))
+    if verbose:
 
-    if ks_stat > critical_val or p_val < alpha:
-        print("Reject H_0: The {} distribution is not a good fit at the {} % significance level."
-              .format(distribution, alpha * 100))
-    else:
-        print("There is not sufficient evidence to reject {} distribution as a good fit at the {} % significance level."
-              .format(distribution, alpha * 100))
+        print("-" * 60)
+        print("K-S Goodness of Fit of {} Distribution to {}: ".format(distribution, parameter_name))
+        print("Test Stat, K: {}".format(ks_stat))
+        print("P(K < {}) = {}".format(critical_val, p_val))
 
-    print("-" * 60)
+        if ks_stat > critical_val or p_val < alpha:
+            print("Reject H_0: The {} distribution is not a good fit at the {} % significance level."
+                  .format(distribution, alpha * 100))
+        else:
+            print("There is not sufficient evidence to reject {} distribution as a good fit at the {} % significance "
+                  "level.".format(distribution, alpha * 100))
+
+        print("-" * 60)
+
+    return [critical_val, ks_stat, p_val, ks_stat < critical_val and p_val > alpha]
 
 # REFERENCES
 
