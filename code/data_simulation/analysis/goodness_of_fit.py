@@ -153,9 +153,9 @@ def chi_squared_test(values, num_bins: int, distribution: str, significance=0.05
 
         if observed_counts.shape[0] < 5:
 
-            warnings.warn(f"The {distribution} PDF cannot be fit to the distribution of {parameter_name}, as there are less than 5 samples from "
-                          "which to include observed and expected counts (i.e. too many histogram bins had to be "
-                          "merged).")
+            warnings.warn(f"The {distribution} PDF cannot be fit to the distribution of {parameter_name}, as there are "
+                          f"less than 5 samples from which to include observed and expected counts (i.e. too many "
+                          f"histogram bins had to be merged).")
 
             return [np.nan, np.nan, np.nan, np.nan, False]
 

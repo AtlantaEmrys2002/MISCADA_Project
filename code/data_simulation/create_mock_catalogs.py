@@ -5,6 +5,8 @@ based on intensive distribution and correlation analysis.
 
 # LIBRARIES
 import argparse
+import copy
+import pandas as pd
 from pathlib import Path
 
 # Relative imports
@@ -17,7 +19,7 @@ import time
 from verification.visualisation import plot_correlation, plot_luminosity_function, plot_spatial_distribution
 
 
-def analysis(agn_rows, pulsar_rows, directory: str = "./plots/analysis"):
+def analysis(agn_rows, pulsar_rows, signif=0.01, directory: str = "./plots/analysis"):
     """Conducts a full analysis of all spectral (and one spatial) parameters for chosen gamma-ray sources. Included in
     this analysis is the fitting of a PDF to the parameters of all sources of a given type within the 4FGL, as well as
     a correlation analysis of these parameters.
@@ -51,11 +53,15 @@ def analysis(agn_rows, pulsar_rows, directory: str = "./plots/analysis"):
     print("PARAMETER DISTRIBUTION ANALYSIS")
     print('-' * 60)
 
-    prob_dist = ['normal', 'lognorm', 'cauchy']
+    prob_dist = ['normal', 'lognorm', 'cauchy', 'gumbel']
 
     # AGNs
 
     print("AGNs")
+
+    agn_results = [["Parameter", "Fitted PDF", "$\\nu$", "$\\Chi^2$", "$\\Chi^2_{\\text{min}}$",
+                    "$P(\\Chi^2; \\nu)$", "$\\Chi^2$ Accept $H_0$", "$D_{\\text{crit}}$", "K",
+                    "$P(K < D_{\\text{crit}})$", "KS Accept $H_0$"]]
 
     # Fit probability distributions and determine goodness-of-fit for each parameter
     for parameter in agns:
@@ -67,17 +73,21 @@ def analysis(agn_rows, pulsar_rows, directory: str = "./plots/analysis"):
         # Iterate over candidate distributions and fit each to parameters
         for dist in prob_dist:
             # Perform chi_squared goodness of fit test
-            chi_squared_test(values, num_bins=100, distribution=dist)
+            results_chi2 = chi_squared_test(copy.deepcopy(values), num_bins=60, distribution=dist, significance=signif)
 
             # Perform K-S goodness of fit test
-            kolmogorov_smirnov_test(values=values, distribution=dist)
+            results_ks = kolmogorov_smirnov_test(values=copy.deepcopy(values), distribution=dist, alpha=signif)
+
+            agn_results.append(tuple([values.name, dist] + results_chi2 + results_ks))
 
     # Plot AGN parameter distributions
     plot_parameter_distributions(agns, source_type='AGN', directory=directory + "/parameter_distributions")
 
     # Pulsars
 
-    print("Pulsars")
+    psr_results = [["Parameter", "Fitted PDF", "$\\nu$", "$\\Chi^2$", "$\\Chi^2_{\\text{min}}$",
+                    "$P(\\Chi^2; \\nu)$", "$\\Chi^2$ Accept $H_0$", "$D_{\\text{crit}}$", "K",
+                    "$P(K < D_{\\text{crit}})$", "KS Accept $H_0$"]]
 
     # Fit probability distributions and determine goodness-of-fit for each parameter
     for parameter in pulsars:
@@ -88,13 +98,27 @@ def analysis(agn_rows, pulsar_rows, directory: str = "./plots/analysis"):
         # Iterate over candidate distributions and fit each to parameters
         for dist in prob_dist:
             # Perform chi_squared goodness of fit test
-            chi_squared_test(values, num_bins=100, distribution=dist)
+            # chi_squared_test(values, num_bins=100, distribution=dist)
+            results_chi2 = chi_squared_test(copy.deepcopy(values), num_bins=30, distribution=dist, significance=signif)
 
             # Perform K-S goodness of fit test
-            kolmogorov_smirnov_test(values=values, distribution=dist)
+            results_ks = kolmogorov_smirnov_test(values=copy.deepcopy(values), distribution=dist, alpha=signif)
+
+            psr_results.append(tuple([values.name, dist] + results_chi2 + results_ks))
 
     # Plot pulsar parameter distributions
     plot_parameter_distributions(pulsars, source_type='Pulsars', directory=directory + "/parameter_distributions")
+
+    # Save Results
+
+    df_agn = pd.DataFrame(agn_results[1:], columns=agn_results[0])
+
+    df_psr = pd.DataFrame(psr_results[1:], columns=psr_results[0])
+
+    Path("./../results/analysis_results").mkdir(parents=True, exist_ok=True)
+
+    df_agn.to_csv("./../results/analysis_results/agn_parameter_analysis.csv", index=False)
+    df_psr.to_csv("./../results/analysis_results/psr_parameter_analysis.csv", index=False)
 
     # CORRELATION ANALYSIS
 

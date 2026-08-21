@@ -5,6 +5,7 @@ Methods for generating a series of realistic simulated AGN whose luminosity func
 from .agn_spectral_parameters import agn_flux_density, agn_spectral_slope, energy_flux_agn
 from astropy.table import QTable
 import numpy as np
+from scipy.stats import gumbel_r
 from .utils import luminosity_function_calculator
 
 
@@ -29,7 +30,9 @@ def agn_generator(agn_stats, energy_flux_low: np.float64 = 0., energy_flux_high:
     """
     # Default is effectively source with any energy flux
 
-    (mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn) = agn_stats
+    # (mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn) = agn_stats
+
+    (mean_log_pivot_energy_agn, std_log_pivot_energy_agn, beta_dist_params) = agn_stats
 
     while True:
 
@@ -56,7 +59,8 @@ def agn_generator(agn_stats, energy_flux_low: np.float64 = 0., energy_flux_high:
         spectral_slope = agn_spectral_slope(pivot_energy)[0]
 
         # Generate new curvature by directly sampling 4FGL
-        beta = np.random.choice(betas_agn)
+        # beta = np.random.choice(betas_agn)
+        beta = gumbel_r(*beta_dist_params).rvs()
 
         # Calculate energy flux of source
         energy_flux = energy_flux_agn(pivot_energy, flux_density, spectral_slope, beta)
@@ -132,6 +136,10 @@ def generate_mock_agn_catalog(catalog: str, agn_data, detection_threshold: np.fl
     # Select beta values and convert from masked to ordinary numpy array
     betas_agn = agn_data['LP_beta'].data.filled(np.nan)
 
+    # NEW - Gumbel distribution
+
+    beta_distribution_params = gumbel_r.fit(betas_agn)
+
     # Select pivot energy values
     pivot_energies = agn_data['Pivot_Energy'].value
 
@@ -158,7 +166,12 @@ def generate_mock_agn_catalog(catalog: str, agn_data, detection_threshold: np.fl
                                                                    target_counts[target_peak:])):
 
         # Due to uncomplimentary functionality - need max of intervals[:-1] - see reference to Digitize Error
-        new_source = agn_generator((mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn),
+        # new_source = agn_generator((mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn),
+        #                            energy_flux_low=np.min(target_bin_intervals),
+        #                            energy_flux_high=np.max(target_bin_intervals[:-1]))
+
+        new_source = agn_generator((mean_log_pivot_energy_agn, std_log_pivot_energy_agn,
+                                    beta_distribution_params),
                                    energy_flux_low=np.min(target_bin_intervals),
                                    energy_flux_high=np.max(target_bin_intervals[:-1]))
 
