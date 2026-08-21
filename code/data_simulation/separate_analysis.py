@@ -116,7 +116,7 @@ def analysis(agn_rows, pulsar_rows, signif=0.01, directory: str = "./plots/analy
     Path("./../results/analysis_results").mkdir(parents=True, exist_ok=True)
 
     df_agn.to_csv("./../results/analysis_results/agn_parameter_analysis.csv", index=False)
-    df_psr.to_csv("./../results/analysis_results/psr_parameter_analysis.csv", index=False)
+    # df_psr.to_csv("./../results/analysis_results/psr_parameter_analysis.csv", index=False)
 
     # CORRELATION ANALYSIS
 
