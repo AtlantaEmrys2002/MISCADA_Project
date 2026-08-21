@@ -62,19 +62,6 @@ ls $RAWDATAFILES/*.fits > $LIST
 
 # gtpsf expcube=$FERMILIVETIMECUBE outfile=$POINTSOURCEPSF irfs=P8R3_ULTRACLEANVETO_V3 ra=252.131996 dec=41.585827 emin=300 emax=200000 nenergies=5 thetamax=50 ntheta=300 evtype=3
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 # Deactivate Fermi environment
 conda deactivate
 

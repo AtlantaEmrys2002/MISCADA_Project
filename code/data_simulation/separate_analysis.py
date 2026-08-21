@@ -2,7 +2,16 @@
 This function is for running a separate analysis of 4FGL parameters without generating catalogs.
 '''
 
-def analysis(agn_rows, pulsar_rows, directory: str = "./plots/analysis"):
+
+from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
+from analysis.visualisation import *
+import copy
+import numpy as np
+from pathlib import Path
+from read_write_functions import catalog_data_preparation
+
+
+def analysis(agn_rows, pulsar_rows, signif=0.05, directory: str = "./plots/analysis"):
     """Conducts a full analysis of all spectral (and one spatial) parameters for chosen gamma-ray sources. Included in
     this analysis is the fitting of a PDF to the parameters of all sources of a given type within the 4FGL, as well as
     a correlation analysis of these parameters.
@@ -36,7 +45,7 @@ def analysis(agn_rows, pulsar_rows, directory: str = "./plots/analysis"):
     print("PARAMETER DISTRIBUTION ANALYSIS")
     print('-' * 60)
 
-    prob_dist = ['normal', 'lognorm', 'cauchy']
+    prob_dist = ['normal', 'lognorm', 'cauchy', 'gumbel']
 
     # AGNs
 
@@ -52,10 +61,10 @@ def analysis(agn_rows, pulsar_rows, directory: str = "./plots/analysis"):
         # Iterate over candidate distributions and fit each to parameters
         for dist in prob_dist:
             # Perform chi_squared goodness of fit test
-            chi_squared_test(values, num_bins=100, distribution=dist)
+            chi_squared_test(copy.deepcopy(values), num_bins=60, distribution=dist, significance=signif)
 
             # Perform K-S goodness of fit test
-            kolmogorov_smirnov_test(values=values, distribution=dist)
+            kolmogorov_smirnov_test(values=copy.deepcopy(values), distribution=dist, alpha=signif)
 
     # Plot AGN parameter distributions
     plot_parameter_distributions(agns, source_type='AGN', directory=directory + "/parameter_distributions")
@@ -73,10 +82,11 @@ def analysis(agn_rows, pulsar_rows, directory: str = "./plots/analysis"):
         # Iterate over candidate distributions and fit each to parameters
         for dist in prob_dist:
             # Perform chi_squared goodness of fit test
-            chi_squared_test(values, num_bins=100, distribution=dist)
+            # chi_squared_test(values, num_bins=100, distribution=dist)
+            chi_squared_test(copy.deepcopy(values), num_bins=30, distribution=dist, significance=signif)
 
             # Perform K-S goodness of fit test
-            kolmogorov_smirnov_test(values=values, distribution=dist)
+            kolmogorov_smirnov_test(values=copy.deepcopy(values), distribution=dist, alpha=signif)
 
     # Plot pulsar parameter distributions
     plot_parameter_distributions(pulsars, source_type='Pulsars', directory=directory + "/parameter_distributions")
@@ -127,3 +137,19 @@ def analysis(agn_rows, pulsar_rows, directory: str = "./plots/analysis"):
                                                 source_type="Pulsar", directory=directory + "/parameter_correlations")
 
 
+agn_4fgl, pulsar_4fgl, source_detection_threshold = catalog_data_preparation("/Volumes/T7/data/catalog/4FGL_DR4.fit")
+
+# unique, counts = np.unique(agn_4fgl["LP_beta"].data.filled(np.nan)[~np.isnan(agn_4fgl["LP_beta"].data.filled(np.nan))], return_counts=True)
+
+# print(len(unique))
+# print(np.min(unique), np.max(unique))
+
+print("Number of AGN: {}".format(len(agn_4fgl)))
+print("Number of Pulsars: {}".format(len(pulsar_4fgl)))
+
+analysis(agn_4fgl.copy(), pulsar_4fgl.copy(), signif=0.01)
+
+
+# REFERENCES
+# K-S Test Mean and Sigma - https://medium.com/@pabaldonedo/kolmogorov-smirnov-test-may-not-be-doing-what-you-think-when
+# -parameters-are-estimated-from-the-data-2d5c3303a020

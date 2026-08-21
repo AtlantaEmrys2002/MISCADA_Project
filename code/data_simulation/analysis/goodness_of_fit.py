@@ -3,10 +3,10 @@ Methods for determining the goodness of fit of well-known PDFs to the histograms
 """
 
 import numpy as np
-from scipy.stats import cauchy, chi2, kstest, lognorm, Normal
+from scipy.stats import cauchy, chi2, gumbel_r, kstest, lognorm, Normal
 
 
-def chi_squared_test(values, num_bins: int, distribution: str) -> None:
+def chi_squared_test(values, num_bins: int, distribution: str, significance=0.05) -> None:
     """Applies chi-squared test, fitting a specified distribution to a series of observations, to determine if the PDF
     is suitable for modelling the distribution of the histogram of values.
 
@@ -18,6 +18,8 @@ def chi_squared_test(values, num_bins: int, distribution: str) -> None:
         PDF that user believes would fit parameter values well.
     num_bins :
         Number of bins in which to bin value data to create histogram.
+    significance :
+        Probability at which to reject null hypothesis.
 
     """
     parameter_name = values.name
@@ -51,6 +53,14 @@ def chi_squared_test(values, num_bins: int, distribution: str) -> None:
 
             X = cauchy(*params)
 
+        # NEW
+
+        case "gumbel":
+
+            params = gumbel_r.fit(values)
+
+            X = gumbel_r(*params)
+
         case _:
 
             raise NameError("That probability distribution is not built in to chi_squared_test().")
@@ -81,32 +91,86 @@ def chi_squared_test(values, num_bins: int, distribution: str) -> None:
         observed_counts = np.array([observed_counts[x] for x in range(len(observed_counts)) if expected_counts[x] > 0])
         expected_counts = np.array([x for x in expected_counts if x > 0])
 
-        # n.b. both normal and log-normal have two free parameters to be fitted
-        degrees_of_freedom = num_bins - 2 - 1
+        # MERGE BINS TO MEET MINIMUM ASSUMPTIONS OF CHI2
 
-        test_statistic = np.sum(((observed_counts - expected_counts) ** 2) / expected_counts)
+        # Ensures sample size assumptions are met - https://sites.utexas.edu/sos/guided/inferential/categorical/univari
+        # ate/chi2/ - merge bins that do not have enough counts
+        while np.min(expected_counts) < 1 and np.sum(expected_counts > 5)/expected_counts.shape[0] < 0.8:
 
-        reduced_chi_squared_min = test_statistic / degrees_of_freedom
+            tmp_o = []
 
-        chi_squared_distribution = chi2(df=degrees_of_freedom)
+            tmp_e = []
 
-        # Ideally about 0.5
-        cdf_probability = 1 - chi_squared_distribution.cdf(test_statistic)
+            for k in range(expected_counts.shape[0] - 1):
 
-        print("-" * 60)
-        print("Chi-Squared Goodness of Fit of {} Distribution to {}: ".format(distribution, parameter_name))
+                if expected_counts[k] < 1:
 
-        print("Chi Squared Min Test Statistic, X^2_min: {}".format(test_statistic))
-        print("P(X^2_min; {}) = {}".format(degrees_of_freedom, cdf_probability))
+                    tmp_o.append(observed_counts[k] + observed_counts[k + 1])
+                    tmp_e.append(expected_counts[k] + expected_counts[k + 1])
 
-        print("Reduced Chi-Squared Min Statistic: {}".format(reduced_chi_squared_min))
+                    for i in range(k + 2, expected_counts.shape[0]):
+                        tmp_o.append(observed_counts[i])
 
-        if cdf_probability < 0.01 or reduced_chi_squared_min > 2:
-            print("Reject H_0: The {} distribution is not a good fit.".format(distribution))
+                    for i in range(k + 2, expected_counts.shape[0]):
+                        tmp_e.append(expected_counts[i])
+
+                    expected_counts = np.array(tmp_e)
+                    observed_counts = np.array(tmp_o)
+
+                    break
+
+                else:
+
+                    tmp_o.append(observed_counts[k])
+                    tmp_e.append(expected_counts[k])
+
+                if k == expected_counts.shape[0] - 2:
+
+                    tmp_o.append(observed_counts[k + 1])
+                    tmp_e.append(observed_counts[k + 1])
+
+                    expected_counts = np.array(tmp_e)
+                    observed_counts = np.array(tmp_o)
+
+        if observed_counts.shape[0] < 5:
+
+            print("-" * 60)
+            print("The {} distribution cannot be fit, as there are less than 5 samples from which to include observed"
+                  "and expected counts (i.e. too many histogram bins had to be merged).".format(distribution))
+            print("-" * 60)
+
         else:
-            print("There is not sufficient evidence to reject {} distribution as a good fit.".format(distribution))
 
-        print("-" * 60)
+            # n.b. both normal, log-normal, gumbel, and cauchy have two free parameters to be fitted
+            # degrees_of_freedom = num_bins - 2 - 1
+
+            degrees_of_freedom = observed_counts.shape[0] - 2 - 1
+
+            test_statistic = np.sum(((observed_counts - expected_counts) ** 2) / expected_counts)
+
+            reduced_chi_squared_min = test_statistic / degrees_of_freedom
+
+            chi_squared_distribution = chi2(df=degrees_of_freedom)
+
+            # Ideally about 0.5
+            cdf_probability = 1 - chi_squared_distribution.cdf(test_statistic)
+
+            print("-" * 60)
+            print("Chi-Squared Goodness of Fit of {} Distribution to {}: ".format(distribution, parameter_name))
+
+            print("Degrees of Freedom: {}".format(degrees_of_freedom))
+
+            print("Chi Squared Min Test Statistic, X^2_min: {}".format(test_statistic))
+            print("P(X^2_min; {}) = {}".format(degrees_of_freedom, cdf_probability))
+
+            print("Reduced Chi-Squared Min Statistic: {}".format(reduced_chi_squared_min))
+
+            if cdf_probability < significance: # or reduced_chi_squared_min > 2:
+                print("Reject H_0: The {} distribution is not a good fit.".format(distribution))
+            else:
+                print("There is not sufficient evidence to reject {} distribution as a good fit.".format(distribution))
+
+            print("-" * 60)
 
     else:
 
@@ -135,8 +199,25 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05) -> None:
 
     parameter_name = values.name
 
+    # NEW - article cited in paper and below shows that extracting the parameters of the distribution from the sample
+    # can lead to incorrect results - therefore, use half the values to determine the parameters of the best fit of the
+    # distribution to the values and the other half to calculate test stat.
+
+    num_samples = values.shape[0] // 2
+
+    # Scramble the values
+    values_tmp = np.random.choice(a=values, size=values.shape[0], replace=False)
+
+    values = values_tmp[:num_samples]
+
+    test_values = values_tmp[num_samples:]
+
+    mean, sigma = np.mean(test_values), np.std(test_values, ddof=1)
+
+    # UNCOMMENT BELOW IF IT DOES NOT WORK
+
     # used for creating specific distribution
-    mean, sigma = np.mean(values), np.std(values, ddof=1)
+    # mean, sigma = np.mean(values), np.std(values, ddof=1)
 
     match distribution:
 
@@ -162,19 +243,24 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05) -> None:
 
             ks_stat, p_val = kstest(values, x.cdf)
 
+        # NEW
+
+        case "gumbel":
+
+            params = gumbel_r.fit(values)
+
+            x = gumbel_r(*params)
+
+            ks_stat, p_val = kstest(values, x.cdf)
+
         case _:
 
             raise NameError("That probability distribution is not built in to kolmogorov_smirnov_test().")
+    #
+    # number_of_sources = len(values)
 
-    number_of_sources = len(values)
-
-    if alpha == 0.05:
-        # 5% significance
-        critical_val = 1.35810 / np.sqrt(number_of_sources)
-
-    else:
-        # 10% significance
-        critical_val = 1.22385 / np.sqrt(number_of_sources)
+    # E.g. if 5% significance, critical value is 1.358
+    critical_val = np.sqrt(-1 * np.log(alpha / 2) * 0.5) * np.sqrt(2 / np.sqrt(num_samples))
 
     print("-" * 60)
     print("K-S Goodness of Fit of {} Distribution to {}: ".format(distribution, parameter_name))
@@ -212,6 +298,7 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05) -> None:
 # for-a-k-s-test
 # Kolmogorov-Smirnov Statistic - https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test
 # K-S Table - https://real-statistics.com/statistics-tables/kolmogorov-smirnov-table/
+# K-S Test Critical Value - https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test
 # K-S Test Tutorial - https://www.geeksforgeeks.org/machine-learning/kolmogorov-smirnov-test-ks-test/
 # K-S Test Unexpected Values - https://stackoverflow.com/questions/51902996/scipy-kstest-used-on-scipy-lognormal-
 # distribution

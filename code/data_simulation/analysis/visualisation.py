@@ -5,7 +5,7 @@ Functions for visualising the analysis conducted on 4FGL sources' spectral and s
 from itertools import combinations, product
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.stats import cauchy, lognorm, norm
+from scipy.stats import cauchy, gumbel_r, lognorm, norm
 from .utils import log_normal_parameter
 import seaborn as sns
 from sklearn.metrics import root_mean_squared_error
@@ -309,6 +309,12 @@ def plot_parameter_distributions(sources, source_type: str, directory: str) -> N
         cauchy_params = cauchy.fit(values, floc=0)
 
         subplot.plot(x_values, cauchy.pdf(x_values, *cauchy_params), label="Cauchy", color='green')
+
+        # NEW
+
+        gumbel_params = gumbel_r.fit(values)
+
+        subplot.plot(x_values, gumbel_r.pdf(x_values, *gumbel_params), label="Gumbel", color='purple')
 
         # Long line
         long_line = "\n"
