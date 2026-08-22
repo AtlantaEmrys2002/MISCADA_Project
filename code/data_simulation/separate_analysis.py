@@ -11,6 +11,10 @@ from pathlib import Path
 from read_write_functions import catalog_data_preparation
 
 
+# DELETE THIS AT THE END - JUST USED FOR GETTING NUMBERS FROM 4FGL CATALOG
+
+
+
 # def analysis(agn_rows, pulsar_rows, signif=0.01, directory: str = "./plots/analysis"):
 #     """Conducts a full analysis of all spectral (and one spatial) parameters for chosen gamma-ray sources. Included in
 #     this analysis is the fitting of a PDF to the parameters of all sources of a given type within the 4FGL, as well as
