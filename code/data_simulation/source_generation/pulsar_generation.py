@@ -6,7 +6,7 @@ catalog.
 from astropy.table import QTable
 import numpy as np
 from .pulsar_spectral_parameters import energy_flux_pulsar, pulsar_flux_density
-from scipy.stats import cauchy, gumbel_r
+from scipy.stats import cauchy, gumbel_r, lognorm, norm
 from .utils import luminosity_function_calculator
 
 
@@ -29,15 +29,8 @@ def pulsar_generator(pulsar_stats, energy_flux_low: np.float64 = 0., energy_flux
 
     """
 
-    # (mean_log_Gamma_pulsars, std_log_Gamma_pulsars, mean_log_a_pulsars, std_log_a_pulsars,
-    #  mean_log_flux_density_pulsars, std_log_flux_density_pulsars, mean_log_pivot_energy_pulsars,
-    #  std_log_pivot_energy_pulsars, choice_values, new_weights) = pulsar_stats
-    # (mean_Gamma_pulsars, std_Gamma_pulsars, mean_log_a_pulsars, std_log_a_pulsars,
-    #  mean_log_flux_density_pulsars, std_log_flux_density_pulsars, mean_log_pivot_energy_pulsars,
-    #  std_log_pivot_energy_pulsars, choice_values, new_weights) = pulsar_stats
-    (mean_Gamma_pulsars, std_Gamma_pulsars, a_distribution_parameters,
-     mean_log_flux_density_pulsars, std_log_flux_density_pulsars, mean_log_pivot_energy_pulsars,
-     std_log_pivot_energy_pulsars, choice_values, new_weights) = pulsar_stats
+    (mean_Gamma_pulsars, std_Gamma_pulsars, a_distribution_parameters, mean_log_pivot_energy_pulsars,
+     std_log_pivot_energy_pulsars, choice_values, new_weights, gamma_noise_std, a_noise_std) = pulsar_stats
 
     while True:
 
@@ -45,7 +38,7 @@ def pulsar_generator(pulsar_stats, energy_flux_low: np.float64 = 0., energy_flux
 
         # Generate new pivot energies - in ID8, they randomly select pivot energies from a Gaussian distribution.
         # However, the distribution of pivot energies in the 4FGL follows log-normal more precise
-        pivot_energy = np.random.lognormal(mean=mean_log_pivot_energy_pulsars, sigma=std_log_pivot_energy_pulsars)
+        pivot_energy = (np.random.lognormal(mean=mean_log_pivot_energy_pulsars, sigma=std_log_pivot_energy_pulsars))
 
         # Generate new flux densities - log-normal for flux densities was initially used then used cubic correlation
         # of log pivot energy and log flux density
@@ -53,16 +46,19 @@ def pulsar_generator(pulsar_stats, energy_flux_low: np.float64 = 0., energy_flux
 
         # Generate new spectral slopes (Gammas) - Gaussian distribution most likely
         # (see chi-squared test)
-        # spectral_slope = np.random.lognormal(mean=mean_log_Gamma_pulsars, sigma=std_log_Gamma_pulsars)
-        spectral_slope = np.random.normal(loc=mean_Gamma_pulsars, scale=std_Gamma_pulsars)
+        # spectral_slope = np.random.normal(loc=mean_Gamma_pulsars, scale=std_Gamma_pulsars)
+
+        # NEW - with noise
+
+        spectral_slope = (np.random.normal(loc=mean_Gamma_pulsars, scale=std_Gamma_pulsars) +
+                          np.random.normal(loc=0, scale=gamma_noise_std))
 
         # Generate new exponential factors (as)
-        # exponential_factor = np.random.lognormal(mean=mean_log_a_pulsars, sigma=std_log_a_pulsars)
+        # exponential_factor = gumbel_r(*a_distribution_parameters).rvs()
 
-        # NEW - Gumbel distribution
+        # NEW - with noise
 
-        exponential_factor = gumbel_r(*a_distribution_parameters).rvs()
-
+        exponential_factor = gumbel_r(*a_distribution_parameters).rvs() + np.random.normal(loc=0, scale=a_noise_std)
 
         # Generate new exponential indices (bs) - changed to random choice instead of ID8's Gaussian
         exponential_index = np.random.choice(choice_values, p=new_weights)
@@ -71,23 +67,30 @@ def pulsar_generator(pulsar_stats, energy_flux_low: np.float64 = 0., energy_flux
         energy_flux = energy_flux_pulsar(pivot_energy, flux_density, spectral_slope, exponential_index,
                                          exponential_factor)
 
-        # Check energy flux in given range AND that the energy flux is valid
-        if (energy_flux >= energy_flux_low) and (energy_flux < energy_flux_high) and (~np.isnan(energy_flux)):
-            # SPATIAL PARAMETERS
+        # NEW
 
-            # l - uniform distribution assumed
-            longitude = np.random.uniform(low=-(2 * np.pi), high=2 * np.pi)
+        with np.errstate(over="ignore"):
 
-            # b - double Gaussian - two overlapping sampled as one
 
-            # Randomly sample pulsar latitudes from distribution created above
-            latitude = cauchy(loc=0, scale=np.float64(0.018077045649988577)).rvs()
 
-            # Clip to correct range
-            latitude = np.clip(latitude, a_min=-np.pi / 2, a_max=np.pi / 2)
+            # Check energy flux in given range AND that the energy flux is valid
+            # if (energy_flux >= energy_flux_low) and (energy_flux < energy_flux_high) and (~np.isnan(energy_flux)):
+            if (energy_flux >= energy_flux_low) and (energy_flux < energy_flux_high) and (np.isfinite(energy_flux)):
+                # SPATIAL PARAMETERS
 
-            return np.asarray([pivot_energy, flux_density, spectral_slope, exponential_index, exponential_factor,
-                               energy_flux, longitude, latitude])
+                # l - uniform distribution assumed
+                longitude = np.random.uniform(low=-(2 * np.pi), high=2 * np.pi)
+
+                # b - double Gaussian - two overlapping sampled as one
+
+                # Randomly sample pulsar latitudes from distribution created above
+                latitude = cauchy(loc=0, scale=np.float64(0.018077045649988577)).rvs()
+
+                # Clip to correct range
+                latitude = np.clip(latitude, a_min=-np.pi / 2, a_max=np.pi / 2)
+
+                return np.asarray([pivot_energy, flux_density, spectral_slope, exponential_index, exponential_factor,
+                                   energy_flux, longitude, latitude])
 
 
 def luminosity_function_pulsar(catalog: str, detection_threshold):
@@ -124,7 +127,7 @@ def luminosity_function_pulsar(catalog: str, detection_threshold):
                                           detection_threshold=detection_threshold, num_bins=10)
 
 
-def generate_mock_pulsar_catalog(catalog: str, pulsars, detection_threshold):
+def generate_mock_pulsar_catalog(catalog: str, pulsars, noise_params, detection_threshold):
     """Generates an array of simulated pulsar sources with realistic energy spectra and spatial locations within the
     sky.
 
@@ -150,35 +153,33 @@ def generate_mock_pulsar_catalog(catalog: str, pulsars, detection_threshold):
     # Select Gamma values and convert from masked to ordinary numpy array
     Gammas = pulsars['PLEC_IndexS'].data.filled(np.nan)
 
+    # NEW NOISE
+
+    gamma_noise = noise_params["Unc_PLEC_IndexS"].data.filled(np.nan)[
+        ~np.isnan(noise_params["Unc_PLEC_IndexS"].data.filled(np.nan))]
+
+    gamma_noise_std = np.sqrt(np.sum(gamma_noise ** 2) / gamma_noise.shape[0])
+
+
+
     # Select exponential indices
     b_values = pulsars['PLEC_Exp_Index'].data.filled(np.nan)
 
     # Select index a values
     a_values = pulsars['PLEC_ExpfactorS'].data
 
-    # Select flux density values
-    flux_densities = pulsars['PLEC_Flux_Density'].value
-    log_flux_densities = np.log(flux_densities)
+    # NEW NOISE
+
+    a_noise = noise_params["Unc_PLEC_ExpfactorS"].data.filled(np.nan)[
+        ~np.isnan(noise_params["Unc_PLEC_ExpfactorS"].data.filled(np.nan))]
+
+    a_noise_std = np.sqrt(np.sum(a_noise ** 2) / a_noise.shape[0])
 
     # Log-normal for Gamma even though says Gaussian in ID8
-    # log_Gammas = np.log(Gammas)
-    #
-    # mean_log_Gamma_pulsars, std_log_Gamma_pulsars = np.nanmean(log_Gammas), np.nanstd(log_Gammas, ddof=1)
-
     mean_Gamma_pulsars, std_Gamma_pulsars = np.nanmean(Gammas), np.nanstd(Gammas, ddof=1)
 
-    #  log_a_values = np.log(a_values)
-
     # Log-normal for values (ID8 recommends Gaussian)
-    # mean_log_a_pulsars, std_log_a_pulsars = np.nanmean(log_a_values), np.nanstd(log_a_values, ddof=1)
-
     a_distribution_parameters = gumbel_r.fit(a_values)
-
-
-
-
-    mean_log_flux_density_pulsars, std_log_flux_density_pulsars = (np.nanmean(log_flux_densities),
-                                                                   np.nanstd(log_flux_densities))
 
     # Log-normal for pivot energy even though ID8 says Gaussian
     log_pivot_energies = np.log(pivot_energies)
@@ -193,17 +194,8 @@ def generate_mock_pulsar_catalog(catalog: str, pulsars, detection_threshold):
     # Divide by number of pulsars in 4FGL to get probabilities
     new_weights = unique_values.counts / b_values.shape[0]
 
-    # pulsar_stats = (mean_log_Gamma_pulsars, std_log_Gamma_pulsars, mean_log_a_pulsars, std_log_a_pulsars,
-    #                 mean_log_flux_density_pulsars, std_log_flux_density_pulsars, mean_log_pivot_energy_pulsars,
-    #                 std_log_pivot_energy_pulsars, choice_values, new_weights)
-
-    # pulsar_stats = (mean_Gamma_pulsars, std_Gamma_pulsars, mean_log_a_pulsars, std_log_a_pulsars,
-    #                 mean_log_flux_density_pulsars, std_log_flux_density_pulsars, mean_log_pivot_energy_pulsars,
-    #                 std_log_pivot_energy_pulsars, choice_values, new_weights)
-
-    pulsar_stats = (mean_Gamma_pulsars, std_Gamma_pulsars, a_distribution_parameters,
-                    mean_log_flux_density_pulsars, std_log_flux_density_pulsars, mean_log_pivot_energy_pulsars,
-                    std_log_pivot_energy_pulsars, choice_values, new_weights)
+    pulsar_stats = (mean_Gamma_pulsars, std_Gamma_pulsars, a_distribution_parameters, mean_log_pivot_energy_pulsars,
+                    std_log_pivot_energy_pulsars, choice_values, new_weights, gamma_noise_std, a_noise_std)
 
     # CREATE NEW SOURCES
 

@@ -25,7 +25,7 @@ def luminosity_function_calculator(energy_fluxes_4fgl, n_min, detection_threshol
 
     """
     # The minimum energy flux of our generated sources is an order of magnitude less than the 4FGL
-    our_threshold = detection_threshold / 10
+    our_threshold = detection_threshold / 1.5
 
     # Following method detailed in ID8
 

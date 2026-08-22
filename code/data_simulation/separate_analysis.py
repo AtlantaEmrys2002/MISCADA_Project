@@ -178,7 +178,7 @@ agn_4fgl = agn_4fgl.to_pandas()
 agn_4fgl.dropna(inplace=True)
 
 mask = ~np.isnan(agn_4fgl["LP_beta"])
-values = agn_4fgl["LP_beta"][mask]
+values = agn_4fgl["LP_beta"][~np.isnan(agn_4fgl["LP_beta"])]
 
 print(gumbel_r.fit(values))
 

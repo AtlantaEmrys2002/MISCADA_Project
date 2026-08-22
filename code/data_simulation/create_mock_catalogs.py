@@ -84,7 +84,6 @@ def analysis(agn_rows, pulsar_rows, signif=0.01, directory: str = "./plots/analy
     plot_parameter_distributions(agns, source_type='AGN', directory=directory + "/parameter_distributions")
 
     # Pulsars
-
     psr_results = [["Parameter", "Fitted PDF", "$\\nu$", "$\\Chi^2$", "$\\Chi^2_{\\text{min}}$",
                     "$P(\\Chi^2; \\nu)$", "$\\Chi^2$ Accept $H_0$", "$D_{\\text{crit}}$", "K",
                     "$P(K < D_{\\text{crit}})$", "KS Accept $H_0$"]]
@@ -166,7 +165,7 @@ def analysis(agn_rows, pulsar_rows, signif=0.01, directory: str = "./plots/analy
                                                 source_type="Pulsar", directory=directory + "/parameter_correlations")
 
 
-def create_catalog(fermi_catalog: str, data_4fgl: tuple, threshold, verify: bool = False):
+def create_catalog(fermi_catalog: str, data_4fgl: tuple, threshold, noise_params:tuple, verify: bool = False):
     """Creates a catalog of simulated AGN and pulsar sources given the 4FGL data from which to sample realistic
     parameter values and an energy flux from below which the luminosity function must be extrapolated.
 
@@ -196,11 +195,13 @@ def create_catalog(fermi_catalog: str, data_4fgl: tuple, threshold, verify: bool
 
     # Generate simulated AGN sources
 
-    simulated_agn = generate_mock_agn_catalog(fermi_catalog, lat_agn, detection_threshold=threshold)
+    simulated_agn = generate_mock_agn_catalog(fermi_catalog, lat_agn, agn_noise_params,
+                                              detection_threshold=threshold)
 
     # Generate simulated pulsar sources
 
-    simulated_pulsar = generate_mock_pulsar_catalog(fermi_catalog, lat_pulsar, detection_threshold=threshold)
+    simulated_pulsar = generate_mock_pulsar_catalog(fermi_catalog, lat_pulsar, psr_noise_params,
+                                                    detection_threshold=threshold)
 
     end = time.time()
 
@@ -328,7 +329,8 @@ if __name__ == "__main__":
     print("READ DATA: ", end='')
 
     # Read in catalog data
-    agn_4fgl, pulsar_4fgl, source_detection_threshold = catalog_data_preparation(file)
+    agn_4fgl, pulsar_4fgl, source_detection_threshold, agn_noise_params, psr_noise_params = (
+        catalog_data_preparation(file))
 
     print("DONE")
 
@@ -362,6 +364,7 @@ if __name__ == "__main__":
 
         new_agns, new_pulsars, generation_time = create_catalog(fermi_catalog=file, data_4fgl=(agn_4fgl.copy(),
                                                                                                pulsar_4fgl.copy()),
+                                                                noise_params=(agn_noise_params.copy(), psr_noise_params.copy()),
                                                                 threshold=source_detection_threshold, verify=run_verify)
 
         total_time += generation_time

@@ -126,9 +126,12 @@ def catalog_data_preparation(file_name: str):
     # Assume catalog data conforms to standard NASA format
     catalog = QTable.read(file_name, format='fits', hdu=1)
 
+    print(catalog.columns)
+
     # Select relevant columns
     columns = ("Pivot_Energy", "LP_Flux_Density", "PLEC_Flux_Density", "LP_Index", "LP_beta", "PLEC_IndexS",
-               "PLEC_Exp_Index", "PLEC_ExpfactorS", "CLASS1", "GLAT")
+               "PLEC_Exp_Index", "PLEC_ExpfactorS", "CLASS1", "GLAT", "Unc_LP_beta", "Unc_PLEC_IndexS",
+               "Unc_PLEC_ExpfactorS")
 
     # Find detection threshold of sources (characterised by minimum energy flux)
     source_detection_threshold = np.min(catalog["Energy_Flux100"].value)
@@ -151,6 +154,9 @@ def catalog_data_preparation(file_name: str):
     agn_data = catalog[agn_mask].copy()
     pulsar_data = catalog[pulsar_mask].copy()
 
+    agn_noise = agn_data["Unc_LP_beta"].copy()
+    pulsar_noise = pulsar_data["Unc_PLEC_IndexS", "Unc_PLEC_ExpfactorS"].copy()
+
     # Select relevant columns for each source type
 
     # N.B. remove spatial column for AGNS - AGNs are known to be approximately isotropically distributed on the sky
@@ -163,7 +169,7 @@ def catalog_data_preparation(file_name: str):
     pulsar_data["GLAT"] = pulsar_data["GLAT"].to(u.rad)
 
     # Separate into AGN and pulsars
-    return agn_data, pulsar_data, source_detection_threshold
+    return agn_data, pulsar_data, source_detection_threshold, agn_noise, pulsar_noise
 
 
 def pulsar_xml_writer(sources, root, xml):

@@ -5,7 +5,7 @@ Methods for generating a series of realistic simulated AGN whose luminosity func
 from .agn_spectral_parameters import agn_flux_density, agn_spectral_slope, energy_flux_agn
 from astropy.table import QTable
 import numpy as np
-from scipy.stats import gumbel_r
+from scipy.stats import gumbel_r, lognorm
 from .utils import luminosity_function_calculator
 
 
@@ -30,9 +30,7 @@ def agn_generator(agn_stats, energy_flux_low: np.float64 = 0., energy_flux_high:
     """
     # Default is effectively source with any energy flux
 
-    # (mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn) = agn_stats
-
-    (mean_log_pivot_energy_agn, std_log_pivot_energy_agn, beta_dist_params) = agn_stats
+    (mean_log_pivot_energy_agn, std_log_pivot_energy_agn, beta_dist_params, beta_noise_std) = agn_stats
 
     while True:
 
@@ -43,8 +41,8 @@ def agn_generator(agn_stats, energy_flux_low: np.float64 = 0., energy_flux_high:
         # Although ID8 stated that they only randomly sampled flux densities according to a log-normal distribution, a
         # log-normal distribution fits pivot energies much better than their recommended Gaussian (and this makes sense
         # as differential flux density and pivot energy are correlated). Therefore, I have changed the way pivot
-        # energies are randomly generated (and now use a log-normal distribution)
-        pivot_energy = np.random.lognormal(mean=mean_log_pivot_energy_agn, sigma=std_log_pivot_energy_agn)
+        # energies are randomly generated (and now use a log-normal distribution). There is no uncertainty in PE in 4FGL
+        pivot_energy = (np.random.lognormal(mean=mean_log_pivot_energy_agn, sigma=std_log_pivot_energy_agn))
 
         # Flux densities and pivot energies are correlated and depend on one another - therefore, I fitted a polynomial
         # relationship to the log of both values and add noise to improve data realism instead of randomly sampling
@@ -59,23 +57,33 @@ def agn_generator(agn_stats, energy_flux_low: np.float64 = 0., energy_flux_high:
         spectral_slope = agn_spectral_slope(pivot_energy)[0]
 
         # Generate new curvature by directly sampling 4FGL
-        # beta = np.random.choice(betas_agn)
-        beta = gumbel_r(*beta_dist_params).rvs()
+        # beta = gumbel_r(*beta_dist_params).rvs()
+
+
+        # ADD NOISE
+
+        beta = gumbel_r(*beta_dist_params).rvs() + np.random.normal(loc=0, scale=beta_noise_std)
+
 
         # Calculate energy flux of source
         energy_flux = energy_flux_agn(pivot_energy, flux_density, spectral_slope, beta)
 
-        if (energy_flux >= energy_flux_low) and (energy_flux < energy_flux_high) and (~np.isnan(energy_flux)):
-            # SPATIAL PARAMETERS
+        # IS NEW
 
-            # longitude
-            longitude = np.random.uniform(low=-(2 * np.pi), high=2 * np.pi)
 
-            # latitude
-            sin_galactic_latitudes = np.random.uniform(low=-1, high=1)
-            latitude = np.arcsin(sin_galactic_latitudes)
+        with np.errstate(over="ignore"):
 
-            return np.array([pivot_energy, flux_density, spectral_slope, beta, energy_flux, longitude, latitude])
+            if (energy_flux >= energy_flux_low) and (energy_flux < energy_flux_high) and (np.isfinite(energy_flux)):
+                # SPATIAL PARAMETERS
+
+                # longitude
+                longitude = np.random.uniform(low=-(2 * np.pi), high=2 * np.pi)
+
+                # latitude
+                sin_galactic_latitudes = np.random.uniform(low=-1, high=1)
+                latitude = np.arcsin(sin_galactic_latitudes)
+
+                return np.array([pivot_energy, flux_density, spectral_slope, beta, energy_flux, longitude, latitude])
 
 
 def luminosity_function_agn(catalog: str, detection_threshold: np.float64):
@@ -109,7 +117,8 @@ def luminosity_function_agn(catalog: str, detection_threshold: np.float64):
                                           detection_threshold=detection_threshold)
 
 
-def generate_mock_agn_catalog(catalog: str, agn_data, detection_threshold: np.float64 = np.float64(1.0 * 10 ** (-12))):
+def generate_mock_agn_catalog(catalog: str, agn_data, noise_params,
+                              detection_threshold: np.float64 = np.float64(1.0 * 10 ** (-12))):
     """Generates an array of simulated AGN sources with realistic energy spectra and spatial locations within the sky.
 
     Parameters
@@ -138,7 +147,14 @@ def generate_mock_agn_catalog(catalog: str, agn_data, detection_threshold: np.fl
 
     # NEW - Gumbel distribution
 
-    beta_distribution_params = gumbel_r.fit(betas_agn)
+    beta_distribution_params = gumbel_r.fit(betas_agn[~np.isnan(betas_agn)])
+
+
+    # NEW - NOISE
+
+    noise_params = noise_params.data.filled(np.nan)[~np.isnan(noise_params.data.filled(np.nan))]
+
+    beta_noise_std = np.sqrt(np.sum(noise_params ** 2) / noise_params.shape[0])
 
     # Select pivot energy values
     pivot_energies = agn_data['Pivot_Energy'].value
@@ -166,12 +182,8 @@ def generate_mock_agn_catalog(catalog: str, agn_data, detection_threshold: np.fl
                                                                    target_counts[target_peak:])):
 
         # Due to uncomplimentary functionality - need max of intervals[:-1] - see reference to Digitize Error
-        # new_source = agn_generator((mean_log_pivot_energy_agn, std_log_pivot_energy_agn, betas_agn),
-        #                            energy_flux_low=np.min(target_bin_intervals),
-        #                            energy_flux_high=np.max(target_bin_intervals[:-1]))
-
         new_source = agn_generator((mean_log_pivot_energy_agn, std_log_pivot_energy_agn,
-                                    beta_distribution_params),
+                                    beta_distribution_params, beta_noise_std),
                                    energy_flux_low=np.min(target_bin_intervals),
                                    energy_flux_high=np.max(target_bin_intervals[:-1]))
 
