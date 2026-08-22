@@ -167,7 +167,6 @@ def analysis(agn_rows, pulsar_rows, signif=0.01, directory: str = "./plots/analy
                                                 source_type="Pulsar", directory=directory + "/parameter_correlations")
 
 
-# def create_catalog(fermi_catalog: str, data_4fgl: tuple, threshold, noise_params: tuple, verify: bool = False):
 def create_catalog(params):
     """Creates a catalog of simulated AGN and pulsar sources given the 4FGL data from which to sample realistic
     parameter values and an energy flux from below which the luminosity function must be extrapolated.
@@ -191,34 +190,22 @@ def create_catalog(params):
 
     """
 
-    # c, fermi_catalog, data_4fgl, threshold, noise_params, verify = params
-
     c, fermi_catalog, verify = params
 
-    lat_agn, lat_pulsar, threshold, agn_noise_params, psr_noise_params = (
+    lat_agn, lat_pulsar, threshold, agn_noise_cols, psr_noise_cols = (
         catalog_data_preparation(fermi_catalog))
-
-    # start = time.time()
 
     # N.B. This makes a single simulated catalog of mock AGN and pulsars
 
-    # lat_agn, lat_pulsar = data_4fgl[0], data_4fgl[1]
-
-    # agn_noise_params, psr_noise_params = noise_params
-
     # Generate simulated AGN sources
 
-    simulated_agn = generate_mock_agn_catalog(fermi_catalog, lat_agn, agn_noise_params,
+    simulated_agn = generate_mock_agn_catalog(fermi_catalog, lat_agn, agn_noise_cols,
                                               detection_threshold=threshold)
 
     # Generate simulated pulsar sources
 
-    simulated_pulsar = generate_mock_pulsar_catalog(fermi_catalog, lat_pulsar, psr_noise_params,
+    simulated_pulsar = generate_mock_pulsar_catalog(fermi_catalog, lat_pulsar, psr_noise_cols,
                                                     detection_threshold=threshold)
-
-    # end = time.time()
-    #
-    # simulation_time = end - start
 
     if verify:
         # Verify realism and correctness of generated gamma-ray sources
@@ -229,8 +216,6 @@ def create_catalog(params):
                  file_name="./simulated_data/catalogs/catalog_{}/".format(c + 1))
 
     print("Catalog {} Complete".format(c))
-
-    # return simulated_agn, simulated_pulsar, simulation_time
 
 
 def verification(simulated_agns, simulated_pulsars, catalog_4fgl: str, directory: str = "./plots/verification"):
@@ -383,10 +368,6 @@ if __name__ == "__main__":
 
             raise ValueError("conduct_verification cannot have that value.")
 
-    # arguments = [[c, file, (agn_4fgl.copy(), pulsar_4fgl.copy()), source_detection_threshold,
-    #               (agn_noise_params.copy(), psr_noise_params.copy()), verification_booleans[c]] for c in
-    #              range(num_catalogs)]
-
     arguments = [[c, file, verification_booleans[c]] for c in range(num_catalogs)]
 
     start = time.time()
@@ -399,39 +380,7 @@ if __name__ == "__main__":
 
     pool.terminate()
 
-    # # Generate the specified number of catalogs of AGN and pulsars
-    # for c in range(num_catalogs):
-    #
-    #     print("Catalog {}: ".format(c + 1), end='')
-    #
-    #     if conduct_verification == "yes":
-    #         run_verify = True
-    #     elif conduct_verification == "no":
-    #         run_verify = False
-    #     else:
-    #         if c == 0:
-    #             run_verify = True
-    #         else:
-    #             run_verify = False
-    #
-    #     new_agns, new_pulsars, generation_time = create_catalog(fermi_catalog=file, data_4fgl=(agn_4fgl.copy(),
-    #                                                                                            pulsar_4fgl.copy()),
-    #                                                             noise_params=(agn_noise_params.copy(),
-    #                                                                           psr_noise_params.copy()),
-    #                                                             threshold=source_detection_threshold, verify=run_verify)
-    #
-    #     total_time += generation_time
-    #
-    #     # Save simulated sources to XML files
-    #     save_catalog(simulated_agns=new_agns, simulated_pulsars=new_pulsars, file_name="./simulated_data/catalogs"
-    #                                                                                    "/catalog_{}/".format(c + 1))
-    #
-    #     print("DONE")
-
     print("catalog simulation finished")
-
-    # print("Total Time: {} s".format(total_time))
-    # print("Average Catalog Simulation Time: {} s".format(total_time / num_catalogs))
 
     print("Total Time: {} s".format(time.time() - start))
     print("Average Catalog Simulation Time: {} s".format((time.time() - start) / num_catalogs))
