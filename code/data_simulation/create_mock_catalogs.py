@@ -387,6 +387,7 @@ if __name__ == "__main__":
 
 # REFERENCES
 
+# Astropy Multiprocessing Error - https://github.com/astropy/astropy/issues/18206
 # Creating Path to Directories - https://stackoverflow.com/questions/273192/how-do-i-create-a-directory-and-any-missing-
 # parent-directories
 # Energy Flux - https://git.io/JO5FP

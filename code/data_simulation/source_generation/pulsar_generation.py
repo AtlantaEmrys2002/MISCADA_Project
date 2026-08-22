@@ -229,3 +229,7 @@ def generate_mock_pulsar_catalog(catalog: str, pulsars, noise_params, detection_
 
 # Exclude NaNs - https://stackoverflow.com/questions/17126543/numpy-array-get-the-subset-slice-of-an-array-which-is-not
 # -nan
+# Noise Calculations - https://www.reddit.com/r/explainlikeimfive/comments/6te75o/eli5_how_to_calculate_the_average_of_
+# uncertainties/
+# Noise Calculations - https://www.researchgate.net/post/Whats_the_best_way_to_take_an_average_of_many_SDs
+# Overflow Warning - https://github.com/numpy/numpy/issues/23606
