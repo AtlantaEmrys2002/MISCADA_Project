@@ -136,7 +136,7 @@ def plot_419(patch_directory="./../source_extractors/real_data/real_patches/patc
     for r in regions:
 
         fig, axs = plt.subplots(1, 3,  gridspec_kw={"width_ratios":[1, 1, 1]})
-        fig.suptitle("Boxes Around Detected Sources")
+        # fig.suptitle("Boxes Around Detected Sources")
 
         images = []
 
