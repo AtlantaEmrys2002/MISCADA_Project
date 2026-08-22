@@ -57,19 +57,10 @@ def agn_generator(agn_stats, energy_flux_low: np.float64 = 0., energy_flux_high:
         spectral_slope = agn_spectral_slope(pivot_energy)[0]
 
         # Generate new curvature by directly sampling 4FGL
-        # beta = gumbel_r(*beta_dist_params).rvs()
-
-
-        # ADD NOISE
-
         beta = gumbel_r(*beta_dist_params).rvs() + np.random.normal(loc=0, scale=beta_noise_std)
-
 
         # Calculate energy flux of source
         energy_flux = energy_flux_agn(pivot_energy, flux_density, spectral_slope, beta)
-
-        # IS NEW
-
 
         with np.errstate(over="ignore"):
 
@@ -145,12 +136,7 @@ def generate_mock_agn_catalog(catalog: str, agn_data, noise_params,
     # Select beta values and convert from masked to ordinary numpy array
     betas_agn = agn_data['LP_beta'].data.filled(np.nan)
 
-    # NEW - Gumbel distribution
-
     beta_distribution_params = gumbel_r.fit(betas_agn[~np.isnan(betas_agn)])
-
-
-    # NEW - NOISE
 
     noise_params = noise_params.data.filled(np.nan)[~np.isnan(noise_params.data.filled(np.nan))]
 

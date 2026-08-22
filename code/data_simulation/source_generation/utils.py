@@ -82,7 +82,6 @@ def luminosity_function_calculator(energy_fluxes_4fgl, n_min, detection_threshol
 
     return np.array([counts])[0], np.array(bin_intervals), peak
 
-
 # REFERENCES
 
 # Trapezoidal Rule - https://en.wikipedia.org/wiki/Trapezoidal_rule

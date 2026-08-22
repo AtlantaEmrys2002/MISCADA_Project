@@ -6,7 +6,7 @@ catalog.
 from astropy.table import QTable
 import numpy as np
 from .pulsar_spectral_parameters import energy_flux_pulsar, pulsar_flux_density
-from scipy.stats import cauchy, gumbel_r, lognorm, norm
+from scipy.stats import cauchy, gumbel_r
 from .utils import luminosity_function_calculator
 
 
@@ -46,18 +46,10 @@ def pulsar_generator(pulsar_stats, energy_flux_low: np.float64 = 0., energy_flux
 
         # Generate new spectral slopes (Gammas) - Gaussian distribution most likely
         # (see chi-squared test)
-        # spectral_slope = np.random.normal(loc=mean_Gamma_pulsars, scale=std_Gamma_pulsars)
-
-        # NEW - with noise
-
         spectral_slope = (np.random.normal(loc=mean_Gamma_pulsars, scale=std_Gamma_pulsars) +
                           np.random.normal(loc=0, scale=gamma_noise_std))
 
         # Generate new exponential factors (as)
-        # exponential_factor = gumbel_r(*a_distribution_parameters).rvs()
-
-        # NEW - with noise
-
         exponential_factor = gumbel_r(*a_distribution_parameters).rvs() + np.random.normal(loc=0, scale=a_noise_std)
 
         # Generate new exponential indices (bs) - changed to random choice instead of ID8's Gaussian
@@ -70,8 +62,6 @@ def pulsar_generator(pulsar_stats, energy_flux_low: np.float64 = 0., energy_flux
         # NEW
 
         with np.errstate(over="ignore"):
-
-
 
             # Check energy flux in given range AND that the energy flux is valid
             # if (energy_flux >= energy_flux_low) and (energy_flux < energy_flux_high) and (~np.isnan(energy_flux)):
@@ -159,8 +149,6 @@ def generate_mock_pulsar_catalog(catalog: str, pulsars, noise_params, detection_
         ~np.isnan(noise_params["Unc_PLEC_IndexS"].data.filled(np.nan))]
 
     gamma_noise_std = np.sqrt(np.sum(gamma_noise ** 2) / gamma_noise.shape[0])
-
-
 
     # Select exponential indices
     b_values = pulsars['PLEC_Exp_Index'].data.filled(np.nan)

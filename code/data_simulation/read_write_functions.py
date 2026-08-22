@@ -126,8 +126,6 @@ def catalog_data_preparation(file_name: str):
     # Assume catalog data conforms to standard NASA format
     catalog = QTable.read(file_name, format='fits', hdu=1)
 
-    print(catalog.columns)
-
     # Select relevant columns
     columns = ("Pivot_Energy", "LP_Flux_Density", "PLEC_Flux_Density", "LP_Index", "LP_beta", "PLEC_IndexS",
                "PLEC_Exp_Index", "PLEC_ExpfactorS", "CLASS1", "GLAT", "Unc_LP_beta", "Unc_PLEC_IndexS",
