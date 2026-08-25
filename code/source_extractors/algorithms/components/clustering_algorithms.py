@@ -93,8 +93,9 @@ def dbscan_clustering(binary_segments, threshold=0.2):
 
         if source_pixels.size != 0:
 
-            # Labels stating where element n indicates the cluster pixel n is assigned to
-            labelled_source_pixels = DBSCAN(eps=3).fit(source_pixels).labels_
+            # Labels stating where element n indicates the cluster pixel n is assigned to - CHANGED TO 5 AND 10 TO MAKE SENSE
+            # labelled_source_pixels = DBSCAN(eps=3).fit(source_pixels).labels_
+            labelled_source_pixels = DBSCAN(eps=5, min_samples=10).fit(source_pixels).labels_
 
             num_clusters_found = np.max(labelled_source_pixels)
 

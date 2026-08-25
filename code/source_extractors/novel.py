@@ -12,7 +12,7 @@ from algorithms.components.clustering_algorithms import (blob_detection, dbscan_
 from algorithms.components.machine_learning_classification_algorithms import random_forest_classifier, svm_classifier
 from algorithms.components.machine_learning_segmentation_algorithms import random_forest_segmentation
 from algorithms.components.segmentation_algorithms import unet
-from algorithms.components.data_preparation import ml_segmentation_data_prep, prepare_classifier_data
+from algorithms.components.data_preparation import ml_segmentation_data_prep, prepare_classifier_data, FermiCountMapDataset
 import copy
 import numpy as np
 from pathlib import Path
@@ -54,6 +54,19 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
         ml_segmentation_data_prep(train_data=copy.deepcopy(training_data),
                                   validation_data=copy.deepcopy(validation_data),
                                   test_data=copy.deepcopy(testing_data)))
+
+    patch_dataset = FermiCountMapDataset(patches=training_maps, masks=training_masks, num_patches=training_maps.shape[0])
+
+    for i, sample in enumerate(patch_dataset):
+        print(i, sample['patch'].shape, sample['mask'].shape)
+
+
+
+
+
+
+
+
 
     _, _, _, _, _, _, real_patch_ids, real_maps, real_masks = (
         ml_segmentation_data_prep(train_data=np.array([]), validation_data=np.array([]),

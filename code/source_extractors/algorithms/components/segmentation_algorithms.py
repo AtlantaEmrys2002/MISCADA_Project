@@ -145,6 +145,7 @@ class Decoder(nn.Module):
 
         for i in range(uphill):
             self.layers += [
+                # nn.ConvTranspose2d(in_chan, out_chan, kernel_size=2, stride=2),
                 nn.ConvTranspose2d(in_chan, out_chan, kernel_size=2, stride=2),
                 CNNBlocks(n_conv=2, in_chan=in_chan, out_chan=out_chan, padding=padding),
             ]
@@ -278,7 +279,7 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
             # Make sure to zero gradients when calculating loss and don't update model
             output = unet_model(inputs)
 
-            loss = loss_fn(output, labels)
+            loss = loss_fn(output.float(), labels.float())
 
             loss.backward()
 
@@ -297,7 +298,7 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
 
                 voutputs = unet_model(vinputs)
 
-                vloss = loss_fn(voutputs, vlabels)
+                vloss = loss_fn(voutputs.float(), vlabels.float())
 
                 running_vloss += vloss
 
@@ -333,7 +334,7 @@ def unet(training_maps, validation_maps, testing_maps, pretrained=False, real=Fa
         # CHANGE BACK LATER
 
         model, best_epoch = unet_train(train_data=training_maps, test_data=validation_maps,
-                                       save_file=save_file, device=device, training_epochs=10)
+                                       save_file=save_file, device=device, training_epochs=15)
 
         print("BEST EPOCH: {}".format(best_epoch))
 

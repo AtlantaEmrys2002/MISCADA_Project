@@ -5,10 +5,61 @@ import copy
 import numpy as np
 from operator import itemgetter
 import pandas as pd
-from torch.utils.data import DataLoader, Subset
+import torch
+from torch.utils.data import DataLoader, Dataset, Subset
 from ..utils import get_catalog_data, get_lb_from_pixel, pixel_id
 import warnings
 from xml.dom import minidom
+
+
+class FermiCountMapDataset(Dataset):
+    """Custom dataset of fermi patches for training only (not testing)."""
+
+    # def __init__(self, patches_directory, masks_directory, num_patches):
+
+    def __init__(self, patches, masks, num_patches):
+
+        self.patches = patches
+
+        self.masks = masks
+
+        # self.patches = np.array([np.load("{}/patch_{}/patch.npy".format(patches_directory, n)) for n in range(num_patches)])
+        #
+        # self.masks = np.array([[np.load("{}/patch_{}/mask.npy".format(masks_directory, n))] for n in range(num_patches)])
+
+        self.num_patches = num_patches
+
+    def __len__(self):
+
+        return self.num_patches
+
+    def __getitem__(self, idx):
+
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        selected_patches = self.patches[idx]
+        selected_masks = self.masks[idx]
+
+        sample = {"patch": selected_patches, "mask": selected_masks}
+
+        return sample
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 def balance_dataset(data):
@@ -200,8 +251,8 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
 
     # print(len(sub_boxes), len(predicted_locations))
 
-    # Normalise each patch (normalise each energy bin separately)
-    normalised_sub_boxes = normalise_sub_patches(sub_boxes)
+    # Normalise each patch (normalise each energy bin separately) - DO NOT NORMALISE IN THIS MANNER
+    # normalised_sub_boxes = normalise_sub_patches(sub_boxes)
 
     # print(len(sub_boxes), len(predicted_locations))
 
@@ -220,9 +271,20 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
 
     # Combine data such that each sub-patch is associated with its equivalent label
 
-    num_patches = len(normalised_sub_boxes)
+    # num_patches = len(normalised_sub_boxes)
+    num_patches = len(sub_boxes)
 
     # print(len(normalised_sub_boxes), len(predicted_locations), len(vector_labels))
+
+    # for patch in range(num_patches):
+    #
+    #     num_predicted_sources = len(sub_boxes[patch])
+    #
+    #     # N.B. conversion to float 32 from float 64 - Apple GPUs cannot work with float64
+    #     for pred_source in range(num_predicted_sources):
+    #         if isinstance(vector_labels[patch][pred_source], np.ndarray):
+    #             data.append([normalised_sub_boxes[patch][pred_source].astype(np.float32),
+    #                          vector_labels[patch][pred_source].astype(np.float32)])
 
     for patch in range(num_patches):
 
@@ -231,7 +293,7 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
         # N.B. conversion to float 32 from float 64 - Apple GPUs cannot work with float64
         for pred_source in range(num_predicted_sources):
             if isinstance(vector_labels[patch][pred_source], np.ndarray):
-                data.append([normalised_sub_boxes[patch][pred_source].astype(np.float32),
+                data.append([sub_boxes[patch][pred_source].astype(np.float32),
                              vector_labels[patch][pred_source].astype(np.float32)])
 
     # print(len(normalised_sub_boxes), len(predicted_locations), len(vector_labels), len(data))

@@ -12,14 +12,13 @@ from torch.utils.data import DataLoader, Subset
 
 def read_patches(num_patches=int, directory=str):
     # Read in patches
+    # patches = (np.array([np.load("{}/patch_{}/patch.npy".format(directory, n)) for n in range(num_patches)])
+    #            .astype(np.float32))
     patches = (np.array([np.load("{}/patch_{}/patch.npy".format(directory, n)) for n in range(num_patches)])
                .astype(np.float32))
 
     # Read in masks
-    # masks = (np.array([[np.load("{}/patch_{}/mask_2.npy".format(directory, n))] for n in range(num_patches)])
-    #          .astype(np.float32))
-
-    masks = (np.array([[np.load("{}/patch_{}/mask_2.npy".format(directory, n))] for n in range(num_patches)])
+    masks = (np.array([[np.load("{}/patch_{}/mask.npy".format(directory, n))] for n in range(num_patches)])
              .astype(np.float32))
 
     # Read in metadata for each patch
@@ -29,9 +28,7 @@ def read_patches(num_patches=int, directory=str):
     types = []
 
     for n in range(num_patches):
-        # file_name = "{}/patch_{}/metadata.csv".format(directory, n)
-
-        file_name = "{}/patch_{}/metadata_2.csv".format(directory, n)
+        file_name = "{}/patch_{}/metadata.csv".format(directory, n)
 
         df = pd.read_csv(file_name)
 
