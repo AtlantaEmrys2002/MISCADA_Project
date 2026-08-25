@@ -304,6 +304,9 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05, verbose=False
 # and-numpy-c8be815df524
 # Appending Integers - https://stackoverflow.com/questions/17911091/append-integer-to-beginning-of-list-in-python
 # Chi-Squared Critical Value - https://www.statology.org/chi-square-critical-value-python/
+# Chi-Squared Expected Count Assumptions - https://sites.utexas.edu/sos/guided/inferential/categorical/univariate/chi2/
+# Chi-Squared Assumptions - https://psychology.town/statistics/key-assumptions-chi-square-test/
+# Chi-Squared Assumptions - https://www.theanalysisfactor.com/chi-square-test-of-independence-rule-of-thumb/
 # Chi-Squared Goodness of Fit - http://www.stat.yale.edu/Courses/1997-98/101/chigf.htm
 # Chi-Squared Polyfit - https://stackoverflow.com/questions/5477359/chi-square-numpy-polyfit-numpy
 # Chi-Squared Test - https://en.wikipedia.org/wiki/Chi-squared_test
@@ -335,5 +338,9 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05, verbose=False
 # Normality Testing - https://www.graphpad.com/support/faq/testing-data-for-normal-distrbution/
 # Reduced Chi-Squared - https://en.wikipedia.org/wiki/Reduced_chi-squared_statistic
 # Rounding in Format - https://stackoverflow.com/questions/1598579/rounding-decimals-with-new-python-format-function
+# Significance Level - https://www.statsig.com/perspectives/1-percent-significance-level
+# Significance Level - https://stats.stackexchange.com/questions/333892/is-the-kolmogorov-smirnov-test-too-strict-if-the
+# -sample-size-is-large
+# Significance Level - https://www.quantics.co.uk/blog/goodness-of-fit-fail-f-test/
 # Types of Residual - https://stats.stackexchange.com/questions/22653/raw-residuals-versus-standardised-residuals-versus
 # -studentised-residuals-what
