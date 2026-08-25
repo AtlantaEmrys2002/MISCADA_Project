@@ -159,9 +159,9 @@ class Decoder(nn.Module):
         )
 
         # This is introduced in ID8 such that binary classification of each pixel may be performed
-        self.layers.append(
-            nn.Softmax(dim=1)
-        )
+        # self.layers.append(
+        #     nn.Softmax(dim=1)
+        # )
 
     def forward(self, x, routes_connection):
         """Returns the output of the decoder when passed data.
@@ -240,23 +240,23 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
     # EVEN THOUGH ORIGINAL PAPER SAID NO PADDING
 
     # Create U-Net model - padding = 1 ("same convolution") to match no. channels and output sizes given in ID8 diagram
-    unet_model = UNET(5, 16, 2, padding=1, downhill=4).to(device)
+    # unet_model = UNET(5, 16, 2, padding=1, downhill=4).to(device)
 
-    print(unet_model)
+    unet_model = UNET(5, 16, 1, padding=1, downhill=4).to(device)
 
     # TRAINING
 
     # Define loss function and optimiser - changed from that proposed in ID11 and ID8
-    # loss_fn = torch.nn.BCEWithLogitsLoss().to(device)
+    loss_fn = torch.nn.BCEWithLogitsLoss()
 
-    loss_fn = torch.nn.CrossEntropyLoss() #.to(device)
+    # loss_fn = torch.nn.CrossEntropyLoss() #.to(device)
 
-    optimiser = torch.optim.Adam(unet_model.parameters(), lr=1.e-6)
+    optimiser = torch.optim.Adam(unet_model.parameters(), lr=1.e-5)
     # optimiser = torch.optim.SGD(unet_model.parameters(), lr=1.e-4, momentum=0.9)
 
-    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimiser, min_lr=1.e-6, patience=5)
+    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimiser, min_lr=1.e-7, patience=5)
 
-    scheduler = torch.optim.lr_scheduler.StepLR(optimiser, step_size=5, gamma=0.1)
+    # scheduler = torch.optim.lr_scheduler.StepLR(optimiser, step_size=5, gamma=0.1)
 
     # Start with large value that is easily surpassed
     best_vloss = 100000000000000
@@ -271,13 +271,15 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
 
         for i, data in enumerate(train_data):
 
-            inputs, labels = data[1].to(device), data[2].squeeze(1).to(device)
+            inputs, labels = data["patch"].to(device), data["mask"].to(device)
+
+            # inputs, labels = data["patch"].to(device), data["mask"].to(device)
 
             # zero gradients for each batch
             optimiser.zero_grad()
 
             # Make sure to zero gradients when calculating loss and don't update model
-            output = unet_model(inputs)
+            output = unet_model(inputs).squeeze(1)
 
             loss = loss_fn(output.float(), labels.float())
 
@@ -294,9 +296,11 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
         with torch.no_grad():
             for i, vdata in enumerate(test_data):
 
-                vinputs, vlabels = vdata[1].to(device), vdata[2].squeeze(1).to(device)
+                vinputs, vlabels = vdata["patch"].to(device), vdata["mask"].to(device)
 
-                voutputs = unet_model(vinputs)
+                # vinputs, vlabels = vdata["patch"].to(device), vdata["mask"].to(device)
+
+                voutputs = unet_model(vinputs).squeeze(1)
 
                 vloss = loss_fn(voutputs.float(), vlabels.float())
 
@@ -314,7 +318,15 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
             torch.save(unet_model.state_dict(), save_file)
 
         # Calling after validation loss - decrease learning rate if no improvement
-        scheduler.step()
+        # scheduler.step(optimiser)
+
+        if epoch == 60:
+
+            import matplotlib.pyplot as plt
+
+            plt.imshow(voutputs[0].to('cpu').detach().numpy())
+
+            plt.show()
 
     return unet_model, best_epoch
 
@@ -334,7 +346,7 @@ def unet(training_maps, validation_maps, testing_maps, pretrained=False, real=Fa
         # CHANGE BACK LATER
 
         model, best_epoch = unet_train(train_data=training_maps, test_data=validation_maps,
-                                       save_file=save_file, device=device, training_epochs=15)
+                                       save_file=save_file, device=device, training_epochs=70)
 
         print("BEST EPOCH: {}".format(best_epoch))
 

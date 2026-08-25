@@ -23,10 +23,6 @@ class FermiCountMapDataset(Dataset):
 
         self.masks = masks
 
-        # self.patches = np.array([np.load("{}/patch_{}/patch.npy".format(patches_directory, n)) for n in range(num_patches)])
-        #
-        # self.masks = np.array([[np.load("{}/patch_{}/mask.npy".format(masks_directory, n))] for n in range(num_patches)])
-
         self.num_patches = num_patches
 
     def __len__(self):
@@ -41,25 +37,9 @@ class FermiCountMapDataset(Dataset):
         selected_patches = self.patches[idx]
         selected_masks = self.masks[idx]
 
-        sample = {"patch": selected_patches, "mask": selected_masks}
+        sample = {"patch": torch.from_numpy(selected_patches), "mask": torch.from_numpy(selected_masks)}
 
         return sample
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def balance_dataset(data):
