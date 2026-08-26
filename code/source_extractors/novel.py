@@ -12,12 +12,11 @@ from algorithms.components.clustering_algorithms import (blob_detection, dbscan_
 from algorithms.components.machine_learning_classification_algorithms import random_forest_classifier, svm_classifier
 from algorithms.components.machine_learning_segmentation_algorithms import random_forest_segmentation
 from algorithms.components.segmentation_algorithms import unet
-from algorithms.components.data_preparation import ml_segmentation_data_prep, prepare_classifier_data, FermiCountMapDataset
+from algorithms.components.data_preparation import ml_segmentation_data_prep, prepare_classifier_data
 import copy
 import numpy as np
 from pathlib import Path
 from read_write_functions import save_predictions
-from torch.utils.data.dataloader import DataLoader
 
 
 # SAVE EACH TRAINED CLASSIFIER AS [Name of classifier]_classifier_trained_on_[name of segmentation and localisation]_
@@ -56,12 +55,6 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
                                   validation_data=copy.deepcopy(validation_data),
                                   test_data=copy.deepcopy(testing_data)))
 
-    training_patch_dataset = DataLoader(FermiCountMapDataset(patches=training_maps, masks=training_masks, num_patches=training_maps.shape[0]), batch_size=64, shuffle=True)
-    validation_patch_dataset = DataLoader(FermiCountMapDataset(patches=validation_maps, masks=validation_masks, num_patches=validation_maps.shape[0]), batch_size=64, shuffle=True)
-
-    # for i, sample in enumerate(patch_dataset):
-    #     print(i, sample['patch'].shape, sample['mask'].shape)
-
     _, _, _, _, _, _, real_patch_ids, real_maps, real_masks = (
         ml_segmentation_data_prep(train_data=np.array([]), validation_data=np.array([]),
                                   test_data=copy.deepcopy(real_data)))
@@ -72,26 +65,11 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
 
             case "unet":
 
-                # (train_segmentation_predictions, validation_segmentation_predictions, test_segmentation_predictions) = (
-                #     unet(training_maps=training_data, validation_maps=validation_data, testing_maps=testing_data))
-
                 (train_segmentation_predictions, validation_segmentation_predictions, test_segmentation_predictions) = (
-                    unet(training_maps=training_patch_dataset, validation_maps=validation_patch_dataset, testing_maps=testing_data))
+                    unet(training_maps=copy.deepcopy(training_maps), training_masks=copy.deepcopy(training_masks), validation_maps=copy.deepcopy(validation_maps), validation_masks=copy.deepcopy(validation_masks), testing_maps=copy.deepcopy(testing_maps)))
 
-                _, _, real_segmentation_predictions = unet(training_maps=np.array([]), validation_maps=np.array([]),
-                                                           testing_maps=real_data, pretrained=True, real=True)
-
-                print(np.argmax(train_segmentation_predictions))
-
-                import matplotlib.pyplot as plt
-
-                plt.imshow((train_segmentation_predictions[0] > 0.5) * 200)
-
-                plt.show()
-
-                plt.imshow((train_segmentation_predictions[1] > 0.5) * 200)
-
-                plt.show()
+                _, _, real_segmentation_predictions = unet(training_maps=np.array([]), training_masks=np.array([]), validation_maps=np.array([]), validation_masks=np.array([]),
+                                                           testing_maps=copy.deepcopy(real_maps), pretrained=True, real=True)
 
             case "random_forest":
 

@@ -185,36 +185,36 @@ def ml_segmentation_data_prep(train_data, validation_data, test_data):
             test_patch_ids, testing_maps, testing_masks)
 
 
-def normalise_sub_patches(sub_patches, num_bins: int = 5):
-    # Assumes sub_patches are passed as array with shape [n, m, 5, 7, 7] where n is number of patches and m is num
-    # of sub-patches within patch n
-
-    # Normalises each patch independently - assume format of sub-patches is n patches each with m sub-patches
-
-    num_patches = len(sub_patches)
-
-    normalised_sub_patches_arr = []
-
-    for p in range(num_patches):
-
-        num_sub_patches = sub_patches[p].shape[0]
-
-        current_patch = sub_patches[p]
-
-        sub_patches_in_patch = []
-
-        for s in range(num_sub_patches):
-            sigmas = np.array([np.std(current_patch[s][b]) for b in range(num_bins)])
-            means = np.array([np.mean(current_patch[s][b]) for b in range(num_bins)])
-
-            sub_patch = np.array([(current_patch[s][b] - means[b]) / sigmas[b] if sigmas[b] != 0 else
-                                  current_patch[s][b] for b in range(num_bins)])
-
-            sub_patches_in_patch.append(sub_patch)
-
-        normalised_sub_patches_arr.append(np.array(sub_patches_in_patch))
-
-    return normalised_sub_patches_arr
+# def normalise_sub_patches(sub_patches, num_bins: int = 5):
+#     # Assumes sub_patches are passed as array with shape [n, m, 5, 7, 7] where n is number of patches and m is num
+#     # of sub-patches within patch n
+#
+#     # Normalises each patch independently - assume format of sub-patches is n patches each with m sub-patches
+#
+#     num_patches = len(sub_patches)
+#
+#     normalised_sub_patches_arr = []
+#
+#     for p in range(num_patches):
+#
+#         num_sub_patches = sub_patches[p].shape[0]
+#
+#         current_patch = sub_patches[p]
+#
+#         sub_patches_in_patch = []
+#
+#         for s in range(num_sub_patches):
+#             sigmas = np.array([np.std(current_patch[s][b]) for b in range(num_bins)])
+#             means = np.array([np.mean(current_patch[s][b]) for b in range(num_bins)])
+#
+#             sub_patch = np.array([(current_patch[s][b] - means[b]) / sigmas[b] if sigmas[b] != 0 else
+#                                   current_patch[s][b] for b in range(num_bins)])
+#
+#             sub_patches_in_patch.append(sub_patch)
+#
+#         normalised_sub_patches_arr.append(np.array(sub_patches_in_patch))
+#
+#     return normalised_sub_patches_arr
 
 
 def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_data=True, test=False, real_data=False, ml_data = False):

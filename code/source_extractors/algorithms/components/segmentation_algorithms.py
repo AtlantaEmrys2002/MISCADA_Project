@@ -11,30 +11,12 @@ in report). This author also created their own training loop.
 """
 
 import copy
-from .data_preparation import ml_segmentation_data_prep
+from .data_preparation import ml_segmentation_data_prep, FermiCountMapDataset
 import numpy as np
 import torch
 from torch import nn
+from torch.utils.data.dataloader import DataLoader
 from torchvision.transforms.functional import center_crop
-
-
-class LinearCombinationLoss(nn.Module):
-
-    def __init__(self):
-        super(LinearCombinationLoss, self).__init__()
-
-    @staticmethod
-    def forward(predictions, targets):
-        N = len(predictions)
-
-        # FROM ID11
-
-        mse = (1 / (N ** 2)) * torch.sum((targets - predictions) ** 2)
-        ce = (- 1 / (N ** 2)) * torch.sum(targets * torch.log(predictions))
-
-        return mse + (100 * ce)
-
-        # return -1 / N * torch.sum(torch.sum(targets * torch.log(predictions)))
 
 
 class CNNBlock(nn.Module):
@@ -45,12 +27,9 @@ class CNNBlock(nn.Module):
         super(CNNBlock, self).__init__()
 
         self.seq_block = nn.Sequential(
-            # nn.Conv2d(in_channels=in_chan, out_channels=out_chan, kernel_size=kernel_size, stride=stride,
-            #           padding=padding, bias=False),
             nn.Conv2d(in_channels=in_chan, out_channels=out_chan, kernel_size=kernel_size, stride=stride,
                       padding=padding, bias=True),
             nn.ReLU(inplace=True)
-            # nn.ReLU()
         )
 
     def forward(self, x):
@@ -145,7 +124,6 @@ class Decoder(nn.Module):
 
         for i in range(uphill):
             self.layers += [
-                # nn.ConvTranspose2d(in_chan, out_chan, kernel_size=2, stride=2),
                 nn.ConvTranspose2d(in_chan, out_chan, kernel_size=2, stride=2),
                 CNNBlocks(n_conv=2, in_chan=in_chan, out_chan=out_chan, padding=padding),
             ]
@@ -157,11 +135,6 @@ class Decoder(nn.Module):
         self.layers.append(
             nn.Conv2d(in_chan, exit_chan, kernel_size=1),
         )
-
-        # This is introduced in ID8 such that binary classification of each pixel may be performed
-        # self.layers.append(
-        #     nn.Softmax(dim=1)
-        # )
 
     def forward(self, x, routes_connection):
         """Returns the output of the decoder when passed data.
@@ -240,8 +213,6 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
     # EVEN THOUGH ORIGINAL PAPER SAID NO PADDING
 
     # Create U-Net model - padding = 1 ("same convolution") to match no. channels and output sizes given in ID8 diagram
-    # unet_model = UNET(5, 16, 2, padding=1, downhill=4).to(device)
-
     unet_model = UNET(5, 16, 1, padding=1, downhill=4).to(device)
 
     # TRAINING
@@ -249,14 +220,15 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
     # Define loss function and optimiser - changed from that proposed in ID11 and ID8
     loss_fn = torch.nn.BCEWithLogitsLoss()
 
-    # loss_fn = torch.nn.CrossEntropyLoss() #.to(device)
+    # optimiser = torch.optim.Adam(unet_model.parameters(), lr=1.e-5)
 
-    optimiser = torch.optim.Adam(unet_model.parameters(), lr=1.e-5)
-    # optimiser = torch.optim.SGD(unet_model.parameters(), lr=1.e-4, momentum=0.9)
 
-    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimiser, min_lr=1.e-7, patience=5)
 
-    # scheduler = torch.optim.lr_scheduler.StepLR(optimiser, step_size=5, gamma=0.1)
+    optimiser = torch.optim.Adam(unet_model.parameters(), lr=1.e-4)
+
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimiser, min_lr=1.e-7, patience=5)
+
+
 
     # Start with large value that is easily surpassed
     best_vloss = 100000000000000
@@ -272,8 +244,6 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
         for i, data in enumerate(train_data):
 
             inputs, labels = data["patch"].to(device), data["mask"].to(device)
-
-            # inputs, labels = data["patch"].to(device), data["mask"].to(device)
 
             # zero gradients for each batch
             optimiser.zero_grad()
@@ -298,8 +268,6 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
 
                 vinputs, vlabels = vdata["patch"].to(device), vdata["mask"].to(device)
 
-                # vinputs, vlabels = vdata["patch"].to(device), vdata["mask"].to(device)
-
                 voutputs = unet_model(vinputs).squeeze(1)
 
                 vloss = loss_fn(voutputs.float(), vlabels.float())
@@ -318,9 +286,9 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
             torch.save(unet_model.state_dict(), save_file)
 
         # Calling after validation loss - decrease learning rate if no improvement
-        # scheduler.step(optimiser)
+        scheduler.step(avg_vloss)
 
-        if epoch == 60:
+        if epoch == 40:
 
             import matplotlib.pyplot as plt
 
@@ -331,29 +299,35 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
     return unet_model, best_epoch
 
 
-def unet(training_maps, validation_maps, testing_maps, pretrained=False, real=False,
-         save_file="./algorithms/pre_trained_models/unet.pt"):
+def unet(training_maps, training_masks, validation_maps, validation_masks, testing_maps, pretrained=False,
+          real=False, save_file="./algorithms/pre_trained_models/unet.pt"):
+
     device = torch.device("mps")
     print("Using Device: ", device)
 
     # INITIALISE SEGMENTER
     if not pretrained:
 
+        # CREATE DATASETS
+
+        training_patch_dataset = DataLoader(
+            FermiCountMapDataset(patches=copy.deepcopy(training_maps), masks=copy.deepcopy(training_masks), num_patches=training_maps.shape[0]),
+            batch_size=64, shuffle=True)
+
+        validation_patch_dataset = DataLoader(
+            FermiCountMapDataset(patches=copy.deepcopy(validation_maps), masks=copy.deepcopy(validation_masks), num_patches=validation_maps.shape[0]),
+            batch_size=64, shuffle=True)
+
         # Train classifier on data
-        # model, best_epoch = unet_train(train_data=training_maps, test_data=validation_maps,
-        #                                save_file=save_file, device=device)
-
-        # CHANGE BACK LATER
-
-        model, best_epoch = unet_train(train_data=training_maps, test_data=validation_maps,
-                                       save_file=save_file, device=device, training_epochs=70)
+        model, best_epoch = unet_train(train_data=training_patch_dataset, test_data=validation_patch_dataset,
+                                       save_file=save_file, device=device, training_epochs=50)
 
         print("BEST EPOCH: {}".format(best_epoch))
 
     else:
 
         # Use pre-trained model
-        model = UNET(5, 16, 2, padding=1, downhill=4).to(device)
+        model = UNET(5, 16, 1, padding=1, downhill=4).to(device)
         model.load_state_dict(torch.load(save_file, weights_only=True, map_location=device))
 
     # Set to model evaluation model to ensure not accidentally continuing training
@@ -361,48 +335,21 @@ def unet(training_maps, validation_maps, testing_maps, pretrained=False, real=Fa
 
     if real:
 
-        _, _, _, _, _, _, _, real_maps, _ = (
-            ml_segmentation_data_prep(train_data=np.array([]), validation_data=np.array([]),
-                                      test_data=copy.deepcopy(testing_maps)))
-
         with torch.no_grad():
-            # test_data_predictions = model(torch.from_numpy(real_maps).to(device)).detach().cpu().numpy()
 
-            # test_data_predictions = []
-            #
-            # for k in range(0, real_maps.shape[0], 10000):
-            #
-            #     test_data_predictions.append(torch.argmax(model(torch.from_numpy(real_maps).to(device)).detach().cpu(), dim=1).numpy())
-            #
-            test_data_predictions = torch.argmax(model(torch.from_numpy(real_maps).to(device)).detach().cpu(),
-                                                 dim=1).numpy()
+            test_data_predictions = model(torch.from_numpy(testing_maps).to(device)).detach().cpu().numpy()
 
         return np.array([]), np.array([]), test_data_predictions
 
     else:
 
-        # EXTRACT TEST DATA
-
-        (_, training_maps, _, _, validation_maps, _, _, testing_maps, _) = (
-            ml_segmentation_data_prep(train_data=training_maps, validation_data=validation_maps,
-                                      test_data=testing_maps))
-
         with torch.no_grad():
-            # train_data_predictions = model(torch.from_numpy(training_maps).to(device)).detach().cpu().numpy()
-            # validation_data_predictions = model(torch.from_numpy(validation_maps).to(device)).detach().cpu().numpy()
-            # test_data_predictions = model(torch.from_numpy(testing_maps).to(device)).detach().cpu().numpy()
 
-            # train_tmp = model(torch.from_numpy(training_maps).to(device))
+            train_data_predictions = model(torch.from_numpy(training_maps).to(device)).detach().cpu().numpy()
 
+            validation_data_predictions = model(torch.from_numpy(validation_maps).to(device)).detach().cpu().numpy()
 
-            train_data_predictions = torch.argmax(model(torch.from_numpy(training_maps).to(device)).detach().cpu(),
-                                                  dim=1).numpy()
-
-            validation_data_predictions = torch.argmax(model(
-                torch.from_numpy(validation_maps).to(device)).detach().cpu(), dim=1).numpy()
-
-            test_data_predictions = torch.argmax(model(torch.from_numpy(testing_maps).to(device)).detach().cpu(),
-                                                 dim=1).numpy()
+            test_data_predictions = model(torch.from_numpy(testing_maps).to(device)).detach().cpu().numpy()
 
         return train_data_predictions, validation_data_predictions, test_data_predictions
 
