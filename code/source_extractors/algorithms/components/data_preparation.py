@@ -185,41 +185,8 @@ def ml_segmentation_data_prep(train_data, validation_data, test_data):
             test_patch_ids, testing_maps, testing_masks)
 
 
-# def normalise_sub_patches(sub_patches, num_bins: int = 5):
-#     # Assumes sub_patches are passed as array with shape [n, m, 5, 7, 7] where n is number of patches and m is num
-#     # of sub-patches within patch n
-#
-#     # Normalises each patch independently - assume format of sub-patches is n patches each with m sub-patches
-#
-#     num_patches = len(sub_patches)
-#
-#     normalised_sub_patches_arr = []
-#
-#     for p in range(num_patches):
-#
-#         num_sub_patches = sub_patches[p].shape[0]
-#
-#         current_patch = sub_patches[p]
-#
-#         sub_patches_in_patch = []
-#
-#         for s in range(num_sub_patches):
-#             sigmas = np.array([np.std(current_patch[s][b]) for b in range(num_bins)])
-#             means = np.array([np.mean(current_patch[s][b]) for b in range(num_bins)])
-#
-#             sub_patch = np.array([(current_patch[s][b] - means[b]) / sigmas[b] if sigmas[b] != 0 else
-#                                   current_patch[s][b] for b in range(num_bins)])
-#
-#             sub_patches_in_patch.append(sub_patch)
-#
-#         normalised_sub_patches_arr.append(np.array(sub_patches_in_patch))
-#
-#     return normalised_sub_patches_arr
-
-
 def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_data=True, test=False, real_data=False, ml_data = False):
     # Remove all patches with no predicted sources
-    # ids_to_remove = [p for p in range(patch_ids.shape[0]) if len(predicted_locations[p]) == 0]
     ids_to_remove = [p for p in range(patch_ids.shape[0]) if predicted_locations[p].shape[0] == 0]
 
     predicted_locations = [predicted_locations[p] for p in range(patch_ids.shape[0]) if p not in ids_to_remove]
@@ -229,42 +196,16 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
     # Get 7 x 7 boxes around each predicted source in each patch
     sub_boxes, predicted_locations, patch_ids = source_boxes(patches, predicted_locations, patch_ids)
 
-    # print(len(sub_boxes), len(predicted_locations))
-
-    # Normalise each patch (normalise each energy bin separately) - DO NOT NORMALISE IN THIS MANNER
-    # normalised_sub_boxes = normalise_sub_patches(sub_boxes)
-
-    # print(len(sub_boxes), len(predicted_locations))
-
     # Get labels for each patch (i.e. AGN, PSR, FAKE)
     labels = source_box_labels(patch_ids=patch_ids, predicted_source_locations=predicted_locations, real_data=real_data)
 
-    # print(len(normalised_sub_boxes), len(predicted_locations), len(labels))
-
     # Format labels such that they are in vector format, e.g. AGN is equivalent to [1., 0., 0.]
     vector_labels = str_labels_to_vector_labels(labels)
-    # print(vector_labels)
-
-    # print(len(normalised_sub_boxes), len(predicted_locations), len(vector_labels))
 
     data = []
 
     # Combine data such that each sub-patch is associated with its equivalent label
-
-    # num_patches = len(normalised_sub_boxes)
     num_patches = len(sub_boxes)
-
-    # print(len(normalised_sub_boxes), len(predicted_locations), len(vector_labels))
-
-    # for patch in range(num_patches):
-    #
-    #     num_predicted_sources = len(sub_boxes[patch])
-    #
-    #     # N.B. conversion to float 32 from float 64 - Apple GPUs cannot work with float64
-    #     for pred_source in range(num_predicted_sources):
-    #         if isinstance(vector_labels[patch][pred_source], np.ndarray):
-    #             data.append([normalised_sub_boxes[patch][pred_source].astype(np.float32),
-    #                          vector_labels[patch][pred_source].astype(np.float32)])
 
     for patch in range(num_patches):
 
@@ -275,8 +216,6 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
             if isinstance(vector_labels[patch][pred_source], np.ndarray):
                 data.append([sub_boxes[patch][pred_source].astype(np.float32),
                              vector_labels[patch][pred_source].astype(np.float32)])
-
-    # print(len(normalised_sub_boxes), len(predicted_locations), len(vector_labels), len(data))
 
     if len(data) == 0:
         raise RuntimeError("Not enough sources were localised - no data is available for the classifier to train on.")

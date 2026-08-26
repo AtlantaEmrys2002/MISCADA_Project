@@ -23,7 +23,10 @@ from pathlib import Path
 from read_write_functions import save_predictions
 
 
-def novel_source_extraction_algorithms(training_data, validation_data, testing_data, real_data, save_directory):
+# def novel_source_extraction_algorithms(training_data, validation_data, testing_data, real_data, save_directory):
+def novel_source_extraction_algorithms(train_patch_ids, training_maps, training_masks,
+     validation_patch_ids, validation_maps, validation_masks,
+     test_patch_ids, testing_maps, testing_masks, real_patch_ids, real_maps, real_masks, save_directory):
     # FILE INITIALISATION
 
     # Make directory to save results on simulated data
@@ -43,19 +46,6 @@ def novel_source_extraction_algorithms(training_data, validation_data, testing_d
     classification_algorithms = ["cnn", "random_forest", "svm"]
 
     algorithm_count = 1
-
-    # GET DATA IN USEFUL FORMAT - MAYBE MAKE SURE ONLY FORMAT FOR SEGMENTATION CLASSIFIER
-
-    (train_patch_ids, training_maps, training_masks,
-     validation_patch_ids, validation_maps, validation_masks,
-     test_patch_ids, testing_maps, testing_masks) = (
-        ml_segmentation_data_prep(train_data=copy.deepcopy(training_data),
-                                  validation_data=copy.deepcopy(validation_data),
-                                  test_data=copy.deepcopy(testing_data)))
-
-    _, _, _, _, _, _, real_patch_ids, real_maps, real_masks = (
-        ml_segmentation_data_prep(train_data=np.array([]), validation_data=np.array([]),
-                                  test_data=copy.deepcopy(real_data)))
 
     for segment in segmentation_algorithms:
 
@@ -313,12 +303,23 @@ if __name__ == "__main__":
 
     # CHANGE THIS BACK AT THE END
 
-    train, valid, test = read_patches(num_patches=7500, directory=patches_directory)
+    # train, valid, test = read_patches(num_patches=7500, directory=patches_directory)
 
-    real_data = read_real_data(num_patches=768, directory="./real_data/real_patches/patches")
+    (train_patch_ids, training_maps, training_masks,
+    validation_patch_ids, validation_maps, validation_masks,
+    test_patch_ids, testing_maps, testing_masks) = read_patches(num_patches=7500, directory=patches_directory)
 
-    novel_source_extraction_algorithms(training_data=train, validation_data=valid, testing_data=test,
-                                       real_data=real_data, save_directory=save_directory)
+    _, _, _, _, _, _, real_patch_ids, real_maps, real_masks = read_patches(num_patches=768, directory="./real_data/real_patches/patches", split=False)
+
+    # real_data = read_real_data(num_patches=768, directory="./real_data/real_patches/patches")
+
+    # novel_source_extraction_algorithms(training_data=train, validation_data=valid, testing_data=test,
+    #                                    real_data=real_data, save_directory=save_directory)
+
+    novel_source_extraction_algorithms(train_patch_ids=train_patch_ids, training_maps=training_maps, training_masks=training_masks,
+    validation_patch_ids=validation_patch_ids, validation_maps=validation_maps, validation_masks=validation_masks,
+    test_patch_ids=test_patch_ids, testing_maps=testing_maps, testing_masks=testing_masks, real_patch_ids=real_patch_ids, real_maps=real_maps,
+                                       real_masks=real_masks, save_directory=save_directory)
 
     print("Complete")
 
