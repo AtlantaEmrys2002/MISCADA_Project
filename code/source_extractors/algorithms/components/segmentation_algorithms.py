@@ -345,11 +345,21 @@ def unet(training_maps, training_masks, validation_maps, validation_masks, testi
 
         with torch.no_grad():
 
-            train_data_predictions = model(torch.from_numpy(training_maps).to(device)).detach().cpu().numpy()
+            train_data_predictions = np.zeros((training_maps.shape[0], 1, 64, 64))
+            validation_data_predictions = np.zeros((validation_maps.shape[0], 1, 64, 64))
+            test_data_predictions = np.zeros((testing_maps.shape[0], 1, 64, 64))
 
-            validation_data_predictions = model(torch.from_numpy(validation_maps).to(device)).detach().cpu().numpy()
+            # Similar to batch loading - prevents GPU from running out of storage
+            for s in range(0, training_maps.shape[0], 1000):
 
-            test_data_predictions = model(torch.from_numpy(testing_maps).to(device)).detach().cpu().numpy()
+                lower = s
+                upper = min(s + 1000, training_maps.shape[0])
+
+                train_data_predictions[lower:upper] = model(torch.from_numpy(training_maps[lower:upper]).to(device)).detach().cpu().numpy()
+
+                validation_data_predictions[lower:upper] = model(torch.from_numpy(validation_maps[lower:upper]).to(device)).detach().cpu().numpy()
+
+                test_data_predictions[lower:upper] = model(torch.from_numpy(testing_maps[lower:upper]).to(device)).detach().cpu().numpy()
 
         return train_data_predictions, validation_data_predictions, test_data_predictions
 
@@ -362,6 +372,10 @@ def unet(training_maps, training_masks, validation_maps, validation_masks, testi
 # Convolutional Layers - https://en.wikipedia.org/wiki/Convolutional_layer
 # Cross-Entropy Loss Segmentation - https://discuss.pytorch.org/t/use-crossentropyloss-in-multiclass-semantic-
 # segmentation/158141
+# Custom Datasets - https://docs.pytorch.org/tutorials/beginner/data_loading_tutorial.html
+# Data Types - https://stackoverflow.com/questions/67456368/pytorch-getting-runtimeerror-found-dtype-double-but-expected
+# -float
+# Detach - https://stackoverflow.com/questions/49768306/pytorch-tensor-to-numpy-array
 # Early Convergence - https://stackoverflow.com/questions/55973335/best-way-to-overcome-early-convergence-for-machine-
 # learning-model
 # GPU - https://stackoverflow.com/questions/61565293/issue-training-pytorch-model-on-gpu?rq=4
@@ -369,8 +383,12 @@ def unet(training_maps, training_masks, validation_maps, validation_masks, testi
 # torch-cuda-floatte
 # GPU Transfer - https://stackoverflow.com/questions/63061779/pytorch-when-do-i-need-to-use-todevice-on-a-model-or-
 # tensor
+# Looked At (Did Not Use) - https://github.com/milesial/Pytorch-UNet/blob/master/train.py
 # Model Not Training - https://discuss.pytorch.org/t/model-not-training/5055
 # Multiclass Loss Function - https://discuss.pytorch.org/t/unet-multiclass-loss-function-selection/138106
+# NaN Loss - https://discuss.pytorch.org/t/nan-loss-issues-with-precision-16-in-pytorch-lightning-gan-training/204369/4
+# Neuron Datatype - https://discuss.pytorch.org/t/can-i-explicitly-set-dtype-for-torch-nn-conv2d/56563
+# No Gradient - https://stackoverflow.com/questions/65532022/lack-of-gradient-when-creating-tensor-from-numpy
 # Prediction with Model - https://discuss.pytorch.org/t/making-a-prediction-with-a-trained-model/2193
 # Pytorch Documentation - https://pytorch.org/get-started/locally/
 # Torch Types - https://stackoverflow.com/questions/70267810/pytorch-runtimeerror-expected-floating-point-type-for-
@@ -379,13 +397,17 @@ def unet(training_maps, training_masks, validation_maps, validation_masks, testi
 # -do-i-tell-which-samples-the-clas
 # Removing Channel Dimension - https://stackoverflow.com/questions/74764062/how-to-remove-the-channel-dimension-within-a
 # -pytorch-model
+# Requires Grad - https://discuss.pytorch.org/t/when-might-i-want-to-use-requires-grad-true-on-an-input/9624/2
 # Segmentation Loss Function - https://discuss.pytorch.org/t/loss-function-for-segmentation/129703
 # Segmentation with Cross Entropy - https://discuss.pytorch.org/t/image-segmentation-with-cross-entropy-loss/79138/4
 # Softmax Dimension - https://stackoverflow.com/questions/52513802/pytorch-softmax-with-dim
 # Softmax Error - https://discuss.pytorch.org/t/implicit-dimension-choice-for-softmax-warning/12314/2
+# Slicing Numpy Arrays - https://stackoverflow.com/questions/4257394/slicing-of-a-numpy-2d-array-or-how-do-i-extract-an-
+# mxm-submatrix-from-an-nxn-ar
 # Spatial Dimensions - https://discuss.pytorch.org/t/runtimeerror-only-batches-of-spatial-targets-supported-3d-tensors-
 # but-got-targets-of-dimension-4/82098
 # Squeeze - https://stackoverflow.com/questions/60619886/torch-squeeze-and-the-batch-dimension
+# Subsets - https://stackoverflow.com/questions/47432168/taking-subsets-of-a-pytorch-dataset
 # Training - https://docs.pytorch.org/tutorials/beginner/introyt/trainingyt.html
 # Training Loop - https://docs.pytorch.org/tutorials/beginner/introyt/trainingyt.html
 # Training Loss Plateau - https://stackoverflow.com/questions/76063234/pytorch-training-loss-is-0-00-and-validation-
@@ -398,6 +420,7 @@ def unet(training_maps, training_masks, validation_maps, validation_masks, testi
 # something-isnt-working-properly
 # Training Loss Plateau - https://www.reddit.com/r/learnmachinelearning/comments/12g78fz/training_loss_literally_does_
 # not_change_help/
+# Training Loss Plateau - https://discuss.pytorch.org/t/u-net-segmentation-loss-does-not-decrease/68962
 # Training Loss Plateau - https://discuss.pytorch.org/t/model-does-not-train-same-loss-in-every-epoch/121428/3
 # Training Loss Plateau - https://discuss.pytorch.org/t/loss-always-equal-to-zero-while-training-the-model/173676
 # Training Loss Plateau - https://discuss.pytorch.org/t/loss-not-updating-in-pytorch/169048
@@ -406,5 +429,6 @@ def unet(training_maps, training_masks, validation_maps, validation_masks, testi
 # segmentation/semantic_segmentation_unet/model.py
 # U-Net Tutorial - https://medium.com/@alessandromondin/semantic-segmentation-with-pytorch-u-net-from-
 # scratch-502d6565910a
+# U-Net Not Working - https://discuss.pytorch.org/t/unet-implementation/426
 # Weighted Loss Function - https://medium.com/@zergtant/use-weighted-loss-function-to-solve-imbalanced-data-
 # classification-problems-749237f38b75
