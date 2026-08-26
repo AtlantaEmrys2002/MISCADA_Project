@@ -11,34 +11,62 @@ import warnings
 from xml.dom import minidom
 
 
-class FermiCountMapDataset(Dataset):
-    """Custom dataset of fermi patches for training only (not testing)."""
-
-    # def __init__(self, patches_directory, masks_directory, num_patches):
-
-    def __init__(self, patches, masks, num_patches):
-
-        self.patches = patches
-
-        self.masks = masks
-
-        self.num_patches = num_patches
-
-    def __len__(self):
-
-        return self.num_patches
-
-    def __getitem__(self, idx):
-
-        if torch.is_tensor(idx):
-            idx = idx.tolist()
-
-        selected_patches = self.patches[idx]
-        selected_masks = self.masks[idx]
-
-        sample = {"patch": torch.from_numpy(selected_patches), "mask": torch.from_numpy(selected_masks)}
-
-        return sample
+# class FermiCountMapDataset(Dataset):
+#     """Custom dataset of fermi patches for training only (not testing)."""
+#
+#     # def __init__(self, patches_directory, masks_directory, num_patches):
+#
+#     def __init__(self, patches, masks, num_patches):
+#
+#         self.patches = patches
+#
+#         self.masks = masks
+#
+#         self.num_patches = num_patches
+#
+#     def __len__(self):
+#
+#         return self.num_patches
+#
+#     def __getitem__(self, idx):
+#
+#         if torch.is_tensor(idx):
+#             idx = idx.tolist()
+#
+#         selected_patches = self.patches[idx]
+#         selected_masks = self.masks[idx]
+#
+#         sample = {"patch": torch.from_numpy(selected_patches), "mask": torch.from_numpy(selected_masks)}
+#
+#         return sample
+#
+#
+# class ClassiferSubPatchesDataset(Dataset):
+#     """Custom dataset of fermi sub-patches for training (not testing) deep learning classifier."""
+#
+#     def __init__(self, data, num_sub_patches):
+#
+#         self.sub_patches = [k[0] for k in data]
+#
+#         self.labels = [k[1] for k in data]
+#
+#         self.num_sub_patches = num_sub_patches
+#
+#     def __len__(self):
+#
+#         return self.num_sub_patches
+#
+#     def __getitem__(self, idx):
+#
+#         if torch.is_tensor(idx):
+#             idx = idx.tolist()
+#
+#         selected_sub_patches = self.sub_patches[idx]
+#         selected_labels = self.labels[idx]
+#
+#         sample = {"subpatch": torch.from_numpy(selected_sub_patches), "label": torch.from_numpy(selected_labels)}
+#
+#         return sample
 
 
 def balance_dataset(data):
@@ -109,13 +137,9 @@ def image_cartesian_coordinates_to_galactic_coordinates(coordinates, patch_centr
     # We are calculating location in 128 x 128 instead of 64 x 64 image. Remember to keep this way round - x,y
     # becomes y,x for images. Then flattening the image into 1D array - this pixel value gives index into the
     # 1D array.
-    # pixel_id_values = pixel_id(x_vals * 2, y_vals * 2, 128)
-
     pixel_id_values = pixel_id(y_vals * 2, x_vals * 2, 128)
 
     new_coords = get_lb_from_pixel(pixel_id_values, patch_centre)
-
-    # new_coords = np.array([get_lb_from_pixel(pixel_id_val, patch_centre) for pixel_id_val in pixel_id_values])
 
     if coordinate_system == 'G':
 
@@ -132,7 +156,7 @@ def image_cartesian_coordinates_to_galactic_coordinates(coordinates, patch_centr
         raise TypeError("Coordinate system not supported.")
 
 
-def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_data=True, test=False, real_data=False, ml_data = False):
+def prepare_classifier_data(patches, predicted_locations, patch_ids, test=False, real_data=False):
     # Remove all patches with no predicted sources
     ids_to_remove = [p for p in range(patch_ids.shape[0]) if predicted_locations[p].shape[0] == 0]
 
@@ -173,23 +197,9 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_dat
 
         return data
 
-    elif ml_data:
-
-        data = balance_dataset(data)
-
-        return data
-
     else:
 
-        # Only balance dataset if training or validating (not when testing or applying to real data).
-        data = balance_dataset(data)
-
-        # Reformat as DataSet
-        split = Subset(data, np.arange(0, len(data)))
-
-        batches = DataLoader(split, batch_size=128, shuffle=shuffle_data)
-
-        return batches
+        return balance_dataset(data)
 
 
 def source_boxes(patches, predicted_source_locations, patch_ids):
@@ -239,15 +249,10 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
 
     # GET PATCH INFORMATION
 
-    if real_data:
+    directory = "./real_data/real_patches/patches/" if real_data else "./../data_simulation/simulated_data/patches/"
 
-        patches_metadata_file = "./real_data/real_patches/patches/patch_metadata.csv"
-        individual_patch_metadata_file = "./real_data/real_patches/patches/patch_{}/metadata.csv"
-
-    else:
-
-        patches_metadata_file = "./../data_simulation/simulated_data/patches/patch_metadata.csv"
-        individual_patch_metadata_file = "./../data_simulation/simulated_data/patches/patch_{}/metadata.csv"
+    patches_metadata_file = directory + "patch_metadata.csv"
+    individual_patch_metadata_file = directory + "patch_{}/metadata.csv"
 
     source_information = pd.read_csv(patches_metadata_file)
 
@@ -394,11 +399,6 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
                     else:
                         labels_for_patch.append("FAKE")
 
-
-        else:
-
-            print("HI")
-
         labels.append(np.array(labels_for_patch))
 
     return labels
@@ -418,64 +418,32 @@ def str_labels_to_vector_labels(labels):
 
 
 def xml_parser_locations(xml_file: str, coordinate_system='G'):
-    # COULD CALL THIS FROM OTHER FUNCTION MAYBE??
 
     # GET NAME AND LOCATION OF SOURCE IN SKY
 
-    docs = minidom.parse(xml_file)
-
-    sources = docs.getElementsByTagName("source")
-
-    coordinates = []
+    sources = minidom.parse(xml_file).getElementsByTagName("source")
 
     # Remove diffuse sources - only processing point sources with this function
     sources = [sources[k] for k in range(len(sources)) if sources[k].getAttribute("type") != "DiffuseSource"]
 
-    source_ids = []
+    source_ids = np.array([source.getAttribute("name") for source in sources])
 
-    # Parse XML
-    for source in sources:
+    parameters = [source.getElementsByTagName("spatialModel")[0].getElementsByTagName("parameter") for source in sources]
 
-        source_ids.append(source.getAttribute("name"))
-
-        # PARSE SPATIAL PARAMETERS
-
-        spatial_model = source.getElementsByTagName("spatialModel")[0]
-
-        parameters = spatial_model.getElementsByTagName("parameter")
-
-        coordinate = [0, 0]
-
-        for param in parameters:
-            name = param.getAttribute("name")
-
-            if name == "RA":
-                coordinate[0] = float(param.getAttribute("value"))
-            else:
-                coordinate[1] = float(param.getAttribute("value"))
-
-        coordinates.append(coordinate)
-
-    # Have coordinates in format [RA, DEC] - need to convert them to Lat-lon
-
-    # Convert coordinates to np array
-    coordinates = np.array(coordinates)
+    # Get RA and DEC of each source - i.e. parse spatial parameters
+    coordinates = np.array([[float(params[0].getAttribute("value")), float(params[1].getAttribute("value"))] for params in parameters])
 
     if coordinate_system == 'G':
 
         # Converts to galactic coordinates
 
-        # Get coordinates into numpy array then separate into list of latitudes and longitudes
-
         coordinates = SkyCoord(ra=coordinates[:, 0] * u.degree, dec=coordinates[:, 1] * u.degree, frame='icrs').galactic
 
-        coordinates = np.array([coordinates.l.value, coordinates.b.value]).T
-
-        return coordinates, source_ids
+        return np.array([coordinates.l.value, coordinates.b.value]).T, source_ids
 
     elif coordinate_system == "C":
 
-        # Returns in celestial coordinates
+        # Returns celestial coordinates
 
         return coordinates, source_ids
 

@@ -11,7 +11,7 @@ in report). This author also created their own training loop.
 """
 
 import copy
-from .data_preparation import ml_segmentation_data_prep, FermiCountMapDataset
+from .custom_datasets import FermiCountMapDataset
 import numpy as np
 import torch
 from torch import nn
@@ -310,7 +310,7 @@ def unet(training_maps, training_masks, validation_maps, validation_masks, testi
 
         validation_patch_dataset = DataLoader(
             FermiCountMapDataset(patches=copy.deepcopy(validation_maps), masks=copy.deepcopy(validation_masks), num_patches=validation_maps.shape[0]),
-            batch_size=64, shuffle=True)
+            batch_size=64, shuffle=False)
 
         # Train classifier on data
         # model, best_epoch = unet_train(train_data=training_patch_dataset, test_data=validation_patch_dataset,

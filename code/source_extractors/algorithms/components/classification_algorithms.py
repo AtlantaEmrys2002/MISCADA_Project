@@ -1,6 +1,8 @@
+from .custom_datasets import ClassifierSubPatchesDataset
 import numpy as np
 import torch
 from torch import nn
+from torch.utils.data.dataloader import DataLoader
 
 
 class CategoricalCrossEntropy(nn.Module):
@@ -86,7 +88,7 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
     best_vloss = 100000000000000
     best_epoch = 0
 
-    epochs_since_improvement = 0
+    # epochs_since_improvement = 0
 
     # Training epochs
     for epoch in range(training_epochs):
@@ -96,7 +98,8 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
         classifier.train()
 
         for i, data in enumerate(train_data):
-            inputs, labels = torch.tensor(data[0], dtype=torch.float32).to(device), torch.tensor(data[1], dtype=torch.float32).to(device)
+
+            inputs, labels = torch.tensor(data["subpatch"], dtype=torch.float32).to(device), torch.tensor(data["label"], dtype=torch.float32).to(device)
 
             optimiser.zero_grad()
 
@@ -117,7 +120,8 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
 
         with torch.no_grad():
             for i, vdata in enumerate(test_data):
-                vinputs, vlabels = torch.tensor(vdata[0], dtype=torch.float32).to(device), torch.tensor(vdata[1], dtype=torch.float32).to(device)
+
+                vinputs, vlabels = torch.tensor(vdata["subpatch"], dtype=torch.float32).to(device), torch.tensor(vdata["label"], dtype=torch.float32).to(device)
 
                 voutputs = classifier(vinputs)
 
@@ -146,8 +150,15 @@ def classification_neural_network(train_data, validation_data, test_data, pretra
     # INITIALISE CLASSIFIER
     if not pretrained:
 
+        # Get data into efficient dataloader
+
+        train_data_loader = DataLoader(ClassifierSubPatchesDataset(data=train_data, num_sub_patches=len(train_data)), batch_size=64, shuffle=True)
+
+        validation_data_loader = DataLoader(ClassifierSubPatchesDataset(data=validation_data, num_sub_patches=len(validation_data)),
+                                batch_size=64, shuffle=True)
+
         # Train classifier on data
-        classifier_model, best_epoch_classifier = classifier_train(train_data=train_data, test_data=validation_data,
+        classifier_model, best_epoch_classifier = classifier_train(train_data=train_data_loader, test_data=validation_data_loader,
                                                                    device=device, save_file=save_file)
 
         print("BEST EPOCH: {}".format(best_epoch_classifier))
