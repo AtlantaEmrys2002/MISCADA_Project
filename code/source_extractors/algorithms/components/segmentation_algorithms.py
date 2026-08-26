@@ -220,15 +220,9 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
     # Define loss function and optimiser - changed from that proposed in ID11 and ID8
     loss_fn = torch.nn.BCEWithLogitsLoss()
 
-    # optimiser = torch.optim.Adam(unet_model.parameters(), lr=1.e-5)
-
-
-
     optimiser = torch.optim.Adam(unet_model.parameters(), lr=1.e-4)
 
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimiser, min_lr=1.e-7, patience=5)
-
-
 
     # Start with large value that is easily surpassed
     best_vloss = 100000000000000
@@ -319,8 +313,13 @@ def unet(training_maps, training_masks, validation_maps, validation_masks, testi
             batch_size=64, shuffle=True)
 
         # Train classifier on data
+        # model, best_epoch = unet_train(train_data=training_patch_dataset, test_data=validation_patch_dataset,
+        #                                save_file=save_file, device=device, training_epochs=50)
+
+        # CHANGE BACK
+
         model, best_epoch = unet_train(train_data=training_patch_dataset, test_data=validation_patch_dataset,
-                                       save_file=save_file, device=device, training_epochs=50)
+                                       save_file=save_file, device=device, training_epochs=5)
 
         print("BEST EPOCH: {}".format(best_epoch))
 

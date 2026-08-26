@@ -1,4 +1,3 @@
-from astropy.table import QTable
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 import copy
@@ -131,58 +130,6 @@ def image_cartesian_coordinates_to_galactic_coordinates(coordinates, patch_centr
     else:
 
         raise TypeError("Coordinate system not supported.")
-
-
-def ml_segmentation_data_prep(train_data, validation_data, test_data):
-    # Formats count map patches and masks for compatibility with ML (as opposed to DL) segmentation algorithms.
-
-    # EXTRACT TRAINING DATA
-    train_patch_ids = []
-    training_maps = []
-    training_masks = []
-
-    for i, x in enumerate(train_data):
-
-        for k in range(x[0].shape[0]):
-            train_patch_ids.append(x[0][k])
-
-        for k in range(x[1].shape[0]):
-            training_maps.append(x[1][k])
-
-        for j in range(x[2].shape[0]):
-            training_masks.append(x[2][j][0])
-
-    train_patch_ids = np.array(train_patch_ids).astype(int)
-    training_maps = np.array(training_maps)
-    training_masks = np.array(training_masks)
-
-    # EXTRACT VALIDATION DATA
-    validation_patch_ids = []
-    validation_maps = []
-    validation_masks = []
-
-    for i, x in enumerate(validation_data):
-
-        for k in range(x[0].shape[0]):
-            validation_patch_ids.append(x[0][k])
-
-        for k in range(x[1].shape[0]):
-            validation_maps.append(x[1][k])
-
-        for j in range(x[2].shape[0]):
-            validation_masks.append(x[2][j][0])
-
-    validation_patch_ids = np.array(validation_patch_ids).astype(int)
-    validation_maps = np.array(validation_maps)
-    validation_masks = np.array(validation_masks)
-
-    # EXTRACT TEST DATA
-    test_patch_ids = np.array([k[0] for k in test_data])
-    testing_maps = np.array([k[1] for k in test_data])
-    testing_masks = np.array([k[2][0] for k in test_data])
-
-    return (train_patch_ids, training_maps, training_masks, validation_patch_ids, validation_maps, validation_masks,
-            test_patch_ids, testing_maps, testing_masks)
 
 
 def prepare_classifier_data(patches, predicted_locations, patch_ids, shuffle_data=True, test=False, real_data=False, ml_data = False):

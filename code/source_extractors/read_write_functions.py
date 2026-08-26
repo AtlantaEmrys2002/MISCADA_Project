@@ -1,56 +1,7 @@
 import math
 import numpy as np
-import pandas as pd
 from pathlib import Path
 import pickle
-import torch
-from torch.utils.data import DataLoader, Subset
-
-
-# def read_patches(num_patches=int, directory=str):
-#
-#     # Read in patches
-#     patches = (np.array([np.load("{}/patch_{}/patch.npy".format(directory, n)) for n in range(num_patches)])
-#                .astype(np.float32))
-#
-#     # Read in masks
-#     masks = (np.array([[np.load("{}/patch_{}/mask.npy".format(directory, n))] for n in range(num_patches)])
-#              .astype(np.float32))
-#
-#     # Combine to create test data
-#     test_data = [(k, torch.tensor(patches[k]), torch.tensor(masks[k])) for k in range(num_patches)]
-#
-#     # Select random samples
-#     train_set_size = math.floor(float(num_patches) * 0.7)
-#     validation_set_size = math.floor(float(num_patches) * 0.2)
-#     test_set_size = int(num_patches) - train_set_size - validation_set_size
-#
-#     # RANDOM SPLIT OF INDICES - 70% vs 20% v 10%
-#
-#     possible_indices = np.arange(num_patches)
-#
-#     train_indices = np.random.choice(possible_indices, size=train_set_size, replace=False)
-#
-#     validation_indices = np.random.choice(np.setdiff1d(possible_indices, train_indices), size=validation_set_size,
-#                                           replace=False)
-#
-#     test_indices = np.random.choice(np.setdiff1d(possible_indices, np.concatenate((train_indices, validation_indices))),
-#                                     size=test_set_size, replace=False)
-#
-#     # Split data into train, validation, and test sets
-#     train_split = Subset(test_data, train_indices)
-#     validation_split = Subset(test_data, validation_indices)
-#
-#     # Create batches
-#     train_batches = DataLoader(train_split, batch_size=64, shuffle=True)
-#     validation_batches = DataLoader(validation_split, batch_size=64, shuffle=False)
-#
-#     # N.B. Only need the IDs of each test patch and make sure not to shuffle the test patches
-#
-#     data_for_testing = [test_data[k] for k in test_indices]
-#
-#     return train_batches, validation_batches, data_for_testing
-
 
 
 def read_patches(num_patches=int, directory=str, split=True):
@@ -95,50 +46,7 @@ def read_patches(num_patches=int, directory=str, split=True):
 
     else:
 
-        return None, None, None, None, None, None, [k for k in range(num_patches)], [patches[k] for k in range(num_patches)], [masks[k][0] for k in range(num_patches)]
-
-
-
-
-
-
-
-def read_real_data(num_patches, directory=str):
-    # READ IN REAL DATA
-
-    # Read in patches
-    patches = (np.array([np.load("{}/patch_{}/patch.npy".format(directory, n)) for n in range(num_patches)])
-               .astype(np.float32))
-
-    # Read in masks
-    masks = (np.array([[np.load("{}/patch_{}/mask.npy".format(directory, n))] for n in range(num_patches)])
-             .astype(np.float32))
-
-    # Read in metadata for each patch
-    source_ids = []
-    actual_cartesian_locations = []
-    types = []
-
-    for n in range(num_patches):
-        file_name = "{}/patch_{}/metadata.csv".format(directory, n)
-
-        df = pd.read_csv(file_name)
-
-        source_ids.append(df["source_id"].to_numpy())
-
-        ys = df["cartesian_y"].to_numpy()
-        xs = df["cartesian_x"].to_numpy()
-
-        cartesian_coords = np.array(list(zip(ys, xs)))
-
-        actual_cartesian_locations.append(cartesian_coords)
-
-        types.append(df["source_type"].to_numpy())
-
-    # Combine to create test data
-    test_data = [(k, torch.tensor(patches[k]), torch.tensor(masks[k])) for k in range(num_patches)]
-
-    return test_data
+        return np.array([k for k in range(num_patches)]), np.array([patches[k] for k in range(num_patches)]), np.array([masks[k][0] for k in range(num_patches)])
 
 
 def save_predictions(patch_ids, predicted_segmentations, predicted_locations, predicted_classes, actual_classes,

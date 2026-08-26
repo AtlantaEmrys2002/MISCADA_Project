@@ -7,26 +7,61 @@ outputs of each combination of segmentation and localisation algorithm (this is 
 """
 
 import argparse
-# from novel import novel_source_extraction_algorithms
-from read_write_functions import read_patches, read_real_data
-
 from algorithms.components.classification_algorithms import classification_neural_network
 from algorithms.components.clustering_algorithms import (blob_detection, dbscan_clustering, k_means_clustering,
                                                          spectral_clustering)
 from algorithms.components.machine_learning_classification_algorithms import random_forest_classifier, svm_classifier
 from algorithms.components.machine_learning_segmentation_algorithms import random_forest_segmentation
 from algorithms.components.segmentation_algorithms import unet
-from algorithms.components.data_preparation import ml_segmentation_data_prep, prepare_classifier_data
+from algorithms.components.data_preparation import prepare_classifier_data
 import copy
 import numpy as np
 from pathlib import Path
-from read_write_functions import save_predictions
+from read_write_functions import read_patches, save_predictions
 
 
-# def novel_source_extraction_algorithms(training_data, validation_data, testing_data, real_data, save_directory):
-def novel_source_extraction_algorithms(train_patch_ids, training_maps, training_masks,
-     validation_patch_ids, validation_maps, validation_masks,
-     test_patch_ids, testing_maps, testing_masks, real_patch_ids, real_maps, real_masks, save_directory):
+if __name__ == "__main__":
+    # PROCESS USER INPUT
+
+    parser = argparse.ArgumentParser(description="Reads in a collection of specified patches and formats them to be "
+                                                 "passed to benchmark algorithms. These algorithms are then applied and"
+                                                 "the parameters of the 'best' versions of them are saved.")
+
+    parser.add_argument("--patch_location", required=True, type=str, help="The directory in which the"
+                                                                          "patch data is stored.")
+
+    parser.add_argument("--num_patches", required=True, type=int, help="The number of patches to read from"
+                                                                       "the specified patch directory.")
+
+    parser.add_argument("--save_directory", required=True, type=str, help="Location in which to save the "
+                                                                          "predictions and results for each source"
+                                                                          "extraction method.")
+
+    args = parser.parse_args()
+
+    patches_directory = args.patch_location
+    num_patches = args.num_patches
+    save_directory = args.save_directory
+
+    real_data_save_directory = save_directory + "/real"
+
+    Path(real_data_save_directory).mkdir(parents=True, exist_ok=True)
+
+    # READ IN PATCHES CORRECTLY
+
+    print("Reading in and formatting patches...")
+
+    # CHANGE THIS BACK AT THE END
+
+    # train, valid, test = read_patches(num_patches=7500, directory=patches_directory)
+
+    (train_patch_ids, training_maps, training_masks,
+    validation_patch_ids, validation_maps, validation_masks,
+    test_patch_ids, testing_maps, testing_masks) = read_patches(num_patches=7500, directory=patches_directory)
+
+    real_patch_ids, real_maps, real_masks = read_patches(num_patches=768, directory="./real_data/real_patches/patches",
+                                                         split=False)
+
     # FILE INITIALISATION
 
     # Make directory to save results on simulated data
@@ -54,10 +89,14 @@ def novel_source_extraction_algorithms(train_patch_ids, training_maps, training_
             case "unet":
 
                 (train_segmentation_predictions, validation_segmentation_predictions, test_segmentation_predictions) = (
-                    unet(training_maps=copy.deepcopy(training_maps), training_masks=copy.deepcopy(training_masks), validation_maps=copy.deepcopy(validation_maps), validation_masks=copy.deepcopy(validation_masks), testing_maps=copy.deepcopy(testing_maps)))
+                    unet(training_maps=copy.deepcopy(training_maps), training_masks=copy.deepcopy(training_masks),
+                         validation_maps=copy.deepcopy(validation_maps),
+                         validation_masks=copy.deepcopy(validation_masks), testing_maps=copy.deepcopy(testing_maps)))
 
-                _, _, real_segmentation_predictions = unet(training_maps=np.array([]), training_masks=np.array([]), validation_maps=np.array([]), validation_masks=np.array([]),
-                                                           testing_maps=copy.deepcopy(real_maps), pretrained=True, real=True)
+                _, _, real_segmentation_predictions = unet(training_maps=np.array([]), training_masks=np.array([]),
+                                                           validation_maps=np.array([]), validation_masks=np.array([]),
+                                                           testing_maps=copy.deepcopy(real_maps), pretrained=True,
+                                                           real=True)
 
             case "random_forest":
 
@@ -170,12 +209,15 @@ def novel_source_extraction_algorithms(train_patch_ids, training_maps, training_
                                                     patch_ids=copy.deepcopy(validation_patch_ids), shuffle_data=False))
 
                         test_batches_class = prepare_classifier_data(patches=copy.deepcopy(testing_maps),
-                                                                     predicted_locations=copy.deepcopy(test_source_locations),
+                                                                     predicted_locations=copy.deepcopy(
+                                                                         test_source_locations),
                                                                      patch_ids=copy.deepcopy(test_patch_ids), test=True)
 
                         real_batches_class = prepare_classifier_data(patches=copy.deepcopy(real_maps),
-                                                                     predicted_locations=copy.deepcopy(real_source_locations),
-                                                                     patch_ids=copy.deepcopy(real_patch_ids), test=True, real_data=True)
+                                                                     predicted_locations=copy.deepcopy(
+                                                                         real_source_locations),
+                                                                     patch_ids=copy.deepcopy(real_patch_ids), test=True,
+                                                                     real_data=True)
 
                         save_file_classifier = ("./algorithms/pre_trained_models/cnn_classifier_for_{}_and_{}.pt".
                                                 format(segment, local))
@@ -201,12 +243,15 @@ def novel_source_extraction_algorithms(train_patch_ids, training_maps, training_
                                                     patch_ids=copy.deepcopy(train_patch_ids), test=False, ml_data=True))
 
                         test_batches_class = prepare_classifier_data(patches=copy.deepcopy(testing_maps),
-                                                                     predicted_locations=copy.deepcopy(test_source_locations),
+                                                                     predicted_locations=copy.deepcopy(
+                                                                         test_source_locations),
                                                                      patch_ids=copy.deepcopy(test_patch_ids), test=True)
 
                         real_batches_class = prepare_classifier_data(patches=copy.deepcopy(real_maps),
-                                                                     predicted_locations=copy.deepcopy(real_source_locations),
-                                                                     patch_ids=copy.deepcopy(real_patch_ids), test=True, real_data=True)
+                                                                     predicted_locations=copy.deepcopy(
+                                                                         real_source_locations),
+                                                                     patch_ids=copy.deepcopy(real_patch_ids), test=True,
+                                                                     real_data=True)
 
                         save_file_classifier = ("./algorithms/pre_trained_models/rf_classifier_for_{}_and_{}.pt".
                                                 format(segment, local))
@@ -228,12 +273,15 @@ def novel_source_extraction_algorithms(train_patch_ids, training_maps, training_
                                                     patch_ids=copy.deepcopy(train_patch_ids), test=False, ml_data=True))
 
                         test_batches_class = prepare_classifier_data(patches=copy.deepcopy(testing_maps),
-                                                                     predicted_locations=copy.deepcopy(test_source_locations),
+                                                                     predicted_locations=copy.deepcopy(
+                                                                         test_source_locations),
                                                                      patch_ids=copy.deepcopy(test_patch_ids), test=True)
 
                         real_batches_class = prepare_classifier_data(patches=copy.deepcopy(real_maps),
-                                                                     predicted_locations=copy.deepcopy(real_source_locations),
-                                                                     patch_ids=copy.deepcopy(real_patch_ids), test=True, real_data=True)
+                                                                     predicted_locations=copy.deepcopy(
+                                                                         real_source_locations),
+                                                                     patch_ids=copy.deepcopy(real_patch_ids), test=True,
+                                                                     real_data=True)
 
                         save_file_classifier = ("./algorithms/pre_trained_models/svm_classifier_for_{}_and_{}.pt".
                                                 format(segment, local))
@@ -269,62 +317,11 @@ def novel_source_extraction_algorithms(train_patch_ids, training_maps, training_
 
                 algorithm_count += 1
 
-
-if __name__ == "__main__":
-    # PROCESS USER INPUT
-
-    parser = argparse.ArgumentParser(description="Reads in a collection of specified patches and formats them to be "
-                                                 "passed to benchmark algorithms. These algorithms are then applied and"
-                                                 "the parameters of the 'best' versions of them are saved.")
-
-    parser.add_argument("--patch_location", required=True, type=str, help="The directory in which the"
-                                                                          "patch data is stored.")
-
-    parser.add_argument("--num_patches", required=True, type=int, help="The number of patches to read from"
-                                                                       "the specified patch directory.")
-
-    parser.add_argument("--save_directory", required=True, type=str, help="Location in which to save the "
-                                                                          "predictions and results for each source"
-                                                                          "extraction method.")
-
-    args = parser.parse_args()
-
-    patches_directory = args.patch_location
-    num_patches = args.num_patches
-    save_directory = args.save_directory
-
-    real_data_save_directory = save_directory + "/real"
-
-    Path(real_data_save_directory).mkdir(parents=True, exist_ok=True)
-
-    # READ IN PATCHES CORRECTLY
-
-    print("Reading in and formatting patches...")
-
-    # CHANGE THIS BACK AT THE END
-
-    # train, valid, test = read_patches(num_patches=7500, directory=patches_directory)
-
-    (train_patch_ids, training_maps, training_masks,
-    validation_patch_ids, validation_maps, validation_masks,
-    test_patch_ids, testing_maps, testing_masks) = read_patches(num_patches=7500, directory=patches_directory)
-
-    _, _, _, _, _, _, real_patch_ids, real_maps, real_masks = read_patches(num_patches=768, directory="./real_data/real_patches/patches", split=False)
-
-    # real_data = read_real_data(num_patches=768, directory="./real_data/real_patches/patches")
-
-    # novel_source_extraction_algorithms(training_data=train, validation_data=valid, testing_data=test,
-    #                                    real_data=real_data, save_directory=save_directory)
-
-    novel_source_extraction_algorithms(train_patch_ids=train_patch_ids, training_maps=training_maps, training_masks=training_masks,
-    validation_patch_ids=validation_patch_ids, validation_maps=validation_maps, validation_masks=validation_masks,
-    test_patch_ids=test_patch_ids, testing_maps=testing_maps, testing_masks=testing_masks, real_patch_ids=real_patch_ids, real_maps=real_maps,
-                                       real_masks=real_masks, save_directory=save_directory)
-
     print("Complete")
 
 # REFERENCES
 
 # Argparse Errors - https://stackoverflow.com/questions/10900617/getting-syntax-error-near-unexpected-token-in-python
 # Double List Comprehension - https://stackoverflow.com/questions/1198777/double-iteration-in-list-comprehension
-# Interpolation in Imshow - https://stackoverflow.com/questions/55121294/imshow-plot-with-no-data-values-excluded-from-interpolation
+# Interpolation in Imshow - https://stackoverflow.com/questions/55121294/imshow-plot-with-no-data-values-excluded-from-
+# interpolation
