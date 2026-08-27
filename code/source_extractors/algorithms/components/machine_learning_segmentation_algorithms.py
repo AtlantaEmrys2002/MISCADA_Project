@@ -9,6 +9,7 @@ import numpy as np
 from pickle import dump, load
 from skimage import feature, future
 from sklearn.ensemble import RandomForestClassifier
+import time
 
 
 def random_forest_segmentation(training_maps, training_masks, validation_maps, testing_maps, sigma_min=1, sigma_max=16,
@@ -23,12 +24,14 @@ def random_forest_segmentation(training_maps, training_masks, validation_maps, t
         feature.multiscale_basic_features,
         intensity=True,
         workers=4,
-        edges=True,
+        edges=False,
         texture=False,
         sigma_min=sigma_min,
         sigma_max=sigma_max,
         channel_axis=0,
     )
+
+    print(f"HELLO: {training_maps.shape}")
 
     # Extract local features from training data
     training_maps = np.array([features_func(tm) for tm in training_maps])
@@ -39,20 +42,26 @@ def random_forest_segmentation(training_maps, training_masks, validation_maps, t
     # Extract local features from test data
     testing_maps = np.array([features_func(tm) for tm in testing_maps])
 
+    print(testing_maps.shape)
+
     if not pretrained:
         # Train a new RF segmentor
 
         # TRAIN RANDOM FOREST CLASSIFIER ON DATA
 
-        clf = RandomForestClassifier(n_estimators=50, n_jobs=3, max_depth=6, max_samples=0.05)
+        start = time.time()
+
+        clf = RandomForestClassifier(n_estimators=60, n_jobs=4, max_depth=7, max_samples=0.05)
 
         clf = future.fit_segmenter(training_masks, training_maps, clf)
+
+        print(time.time() - start)
 
         # GET PREDICTIONS
 
         # SAVE TRAINED SEGMENTATION ALGORITHM
         with open(save_file, "wb") as f:
-            dump(clf, f, protocol=5)
+            dump(clf, f)
 
     else:
 

@@ -2,6 +2,7 @@
 *__pycache__*
 *.gif
 *.fits
+*.npy
 *DS_Store*
 *.par
 code/data_simulation/simulated_data/.DS_Store

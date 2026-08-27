@@ -59,7 +59,6 @@ class SourceClassifier(nn.Module):
             nn.Linear(in_features=32, out_features=16),
             nn.ReLU(inplace=True),
             nn.Linear(in_features=16, out_features=3),
-            # nn.Softmax(dim=1)
             nn.Softmax(dim=1)
 
         )
@@ -88,8 +87,6 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
     best_vloss = 100000000000000
     best_epoch = 0
 
-    # epochs_since_improvement = 0
-
     # Training epochs
     for epoch in range(training_epochs):
 
@@ -99,7 +96,7 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
 
         for i, data in enumerate(train_data):
 
-            inputs, labels = torch.tensor(data["subpatch"], dtype=torch.float32).to(device), torch.tensor(data["label"], dtype=torch.float32).to(device)
+            inputs, labels = data["subpatch"].to(device, dtype=torch.float32), data["label"].to(device, dtype=torch.float32)
 
             optimiser.zero_grad()
 
@@ -121,7 +118,7 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
         with torch.no_grad():
             for i, vdata in enumerate(test_data):
 
-                vinputs, vlabels = torch.tensor(vdata["subpatch"], dtype=torch.float32).to(device), torch.tensor(vdata["label"], dtype=torch.float32).to(device)
+                vinputs, vlabels = vdata["subpatch"].to(device, dtype=torch.float32), vdata["label"].to(device, dtype=torch.float32)
 
                 voutputs = classifier(vinputs)
 
@@ -130,6 +127,8 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
                 running_vloss += vloss
 
         avg_vloss = running_vloss / (i + 1)
+
+        print(avg_vloss)
 
         # if this is the best model (in terms of loss) found so far, save model
         if avg_vloss < best_vloss:
