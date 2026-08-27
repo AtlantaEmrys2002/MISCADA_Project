@@ -128,5 +128,12 @@ def get_lb_from_pixel(pixel_id, lb_centre, xsize=128):
     return l_PS, b_PS
 
 
+def loss_values(epochs, losses, directory: str, method: str):
+
+    loss_variation = np.vstack((np.array(epochs), np.array(losses))).T
+
+    np.save(directory + f"{method}_loss_per_epoch.npy", loss_variation)
+
+
 def pixel_id(row, col, xsize_patch):
     return (xsize_patch * row + col).astype(int)

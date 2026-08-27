@@ -58,7 +58,7 @@ if __name__ == "__main__":
     (train_patch_ids, training_maps, training_masks,
     validation_patch_ids, validation_maps, validation_masks,
 
-    test_patch_ids, testing_maps, testing_masks) = read_patches(num_patches=25000, directory=patches_directory)
+    test_patch_ids, testing_maps, testing_masks) = read_patches(num_patches=10000, directory=patches_directory)
 
     real_patch_ids, real_maps, real_masks = read_patches(num_patches=768, directory="./real_data/real_patches/patches",
                                                          split=False)
@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
     # ALGORITHMS
 
-    segmentation_algorithms = ["random_forest", "unet"]
+    segmentation_algorithms = ["unet", "random_forest"]
 
     localisation_algorithms = ["dbscan", "kmeans", "spectral", "blob_detection"]
 
@@ -103,7 +103,7 @@ if __name__ == "__main__":
 
                 (train_segmentation_predictions, validation_segmentation_predictions, test_segmentation_predictions) = \
                     (random_forest_segmentation(training_maps=training_maps, training_masks=training_masks,
-                                                validation_maps=validation_maps, testing_maps=testing_maps, pretrained=False))
+                                                validation_maps=validation_maps, testing_maps=testing_maps))
 
                 _, _, real_segmentation_predictions = random_forest_segmentation(training_maps=np.array([]),
                                                                                  training_masks=np.array([]),

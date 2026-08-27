@@ -17,6 +17,7 @@ import torch
 from torch import nn
 from torch.utils.data.dataloader import DataLoader
 from torchvision.transforms.functional import center_crop
+from ..utils import loss_values
 
 
 class CNNBlock(nn.Module):
@@ -228,6 +229,8 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
     best_vloss = 100000000000000
     best_epoch = 0
 
+    loss_record = []
+
     # Training epochs
     for epoch in range(training_epochs):
 
@@ -270,7 +273,7 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
 
         avg_vloss = running_vloss / (i + 1)
 
-        print(avg_vloss)
+        loss_record.append(avg_vloss.item())
 
         # if this is the best model (in terms of loss) found so far, save model
         if avg_vloss < best_vloss:
@@ -282,13 +285,9 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
         # Calling after validation loss - decrease learning rate if no improvement
         scheduler.step(avg_vloss)
 
-        if epoch == 40:
-
-            import matplotlib.pyplot as plt
-
-            plt.imshow(voutputs[0].to('cpu').detach().numpy())
-
-            plt.show()
+    # Save loss values
+    loss_values(epochs=list(range(0, training_epochs)), losses=loss_record, method="unet",
+                directory="./../results/analysis_results/")
 
     return unet_model, best_epoch
 

@@ -27,6 +27,7 @@ def balance_dataset(data):
 
     num_sources_to_sample_of_each_type = np.max([agns.shape[0], psrs.shape[0], fakes.shape[0]])
 
+    print(f"No. AGN: {agns.shape[0]} No. PSR: {psrs.shape[0]} No. FAKE: {fakes.shape[0]}")
     print("No. Each Source in Dataset: {}".format(num_sources_to_sample_of_each_type))
 
     num_agns_to_sample = num_sources_to_sample_of_each_type - agns.shape[0]
@@ -361,4 +362,4 @@ def xml_parser_locations(xml_file: str, coordinate_system='G'):
 # Match vs If-Else - https://www.reddit.com/r/learnpython/comments/1by6vht/should_i_use_match_case_instead_of_if_else/
 # Partial Func - https://stackoverflow.com/questions/15331726/how-does-functools-partial-do-what-it-does
 # Stacking 2D Arrays - https://stackoverflow.com/questions/72473949/stacking-2d-arrays-into-a-3d-array
-# Vstack - https://stackoverflow.com/questions/62340746/numpy-stack-multidimensional-arrays
+# vstack - https://stackoverflow.com/questions/62340746/numpy-stack-multidimensional-arrays
