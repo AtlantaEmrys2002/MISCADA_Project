@@ -4,69 +4,9 @@ import copy
 import numpy as np
 from operator import itemgetter
 import pandas as pd
-import torch
-from torch.utils.data import DataLoader, Dataset, Subset
 from ..utils import get_catalog_data, get_lb_from_pixel, pixel_id
 import warnings
 from xml.dom import minidom
-
-
-# class FermiCountMapDataset(Dataset):
-#     """Custom dataset of fermi patches for training only (not testing)."""
-#
-#     # def __init__(self, patches_directory, masks_directory, num_patches):
-#
-#     def __init__(self, patches, masks, num_patches):
-#
-#         self.patches = patches
-#
-#         self.masks = masks
-#
-#         self.num_patches = num_patches
-#
-#     def __len__(self):
-#
-#         return self.num_patches
-#
-#     def __getitem__(self, idx):
-#
-#         if torch.is_tensor(idx):
-#             idx = idx.tolist()
-#
-#         selected_patches = self.patches[idx]
-#         selected_masks = self.masks[idx]
-#
-#         sample = {"patch": torch.from_numpy(selected_patches), "mask": torch.from_numpy(selected_masks)}
-#
-#         return sample
-#
-#
-# class ClassiferSubPatchesDataset(Dataset):
-#     """Custom dataset of fermi sub-patches for training (not testing) deep learning classifier."""
-#
-#     def __init__(self, data, num_sub_patches):
-#
-#         self.sub_patches = [k[0] for k in data]
-#
-#         self.labels = [k[1] for k in data]
-#
-#         self.num_sub_patches = num_sub_patches
-#
-#     def __len__(self):
-#
-#         return self.num_sub_patches
-#
-#     def __getitem__(self, idx):
-#
-#         if torch.is_tensor(idx):
-#             idx = idx.tolist()
-#
-#         selected_sub_patches = self.sub_patches[idx]
-#         selected_labels = self.labels[idx]
-#
-#         sample = {"subpatch": torch.from_numpy(selected_sub_patches), "label": torch.from_numpy(selected_labels)}
-#
-#         return sample
 
 
 def balance_dataset(data):
@@ -85,12 +25,7 @@ def balance_dataset(data):
         warnings.warn("No FAKE sources were detected - only genuine AGN and PSR. Segmentation and localisation was "
                       "highly successful.")
 
-    if agns.shape[0] > psrs.shape[0] and agns.shape[0] > fakes.shape[0]:
-        num_sources_to_sample_of_each_type = agns.shape[0]
-    elif psrs.shape[0] > agns.shape[0] and psrs.shape[0] > fakes.shape[0]:
-        num_sources_to_sample_of_each_type = psrs.shape[0]
-    else:
-        num_sources_to_sample_of_each_type = fakes.shape[0]
+    num_sources_to_sample_of_each_type = np.max([agns.shape[0], psrs.shape[0], fakes.shape[0]])
 
     print("No. Each Source in Dataset: {}".format(num_sources_to_sample_of_each_type))
 
@@ -110,19 +45,9 @@ def balance_dataset(data):
         indices_to_take = np.random.choice(fakes.shape[0], size=num_fakes_to_sample)
         fakes = np.vstack((fakes, copy.deepcopy(fakes[indices_to_take])))
 
-    # Combine and return new dataset - no need to shuffle, as we are calling this before the end of
-    # prepare_classifier_data()
-
-    data = []
-
-    for k in agns:
-        data.append([k, np.array([1., 0., 0.])])
-
-    for k in psrs:
-        data.append([k, np.array([0., 1., 0.])])
-
-    for k in fakes:
-        data.append([k, np.array([0., 0., 1.])])
+    # Combine and return new dataset - no need to shuffle at this point
+    data = ([[k, np.array([1., 0., 0.])] for k in agns] + [[k, np.array([0., 1., 0.])] for k in psrs] +
+            [[k, np.array([0., 0., 1.])] for k in fakes])
 
     return data
 
@@ -131,15 +56,8 @@ def image_cartesian_coordinates_to_galactic_coordinates(coordinates, patch_centr
     # Converts x, y index into 64 x 64 image into the longitude and latitude of a source in that image, given
     # the galactic coordinates of the centre of that image.
 
-    y_vals = coordinates[:, 0]
-    x_vals = coordinates[:, 1]
-
-    # We are calculating location in 128 x 128 instead of 64 x 64 image. Remember to keep this way round - x,y
-    # becomes y,x for images. Then flattening the image into 1D array - this pixel value gives index into the
-    # 1D array.
-    pixel_id_values = pixel_id(y_vals * 2, x_vals * 2, 128)
-
-    new_coords = get_lb_from_pixel(pixel_id_values, patch_centre)
+    # N.B. use 128 x 128 instead of 64 x 64 for conversions.
+    new_coords = get_lb_from_pixel(pixel_id(coordinates[:, 0] * 2, coordinates[:, 1] * 2, 128), patch_centre)
 
     if coordinate_system == 'G':
 
@@ -157,49 +75,30 @@ def image_cartesian_coordinates_to_galactic_coordinates(coordinates, patch_centr
 
 
 def prepare_classifier_data(patches, predicted_locations, patch_ids, test=False, real_data=False):
-    # Remove all patches with no predicted sources
+
+    # REMOVE PATCHES WITH NO PREDICTED SOURCES
+
     ids_to_remove = [p for p in range(patch_ids.shape[0]) if predicted_locations[p].shape[0] == 0]
 
     predicted_locations = [predicted_locations[p] for p in range(patch_ids.shape[0]) if p not in ids_to_remove]
     patches = np.delete(patches, np.array(ids_to_remove).astype(int), 0)
     patch_ids = np.delete(patch_ids, np.array(ids_to_remove).astype(int), 0)
 
-    # Get 7 x 7 boxes around each predicted source in each patch
+    # DRAW 7 x 7 BOUNDING BOXES AROUND EACH DETECTED SOURCE IN PATCH AND LABEL
+
     sub_boxes, predicted_locations, patch_ids = source_boxes(patches, predicted_locations, patch_ids)
 
-    # Get labels for each patch (i.e. AGN, PSR, FAKE)
     labels = source_box_labels(patch_ids=patch_ids, predicted_source_locations=predicted_locations, real_data=real_data)
-
-    # Format labels such that they are in vector format, e.g. AGN is equivalent to [1., 0., 0.]
-    vector_labels = str_labels_to_vector_labels(labels)
-
-    data = []
 
     # Combine data such that each sub-patch is associated with its equivalent label
     num_patches = len(sub_boxes)
 
-    for patch in range(num_patches):
-
-        num_predicted_sources = len(sub_boxes[patch])
-
-        # N.B. conversion to float 32 from float 64 - Apple GPUs cannot work with float64
-        for pred_source in range(num_predicted_sources):
-            if isinstance(vector_labels[patch][pred_source], np.ndarray):
-                data.append([sub_boxes[patch][pred_source].astype(np.float32),
-                             vector_labels[patch][pred_source].astype(np.float32)])
+    data = [[sub_boxes[p][r], labels[p][r]] for p in range(num_patches) for r in range(sub_boxes[p].shape[0])]
 
     if len(data) == 0:
         raise RuntimeError("Not enough sources were localised - no data is available for the classifier to train on.")
 
-    # Balance dataset
-
-    if test:
-
-        return data
-
-    else:
-
-        return balance_dataset(data)
+    return data if test else balance_dataset(data)
 
 
 def source_boxes(patches, predicted_source_locations, patch_ids):
@@ -401,7 +300,7 @@ def source_box_labels(patch_ids, predicted_source_locations, localisation_thresh
 
         labels.append(np.array(labels_for_patch))
 
-    return labels
+    return str_labels_to_vector_labels(labels)
 
 
 def str_labels_to_vector_labels(labels):
@@ -426,7 +325,7 @@ def xml_parser_locations(xml_file: str, coordinate_system='G'):
     # Remove diffuse sources - only processing point sources with this function
     sources = [sources[k] for k in range(len(sources)) if sources[k].getAttribute("type") != "DiffuseSource"]
 
-    source_ids = np.array([source.getAttribute("name") for source in sources])
+    source_ids = [source.getAttribute("name") for source in sources]
 
     parameters = [source.getElementsByTagName("spatialModel")[0].getElementsByTagName("parameter") for source in sources]
 
@@ -454,14 +353,11 @@ def xml_parser_locations(xml_file: str, coordinate_system='G'):
 # REFERENCES
 
 # Check if Empty - https://stackoverflow.com/questions/11295609/how-can-i-check-whether-a-numpy-array-is-empty-or-not
-# Data Loader Formatting - https://discuss.pytorch.org/t/how-to-get-input-data-from-a-dataloader/121216
 # Delete Rows - https://stackoverflow.com/questions/40426697/is-there-any-way-to-delete-the-specific-elements-of-an-
 # numpy-array-in-place-in
 # Dictionary Mapping - https://stackoverflow.com/questions/63145423/how-to-create-a-numpy-array-based-on-the-values-of-
 # another-numpy-array
 # Dictionary Mapping - https://stackoverflow.com/questions/18453566/get-list-of-values-for-list-of-keys
-# Error Debugging - https://stackoverflow.com/questions/76494637/pytorch-dataloader-runtimeerror-stack-expects-each-
-# tensor-to-be-equal-size
 # Match vs If-Else - https://www.reddit.com/r/learnpython/comments/1by6vht/should_i_use_match_case_instead_of_if_else/
 # Partial Func - https://stackoverflow.com/questions/15331726/how-does-functools-partial-do-what-it-does
 # Stacking 2D Arrays - https://stackoverflow.com/questions/72473949/stacking-2d-arrays-into-a-3d-array

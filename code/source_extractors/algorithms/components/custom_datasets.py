@@ -61,3 +61,8 @@ class ClassifierSubPatchesDataset(Dataset):
         sample = {"subpatch": from_numpy(selected_sub_patches), "label": from_numpy(selected_labels)}
 
         return sample
+
+# REFERENCES
+# Data Loader Formatting - https://discuss.pytorch.org/t/how-to-get-input-data-from-a-dataloader/121216
+# Error Debugging - https://stackoverflow.com/questions/76494637/pytorch-dataloader-runtimeerror-stack-expects-each-
+# tensor-to-be-equal-size

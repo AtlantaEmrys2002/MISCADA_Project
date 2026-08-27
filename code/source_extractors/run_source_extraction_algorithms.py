@@ -57,7 +57,7 @@ if __name__ == "__main__":
 
     (train_patch_ids, training_maps, training_masks,
     validation_patch_ids, validation_maps, validation_masks,
-    test_patch_ids, testing_maps, testing_masks) = read_patches(num_patches=7500, directory=patches_directory)
+    test_patch_ids, testing_maps, testing_masks) = read_patches(num_patches=75000, directory=patches_directory)
 
     real_patch_ids, real_maps, real_masks = read_patches(num_patches=768, directory="./real_data/real_patches/patches",
                                                          split=False)
