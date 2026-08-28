@@ -23,14 +23,17 @@ def evaluate_classifiers(actual_class, predicted_class, method_name, directory):
 def evaluate_localisation(actual_source_centers, predicted_source_centers):
     num_patches = len(actual_source_centers)
 
-    average_chamfer_distance = sum([chamfer_separation(actual_source_centers[p], predicted_source_centers[p]) for p in
-                                    range(num_patches)]) / num_patches
+    actual_source_centers = np.unique(np.array([actual_source_centers[i][j] for i in range(num_patches)
+                                      for j in range(actual_source_centers[i].shape[0])]), axis=0)
 
-    average_percentage_of_sources_detected = (
-            sum([num_sources_correctly_detected(actual_source_locations[p], predicted_locations_celestial[p]) for p in
-                 range(num_patches)]) / num_patches)
+    predicted_source_centers = np.unique(np.array([predicted_source_centers[i][j] for i in range(len(predicted_source_centers))
+                                      for j in range(predicted_source_centers[i].shape[0])]), axis=0)
 
-    return average_chamfer_distance, average_percentage_of_sources_detected
+    chamfer_distance = chamfer_separation(actual_source_centers, predicted_source_centers)
+
+    percentage_of_sources_detected = num_sources_correctly_detected(actual_source_centers, predicted_source_centers)
+
+    return chamfer_distance, percentage_of_sources_detected
 
 
 def evaluate_detection(actual_segmentations, predicted_segmentations):
@@ -82,8 +85,6 @@ def get_classified_patches(predicted_locations_in_real_data_raw):
 
 def evaluate_on_real_data(file_4fgl, model):
 
-    print(model)
-
     patch_centres = get_patch_centres(patches_metadata_file="./../source_extractors/real_data/real_patches/patches/"
                                                             "patch_metadata.csv")
 
@@ -101,13 +102,8 @@ def evaluate_on_real_data(file_4fgl, model):
                                                             coordinate_system='C') for p in range(768) if
         predicted_locations_in_real_data_raw[p].shape != 0]
 
-    new = []
-
-    for x in range(768):
-        for p in predicted_locations_in_real_data_celestial[x]:
-            new.append(p)
-
-    predicted_locations_in_real_data_celestial = np.array(new)
+    predicted_locations_in_real_data_celestial = (
+        np.array([p for x in range(768) for p in predicted_locations_in_real_data_celestial[x]]))
 
     # EVALUATE NUM oF 4FGL SOURCES DETECTED
 
@@ -133,29 +129,16 @@ def evaluate_on_real_data(file_4fgl, model):
                                                             coordinate_system='C') for p in range(768) if
         predicted_locations_in_real_data[p].shape != 0]
 
-    new = []
-
-    for x in range(768):
-        for p in predicted_locations_in_real_data_celestial[x]:
-            new.append(p)
-
-    predicted_locations_in_real_data_celestial = np.array(new)
+    predicted_locations_in_real_data_celestial = np.array([p for x in range(768)
+                                                           for p in predicted_locations_in_real_data_celestial[x]])
 
     classifications_raw = np.load("./../results/real/{}/classifications.npy".format(model))
 
-    # One-hot encoding - some classifications are based on probabilities
+    # One-hot encoding of PREDICTED SOURCE LABELS - some classifications are based on probabilities
 
-    classifications = []
+    classifications = np.zeros((classifications_raw.shape[0], 3))
 
-    for p in classifications_raw:
-
-        p_one_hot = np.zeros((3,))
-
-        p_one_hot[np.argmax(p)] = 1
-
-        classifications.append(p_one_hot)
-
-    classifications = np.array(classifications)
+    classifications[np.arange(classifications_raw.shape[0]), np.argmax(classifications_raw[:, 1], axis=1)] = 1
 
     frac_correct_classed_sources = (
         percentage_of_4fgl_source_correctly_classified(actual_source_locations=actual_source_locations_4fgl,
@@ -197,8 +180,8 @@ if __name__ == "__main__":
     results = []
 
     csv_headers = ("id,detection_algorithm,localisation_algorithm,classification_algorithm,"
-                   "segmentation_balanced_binary_accuracy,segmentation_dive_coefficient,segmentation_precision,"
-                   "segmentation_recall,chamfer_separation,frac_sources_detected\n")
+                   "segmentation_balanced_binary_accuracy,segmentation_dice_coefficient,segmentation_precision,"
+                   "segmentation_recall,chamfer_separation,frac_sources_detected,frac_4fgl_detected,frac_4fgl_detected_and_classified\n")
 
     # Set up file
     file = open("./../results/results.csv", "w+")
@@ -266,7 +249,7 @@ if __name__ == "__main__":
             actual_source_locations.append(actual_source_locations_for_patch)
 
         # Evaluate localisation
-        av_chamfer_distance, av_frac_sources_detected = (
+        chamfer_distance, av_frac_sources_detected = (
             evaluate_localisation(actual_source_centers=actual_source_locations, predicted_source_centers=
             predicted_locations_celestial))
 
@@ -281,16 +264,13 @@ if __name__ == "__main__":
         evaluate_classifiers(actual_class=actual_classes, predicted_class=predicted_classes, method_name=m,
                              directory=plot_directory)
 
-        evaluate_on_real_data(file_4fgl="/Volumes/T7/data/catalog/4FGL_DR4.fit", model=m)
+        (frac_of_4fgl_sources_detected,
+         frac_correct_classed_4fgl_sources) = evaluate_on_real_data(file_4fgl="/Volumes/T7/data/catalog/4FGL_DR4.fit", model=m)
 
         # SAVE RESULTS
-        #
-        # results.append(f"{model_id},{m},{av_bin_balanced_acc},{av_dice},"
-        #                f"{av_prec},{av_rec},{av_chamfer_distance},{av_frac_sources_detected}\n")
-
 
         results.append(f"{model_id},{model_lists[model_id][0]},{model_lists[model_id][1]},{model_lists[model_id][2]},{av_bin_balanced_acc},{av_dice},"
-                       f"{av_prec},{av_rec},{av_chamfer_distance},{av_frac_sources_detected}\n")
+                       f"{av_prec},{av_rec},{chamfer_distance},{av_frac_sources_detected},{frac_of_4fgl_sources_detected},{frac_correct_classed_4fgl_sources}\n")
 
         model_id += 1
 

@@ -1,7 +1,6 @@
 from astropy.coordinates import SkyCoord
 import astropy.units as u
 import numpy as np
-from scipy.spatial.distance import cdist
 
 
 def chamfer_separation(actual_source_centres, predicted_source_centres):
@@ -17,7 +16,7 @@ def chamfer_separation(actual_source_centres, predicted_source_centres):
     # B = Ground truth source centres
 
     if actual_source_centres.shape[0] == 0 or predicted_source_centres.shape[0] == 0:
-        return 0
+        return np.inf
 
     # Convert predicted source_centres to sky coordinates
     predicted_source_centres_sky = SkyCoord(ra=predicted_source_centres[:, 0] * u.degree,
@@ -34,9 +33,7 @@ def chamfer_separation(actual_source_centres, predicted_source_centres):
 
         separations = coordinate.separation(predicted_source_centres_sky).degree
 
-        separation_from_closest_predicted_source = separations[np.argmin(separations)]
-
-        dist_ab += separation_from_closest_predicted_source
+        dist_ab += separations[np.argmin(separations)]
 
     dist_ba = 0
 
@@ -46,9 +43,7 @@ def chamfer_separation(actual_source_centres, predicted_source_centres):
 
         separations = coordinate.separation(actual_source_centres_sky).degree
 
-        separation_from_closest_actual_source = separations[np.argmin(separations)]
-
-        dist_ba += separation_from_closest_actual_source
+        dist_ba += separations[np.argmin(separations)]
 
     dist_chamfer = dist_ab + dist_ba
 
@@ -74,9 +69,8 @@ def num_sources_correctly_detected(actual_source_centres, predicted_source_centr
 
     for a in actual_source_centres:
 
-        coordinate = SkyCoord(ra=a[0] * u.degree, dec=a[1] * u.degree, frame='icrs')
-
-        separations = coordinate.separation(predicted_source_centres_sky).degree
+        separations = (SkyCoord(ra=a[0] * u.degree, dec=a[1] * u.degree, frame='icrs').
+                       separation(predicted_source_centres_sky).degree)
 
         separation_from_closest_predicted_source = separations[np.argmin(separations)]
 

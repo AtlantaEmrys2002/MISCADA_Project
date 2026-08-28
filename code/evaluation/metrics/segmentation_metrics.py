@@ -22,30 +22,22 @@ def binary_balanced_accuracy(actual_segmentation, predicted_segmentation):
         first_term = true_positives / (true_positives + false_negatives)
         second_term = true_negatives / (true_negatives + false_positives)
 
-        balanced_accuracy = (first_term + second_term) / 2
-
-        return balanced_accuracy
+        return (first_term + second_term) / 2
 
 
 def dice_coefficient(actual_segmentation, predicted_segmentation):
 
     # See ID27 and ID29.
 
-    # We do not assume data is Boolean (see ID27) - if we did then Dice is same as F1 score. However, our data is
-    # probabilistic and we may introduce Gaussian blurs in mask (instead of single point representing correctness).
-    # Therefore, we introduce binary parameter - it says whether to convert predicted segmentation to Boolean (1s and 0s)
-    # and calculate equivalent of F1-score, our keep probabilistic data.
+    true_positives = np.sum(np.logical_and(actual_segmentation == 1, predicted_segmentation == 1))
 
-    # Assume that we will be using Boolean data most of the time, but made sure to keep general.
+    false_positives = np.sum(np.logical_and(actual_segmentation == 0, predicted_segmentation == 1))
 
-    # Input format assumptions:
-    # Actual segmentation - binary mask, indicating where actual sources are
-    # Predicted segmentation - probability in each pixel that pixel contains source vs background
+    false_negatives = np.sum(np.logical_and(actual_segmentation == 1, predicted_segmentation == 0))
 
-    # We are looking at the cardinality of the logical and
-    numerator = np.sum(2 * np.logical_and(actual_segmentation, predicted_segmentation))
+    numerator = 2 * true_positives
 
-    denominator = 2 * actual_segmentation.size
+    denominator = numerator + false_positives + false_negatives
 
     return 0 if denominator == 0 else numerator / denominator
 
