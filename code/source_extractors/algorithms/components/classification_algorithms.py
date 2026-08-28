@@ -80,8 +80,11 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
 
     # Define loss function
 
-    loss_fn = CategoricalCrossEntropy()
-    optimiser = torch.optim.Adam(classifier.parameters(), lr=1.e-5)
+    # loss_fn = CategoricalCrossEntropy()
+
+    loss_fn = nn.CrossEntropyLoss()
+
+    optimiser = torch.optim.Adam(classifier.parameters(), lr=1.e-6)
 
     # Start with large value that is easily surpassed
     best_vloss = 100000000000000
@@ -128,7 +131,7 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
 
         avg_vloss = running_vloss / (i + 1)
 
-        print(avg_vloss)
+        print(avg_vloss.item())
 
         # if this is the best model (in terms of loss) found so far, save model
         if avg_vloss < best_vloss:

@@ -3,6 +3,8 @@ import cv2
 from itertools import product
 import numpy as np
 from sklearn.cluster import DBSCAN, KMeans, SpectralClustering
+from sklearn.neighbors import NearestNeighbors
+import time
 import warnings
 
 
@@ -75,27 +77,84 @@ def blob_detection(binary_segments):
     return centres
 
 
-def dbscan_clustering(binary_segments, threshold=0.2):
+def dbscan_clustering(binary_segments, threshold=0.2, tune=False, masks=None):
+
     source_centres_in_each_image = []
+
+    if tune:
+
+        leaf_sizes = [5, 10, 20, 30, 40, 50, 60, 70, 200]
+
+        total_scores = []
+
+        times = []
+
+        for l in leaf_sizes:
+
+            current_index = 0
+
+            total_score = 0
+
+            start = time.time()
+
+            for segment in binary_segments:
+
+                D = segment[0] if isinstance(segment[0], np.ndarray) else segment[0].detach().numpy()
+
+                # As we have used SoftMax, our image isn't exactly binary - this will make it so
+                source_pixels = np.argwhere(D > threshold)
+
+                if source_pixels.size != 0:
+
+                    mask_centres = np.array([[i, j] for i in range(3, 60) for j in range(3, 60)
+                                             if np.all(masks[current_index][i, j - 3: j + 4] == 1.) and
+                                             np.all(masks[current_index][i - 3: i + 4, j] == 1.)])
+
+                    labelled_source_pixels = DBSCAN(eps=5, min_samples=10, leaf_size=l).fit(
+                        source_pixels).labels_
+
+                    num_clusters_found = np.max(labelled_source_pixels)
+
+                    cluster_centres = np.array([np.round(np.mean(np.array([k[0] for k in source_pixels[
+                        np.argwhere(labelled_source_pixels == c)]]).T, axis=1)).astype(int) for c in range(1,
+                                                                                                           num_clusters_found)])
+
+                    # source_centres_in_each_image.append(np.array(cluster_centres))
+
+                    # Find the sum of the distance between each cluster centre and its nearest neighbours
+                    total_score += sum(
+                        np.min(np.sqrt((cluster_centres[:, 0] - k[0]) ** 2 + (cluster_centres[:, 1] - k[1]) ** 2)) for k
+                        in mask_centres)
+
+                else:
+
+                    source_centres_in_each_image.append(np.array([]))
+
+                current_index += 1
+
+            total_scores.append(total_score)
+
+            times.append(time.time() - start)
+
+        print("SCORES: {}".format(total_scores))
+        print("TIMES: {}".format(times))
+        print("Best Leaf Size for DBSCAN (in terms of error): {}".format(leaf_sizes[np.argmin(total_scores)]))
+        print("Best Leaf Size for DBSCAN (in terms of time): {}".format(leaf_sizes[np.argmin(times)]))
+        print("Best Time for DBSCAN: {}".format(times[np.argmin(times)]))
+
+    # 200 is the best found during tuning
+    leaf_size = leaf_sizes[np.argmin(times)] if tune else 200
 
     for segment in binary_segments:
 
-        if isinstance(segment[0], np.ndarray):
-
-            D = segment[0]
-
-        else:
-
-            D = segment[0].detach().numpy()
+        D = segment[0] if isinstance(segment[0], np.ndarray) else segment[0].detach().numpy()
 
         # As we have used SoftMax, our image isn't exactly binary - this will make it so
         source_pixels = np.argwhere(D > threshold)
 
         if source_pixels.size != 0:
 
-            # Labels stating where element n indicates the cluster pixel n is assigned to - CHANGED TO 5 AND 10 TO MAKE SENSE
-            # labelled_source_pixels = DBSCAN(eps=3).fit(source_pixels).labels_
-            labelled_source_pixels = DBSCAN(eps=5, min_samples=10).fit(source_pixels).labels_
+            labelled_source_pixels = DBSCAN(eps=5, min_samples=10, leaf_size=leaf_size).fit(source_pixels).labels_
 
             num_clusters_found = np.max(labelled_source_pixels)
 
@@ -104,6 +163,7 @@ def dbscan_clustering(binary_segments, threshold=0.2):
                                                                                                    num_clusters_found)]
 
             source_centres_in_each_image.append(np.array(cluster_centres))
+
 
         else:
 
@@ -195,7 +255,13 @@ def spectral_clustering(binary_segments, max_num_centroids=20, threshold=0.2):
     l_snn = -10
     R = 5
 
+    current_index = 0
+
     for segment in binary_segments:
+
+        print(current_index)
+
+        current_index += 1
 
         D = segment[0]
 
@@ -223,11 +289,11 @@ def spectral_clustering(binary_segments, max_num_centroids=20, threshold=0.2):
             try:
 
                 # Perform spectral clustering - chose cluster_qr, as it has no iterations or tuning parameters (and can
-                # outperform the K-means algorithm)
+                # outperform the K-means algorithm). Chose 0.5 as recommended by link below (see Gamma Choice)
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    spectral_classifications = SpectralClustering(n_clusters=k, random_state=0, n_jobs=3,
-                                                                  assign_labels="cluster_qr").fit_predict(V_D)
+                    spectral_classifications = SpectralClustering(n_clusters=k, random_state=0, n_jobs=4, gamma=1,
+                                                                  assign_labels="kmeans").fit_predict(V_D)
 
                 # Get centre of each cluster
                 with warnings.catch_warnings():
@@ -293,6 +359,7 @@ def spectral_clustering(binary_segments, max_num_centroids=20, threshold=0.2):
 # coordinates-from-opencv-cv2-keypoint-object
 # fit vs fit_predict - https://stackoverflow.com/questions/57234414/what-is-the-difference-between-fit-and-fit-predict-
 # in-spectralclustering
+# Gamma Choice - https://mcpanalytics.ai/articles/spectral-clustering-practical-guide-for-data-driven-decisions
 # ID8 and ID25 - see references
 # Indexing with array of indices - https://stackoverflow.com/questions/19821425/how-can-i-filter-numpy-array-by-list-of-
 # indices

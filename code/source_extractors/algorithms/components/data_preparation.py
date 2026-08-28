@@ -27,6 +27,10 @@ def balance_dataset(data):
 
     num_sources_to_sample_of_each_type = np.max([agns.shape[0], psrs.shape[0], fakes.shape[0]])
 
+    # Do not want too much oversampling
+    num_sources_to_sample_of_each_type = min(15000, num_sources_to_sample_of_each_type)
+
+
     print(f"No. AGN: {agns.shape[0]} No. PSR: {psrs.shape[0]} No. FAKE: {fakes.shape[0]}")
     print("No. Each Source in Dataset: {}".format(num_sources_to_sample_of_each_type))
 

@@ -312,13 +312,8 @@ def unet(training_maps, training_masks, validation_maps, validation_masks, testi
             batch_size=64, shuffle=False)
 
         # Train classifier on data
-        # model, best_epoch = unet_train(train_data=training_patch_dataset, test_data=validation_patch_dataset,
-        #                                save_file=save_file, device=device, training_epochs=50)
-
-        # CHANGE BACK
-
         model, best_epoch = unet_train(train_data=training_patch_dataset, test_data=validation_patch_dataset,
-                                       save_file=save_file, device=device, training_epochs=5)
+                                       save_file=save_file, device=device, training_epochs=50)
 
         print("BEST EPOCH: {}".format(best_epoch))
 

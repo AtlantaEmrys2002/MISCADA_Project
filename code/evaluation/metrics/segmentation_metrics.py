@@ -13,15 +13,21 @@ def binary_balanced_accuracy(actual_segmentation, predicted_segmentation):
 
     false_negatives = np.sum(np.logical_and(actual_segmentation == 1, predicted_segmentation == 0))
 
-    first_term = true_positives / (true_positives + false_negatives)
-    second_term = true_negatives / (true_negatives + false_positives)
+    if (true_positives == 0 and false_negatives == 0) or (true_negatives == 0 and false_positives == 0):
 
-    balanced_accuracy = (first_term + second_term) / 2
+        return 0
 
-    return balanced_accuracy
+    else:
+
+        first_term = true_positives / (true_positives + false_negatives)
+        second_term = true_negatives / (true_negatives + false_positives)
+
+        balanced_accuracy = (first_term + second_term) / 2
+
+        return balanced_accuracy
 
 
-def dice_coefficient(actual_segmentation, predicted_segmentation, threshold=0.5, binary=True):
+def dice_coefficient(actual_segmentation, predicted_segmentation):
 
     # See ID27 and ID29.
 
@@ -36,17 +42,12 @@ def dice_coefficient(actual_segmentation, predicted_segmentation, threshold=0.5,
     # Actual segmentation - binary mask, indicating where actual sources are
     # Predicted segmentation - probability in each pixel that pixel contains source vs background
 
-    if binary is True:
-        predicted_segmentation = (predicted_segmentation > threshold).astype(np.uint8)
-
     # We are looking at the cardinality of the logical and
     numerator = np.sum(2 * np.logical_and(actual_segmentation, predicted_segmentation))
 
     denominator = 2 * actual_segmentation.size
 
-    dice = numerator / denominator
-
-    return dice
+    return 0 if denominator == 0 else numerator / denominator
 
 
 def segmentation_precision(actual_segmentation, predicted_segmentation):
@@ -55,16 +56,7 @@ def segmentation_precision(actual_segmentation, predicted_segmentation):
 
     false_positives = np.sum(np.logical_and(actual_segmentation == 0, predicted_segmentation == 1))
 
-    if false_positives == 0:
-
-        # A method with only false negatives will be shown in the recall
-        return 1
-
-    else:
-
-        precision = true_positives / (true_positives / false_positives)
-
-        return precision
+    return 0 if (true_positives == 0 and false_positives == 0) else true_positives / (true_positives + false_positives)
 
 
 def segmentation_recall(actual_segmentation, predicted_segmentation):
@@ -73,8 +65,7 @@ def segmentation_recall(actual_segmentation, predicted_segmentation):
 
     false_negatives = np.sum(np.logical_and(actual_segmentation == 1, predicted_segmentation == 0))
 
-    return true_positives / (true_positives + false_negatives)
-
+    return 0 if (true_positives == 0 and false_negatives == 0) else true_positives / (true_positives + false_negatives)
 
 # REFERENCES
 # Dice-Sorenson Coefficient - https://en.wikipedia.org/wiki/Dice-Sørensen_coefficient

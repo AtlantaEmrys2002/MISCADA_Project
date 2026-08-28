@@ -15,9 +15,11 @@ from algorithms.components.machine_learning_segmentation_algorithms import rando
 from algorithms.components.segmentation_algorithms import unet
 from algorithms.components.data_preparation import prepare_classifier_data
 import copy
+import csv
 import numpy as np
 from pathlib import Path
 from read_write_functions import read_patches, save_predictions
+import time
 
 
 if __name__ == "__main__":
@@ -58,7 +60,9 @@ if __name__ == "__main__":
     (train_patch_ids, training_maps, training_masks,
     validation_patch_ids, validation_maps, validation_masks,
 
-    test_patch_ids, testing_maps, testing_masks) = read_patches(num_patches=10000, directory=patches_directory)
+    # test_patch_ids, testing_maps, testing_masks) = read_patches(num_patches=75000, directory=patches_directory)
+
+    test_patch_ids, testing_maps, testing_masks) = read_patches(num_patches=20000, directory=patches_directory)
 
     real_patch_ids, real_maps, real_masks = read_patches(num_patches=768, directory="./real_data/real_patches/patches",
                                                          split=False)
@@ -75,24 +79,47 @@ if __name__ == "__main__":
 
     # ALGORITHMS
 
-    segmentation_algorithms = ["unet", "random_forest"]
+    # segmentation_algorithms = ["unet", "random_forest"]
+    #
+    # localisation_algorithms = ["dbscan", "kmeans", "spectral", "blob_detection"]
+    #
+    # classification_algorithms = ["cnn", "random_forest", "svm"]
 
-    localisation_algorithms = ["dbscan", "kmeans", "spectral", "blob_detection"]
+    # CHANGE BACK
 
-    classification_algorithms = ["cnn", "random_forest", "svm"]
+    segmentation_algorithms = ["unet"]
+
+    localisation_algorithms = ["dbscan", "kmeans", "blob_detection", "spectral"]
+
+    classification_algorithms = ["cnn", "random_forest"]
 
     algorithm_count = 1
 
+    execution_times = []
+
     for segment in segmentation_algorithms:
+
+        print("Segmentation Algorithm: {}".format(segment))
+
+        start_segmentation_time = time.time()
 
         match segment:
 
             case "unet":
 
+                # (train_segmentation_predictions, validation_segmentation_predictions, test_segmentation_predictions) = (
+                #     unet(training_maps=copy.deepcopy(training_maps), training_masks=copy.deepcopy(training_masks),
+                #          validation_maps=copy.deepcopy(validation_maps),
+                #          validation_masks=copy.deepcopy(validation_masks), testing_maps=copy.deepcopy(testing_maps)))
+
+
+                # CHANGE THIS BACK LATER
+
+
                 (train_segmentation_predictions, validation_segmentation_predictions, test_segmentation_predictions) = (
                     unet(training_maps=copy.deepcopy(training_maps), training_masks=copy.deepcopy(training_masks),
                          validation_maps=copy.deepcopy(validation_maps),
-                         validation_masks=copy.deepcopy(validation_masks), testing_maps=copy.deepcopy(testing_maps)))
+                         validation_masks=copy.deepcopy(validation_masks), testing_maps=copy.deepcopy(testing_maps), pretrained=True))
 
                 _, _, real_segmentation_predictions = unet(training_maps=np.array([]), training_masks=np.array([]),
                                                            validation_maps=np.array([]), validation_masks=np.array([]),
@@ -115,7 +142,11 @@ if __name__ == "__main__":
 
                 raise NameError("Segmentation algorithm {} could not be found.".format(segment))
 
+        segmentation_time = time.time() - start_segmentation_time
+
         for local in localisation_algorithms:
+
+            start_localisation_time = time.time()
 
             match local:
 
@@ -193,6 +224,8 @@ if __name__ == "__main__":
                 case _:
                     raise NameError("Localisation algorithm {} could not be found.".format(local))
 
+            localisation_time = time.time() - start_localisation_time
+
             # Prepare detected sources for classification (effectively, data prep)
             train_batches_class = (
                 prepare_classifier_data(patches=training_maps,
@@ -211,6 +244,8 @@ if __name__ == "__main__":
                                                          patch_ids=real_patch_ids, test=True, real_data=True)
 
             for classifier in classification_algorithms:
+
+                start_classification_time = time.time()
 
                 match classifier:
 
@@ -267,6 +302,8 @@ if __name__ == "__main__":
                     case _:
                         raise NameError("Classification algorithm {} could not be found.".format(classifier))
 
+                classification_time = time.time() - start_classification_time
+
                 # SAVE RESULTS FOR SOURCE EXTRACTION ALGORITHM
 
                 # Save predictions for test patches
@@ -284,7 +321,20 @@ if __name__ == "__main__":
                 print("Completed Novel Source Extraction Pipeline {}: {} + {} + {}".format(algorithm_count,
                                                                                            segment, local, classifier))
 
+                execution_times.append([f"{segment}_{local}_{classifier}", segmentation_time, localisation_time, classification_time])
+
                 algorithm_count += 1
+
+    # Save execution times
+
+    fields = ["algorithm", "segmentation_time (s)", "localisation_time(s)", "classification_time (s)"]
+
+    with open("./../results/execution_times.csv", mode="w", newline='') as f:
+
+        writer = csv.writer(f)
+        writer.writerow(fields)
+        writer.writerows(execution_times)
+
 
     print("Complete")
 
@@ -294,3 +344,4 @@ if __name__ == "__main__":
 # Double List Comprehension - https://stackoverflow.com/questions/1198777/double-iteration-in-list-comprehension
 # Interpolation in Imshow - https://stackoverflow.com/questions/55121294/imshow-plot-with-no-data-values-excluded-from-
 # interpolation
+# Save CSV Results - https://www.geeksforgeeks.org/python/python-save-list-to-csv/

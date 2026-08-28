@@ -1,4 +1,3 @@
-from astropy.table import QTable
 import copy
 from utils import integral_photon_flux_agn, integral_photon_flux_pulsar, get_catalog_data
 from metrics.utils import image_cartesian_coordinates_to_physical_coordinates
@@ -40,16 +39,16 @@ def evaluate_detection(actual_segmentations, predicted_segmentations):
     num_patches = actual_segmentations.shape[0]
 
     average_binary_balanced_accuracy = sum([binary_balanced_accuracy(actual_segmentations[p],
-                                                                     predicted_segmentations[p])
+                                                                     predicted_segmentations[p] > 0.5)
                                             for p in range(num_patches)]) / num_patches
 
-    average_dice_coefficient = sum([dice_coefficient(actual_segmentations[p], predicted_segmentations[p]) for p in
+    average_dice_coefficient = sum([dice_coefficient(actual_segmentations[p], predicted_segmentations[p] > 0.5) for p in
                                     range(num_patches)]) / num_patches
 
-    average_precision = sum([segmentation_precision(actual_segmentations[p], predicted_segmentations[p]) for p in
+    average_precision = sum([segmentation_precision(actual_segmentations[p], predicted_segmentations[p] > 0.5) for p in
                              range(num_patches)]) / num_patches
 
-    average_recall = sum([segmentation_recall(actual_segmentations[p], predicted_segmentations[p]) for p in
+    average_recall = sum([segmentation_recall(actual_segmentations[p], predicted_segmentations[p] > 0.5) for p in
                           range(num_patches)]) / num_patches
 
     return average_binary_balanced_accuracy, average_dice_coefficient, average_precision, average_recall
@@ -177,29 +176,23 @@ if __name__ == "__main__":
 
     # TAKE INPUTS (RECOMMENDED READ IN FILE)
 
-    # Add name of models here
-    # models = ["UNEK", "UNEB"]
-    # models = ["UNEK"]
+    # segmentation_algorithms = ["unet", "random_forest"]
+    #
+    # localisation_algorithms = ["dbscan", "blob_detection", "kmeans", "spectral"]
+    #
+    # classification_algorithms = ["random_forest", "cnn", "svm"]
 
-    # detectors = {"UNEK": "U-NET", "UNEB": "U-NET"}
-    # localisers = {"UNEK": "K-Means", "UNEB": "Blob Detection"}
-    # classifiers = {"UNEK": "CNN", "UNEB": "CNN"}
+    segmentation_algorithms = ["unet"]
 
-    segmentation_algorithms = ["random_forest", "unet"]
+    localisation_algorithms = ["dbscan"]
 
-    localisation_algorithms = ["dbscan", "blob_detection", "kmeans", "spectral"]
+    classification_algorithms = ["random_forest", "cnn"]
 
-    classification_algorithms = ["random_forest", "cnn", "svm"]
+    models = ["{}_{}_{}".format(i, j, k) for i in segmentation_algorithms for j in localisation_algorithms
+              for k in classification_algorithms]
 
-    models = []
-
-    for i in segmentation_algorithms:
-
-        for j in localisation_algorithms:
-
-            for k in classification_algorithms:
-
-                models.append("{}_{}_{}".format(i, j, k))
+    model_lists = [[i, j, k] for i in segmentation_algorithms for j in localisation_algorithms
+              for k in classification_algorithms]
 
     results = []
 
@@ -291,8 +284,12 @@ if __name__ == "__main__":
         evaluate_on_real_data(file_4fgl="/Volumes/T7/data/catalog/4FGL_DR4.fit", model=m)
 
         # SAVE RESULTS
+        #
+        # results.append(f"{model_id},{m},{av_bin_balanced_acc},{av_dice},"
+        #                f"{av_prec},{av_rec},{av_chamfer_distance},{av_frac_sources_detected}\n")
 
-        results.append(f"{model_id},{m},{av_bin_balanced_acc},{av_dice},"
+
+        results.append(f"{model_id},{model_lists[model_id][0]},{model_lists[model_id][1]},{model_lists[model_id][2]},{av_bin_balanced_acc},{av_dice},"
                        f"{av_prec},{av_rec},{av_chamfer_distance},{av_frac_sources_detected}\n")
 
         model_id += 1

@@ -2,6 +2,6 @@
 
 source gamma_source_detection/bin/activate
 
-python evaluation.py
+python3 evaluation.py
 
 source deactivate
