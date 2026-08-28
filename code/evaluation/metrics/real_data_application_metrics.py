@@ -14,7 +14,7 @@ def percentage_of_4fgl_source_correctly_classified(actual_source_locations, pred
 
     num_sources_correctly_classified = 0
 
-    classifications = classifications[:, 1]
+    # classifications = classifications[:, 1]
 
     num_detected_sources = 0
 
@@ -26,15 +26,13 @@ def percentage_of_4fgl_source_correctly_classified(actual_source_locations, pred
 
         separations = coordinate.separation(predicted_source_centres_sky).degree
 
-        closest_predicted_index = np.argmin(separations)
-
-        separation_from_closest_predicted_source = separations[closest_predicted_index]
+        separation_from_closest_predicted_source = separations[np.argmin(separations)]
 
         if separation_from_closest_predicted_source < separation_threshold:
 
             num_detected_sources += 1
 
-            if np.all(np.equal(classifications[closest_predicted_index], actual_classifications[a])):
+            if np.all(np.equal(classifications[np.argmin(separations)], actual_classifications[a])):
 
                 num_sources_correctly_classified += 1
 
@@ -55,12 +53,12 @@ def percentage_of_4fgl_sources_detected(actual_source_locations, predicted_sourc
 
         separations = coordinate.separation(predicted_source_centres_sky).degree
 
-        separation_from_closest_predicted_source = separations[np.argmin(separations)]
-
-        if separation_from_closest_predicted_source < separation_threshold:
+        if separations[np.argmin(separations)] < separation_threshold:
             num_sources_detected += 1
 
-    return num_sources_detected / len(actual_source_locations)
+    print(num_sources_detected / actual_source_locations.shape[0])
+
+    return num_sources_detected / actual_source_locations.shape[0]
 
 
 def plot_predictions_actual(actual_coordinates, predicted_coordinates, model, detection_threshold: float=0.3):

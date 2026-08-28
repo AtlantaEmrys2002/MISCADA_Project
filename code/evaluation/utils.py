@@ -1,4 +1,5 @@
 from astropy.table import QTable
+import copy
 import numpy as np
 from scipy.integrate import quad
 import warnings
@@ -90,6 +91,32 @@ def get_catalog_data(catalog_file: str):
                                      np.array([[0., 1., 0.] for _ in range(psr_ra.shape[0])])))
 
     return actual_source_locations_4fgl, actual_source_types
+
+
+def get_classified_patches(predicted_locations_in_real_data_raw):
+    # see if it would have been classified or not (i.e. if it was too close to the edge. If it was too close to
+    # edge of 64 x 64 image, then remove.
+
+    predicted_locations_in_real_data = []
+
+    for p in range(len(predicted_locations_in_real_data_raw)):
+
+        loc_in_patch = predicted_locations_in_real_data_raw[p]
+
+        if loc_in_patch.shape[0] != 0:
+
+            xs = loc_in_patch[:, 0]
+            ys = loc_in_patch[:, 1]
+
+            mask = np.logical_not(((xs - 3) < 0) | ((xs + 4) > 63) | ((ys - 3) < 0) | ((ys + 4) > 63))
+
+            predicted_locations_in_real_data.append(copy.deepcopy(predicted_locations_in_real_data_raw[p][mask]))
+
+        else:
+
+            predicted_locations_in_real_data.append(np.array([]))
+
+    return predicted_locations_in_real_data
 
 
 def integral_photon_flux_agn(pivot_energy, flux_density, spectral_slope, curvature, min_energy=100.0, max_energy=100000.0):

@@ -1,7 +1,7 @@
 import copy
 from utils import integral_photon_flux_agn, integral_photon_flux_pulsar, get_catalog_data
-from metrics.utils import image_cartesian_coordinates_to_physical_coordinates
-from metrics.classification_metrics import classification_confusion_matrix
+from metrics.utils import im_cartesian_to_physical
+from metrics.classification_metrics import classification_confusion_matrix, classification_precision_recall
 from metrics.localisation_metrics import chamfer_separation, num_sources_correctly_detected
 from metrics.real_data_application_metrics import (percentage_of_4fgl_sources_detected, plot_predictions_actual,
                                                    percentage_of_4fgl_source_correctly_classified,
@@ -12,12 +12,17 @@ import numpy as np
 from pathlib import Path
 import pickle
 from read_write_functions import get_patch_centres, localisation_metadata, vector_labels_to_str
+from utils import get_classified_patches
 
 
 def evaluate_classifiers(actual_class, predicted_class, method_name, directory):
     # Plot confusion matrices
     classification_confusion_matrix(ground_truth=actual_class, predicted=predicted_class, classifier_name=method_name,
                                     directory=directory)
+
+    classification_precision, classification_recall = classification_precision_recall(ground_truth=np.array(actual_class), predicted=np.array(predicted_class))
+
+    return classification_precision, classification_recall
 
 
 def evaluate_localisation(actual_source_centers, predicted_source_centers):
@@ -57,32 +62,6 @@ def evaluate_detection(actual_segmentations, predicted_segmentations):
     return average_binary_balanced_accuracy, average_dice_coefficient, average_precision, average_recall
 
 
-def get_classified_patches(predicted_locations_in_real_data_raw):
-    # see if it would have been classified or not (i.e. if it was too close to the edge. If it was too close to
-    # edge of 64 x 64 image, then remove.
-
-    predicted_locations_in_real_data = []
-
-    for p in range(len(predicted_locations_in_real_data_raw)):
-
-        loc_in_patch = predicted_locations_in_real_data_raw[p]
-
-        if loc_in_patch.shape[0] != 0:
-
-            xs = loc_in_patch[:, 0]
-            ys = loc_in_patch[:, 1]
-
-            mask = np.logical_not(((xs - 3) < 0) | ((xs + 4) > 63) | ((ys - 3) < 0) | ((ys + 4) > 63))
-
-            predicted_locations_in_real_data.append(copy.deepcopy(predicted_locations_in_real_data_raw[p][mask]))
-
-        else:
-
-            predicted_locations_in_real_data.append(np.array([]))
-
-    return predicted_locations_in_real_data
-
-
 def evaluate_on_real_data(file_4fgl, model):
 
     patch_centres = get_patch_centres(patches_metadata_file="./../source_extractors/real_data/real_patches/patches/"
@@ -94,16 +73,16 @@ def evaluate_on_real_data(file_4fgl, model):
 
     # Get predicted locations from model (in x, y coordinates in 64 x 64 image)
     with open("./../results/real/{}/predicted_locations.data".format(model), 'rb') as f:
-        predicted_locations_in_real_data_raw = pickle.load(f)
+        predicted_locations_raw = pickle.load(f)
 
-    predicted_locations_in_real_data_celestial = [
-        image_cartesian_coordinates_to_physical_coordinates(coordinates=copy.deepcopy(predicted_locations_in_real_data_raw[p]),
+    predicted_locations_real = [
+        im_cartesian_to_physical(coordinates=predicted_locations_raw[p],
                                                             patch_centre=patch_centres[p],
                                                             coordinate_system='C') for p in range(768) if
-        predicted_locations_in_real_data_raw[p].shape != 0]
+        predicted_locations_raw[p].shape != 0]
 
-    predicted_locations_in_real_data_celestial = (
-        np.array([p for x in range(768) for p in predicted_locations_in_real_data_celestial[x]]))
+    predicted_locations_real = (
+        np.unique(np.array([p for x in range(768) for p in predicted_locations_real[x]]), axis=0))
 
     # EVALUATE NUM oF 4FGL SOURCES DETECTED
 
@@ -111,20 +90,29 @@ def evaluate_on_real_data(file_4fgl, model):
     actual_source_locations_4fgl, actual_source_types = get_catalog_data(file_4fgl)
 
     frac_of_4fgl_sources_detected = percentage_of_4fgl_sources_detected(
-        actual_source_locations=copy.deepcopy(actual_source_locations_4fgl),
-        predicted_source_locations=copy.deepcopy(predicted_locations_in_real_data_celestial))
+        actual_source_locations=actual_source_locations_4fgl,
+        predicted_source_locations=predicted_locations_real)
 
     Path("./../results/plots/source_discoveries_all_sky/").mkdir(parents=True, exist_ok=True)
 
     plot_predictions_actual(actual_coordinates=copy.deepcopy(actual_source_locations_4fgl),
-                            predicted_coordinates=copy.deepcopy(predicted_locations_in_real_data_celestial), model=model)
+                            predicted_coordinates=copy.deepcopy(predicted_locations_real), model=model)
+
+
+
+
+
+
+
+
+
 
     # THIS FRACTION IS THE NUMBER OF SOURCES CORRECTLY CLASSIFIED OF THE NUMBER OF SOURCES CORRECTLY DETECTED
 
-    predicted_locations_in_real_data = get_classified_patches(predicted_locations_in_real_data_raw)
+    predicted_locations_in_real_data = get_classified_patches(predicted_locations_raw)
 
     predicted_locations_in_real_data_celestial = [
-        image_cartesian_coordinates_to_physical_coordinates(coordinates=predicted_locations_in_real_data[p],
+        im_cartesian_to_physical(coordinates=predicted_locations_in_real_data[p],
                                                             patch_centre=patch_centres[p],
                                                             coordinate_system='C') for p in range(768) if
         predicted_locations_in_real_data[p].shape != 0]
@@ -149,7 +137,6 @@ def evaluate_on_real_data(file_4fgl, model):
     save_candidate_sources(actual_source_locations=actual_source_locations_4fgl,
                            predicted_source_locations=predicted_locations_in_real_data_celestial,
                            classifications=classifications, model=model)
-
 
     return frac_of_4fgl_sources_detected, frac_correct_classed_sources
 
@@ -181,7 +168,8 @@ if __name__ == "__main__":
 
     csv_headers = ("id,detection_algorithm,localisation_algorithm,classification_algorithm,"
                    "segmentation_balanced_binary_accuracy,segmentation_dice_coefficient,segmentation_precision,"
-                   "segmentation_recall,chamfer_separation,frac_sources_detected,frac_4fgl_detected,frac_4fgl_detected_and_classified\n")
+                   "segmentation_recall,chamfer_separation,frac_sources_detected,classification_precision,"
+                   "classification_recall,frac_4fgl_detected,frac_4fgl_detected_and_classified\n")
 
     # Set up file
     file = open("./../results/results.csv", "w+")
@@ -227,7 +215,7 @@ if __name__ == "__main__":
         # Convert predicted locations to celestial RA/DEC coordinates
 
         predicted_locations_celestial = [
-            image_cartesian_coordinates_to_physical_coordinates(coordinates=predicted_locations[p],
+            im_cartesian_to_physical(coordinates=predicted_locations[p],
                                                                 patch_centre=patch_centres[patch_ids[p]],
                                                                 coordinate_system='C') for p in range(len(patch_ids))]
 
@@ -261,8 +249,9 @@ if __name__ == "__main__":
             classifications[:, 1])
 
         # This does not take into account any spatial distributions (at the moment!!!!!!)
-        evaluate_classifiers(actual_class=actual_classes, predicted_class=predicted_classes, method_name=m,
-                             directory=plot_directory)
+        classification_precision, classification_recall = evaluate_classifiers(actual_class=actual_classes,
+                                                                               predicted_class=predicted_classes,
+                                                                               method_name=m, directory=plot_directory)
 
         (frac_of_4fgl_sources_detected,
          frac_correct_classed_4fgl_sources) = evaluate_on_real_data(file_4fgl="/Volumes/T7/data/catalog/4FGL_DR4.fit", model=m)
@@ -270,7 +259,7 @@ if __name__ == "__main__":
         # SAVE RESULTS
 
         results.append(f"{model_id},{model_lists[model_id][0]},{model_lists[model_id][1]},{model_lists[model_id][2]},{av_bin_balanced_acc},{av_dice},"
-                       f"{av_prec},{av_rec},{chamfer_distance},{av_frac_sources_detected},{frac_of_4fgl_sources_detected},{frac_correct_classed_4fgl_sources}\n")
+                       f"{av_prec},{av_rec},{chamfer_distance},{av_frac_sources_detected},{classification_precision},{classification_recall},{frac_of_4fgl_sources_detected},{frac_correct_classed_4fgl_sources}\n")
 
         model_id += 1
 

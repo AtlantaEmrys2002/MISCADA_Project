@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
+import numpy as np
 from pathlib import Path
 import seaborn as sn
 from sklearn.metrics import confusion_matrix
+import warnings
 
 
 def classification_confusion_matrix(ground_truth, predicted, classifier_name, directory):
@@ -32,6 +34,56 @@ def classification_confusion_matrix(ground_truth, predicted, classifier_name, di
 
     plt.close()
 
+
+def classification_precision_recall(ground_truth, predicted):
+
+    precision = []
+    recall = []
+
+    labels = np.unique(ground_truth)
+
+    for source_type in labels:
+
+        mask = (ground_truth == source_type)
+
+        true_positives = np.sum(predicted[mask] == source_type)
+
+        false_positives = np.sum(predicted[np.logical_not(mask)] == source_type)
+
+        false_negatives = np.sum(predicted[mask] != source_type)
+
+        # RAISE A WARNING IF TURE POSITIVE, FLASE POSITIVE OR FALSE NEgATIVE == 0
+
+        if (true_positives != 0) or (false_positives != 0):
+            precision.append(true_positives / (true_positives + false_positives))
+        else:
+            warnings.warn("There were no true positive or false positive detections of {}".format(source_type))
+
+        if (true_positives != 0) or (false_negatives != 0):
+            recall.append(true_positives / (true_positives + false_negatives))
+        else:
+            warnings.warn("There were no true positive or false negative detections of {}".format(source_type))
+
+    return sum(precision) / labels.shape[0], sum(recall) / labels.shape[0]
+
+
+
+
+
+
+    # values, counts = np.unique(predicted, axis=0, return_counts=True)
+    #
+    # pred_dict = dict(zip(values, counts))
+    #
+    # values, counts = np.unique(ground_truth, axis=0, return_counts=True)
+    #
+    # actual_dict = dict(zip(values, counts))
+    #
+    # # AGN precision and recall
+    #
+    # agn_true_positives = abs(actual_dict["AGN"] - pred_dict["AGN"])
+    #
+    # agn_false_positives = abs(actual_dict["AGN"])
 
 # REFERENCES
 
