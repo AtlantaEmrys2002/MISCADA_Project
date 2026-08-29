@@ -28,27 +28,40 @@ def balance_dataset(data):
     num_sources_to_sample_of_each_type = np.max([agns.shape[0], psrs.shape[0], fakes.shape[0]])
 
     # Do not want too much oversampling
-    num_sources_to_sample_of_each_type = min(15000, num_sources_to_sample_of_each_type)
-
+    num_sources_to_sample_of_each_type = min(20000, num_sources_to_sample_of_each_type)
 
     print(f"No. AGN: {agns.shape[0]} No. PSR: {psrs.shape[0]} No. FAKE: {fakes.shape[0]}")
     print("No. Each Source in Dataset: {}".format(num_sources_to_sample_of_each_type))
 
-    num_agns_to_sample = num_sources_to_sample_of_each_type - agns.shape[0]
-    num_psrs_to_sample = num_sources_to_sample_of_each_type - psrs.shape[0]
-    num_fakes_to_sample = num_sources_to_sample_of_each_type - fakes.shape[0]
-
-    if num_agns_to_sample > 0:
-        indices_to_take = np.random.choice(agns.shape[0], size=num_agns_to_sample)
+    if num_sources_to_sample_of_each_type > agns.shape[0]:
+        indices_to_take = np.random.choice(agns.shape[0], size=num_sources_to_sample_of_each_type - agns.shape[0])
         agns = np.vstack((agns, copy.deepcopy(agns[indices_to_take])))
+    elif num_sources_to_sample_of_each_type == agns.shape[0]:
+        agns = agns
+    else:
+        indices_to_remove = np.random.choice(agns.shape[0], size=agns.shape[0] - num_sources_to_sample_of_each_type,
+                                             replace=False)
+        agns = np.delete(agns, indices_to_remove, axis=0)
 
-    if num_psrs_to_sample > 0:
-        indices_to_take = np.random.choice(psrs.shape[0], size=num_psrs_to_sample)
+    if num_sources_to_sample_of_each_type > psrs.shape[0]:
+        indices_to_take = np.random.choice(psrs.shape[0], size=num_sources_to_sample_of_each_type - psrs.shape[0])
         psrs = np.vstack((psrs, copy.deepcopy(psrs[indices_to_take])))
+    elif num_sources_to_sample_of_each_type == psrs.shape[0]:
+        psrs = psrs
+    else:
+        indices_to_remove = np.random.choice(psrs.shape[0], size=psrs.shape[0] - num_sources_to_sample_of_each_type,
+                                             replace=False)
+        psrs = np.delete(psrs, indices_to_remove, axis=0)
 
-    if num_fakes_to_sample > 0 and fakes.shape[0] > 0:
-        indices_to_take = np.random.choice(fakes.shape[0], size=num_fakes_to_sample)
+    if num_sources_to_sample_of_each_type > fakes.shape[0]:
+        indices_to_take = np.random.choice(fakes.shape[0], size=num_sources_to_sample_of_each_type - fakes.shape[0])
         fakes = np.vstack((fakes, copy.deepcopy(fakes[indices_to_take])))
+    elif num_sources_to_sample_of_each_type == fakes.shape[0]:
+        fakes = fakes
+    else:
+        indices_to_remove = np.random.choice(fakes.shape[0], size=fakes.shape[0] - num_sources_to_sample_of_each_type,
+                                             replace=False)
+        fakes = np.delete(fakes, indices_to_remove, axis=0)
 
     # Combine and return new dataset - no need to shuffle at this point
     data = ([[k, np.array([1., 0., 0.])] for k in agns] + [[k, np.array([0., 1., 0.])] for k in psrs] +

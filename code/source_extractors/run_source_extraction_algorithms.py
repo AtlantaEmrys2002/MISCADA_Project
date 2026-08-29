@@ -62,7 +62,7 @@ if __name__ == "__main__":
 
     # test_patch_ids, testing_maps, testing_masks) = read_patches(num_patches=75000, directory=patches_directory)
 
-    test_patch_ids, testing_maps, testing_masks) = read_patches(num_patches=30000, directory=patches_directory)
+    test_patch_ids, testing_maps, testing_masks) = read_patches(num_patches=50000, directory=patches_directory)
 
     real_patch_ids, real_maps, real_masks = read_patches(num_patches=768, directory="./real_data/real_patches/patches",
                                                          split=False)
@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
     localisation_algorithms = ["dbscan"] #, "kmeans", "blob_detection", "spectral"]
 
-    classification_algorithms = ["random_forest"] # , "cnn"]
+    classification_algorithms = ["cnn", "random_forest"]
 
     algorithm_count = 1
 

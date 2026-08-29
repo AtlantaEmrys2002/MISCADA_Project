@@ -5,21 +5,6 @@ from torch import nn
 from torch.utils.data.dataloader import DataLoader
 
 
-class CategoricalCrossEntropy(nn.Module):
-
-    def __init__(self):
-        super(CategoricalCrossEntropy, self).__init__()
-
-    @staticmethod
-    def forward(predictions, targets):
-        N = len(predictions)
-
-        # return nn.NLLLoss()(torch.log(predictions), targets)
-
-        # see references for this below line - borrowed for medium article on categorical cross entropy loss
-        return -1 / N * torch.sum(torch.sum(targets * torch.log(predictions)))
-
-
 class SourceClassifier(nn.Module):
 
     # Architecture is that specified in ID8. This implementation is completely unique and created by this author.
@@ -59,7 +44,7 @@ class SourceClassifier(nn.Module):
             nn.Linear(in_features=32, out_features=16),
             nn.ReLU(inplace=True),
             nn.Linear(in_features=16, out_features=3),
-            nn.Softmax(dim=1)
+            # nn.Softmax(dim=1)
 
         )
 
@@ -79,12 +64,12 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
     classifier = SourceClassifier().to(device)
 
     # Define loss function
-
-    # loss_fn = CategoricalCrossEntropy()
-
     loss_fn = nn.CrossEntropyLoss()
 
-    optimiser = torch.optim.Adam(classifier.parameters(), lr=1.e-6)
+    # ADDED IN SOME WEIGHT DECAY
+    optimiser = torch.optim.Adam(classifier.parameters(), lr=1.e-3)
+
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimiser, patience=2)
 
     # Start with large value that is easily surpassed
     best_vloss = 100000000000000
@@ -96,6 +81,8 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
         print("EPOCH {}".format(epoch))
 
         classifier.train()
+
+        training_loss = 0.0
 
         for i, data in enumerate(train_data):
 
@@ -113,8 +100,14 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
             # Adjust weights
             optimiser.step()
 
+            training_loss += loss.item()
+
         # Set to evaluate mode
         classifier.eval()
+
+        avg_training_loss = training_loss / (i + 1)
+
+        print("Training loss: {}".format(avg_training_loss))
 
         running_vloss = 0.0
 
@@ -131,7 +124,7 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
 
         avg_vloss = running_vloss / (i + 1)
 
-        print(avg_vloss.item())
+        print("Validation Loss: {}".format(avg_vloss.item()))
 
         # if this is the best model (in terms of loss) found so far, save model
         if avg_vloss < best_vloss:
@@ -140,6 +133,8 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
             best_epoch = epoch
 
             torch.save(classifier.state_dict(), save_file)
+
+        scheduler.step(avg_vloss)
 
     return classifier, best_epoch
 
@@ -154,10 +149,10 @@ def classification_neural_network(train_data, validation_data, test_data, pretra
 
         # Get data into efficient dataloader
 
-        train_data_loader = DataLoader(ClassifierSubPatchesDataset(data=train_data, num_sub_patches=len(train_data)), batch_size=64, shuffle=True)
+        train_data_loader = DataLoader(ClassifierSubPatchesDataset(data=train_data, num_sub_patches=len(train_data)), batch_size=128, shuffle=True)
 
         validation_data_loader = DataLoader(ClassifierSubPatchesDataset(data=validation_data, num_sub_patches=len(validation_data)),
-                                batch_size=64, shuffle=True)
+                                batch_size=128, shuffle=True)
 
         # Train classifier on data
         classifier_model, best_epoch_classifier = classifier_train(train_data=train_data_loader, test_data=validation_data_loader,
