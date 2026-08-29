@@ -1,2 +1,2 @@
 algorithm,segmentation_time (s),localisation_time(s),classification_time (s)
-unet_dbscan_random_forest,0.6308462619781494,0.776090145111084,0.12781381607055664
+unet_dbscan_random_forest,6.761551856994629,10.765814065933228,5.820011138916016

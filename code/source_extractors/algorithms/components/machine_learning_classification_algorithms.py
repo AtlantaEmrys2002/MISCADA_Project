@@ -7,16 +7,16 @@ https://www.geeksforgeeks.org/machine-learning/image-classification-using-suppor
 import numpy as np
 from pickle import dump, load
 from sklearn import svm
+from sklearn.model_selection import GridSearchCV, RepeatedStratifiedKFold
 from sklearn.ensemble import RandomForestClassifier
 
 
-def random_forest_classifier(train_data, test_data, pretrained=False,
+def random_forest_classifier(train_data, test_data, pretrained=False, tune=False,
                              save_file="./algorithms/pre_trained_models/random_forest_classifier.pt"):
     if not pretrained:
         # EXTRACT TRAINING DATA
 
         train_map_patches = np.array([k[0].flatten() for k in train_data])
-        # train_labels = np.array([k[1] for k in train_data])
 
         train_labels = []
 
@@ -31,13 +31,54 @@ def random_forest_classifier(train_data, test_data, pretrained=False,
 
         train_labels = np.array(train_labels)
 
-        clf = RandomForestClassifier(n_estimators=50, n_jobs=-1, max_depth=10, max_samples=0.05)
+        # just use specified parameters
+        if not tune:
 
-        clf.fit(train_map_patches, train_labels)
+            # The parameters are the best found during tuning
+            clf = RandomForestClassifier(n_estimators=200, max_depth=20, max_features='log2', n_jobs=-1)
 
-        # SAVE TRAINED SEGMENTATION ALGORITHM
-        with open(save_file, "wb") as f:
-            dump(clf, f, protocol=5)
+            clf.fit(train_map_patches, train_labels)
+
+            # SAVE TRAINED CLASSIFIER
+            with open(save_file, "wb") as f:
+                dump(clf, f, protocol=5)
+
+        # find optimal parameters in terms of BALANCED accuracy
+        else:
+
+            clf = RandomForestClassifier()
+
+            n_estimators = [30, 50, 70, 90, 200]
+
+            max_depth = [5, 10, 15, 20]
+
+            class_weight = [None, {"AGN" : 0.1, "PSR": 1, "FAKE":0.5}]
+
+            max_features = [None, "sqrt", "log2"]
+
+            grid = dict(n_estimators=n_estimators, max_depth=max_depth,
+                        class_weight=class_weight, max_features=max_features)
+
+            cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=3, random_state=1)
+
+            grid_search = GridSearchCV(estimator=clf, param_grid=grid, n_jobs=-1, cv=cv, scoring="balanced_accuracy")
+
+            grid_result = grid_search.fit(train_map_patches, train_labels)
+
+            print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
+            means = grid_result.cv_results_['mean_test_score']
+            stds = grid_result.cv_results_['std_test_score']
+            params = grid_result.cv_results_['params']
+            for mean, stdev, param in zip(means, stds, params):
+                print("%f (%f) with: %r" % (mean, stdev, param))
+
+            # Use classifier with best params found
+            clf = RandomForestClassifier(**grid_search.best_params_)
+            clf.fit(train_map_patches, train_labels)
+
+            # SAVE TRAINED SEGMENTATION ALGORITHM
+            with open(save_file, "wb") as f:
+                dump(clf, f, protocol=5)
 
     else:
 
@@ -48,7 +89,6 @@ def random_forest_classifier(train_data, test_data, pretrained=False,
             clf = load(f)
 
     # EXTRACT TEST DATA
-    # test_map_patches = [extract_hog_features(k[0]) for k in test_data]
     test_map_patches = np.array([k[0].flatten() for k in test_data])
     actual_labels = np.array([k[1] for k in test_data])
 
