@@ -91,5 +91,9 @@ def classification_precision_recall(ground_truth, predicted):
 # heatmap
 # Clear Plots - https://stackoverflow.com/questions/17106288/how-to-forget-previous-plots-how-can-i-flush-refresh
 # Plotting Confusion Matrix - https://stackoverflow.com/questions/35572000/how-can-i-plot-a-confusion-matrix
+# Precision and Recall for Multiclass Problems - https://www.evidentlyai.com/classification-metrics/multi-class-metrics#
+# averaging-precision-and-recall
+# Precision and Recall Edge Cases - https://stats.stackexchange.com/questions/8025/what-are-correct-values-for-precision
+# -and-recall-when-the-denominators-equal-0
 # Scikit-Learn Documentation - https://scikit-learn.org/stable/modules/generated/sklearn.metrics.confusion_matrix.html
 # Seaborn Documentation - https://matplotlib.org/stable/users/explain/colors/colormaps.html

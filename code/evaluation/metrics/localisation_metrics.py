@@ -50,6 +50,7 @@ def chamfer_separation(actual_source_centres, predicted_source_centres):
     return dist_chamfer
 
 
+# CHANGED TO 0.46 (CHANGE BACK TO 0.3)
 def num_sources_correctly_detected(actual_source_centres, predicted_source_centres, separation_threshold=0.3):
     # This determines how many sources in patch are correctly detected (it does not matter what source type they are,
     # but whether they are correctly detected and localised as a source). A fraction is returned - the proportion of

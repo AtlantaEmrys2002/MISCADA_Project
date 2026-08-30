@@ -365,6 +365,7 @@ def unet(training_maps, training_masks, validation_maps, validation_masks, testi
 # Convolutional Layers - https://en.wikipedia.org/wiki/Convolutional_layer
 # Cross-Entropy Loss Segmentation - https://discuss.pytorch.org/t/use-crossentropyloss-in-multiclass-semantic-
 # segmentation/158141
+# Cross-Entropy Loss - https://wiki.cloudfactory.com/docs/mp-wiki/loss/cross-entropy-loss
 # Custom Datasets - https://docs.pytorch.org/tutorials/beginner/data_loading_tutorial.html
 # Data Types - https://stackoverflow.com/questions/67456368/pytorch-getting-runtimeerror-found-dtype-double-but-expected
 # -float

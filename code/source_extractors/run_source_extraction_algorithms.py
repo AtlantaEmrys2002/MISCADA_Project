@@ -11,7 +11,7 @@ from algorithms.components.classification_algorithms import classification_neura
 from algorithms.components.clustering_algorithms import (blob_detection, dbscan_clustering, k_means_clustering,
                                                          spectral_clustering)
 from algorithms.components.machine_learning_classification_algorithms import random_forest_classifier, svm_classifier
-from algorithms.components.machine_learning_segmentation_algorithms import random_forest_segmentation
+from algorithms.components.machine_learning_segmentation_algorithms import random_forest_segmentation, svm_segmentation
 from algorithms.components.segmentation_algorithms import unet
 from algorithms.components.data_preparation import prepare_classifier_data
 import copy
@@ -58,11 +58,10 @@ if __name__ == "__main__":
     # train, valid, test = read_patches(num_patches=7500, directory=patches_directory)
 
     (train_patch_ids, training_maps, training_masks,
-    validation_patch_ids, validation_maps, validation_masks,
+    validation_patch_ids, validation_maps, validation_masks, test_patch_ids, testing_maps, testing_masks) = (
+        read_patches(num_patches=250, directory=patches_directory))
 
-    # test_patch_ids, testing_maps, testing_masks) = read_patches(num_patches=75000, directory=patches_directory)
-
-    test_patch_ids, testing_maps, testing_masks) = read_patches(num_patches=50000, directory=patches_directory)
+    # test_patch_ids, testing_maps, testing_masks) = read_patches(num_patches=1000, directory=patches_directory)
 
     real_patch_ids, real_maps, real_masks = read_patches(num_patches=768, directory="./real_data/real_patches/patches",
                                                          split=False)
@@ -87,11 +86,11 @@ if __name__ == "__main__":
 
     # CHANGE BACK
 
-    segmentation_algorithms = ["unet"]
+    segmentation_algorithms = ["svm"] # ["random_forest"] # ["unet"]
 
     localisation_algorithms = ["dbscan"] #, "kmeans", "blob_detection", "spectral"]
 
-    classification_algorithms = ["cnn", "random_forest"]
+    classification_algorithms = ["cnn"] # , "random_forest"]
 
     algorithm_count = 1
 
@@ -130,9 +129,22 @@ if __name__ == "__main__":
 
                 (train_segmentation_predictions, validation_segmentation_predictions, test_segmentation_predictions) = \
                     (random_forest_segmentation(training_maps=training_maps, training_masks=training_masks,
-                                                validation_maps=validation_maps, testing_maps=testing_maps))
+                                                validation_maps=validation_maps, validation_masks=validation_masks, testing_maps=testing_maps, tune=True))
 
                 _, _, real_segmentation_predictions = random_forest_segmentation(training_maps=np.array([]),
+                                                                                 training_masks=np.array([]),
+                                                                                 validation_maps=np.array([]),
+                                                                                 testing_maps=real_maps,
+                                                                                 pretrained=True, real=True)
+
+            case "svm":
+
+                (train_segmentation_predictions, validation_segmentation_predictions, test_segmentation_predictions) = \
+                    (svm_segmentation(training_maps=training_maps, training_masks=training_masks,
+                                                validation_maps=validation_maps, validation_masks=validation_masks,
+                                      testing_maps=testing_maps, tune=True))
+
+                _, _, real_segmentation_predictions = svm_segmentation(training_maps=np.array([]),
                                                                                  training_masks=np.array([]),
                                                                                  validation_maps=np.array([]),
                                                                                  testing_maps=real_maps,
@@ -141,6 +153,8 @@ if __name__ == "__main__":
             case _:
 
                 raise NameError("Segmentation algorithm {} could not be found.".format(segment))
+
+
 
         segmentation_time = time.time() - start_segmentation_time
 

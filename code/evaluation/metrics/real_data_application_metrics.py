@@ -5,8 +5,18 @@ import numpy as np
 import pickle
 
 
+
+
+# CHANGED ALL detection thresholds to 0.46 instead of 0.3 (change back if not good threshold) - see reminders - effectively gives 1 pixel grace
+
+
+
 def percentage_of_4fgl_source_correctly_classified(actual_source_locations, predicted_source_locations, classifications,
                                                    actual_classifications, separation_threshold=0.3):
+
+    # print(actual_source_locations.shape, predicted_source_locations.shape)
+    #
+    # print(np.unique(actual_source_locations, axis=0).shape, np.unique(predicted_source_locations, axis=0).shape)
 
     # Convert predicted source_centres to sky coordinates
     predicted_source_centres_sky = SkyCoord(ra=predicted_source_locations[:, 0] * u.degree,
@@ -39,7 +49,7 @@ def percentage_of_4fgl_source_correctly_classified(actual_source_locations, pred
     return num_sources_correctly_classified / num_detected_sources
 
 
-def percentage_of_4fgl_sources_detected(actual_source_locations, predicted_source_locations, separation_threshold=0.3):
+def percentage_of_4fgl_sources_detected(actual_source_locations, predicted_source_locations, separation_threshold=5):
 
     # Convert predicted source_centres to sky coordinates
     predicted_source_centres_sky = SkyCoord(ra=predicted_source_locations[:, 0] * u.degree,
@@ -130,7 +140,7 @@ def plot_predictions_actual(actual_coordinates, predicted_coordinates, model, de
     ax.set_xlabel("RA [$\\degree$]")
     ax.set_ylabel("Dec [$\\degree$]")
 
-    ax.legend(loc='lower center', bbox_to_anchor=(0.5, -.3))
+    ax.legend(loc='lower center', bbox_to_anchor=(0.3, -.3))
 
     fig.suptitle("Plot of {} Algorithm Applied to Fermi-LAT Observations".format(model))
 
@@ -159,7 +169,7 @@ def save_candidate_sources(actual_source_locations, predicted_source_locations, 
 
         separation_from_closest_actual_source = separations[np.argmin(separations)]
 
-        if separation_from_closest_actual_source > 0.3:
+        if separation_from_closest_actual_source > detection_threshold:
             potential_new_sources.append([classifications[p], predicted_source_locations[p][0],
                                           predicted_source_locations[p][1]])
 

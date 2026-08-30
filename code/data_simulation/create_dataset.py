@@ -131,6 +131,8 @@ if __name__ == "__main__":
 
 # REFERENCES
 
+# Erase File Every Run - https://stackoverflow.com/questions/2769061/how-to-erase-the-file-contents-of-text-file-in-
+# python
 # Indexing 3D Arrays stored as 1D - https://cplusplus.com/forum/general/137677/
 # Readlines - https://stackoverflow.com/questions/16222956/reading-a-file-line-by-line-into-elements-of-an-array-in-
 # python

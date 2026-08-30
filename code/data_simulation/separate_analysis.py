@@ -1,15 +1,19 @@
 '''
 This function is for running a separate analysis of 4FGL parameters without generating catalogs.
 '''
-import pandas as pd
+# import pandas as pd
+#
+# from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
+# from analysis.visualisation import *
+# import copy
+# import numpy as np
+# from pathlib import Path
+# from read_write_functions import catalog_data_preparation
 
-from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
-from analysis.visualisation import *
-import copy
-import numpy as np
-from pathlib import Path
-from read_write_functions import catalog_data_preparation
 
+import healpy as hp
+
+print(hp.nside2pixarea(256, degrees=True))
 
 # DELETE THIS AT THE END - JUST USED FOR GETTING NUMBERS FROM 4FGL CATALOG
 
@@ -168,25 +172,25 @@ from read_write_functions import catalog_data_preparation
 #                                                 source_type="Pulsar", directory=directory + "/parameter_correlations")
 
 
-agn_4fgl, pulsar_4fgl, source_detection_threshold = catalog_data_preparation("/Volumes/T7/data/catalog/4FGL_DR4.fit")
-
-print("Number of AGN: {}".format(len(agn_4fgl)))
-print("Number of Pulsars: {}".format(len(pulsar_4fgl)))
-
-# un, count = np.unique(pulsar_4fgl['PLEC_Exp_Index'].data, return_counts=True)
+# agn_4fgl, pulsar_4fgl, source_detection_threshold = catalog_data_preparation("/Volumes/T7/data/catalog/4FGL_DR4.fit")
 #
+# print("Number of AGN: {}".format(len(agn_4fgl)))
+# print("Number of Pulsars: {}".format(len(pulsar_4fgl)))
 #
-
-agn_4fgl = agn_4fgl.to_pandas()
-
-agn_4fgl.dropna(inplace=True)
-
-mask = ~np.isnan(agn_4fgl["LP_beta"])
-values = agn_4fgl["LP_beta"][~np.isnan(agn_4fgl["LP_beta"])]
-
-print(gumbel_r.fit(values))
-
-# analysis(agn_4fgl.copy(), pulsar_4fgl.copy())
+# # un, count = np.unique(pulsar_4fgl['PLEC_Exp_Index'].data, return_counts=True)
+# #
+# #
+#
+# agn_4fgl = agn_4fgl.to_pandas()
+#
+# agn_4fgl.dropna(inplace=True)
+#
+# mask = ~np.isnan(agn_4fgl["LP_beta"])
+# values = agn_4fgl["LP_beta"][~np.isnan(agn_4fgl["LP_beta"])]
+#
+# print(gumbel_r.fit(values))
+#
+# # analysis(agn_4fgl.copy(), pulsar_4fgl.copy())
 
 
 # REFERENCES
