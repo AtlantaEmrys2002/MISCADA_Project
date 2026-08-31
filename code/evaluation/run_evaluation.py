@@ -152,11 +152,13 @@ if __name__ == "__main__":
     #
     # classification_algorithms = ["random_forest", "cnn", "svm"]
 
-    segmentation_algorithms = ["unet"]
+    # segmentation_algorithms = ["unet"]
+
+    segmentation_algorithms = ["pspnet"] # "random_forest"]
 
     localisation_algorithms = ["dbscan"]
 
-    classification_algorithms = ["cnn", "random_forest"] # , "cnn"]
+    classification_algorithms = ["cnn"] # , "random_forest"] # , "cnn"]
 
     models = ["{}_{}_{}".format(i, j, k) for i in segmentation_algorithms for j in localisation_algorithms
               for k in classification_algorithms]

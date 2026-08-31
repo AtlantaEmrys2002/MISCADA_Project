@@ -1,2 +1,2 @@
 id,detection_algorithm,localisation_algorithm,classification_algorithm,segmentation_balanced_binary_accuracy,segmentation_dice_coefficient,segmentation_precision,segmentation_recall,chamfer_separation,frac_sources_detected,classification_precision,classification_recall,frac_4fgl_detected,frac_4fgl_detected_and_classified
-0,unet,dbscan,random_forest,0.9804008736734984,0.9713709775050342,0.981773008423775,0.9618618312871168,16704.316402467884,0.4690186588549959,0.701348256536379,0.9159400410309341,0.3576765485659195,0.3583617747440273
+0,pspnet,dbscan,cnn,0.8458271210196401,0.7875410956003428,0.9196941703361364,0.6951687999319007,17355.399078411923,0.466610964714956,0.6763419766907915,0.931471525592884,0.9775849602313811,0.7114351496546432

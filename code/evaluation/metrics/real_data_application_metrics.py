@@ -46,6 +46,10 @@ def percentage_of_4fgl_source_correctly_classified(actual_source_locations, pred
 
                 num_sources_correctly_classified += 1
 
+    if num_detected_sources == 0 or num_sources_correctly_classified == 0:
+
+        return 0
+
     return num_sources_correctly_classified / num_detected_sources
 
 
@@ -130,12 +134,14 @@ def plot_predictions_actual(actual_coordinates, predicted_coordinates, model, de
 
     for x in range(len(data_points)):
 
-        coords = SkyCoord(ra=data_points[x][:, 0] * u.degree, dec=data_points[x][:, 1] * u.degree, frame='icrs')
+        if data_points[x].size != 0:
 
-        ra_rad = coords.ra.wrap_at(180 * u.deg).radian
-        dec_rad = coords.dec.radian
+            coords = SkyCoord(ra=data_points[x][:, 0] * u.degree, dec=data_points[x][:, 1] * u.degree, frame='icrs')
 
-        ax.scatter(ra_rad, dec_rad, label=labels[x], color=colours[x], marker=markers[x], s=sizes[x])
+            ra_rad = coords.ra.wrap_at(180 * u.deg).radian
+            dec_rad = coords.dec.radian
+
+            ax.scatter(ra_rad, dec_rad, label=labels[x], color=colours[x], marker=markers[x], s=sizes[x])
 
     ax.set_xlabel("RA [$\\degree$]")
     ax.set_ylabel("Dec [$\\degree$]")

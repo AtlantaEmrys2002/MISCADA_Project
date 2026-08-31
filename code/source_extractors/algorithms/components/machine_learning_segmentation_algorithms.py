@@ -8,13 +8,49 @@ from functools import partial
 import numpy as np
 from pickle import dump, load
 from skimage import feature, future
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from sklearn.svm import SVC, LinearSVC
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.metrics import balanced_accuracy_score
 import time
 
 
-def random_forest_segmentation(training_maps, training_masks, validation_maps, testing_maps, validation_masks=None, sigma_min=1, sigma_max=16,
+def format_for_segmentation_algorithm(maps, masks, sigma_min=1, sigma_max=4):
+
+    features_func = partial(
+        feature.multiscale_basic_features,
+        intensity=True,
+        workers=4,
+        edges=True,
+        texture=True,
+        sigma_min=sigma_min,
+        sigma_max=sigma_max,
+        channel_axis=0,
+    )
+
+    # Extract local features from training data
+    features = np.array([features_func(m) for m in maps])
+
+    # Stitch all training images together - format correct for classifier
+
+    num_features = features[0].shape[-1]
+
+    features = np.reshape(features, shape=(64 * maps.shape[0], 64, num_features))
+
+    if masks.size != 0:
+
+        labels = np.reshape(masks, shape=(64 * maps.shape[0], 64))
+
+    else:
+
+        labels = np.array([])
+
+    return features, labels
+
+
+def random_forest_segmentation(training_maps, training_masks, validation_maps, testing_maps, validation_masks=None, sigma_min=1, sigma_max=4,
                                pretrained=False, real=False,
                                save_file="./algorithms/pre_trained_models/random_forest_segmentation.pt", tune=False):
     # PREPARE DATA
@@ -26,60 +62,43 @@ def random_forest_segmentation(training_maps, training_masks, validation_maps, t
 
         validation_masks = np.array(validation_masks) + 1
 
-    # features_func = partial(
-    #     feature.multiscale_basic_features,
-    #     intensity=True,
-    #     workers=4,
-    #     edges=False,
-    #     texture=False,
-    #     sigma_min=sigma_min,
-    #     sigma_max=sigma_max,
-    #     channel_axis=0,
-    # )
-    #
-    # # Extract local features from training data
-    # training_maps = np.array([features_func(tm) for tm in training_maps])
-    #
-    # # Extract local features from validation data
-    # validation_maps = np.array([features_func(vm) for vm in validation_maps])
-    #
-    # # Extract local features from test data
-    # testing_maps = np.array([features_func(tm) for tm in testing_maps])
-
     if not pretrained:
-        # Train a new RF segmentor
 
         # TRAIN RANDOM FOREST CLASSIFIER ON DATA
 
         if not tune:
 
-            features_func = partial(
-                feature.multiscale_basic_features,
-                intensity=True,
-                workers=4,
-                edges=False,
-                texture=False,
-                sigma_min=sigma_min,
-                sigma_max=sigma_max,
-                channel_axis=0,
-            )
+            # Found model overfits if number of patches used to train is greater than 250
+            if training_maps.shape[0] > 250:
 
-            # Extract local features from training data
-            training_maps = np.array([features_func(tm) for tm in training_maps])
+                # random_indices = np.random.choice(a=training_maps, size=250, replace=False)
 
-            # Extract local features from validation data
-            validation_maps = np.array([features_func(vm) for vm in validation_maps])
+                # CHANGED THIS LINE - CHANGE BACK AT THE END IF NO IMPROVEMENT
 
-            # Extract local features from test data
-            testing_maps = np.array([features_func(tm) for tm in testing_maps])
+                random_indices = np.random.choice(a=training_maps, size=1000, replace=False)
 
-            # CHANGE THESE TO THE BEST FOUND DURING TUNING
 
-            clf = RandomForestClassifier(n_estimators=60, n_jobs=4, max_depth=7, max_samples=0.05)
 
-            clf = future.fit_segmenter(training_masks, training_maps, clf)
+
+                training_maps_subset = training_maps[random_indices]
+                training_masks_subset = training_masks[random_indices]
+
+            else:
+
+                training_maps_subset = training_maps
+                training_masks_subset = training_masks
+
+            # Extract local features from training data and stitch training images together to create giant image upon
+            # which to train
+            training_features, training_labels = format_for_segmentation_algorithm(training_maps_subset,
+                                                                                   training_masks_subset)
+
+            # Best values found during tuning
+            clf = RandomForestClassifier(n_estimators=150, n_jobs=5, max_depth=20, max_samples=0.05, max_features=None,
+                                         oob_score=balanced_accuracy_score)
 
             # GET PREDICTIONS
+            clf = future.fit_segmenter(training_labels, training_features, clf)
 
             # SAVE TRAINED SEGMENTATION ALGORITHM
             with open(save_file, "wb") as f:
@@ -101,8 +120,6 @@ def random_forest_segmentation(training_maps, training_masks, validation_maps, t
             #
             # sxs = [4, 8, 16]
 
-
-
             n_estimators = [150]
 
             max_depth = [20]
@@ -114,6 +131,10 @@ def random_forest_segmentation(training_maps, training_masks, validation_maps, t
             sms = [1]
 
             sxs = [4]
+
+            # BEST FOUND WHEN ONLY USING 250 PATCHES
+
+            # MAKE SO SAVES BEST
 
             for n in n_estimators:
 
@@ -129,59 +150,18 @@ def random_forest_segmentation(training_maps, training_masks, validation_maps, t
 
                                     start = time.time()
 
-                                    features_func = partial(
-                                        feature.multiscale_basic_features,
-                                        intensity=True,
-                                        workers=5,
-                                        texture=True,
-                                        edges = True,
-                                        sigma_min=sm,
-                                        sigma_max=sx,
-                                        channel_axis=0,
-                                    )
+                                    training_features, training_labels = (
+                                        format_for_segmentation_algorithm(maps=training_maps, masks=training_masks))
 
-                                    # Extract local features from training data
-                                    training_features = np.array([features_func(tm) for tm in training_maps])
-
-                                    tmp = training_features[0]
-                                    tmp_labels = training_masks[0]
-
-                                    for k in range(1, training_maps.shape[0]):
-                                        tmp = np.concatenate((tmp, training_features[k]), 0)
-                                        tmp_labels = np.concatenate((tmp_labels, training_masks[k]), 0)
-
-                                    training_features = tmp
-                                    training_labels = tmp_labels
-
-                                    # Extract local features from validation data
-                                    validation_features = np.array([features_func(vm) for vm in validation_maps])
-
-                                    tmp = validation_features[0]
-                                    tmp_labels = validation_masks[0]
-
-                                    for k in range(1, validation_maps.shape[0]):
-                                        tmp = np.concatenate((tmp, validation_features[k]), 0)
-                                        tmp_labels = np.concatenate((tmp_labels, validation_masks[k]), 0)
-
-                                    validation_features = tmp
-
-                                    # clf = RandomForestClassifier(n_estimators=n, max_depth=m, max_samples=ms, max_features=mf,
-                                    #                              n_jobs=-1)
-
-
-
-                                    # CHANGED OOB SCORE - better
+                                    validation_features, validation_labels = (
+                                        format_for_segmentation_algorithm(maps=validation_maps, masks=validation_masks))
 
                                     clf = RandomForestClassifier(n_estimators=n, max_depth=m, max_samples=ms, max_features=mf,
                                                                  n_jobs=-1, oob_score=balanced_accuracy_score)
 
-
-
-
-
                                     clf = future.fit_segmenter(training_labels, training_features, clf)
 
-                                    # FIT TO VALIDATION MAPS
+                                    # EVALUATE ON VALIDATION MAPS
 
                                     predicted_tmp = future.predict_segmenter(validation_features, clf)
 
@@ -238,61 +218,49 @@ def random_forest_segmentation(training_maps, training_masks, validation_maps, t
 
     else:
 
-        features_func = partial(
-            feature.multiscale_basic_features,
-            intensity=True,
-            workers=4,
-            edges=False,
-            texture=False,
-            sigma_min=sigma_min,
-            sigma_max=sigma_max,
-            channel_axis=0,
-        )
-
-        # Extract local features from training data
-        training_maps = np.array([features_func(tm) for tm in training_maps])
-
-        # Extract local features from validation data
-        validation_maps = np.array([features_func(vm) for vm in validation_maps])
-
-        # Extract local features from test data
-        testing_maps = np.array([features_func(tm) for tm in testing_maps])
-
         # RETRIEVE RANDOM FOREST CLASSIFIER
 
         # Use pre-trained RF segmentor
         with open(save_file, "rb") as f:
             clf = load(f)
 
+    # FORMAT DATA
+
     # GET PREDICTIONS
 
     if real:
-        test_data_predictions = future.predict_segmenter(testing_maps, clf)
-        test_data_predictions = np.array(
-            [[test_data_predictions[k]] for k in range(test_data_predictions.shape[0])]) - 1
 
-        return np.array([]), np.array([]), test_data_predictions
+        testing_features, testing_labels = format_for_segmentation_algorithm(testing_maps,
+                                                                             np.array([]))
+
+        test_data_predictions = future.predict_segmenter(testing_features, clf).reshape(testing_maps.shape[0], 64, 64) - 1
+
+        return np.array([]), np.array([]), np.array([[k] for k in test_data_predictions])
 
     else:
 
-        train_data_predictions = future.predict_segmenter(training_maps, clf)
-        validation_data_predictions = future.predict_segmenter(validation_maps, clf)
-        test_data_predictions = future.predict_segmenter(testing_maps, clf)
+        training_features, training_labels = format_for_segmentation_algorithm(training_maps,
+                                                                               training_masks)
+
+        validation_features, validation_labels = format_for_segmentation_algorithm(validation_maps,
+                                                                                   validation_masks)
+
+        testing_features, testing_labels = format_for_segmentation_algorithm(testing_maps,
+                                                                             np.array([]))
 
         # Minus 1 such that pixel = 0 indicates background and pixel = 1 indicates foreground
-        train_data_predictions = np.array([[train_data_predictions[k]] for k in
-                                           range(train_data_predictions.shape[0])]) - 1
-        validation_data_predictions = np.array([[validation_data_predictions[k]] for k in
-                                                range(validation_data_predictions.shape[0])]) - 1
-        test_data_predictions = np.array([[test_data_predictions[k]] for k in
-                                          range(test_data_predictions.shape[0])]) - 1
+        train_data_predictions = future.predict_segmenter(training_features, clf).reshape(training_maps.shape[0], 64, 64) - 1
+        validation_data_predictions = future.predict_segmenter(validation_features, clf).reshape(validation_maps.shape[0], 64, 64) - 1
+        test_data_predictions = future.predict_segmenter(testing_features, clf).reshape(testing_maps.shape[0], 64, 64) - 1
 
-        return train_data_predictions, validation_data_predictions, test_data_predictions
-
+        return (np.array([[k] for k in train_data_predictions]),
+                np.array([[k] for k in validation_data_predictions]),
+                np.array([[k] for k in test_data_predictions]))
 
 
 
-def svm_segmentation(training_maps, training_masks, validation_maps, testing_maps, validation_masks=None, sigma_min=1, sigma_max=16,
+
+def adaboost_segmentation(training_maps, training_masks, validation_maps, testing_maps, validation_masks=None, sigma_min=1, sigma_max=16,
                                pretrained=False, real=False,
                                save_file="./algorithms/pre_trained_models/random_forest_segmentation.pt", tune=False):
     # PREPARE DATA
@@ -303,26 +271,6 @@ def svm_segmentation(training_maps, training_masks, validation_maps, testing_map
     if isinstance(validation_masks, np.ndarray):
 
         validation_masks = np.array(validation_masks) + 1
-
-    # features_func = partial(
-    #     feature.multiscale_basic_features,
-    #     intensity=True,
-    #     workers=4,
-    #     edges=False,
-    #     texture=False,
-    #     sigma_min=sigma_min,
-    #     sigma_max=sigma_max,
-    #     channel_axis=0,
-    # )
-    #
-    # # Extract local features from training data
-    # training_maps = np.array([features_func(tm) for tm in training_maps])
-    #
-    # # Extract local features from validation data
-    # validation_maps = np.array([features_func(vm) for vm in validation_maps])
-    #
-    # # Extract local features from test data
-    # testing_maps = np.array([features_func(tm) for tm in testing_maps])
 
     if not pretrained:
         # Train a new RF segmentor
@@ -353,7 +301,7 @@ def svm_segmentation(training_maps, training_masks, validation_maps, testing_map
 
             # CHANGE THESE TO THE BEST FOUND DURING TUNING
             #
-            # clf = RandomForestClassifier(n_estimators=60, n_jobs=4, max_depth=7, max_samples=0.05)
+            clf = RandomForestClassifier(n_estimators=60, n_jobs=4, max_depth=7, max_samples=0.05)
 
             clf = future.fit_segmenter(training_masks, training_maps, clf)
 
@@ -365,45 +313,46 @@ def svm_segmentation(training_maps, training_masks, validation_maps, testing_map
 
         else:
 
-            # ONES I USED WHEN TUNING:
-
-            # n_estimators = [30, 50, 60, 70, 90, 100, 150]
+            # n_estimators = [25, 50, 75, 100]
             #
-            # max_depth = [5, 7, 9, 10, 15, 20]
-            #
-            # max_samples = [0.01, 0.025, 0.05]
-            #
-            # max_features = [None, "sqrt", "log2"]
+            # learning_rate = [0.001, 0.01, 0.1, 1]
             #
             # sms = [1]
             #
-            # sxs = [4, 8, 16]
+            # sxs = [4]
+
+            # edges = [True, False]
+            #
+            # textures = [True, False]
 
 
+            n_estimators = [200]
 
-            n_estimators = [150]
-
-            max_depth = [20]
-
-            max_samples = [0.05]
-
-            max_features = [None]
+            learning_rate = [0.001]
 
             sms = [1]
 
             sxs = [4]
 
+            edges = [False]
+
+            textures = [False]
+
+            # BEST FOUND: 75, 0.001, 1, 4, 60.10300588607788, 0.8027564830725533 WITH decision tree with max depth 1
+
+            # TRY LOGISTIC REGRESSOR INSTEAD OF DECISION TREE LATER
+
             for n in n_estimators:
 
-                for m in max_depth:
+                for lr in learning_rate:
 
-                    for ms in max_samples:
+                    for sm in sms:
 
-                        for mf in max_features:
+                        for sx in sxs:
 
-                            for sm in sms:
+                            for edge in edges:
 
-                                for sx in sxs:
+                                for texture in textures:
 
                                     start = time.time()
 
@@ -411,8 +360,8 @@ def svm_segmentation(training_maps, training_masks, validation_maps, testing_map
                                         feature.multiscale_basic_features,
                                         intensity=True,
                                         workers=5,
-                                        texture=True,
-                                        edges = True,
+                                        texture=texture,
+                                        edges = edge,
                                         sigma_min=sm,
                                         sigma_max=sx,
                                         channel_axis=0,
@@ -443,21 +392,7 @@ def svm_segmentation(training_maps, training_masks, validation_maps, testing_map
 
                                     validation_features = tmp
 
-                                    # clf = RandomForestClassifier(n_estimators=n, max_depth=m, max_samples=ms, max_features=mf,
-                                    #                              n_jobs=-1)
-
-
-
-                                    # CHANGED OOB SCORE - better
-
-                                    # clf = RandomForestClassifier(n_estimators=n, max_depth=m, max_samples=ms, max_features=mf,
-                                    #                              n_jobs=-1, oob_score=balanced_accuracy_score, criterion='entropy')
-                                    #
-
-                                    clf = SVC()
-
-
-
+                                    clf = AdaBoostClassifier(n_estimators=n, learning_rate=lr, estimator=DecisionTreeClassifier(max_depth=2))
 
                                     clf = future.fit_segmenter(training_labels, training_features, clf)
 
@@ -491,7 +426,7 @@ def svm_segmentation(training_maps, training_masks, validation_maps, testing_map
 
                                         bba = (first_term + second_term) / 2
 
-                                    print(f"{n}, {m}, {ms}, {mf}, {sm}, {sx}, {time.time() - start}, {bba}")
+                                    print(f"{n}, {lr}, {sm}, {sx}, {time.time() - start}, {bba}")
 
 
 

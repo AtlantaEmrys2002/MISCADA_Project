@@ -149,6 +149,12 @@ def dbscan_clustering(binary_segments, threshold=0.2, tune=False, masks=None):
 
         D = segment[0] if isinstance(segment[0], np.ndarray) else segment[0].detach().numpy()
 
+        # import matplotlib.pyplot as plt
+        #
+        # plt.imshow(D)
+        #
+        # plt.show()
+
         # As we have used SoftMax, our image isn't exactly binary - this will make it so
         source_pixels = np.argwhere(D > threshold)
 
