@@ -12,55 +12,25 @@ from torchvision.transforms.functional import center_crop
 from torch.nn.functional import adaptive_avg_pool2d
 
 
-
-# class Block(nn.Module):
-#
-#     def __init__(self, channel_sizes):
-#
-#         super(Block, self).__init__()
-#
-#         self.skip = nn.Sequential(
-#             nn.Conv2d(in_channels=5, out_channels=channel_sizes[2], kernel_size=3, stride=2, padding=1, bias=True),
-#
-#             nn.LeakyReLU(inplace=True),
-#         )
-#
-#         self.seq_block = nn.Sequential(
-#
-#             # TUNE THIS ARCHITECTURE LATER!!!
-#
-#             nn.Conv2d(in_channels=5, out_channels=channel_sizes[0], kernel_size=3, stride=2, padding=1, bias=True),
-#
-#             nn.LeakyReLU(inplace=True),
-#
-#             nn.Conv2d(in_channels=channel_sizes[0], out_channels=channel_sizes[1], kernel_size=3, stride=2, padding=1, bias=True),
-#
-#             nn.LeakyReLU(inplace=True),
-#
-#             nn.Conv2d(in_channels=channel_sizes[1], out_channels=channel_sizes[2], kernel_size=3, stride=2, padding=1, bias=True),
-#
-#             nn.LeakyReLU(inplace=True),
-#
-#         )
-#
-#     def forward(self, x):
-#
-#         print(self.skip(x).shape)
-#         print(self.seq_block(x).shape)
-#
-#         # THIS INTRODUCES A SKIP CONNECTION
-#         return torch.concat((x, self.seq_block(x)), dim=1)
-
 class Block(nn.Module):
 
-    def __init__(self, in_chan, out_chan, stride=1):
+    def __init__(self, in_chan, out_chan, stride=1, k_size=None):
 
         super(Block, self).__init__()
 
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(in_channels=in_chan, out_channels=out_chan, kernel_size=3, stride=stride, padding=1),
-            nn.ReLU()
-        )
+        if k_size is not None:
+
+            self.conv1 = nn.Sequential(
+                nn.Conv2d(in_channels=in_chan, out_channels=out_chan, kernel_size=k_size, stride=stride, padding=0),
+                nn.ReLU()
+            )
+
+        else:
+
+            self.conv1 = nn.Sequential(
+                nn.Conv2d(in_channels=in_chan, out_channels=out_chan, kernel_size=3, stride=stride, padding=1),
+                nn.ReLU()
+            )
 
         self.conv2 = nn.Sequential(
             nn.Conv2d(in_channels=out_chan, out_channels=out_chan, kernel_size=3, stride=1, padding=1),
@@ -83,11 +53,8 @@ class Block(nn.Module):
         out = self.conv1(x)
         out = self.conv2(out)
         if self.downsample:
+
             residual = self.downsample(x)
-
-            # print(residual.shape)
-            # print(out.shape)
-
             out += residual
 
         out = self.second_relu(out)
@@ -102,48 +69,52 @@ class FeatureMap(nn.Module):
 
         super(FeatureMap, self).__init__()
 
-        self.seq_block = nn.Sequential(
-
-            # TUNE THIS ARCHITECTURE LATER!!!
-
-            nn.Conv2d(in_channels=5, out_channels=16, kernel_size=3, stride=2, padding=1, bias=True),
-
-            nn.LeakyReLU(inplace=True),
-
-            nn.Conv2d(in_channels=16, out_channels=16, kernel_size=3, stride=1, padding=1, bias=True),
-
-            nn.LeakyReLU(inplace=True),
-
-            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, stride=2, padding=1, bias=True),
-
-            nn.LeakyReLU(inplace=True),
-
-            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=2, padding=1, bias=True),
-
-            nn.LeakyReLU(inplace=True),
-
-        )
+        # self.seq_block = nn.Sequential(
+        #
+        #     # TUNE THIS ARCHITECTURE LATER!!!
+        #
+        #     nn.Conv2d(in_channels=5, out_channels=16, kernel_size=3, stride=2, padding=1, bias=True),
+        #
+        #     # nn.LeakyReLU(inplace=True),
+        #
+        #     nn.ReLU(inplace=True),
+        #
+        #     nn.Conv2d(in_channels=16, out_channels=16, kernel_size=3, stride=1, padding=1, bias=True),
+        #
+        #     # nn.LeakyReLU(inplace=True),
+        #     nn.ReLU(inplace=True),
+        #
+        #     nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, stride=2, padding=1, bias=True),
+        #
+        #     # nn.LeakyReLU(inplace=True),
+        #     nn.ReLU(inplace=True),
+        #
+        #     nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=2, padding=1, bias=True),
+        #
+        #     # nn.LeakyReLU(inplace=True),
+        #     nn.ReLU(inplace=True)
+        # )
 
         self.blocks = nn.Sequential(
 
             Block(5, 16, stride=1),
             Block(16, 32, stride=2),
-            Block(32, 64, stride=2)
+            Block(32, 64, stride=2),
+            # Block(64, 128, stride=2, k_size=2),
+
+            # Block(5, 32, stride=1),
+            # Block(32, 64, stride=2),
+            # Block(64, 128, stride=2),
 
         )
-
-        # self.block_1 = Block(5, 16)
-        # self.block_2 = Block(16, 32, stride=2)
-        # self.block_3 = Block(32, 64, stride=2)
-
-
-
 
     def forward(self, x):
 
         # x = self.seq_block(x)
 
         x = self.blocks(x)
+
+        # print(x.shape)
 
         return x
 
@@ -200,19 +171,26 @@ class PyramidPoolingModule(nn.Module):
 
         self.upsample_conv_6_x_6 = nn.ConvTranspose2d(in_channels=6, out_channels=6, kernel_size=3, stride=1)
 
-        self.upsample_1_x_1 = nn.Upsample(size=(8, 8), mode='bilinear')
+        # self.upsample_1_x_1 = nn.Upsample(size=(8, 8), mode='bilinear')
+        #
+        # self.upsample_2_x_2 = nn.Upsample(size=(8, 8), mode='bilinear')
+        #
+        # self.upsample_3_x_3 = nn.Upsample(size=(8, 8), mode='bilinear')
+        #
+        # self.upsample_6_x_6 = nn.Upsample(size=(8, 8), mode='bilinear')
 
-        self.upsample_2_x_2 = nn.Upsample(size=(8, 8), mode='bilinear')
+        self.upsample_1_x_1 = nn.Upsample(size=(16, 16), mode='bilinear')
 
-        self.upsample_3_x_3 = nn.Upsample(size=(8, 8), mode='bilinear')
+        self.upsample_2_x_2 = nn.Upsample(size=(16, 16), mode='bilinear')
 
-        self.upsample_6_x_6 = nn.Upsample(size=(8, 8), mode='bilinear')
+        self.upsample_3_x_3 = nn.Upsample(size=(16, 16), mode='bilinear')
+
+        self.upsample_6_x_6 = nn.Upsample(size=(16, 16), mode='bilinear')
 
         # self.final_conv = nn.ConvTranspose2d(in_channels=140, out_channels=1, kernel_size=3, stride=1, padding=1)
 
         self.final_conv = nn.Sequential(
-            nn.Conv2d(in_channels=76, out_channels=1, kernel_size=3, stride=1, padding=1),
-            # nn.ReLU(inplace=True)
+            nn.Conv2d(in_channels=76, out_channels=1, kernel_size=3, stride=1, padding=1)
         )
 
         self.bilinear_upsampling = nn.Upsample(size=(64, 64), mode='bilinear')
@@ -251,7 +229,6 @@ class PyramidPoolingModule(nn.Module):
 
         upsampled_6 = self.upsample_6_x_6(pooled_6)
 
-
         # upsampled_1 = self.upsample_conv_1_x_1(pooled_1)
         #
         # upsampled_2 = self.upsample_conv_2_x_2(pooled_2)
@@ -260,9 +237,15 @@ class PyramidPoolingModule(nn.Module):
         #
         # upsampled_6 = self.upsample_conv_6_x_6(pooled_6)
 
+        # x = torch.concat((x, center_crop(upsampled_6, x.shape[2]), center_crop(upsampled_3, x.shape[2]),
+        #                   center_crop(upsampled_2, x.shape[2]), center_crop(upsampled_1, x.shape[2])), dim=1)
 
 
-        x = torch.concat((x, center_crop(upsampled_6, x.shape[2]), center_crop(upsampled_3, x.shape[2]), center_crop(upsampled_2, x.shape[2]), center_crop(upsampled_1, x.shape[2])), dim=1)
+        # print(upsampled_1.shape, upsampled_2.shape, upsampled_3.shape, upsampled_6.shape)
+
+        x = torch.cat((x, upsampled_6, upsampled_3, upsampled_2, upsampled_1), axis=1)
+
+        # x = torch.stack((x, upsampled_6, upsampled_3, upsampled_2, upsampled_1), axis=1)
 
         x = self.final_conv(self.bilinear_upsampling(x))
 
