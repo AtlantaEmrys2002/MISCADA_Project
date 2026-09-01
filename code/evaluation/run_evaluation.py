@@ -98,15 +98,6 @@ def evaluate_on_real_data(file_4fgl, model):
     plot_predictions_actual(actual_coordinates=copy.deepcopy(actual_source_locations_4fgl),
                             predicted_coordinates=copy.deepcopy(predicted_locations_real), model=model)
 
-
-
-
-
-
-
-
-
-
     # THIS FRACTION IS THE NUMBER OF SOURCES CORRECTLY CLASSIFIED OF THE NUMBER OF SOURCES CORRECTLY DETECTED
 
     predicted_locations_in_real_data = get_classified_patches(predicted_locations_raw)
@@ -154,7 +145,7 @@ if __name__ == "__main__":
 
     # segmentation_algorithms = ["unet"]
 
-    segmentation_algorithms = ["pspnet"] # "random_forest"]
+    segmentation_algorithms = ["random_forest"] # ["pspnet"] # "random_forest"]
 
     localisation_algorithms = ["dbscan"]
 
@@ -280,7 +271,10 @@ if __name__ == "__main__":
 
 # REFERENCES
 
+# Array of Arrays - https://stackoverflow.com/questions/12020872/array-of-arrays-python-numpy
 # Cartesian Products - https://stackoverflow.com/questions/11144513/cartesian-product-of-x-and-y-array-points-into-
 # single-array-of-2d-points
+# Number of Occurrences - https://stackoverflow.com/questions/28663856/how-do-i-count-the-occurrence-of-a-certain-item-
+# in-an-ndarray
 # One-Hot Encoding - https://stackoverflow.com/questions/20295046/numpy-change-max-in-each-row-to-1-all-other-numbers-to
 # -0

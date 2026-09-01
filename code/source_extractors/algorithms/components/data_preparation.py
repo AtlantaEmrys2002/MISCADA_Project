@@ -1,9 +1,11 @@
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 import copy
+from functools import partial
 import numpy as np
 from operator import itemgetter
 import pandas as pd
+from skimage import feature
 from ..utils import get_catalog_data, get_lb_from_pixel, pixel_id
 import warnings
 from xml.dom import minidom
@@ -68,6 +70,33 @@ def balance_dataset(data):
             [[k, np.array([0., 0., 1.])] for k in fakes])
 
     return data
+
+
+def extract_features(maps, masks, sigma_min=1, sigma_max=4):
+
+    features_func = partial(
+        feature.multiscale_basic_features,
+        intensity=True,
+        workers=4,
+        edges=True,
+        texture=True,
+        sigma_min=sigma_min,
+        sigma_max=sigma_max,
+        channel_axis=0,
+    )
+
+    # Extract local features from training data
+    features = np.array([features_func(m) for m in maps])
+
+    # Stitch all training images together - format correct for classifier
+
+    num_features = features[0].shape[-1]
+
+    features = np.reshape(features, shape=(64 * maps.shape[0], 64, num_features))
+
+    labels = np.reshape(masks, shape=(64 * maps.shape[0], 64)) if masks.size != 0 else np.array([])
+
+    return features, labels
 
 
 def image_cartesian_coordinates_to_galactic_coordinates(coordinates, patch_centre, coordinate_system='G'):

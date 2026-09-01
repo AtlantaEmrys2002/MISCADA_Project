@@ -265,8 +265,6 @@ def spectral_clustering(binary_segments, max_num_centroids=20, threshold=0.2):
 
     for segment in binary_segments:
 
-        print(current_index)
-
         current_index += 1
 
         D = segment[0]
@@ -380,6 +378,7 @@ def spectral_clustering(binary_segments, max_num_centroids=20, threshold=0.2):
 # Numpy and OpenCV Datatypes - https://stackoverflow.com/questions/54446621/why-wont-opencv-show-an-image-stored-in-a-
 # numpy-array-python?rq=3
 # Numpy Thresholding - https://bobbyhadz.com/blog/python-convert-numpy-array-to-0-or-1-based-on-threshold
+# One-Hot Encoding - https://stackoverflow.com/questions/38592324/one-hot-encoding-using-numpy
 # Permutations - https://stackoverflow.com/questions/1953194/permutations-of-two-lists-in-python
 # Row Selection - https://stackoverflow.com/questions/58079075/numpy-select-rows-based-on-condition
 # Setting Blob Detection Thresholds - https://stackoverflow.com/questions/32973537/what-is-the-use-of-minrepeatability-

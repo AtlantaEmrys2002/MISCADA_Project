@@ -361,6 +361,8 @@ def unet(training_maps, training_masks, validation_maps, validation_masks, testi
 # Class Imbalance - https://stackoverflow.com/questions/56841451/why-is-my-neural-net-only-predicting-one-class-binary-
 # classification
 # Casting Tensor Types - https://discuss.pytorch.org/t/how-to-cast-a-tensor-to-another-type/2713
+# Change Learning Rate - https://stackoverflow.com/questions/60050586/pytorch-change-the-learning-rate-based-on-number-
+# of-epochs
 # Class Weights - https://discuss.pytorch.org/t/using-class-weights-with-loss-function-for-train-val-test-splits/222696
 # Convolutional Layers - https://en.wikipedia.org/wiki/Convolutional_layer
 # Cross-Entropy Loss Segmentation - https://discuss.pytorch.org/t/use-crossentropyloss-in-multiclass-semantic-
@@ -369,6 +371,7 @@ def unet(training_maps, training_masks, validation_maps, validation_masks, testi
 # Custom Datasets - https://docs.pytorch.org/tutorials/beginner/data_loading_tutorial.html
 # Data Types - https://stackoverflow.com/questions/67456368/pytorch-getting-runtimeerror-found-dtype-double-but-expected
 # -float
+# Debugging U-Net - https://www.reddit.com/r/deeplearning/comments/1bdohnf/debugging_unet_for_segmentation_in_pytorch/
 # Detach - https://stackoverflow.com/questions/49768306/pytorch-tensor-to-numpy-array
 # Early Convergence - https://stackoverflow.com/questions/55973335/best-way-to-overcome-early-convergence-for-machine-
 # learning-model
@@ -377,12 +380,18 @@ def unet(training_maps, training_masks, validation_maps, validation_masks, testi
 # torch-cuda-floatte
 # GPU Transfer - https://stackoverflow.com/questions/63061779/pytorch-when-do-i-need-to-use-todevice-on-a-model-or-
 # tensor
+# High Loss - https://www.reddit.com/r/learnmachinelearning/comments/1ceoudk/my_deep_neural_network_plateaus_at_a_
+# relatively/
 # Looked At (Did Not Use) - https://github.com/milesial/Pytorch-UNet/blob/master/train.py
+# Max of Each Row - https://stackoverflow.com/questions/51740214/find-the-max-from-each-row-in-python
+# Memory Limitations - https://stackoverflow.com/questions/79464907/memory-keeps-increasing-in-pytorch-training-loop-
+# even-with-empty-cache
 # Model Not Training - https://discuss.pytorch.org/t/model-not-training/5055
 # Multiclass Loss Function - https://discuss.pytorch.org/t/unet-multiclass-loss-function-selection/138106
 # NaN Loss - https://discuss.pytorch.org/t/nan-loss-issues-with-precision-16-in-pytorch-lightning-gan-training/204369/4
 # Neuron Datatype - https://discuss.pytorch.org/t/can-i-explicitly-set-dtype-for-torch-nn-conv2d/56563
 # No Gradient - https://stackoverflow.com/questions/65532022/lack-of-gradient-when-creating-tensor-from-numpy
+# Overfitting - https://discuss.pytorch.org/t/how-to-prevent-overfitting/1902
 # Prediction with Model - https://discuss.pytorch.org/t/making-a-prediction-with-a-trained-model/2193
 # Pytorch Documentation - https://pytorch.org/get-started/locally/
 # Torch Types - https://stackoverflow.com/questions/70267810/pytorch-runtimeerror-expected-floating-point-type-for-
@@ -392,6 +401,7 @@ def unet(training_maps, training_masks, validation_maps, validation_masks, testi
 # Removing Channel Dimension - https://stackoverflow.com/questions/74764062/how-to-remove-the-channel-dimension-within-a
 # -pytorch-model
 # Requires Grad - https://discuss.pytorch.org/t/when-might-i-want-to-use-requires-grad-true-on-an-input/9624/2
+# Saving Model - https://discuss.pytorch.org/t/how-to-save-training-iterations-output/84801/2
 # Segmentation Loss Function - https://discuss.pytorch.org/t/loss-function-for-segmentation/129703
 # Segmentation with Cross Entropy - https://discuss.pytorch.org/t/image-segmentation-with-cross-entropy-loss/79138/4
 # Softmax Dimension - https://stackoverflow.com/questions/52513802/pytorch-softmax-with-dim
@@ -424,5 +434,7 @@ def unet(training_maps, training_masks, validation_maps, validation_masks, testi
 # U-Net Tutorial - https://medium.com/@alessandromondin/semantic-segmentation-with-pytorch-u-net-from-
 # scratch-502d6565910a
 # U-Net Not Working - https://discuss.pytorch.org/t/unet-implementation/426
+# Weight Decay - https://medium.com/@noorfatimaafzalbutt/understanding-weight-decay-why-it-matters-in-training-large-
+# language-models-b3a5f1ee2e9a
 # Weighted Loss Function - https://medium.com/@zergtant/use-weighted-loss-function-to-solve-imbalanced-data-
 # classification-problems-749237f38b75

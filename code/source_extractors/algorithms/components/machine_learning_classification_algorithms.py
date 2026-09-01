@@ -13,6 +13,23 @@ from sklearn.ensemble import RandomForestClassifier
 
 def random_forest_classifier(train_data, test_data, pretrained=False, tune=False,
                              save_file="./algorithms/pre_trained_models/random_forest_classifier.pt"):
+    """Consulted this heavily when tuning
+     https://machinelearningmastery.com/hyperparameters-for-classification-machine-learning-algorithms/
+
+    Parameters
+    ----------
+    train_data
+    test_data
+    pretrained
+    tune
+    save_file
+
+    Returns
+    -------
+
+    """
+
+
     if not pretrained:
         # EXTRACT TRAINING DATA
 

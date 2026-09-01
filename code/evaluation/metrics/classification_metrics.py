@@ -66,31 +66,13 @@ def classification_precision_recall(ground_truth, predicted):
 
     return sum(precision) / labels.shape[0], sum(recall) / labels.shape[0]
 
-
-
-
-
-
-    # values, counts = np.unique(predicted, axis=0, return_counts=True)
-    #
-    # pred_dict = dict(zip(values, counts))
-    #
-    # values, counts = np.unique(ground_truth, axis=0, return_counts=True)
-    #
-    # actual_dict = dict(zip(values, counts))
-    #
-    # # AGN precision and recall
-    #
-    # agn_true_positives = abs(actual_dict["AGN"] - pred_dict["AGN"])
-    #
-    # agn_false_positives = abs(actual_dict["AGN"])
-
 # REFERENCES
 
 # Annotating Seaborn - https://stackoverflow.com/questions/32723798/how-do-i-add-a-title-and-axis-labels-to-seaborn-
 # heatmap
 # Clear Plots - https://stackoverflow.com/questions/17106288/how-to-forget-previous-plots-how-can-i-flush-refresh
 # Plotting Confusion Matrix - https://stackoverflow.com/questions/35572000/how-can-i-plot-a-confusion-matrix
+# Plotting Colour Bars - https://stackoverflow.com/questions/18195758/set-matplotlib-colorbar-size-to-match-graph
 # Precision and Recall for Multiclass Problems - https://www.evidentlyai.com/classification-metrics/multi-class-metrics#
 # averaging-precision-and-recall
 # Precision and Recall Edge Cases - https://stats.stackexchange.com/questions/8025/what-are-correct-values-for-precision

@@ -11,7 +11,7 @@ from algorithms.components.classification_algorithms import classification_neura
 from algorithms.components.clustering_algorithms import (blob_detection, dbscan_clustering, k_means_clustering,
                                                          spectral_clustering)
 from algorithms.components.machine_learning_classification_algorithms import random_forest_classifier, svm_classifier
-from algorithms.components.machine_learning_segmentation_algorithms import random_forest_segmentation, adaboost_segmentation
+from algorithms.components.machine_learning_segmentation_algorithms import random_forest_segmentation
 from algorithms.components.pspnet import pspnet
 from algorithms.components.segmentation_algorithms import unet
 from algorithms.components.data_preparation import prepare_classifier_data
@@ -58,7 +58,7 @@ if __name__ == "__main__":
 
     (train_patch_ids, training_maps, training_masks,
     validation_patch_ids, validation_maps, validation_masks, test_patch_ids, testing_maps, testing_masks) = (
-        read_patches(num_patches=50000, directory=patches_directory))
+        read_patches(num_patches=500, directory=patches_directory))
 
     real_patch_ids, real_maps, real_masks = read_patches(num_patches=768, directory="./real_data/real_patches/patches",
                                                          split=False)
@@ -83,7 +83,7 @@ if __name__ == "__main__":
 
     # CHANGE BACK
 
-    segmentation_algorithms = ["pspnet"] # ["unet"]  # ["adaboost"] # ["random_forest"] # ["unet"]
+    segmentation_algorithms = ["random_forest"] # ["pspnet"] # ["unet"]  # ["adaboost"] # ["unet"]
 
     localisation_algorithms = ["dbscan"] #, "kmeans", "blob_detection", "spectral"]
 
@@ -92,6 +92,9 @@ if __name__ == "__main__":
     algorithm_count = 1
 
     execution_times = []
+
+
+    # MAKE SURE NONE ARE PRETRAINED
 
     for segment in segmentation_algorithms:
 
@@ -102,15 +105,6 @@ if __name__ == "__main__":
         match segment:
 
             case "unet":
-
-                # (train_segmentation_predictions, validation_segmentation_predictions, test_segmentation_predictions) = (
-                #     unet(training_maps=copy.deepcopy(training_maps), training_masks=copy.deepcopy(training_masks),
-                #          validation_maps=copy.deepcopy(validation_maps),
-                #          validation_masks=copy.deepcopy(validation_masks), testing_maps=copy.deepcopy(testing_maps)))
-
-
-                # CHANGE THIS BACK LATER
-
 
                 (train_segmentation_predictions, validation_segmentation_predictions, test_segmentation_predictions) = (
                     unet(training_maps=copy.deepcopy(training_maps), training_masks=copy.deepcopy(training_masks),
@@ -124,37 +118,12 @@ if __name__ == "__main__":
 
             case "random_forest":
 
-                # CHANGE BACK FOR FINAL RUN - THIS IS PRETRAINED
-
                 (train_segmentation_predictions, validation_segmentation_predictions, test_segmentation_predictions) = \
                     (random_forest_segmentation(training_maps=training_maps, training_masks=training_masks,
-                                                validation_maps=validation_maps, validation_masks=validation_masks, testing_maps=testing_maps, pretrained=True))
-
-
-                # (train_segmentation_predictions, validation_segmentation_predictions, test_segmentation_predictions) = \
-                #     (random_forest_segmentation(training_maps=training_maps, training_masks=training_masks,
-                #                                 validation_maps=validation_maps, validation_masks=validation_masks, testing_maps=testing_maps))
-
-                # import matplotlib.pyplot as plt
-                #
-                # plt.imshow(test_segmentation_predictions[0])
-                #
-                # plt.show()
+                                                validation_maps=validation_maps, validation_masks=validation_masks,
+                                                testing_maps=testing_maps, tune=True))
 
                 _, _, real_segmentation_predictions = random_forest_segmentation(training_maps=np.array([]),
-                                                                                 training_masks=np.array([]),
-                                                                                 validation_maps=np.array([]),
-                                                                                 testing_maps=real_maps,
-                                                                                 pretrained=True, real=True)
-
-            case "adaboost":
-
-                (train_segmentation_predictions, validation_segmentation_predictions, test_segmentation_predictions) = \
-                    (adaboost_segmentation(training_maps=training_maps, training_masks=training_masks,
-                                                validation_maps=validation_maps, validation_masks=validation_masks,
-                                      testing_maps=testing_maps, tune=True))
-
-                _, _, real_segmentation_predictions = adaboost_segmentation(training_maps=np.array([]),
                                                                                  training_masks=np.array([]),
                                                                                  validation_maps=np.array([]),
                                                                                  testing_maps=real_maps,

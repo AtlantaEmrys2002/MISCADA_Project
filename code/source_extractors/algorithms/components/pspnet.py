@@ -11,38 +11,25 @@ from torch.nn.functional import adaptive_avg_pool2d
 
 
 class Block(nn.Module):
+    """
+    Consulted https://www.digitalocean.com/community/tutorials/writing-resnet-from-scratch-in-pytorch when creating
+    ResNet blocks
+    """
 
-    def __init__(self, in_chan, out_chan, stride=1, k_size=None):
+    def __init__(self, in_chan, out_chan, stride=1):
 
         super(Block, self).__init__()
 
-        if k_size is not None:
-
-            self.conv1 = nn.Sequential(
-                nn.Conv2d(in_channels=in_chan, out_channels=out_chan, kernel_size=k_size, stride=stride, padding=0),
-                nn.ReLU()
-            )
-
-        else:
-
-            self.conv1 = nn.Sequential(
-                nn.Conv2d(in_channels=in_chan, out_channels=out_chan, kernel_size=3, stride=stride, padding=1),
-                nn.ReLU()
-            )
-
-        self.conv2 = nn.Sequential(
-            nn.Conv2d(in_channels=out_chan, out_channels=out_chan, kernel_size=3, stride=1, padding=1),
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(in_channels=in_chan, out_channels=out_chan, kernel_size=3, stride=stride, padding=1),
+            nn.ReLU()
         )
+
+        self.conv2 = nn.Conv2d(in_channels=out_chan, out_channels=out_chan, kernel_size=3, stride=1, padding=1)
 
         self.second_relu = nn.ReLU()
 
-        if stride == 1:
-
-            self.downsample = None
-
-        else:
-
-            self.downsample = nn.Conv2d(in_chan, out_chan, kernel_size=1, stride=stride)
+        self.downsample = None if stride == 1 else nn.Conv2d(in_chan, out_chan, kernel_size=1, stride=stride)
 
         self.stride = stride
 
@@ -50,15 +37,13 @@ class Block(nn.Module):
 
         out = self.conv1(x)
         out = self.conv2(out)
+
         if self.downsample:
+            out += self.downsample(x)
 
-            residual = self.downsample(x)
-            out += residual
+        # out = self.second_relu(out)
 
-        out = self.second_relu(out)
-
-        return out
-
+        return self.second_relu(out)
 
 
 class FeatureMap(nn.Module):
@@ -103,10 +88,7 @@ class PyramidPoolingModule(nn.Module):
         self.upsample_3_x_3 = nn.Upsample(size=(16, 16), mode='bilinear')
         self.upsample_6_x_6 = nn.Upsample(size=(16, 16), mode='bilinear')
 
-        self.final_conv = nn.Sequential(
-            nn.Conv2d(in_channels=76, out_channels=1, kernel_size=3, stride=1, padding=1)
-        )
-
+        self.final_conv = nn.Conv2d(in_channels=76, out_channels=1, kernel_size=3, stride=1, padding=1)
         self.bilinear_upsampling = nn.Upsample(size=(64, 64), mode='bilinear')
 
     def forward(self, x):
@@ -116,11 +98,8 @@ class PyramidPoolingModule(nn.Module):
         x_cpu = x.to('cpu')
 
         pool_6_x_6 = adaptive_avg_pool2d(x_cpu, output_size=(6, 6)).to('mps')
-
         pool_3_x_3 = adaptive_avg_pool2d(x_cpu, output_size=(3, 3)).to('mps')
-
         pool_2_x_2 = adaptive_avg_pool2d(x_cpu, output_size=(2, 2)).to('mps')
-
         pool_1_x_1 = adaptive_avg_pool2d(x_cpu, output_size=(1, 1)).to('mps')
 
         pooled_6 = self.conv_6_x_6(pool_6_x_6)
@@ -176,16 +155,13 @@ def pspnet_train(train_data, test_data, device, training_epochs: int = 50,
 
     """
 
-    # Create U-Net model - padding = 1 ("same convolution") to match no. channels and output sizes given in ID8 diagram
-
+    # Create model
     pspnet_model = PSPNet().to(device)
 
     # TRAINING
 
     # Define loss function and optimiser - changed from that proposed in ID11 and ID8
     loss_fn = torch.nn.BCEWithLogitsLoss()
-
-    # optimiser = torch.optim.Adam(pspnet_model.parameters(), lr=1.e-4)
 
     optimiser = torch.optim.Adam(pspnet_model.parameters(), lr=1.e-4)
 
@@ -239,9 +215,9 @@ def pspnet_train(train_data, test_data, device, training_epochs: int = 50,
 
         avg_vloss = running_vloss / (i + 1)
 
-        loss_record.append(avg_vloss.item())
-
         print(avg_vloss.item())
+
+        loss_record.append(avg_vloss.item())
 
         # if this is the best model (in terms of loss) found so far, save model
         if avg_vloss < best_vloss:
@@ -271,42 +247,6 @@ def pspnet(training_maps, training_masks, validation_maps, validation_masks, tes
 
         # CREATE DATASETS
 
-        # training_patch_dataset = DataLoader(
-        #     FermiCountMapDataset(patches=copy.deepcopy(training_maps), masks=copy.deepcopy(training_masks), num_patches=training_maps.shape[0]),
-        #     batch_size=128, shuffle=True)
-        #
-        # validation_patch_dataset = DataLoader(
-        #     FermiCountMapDataset(patches=copy.deepcopy(validation_maps), masks=copy.deepcopy(validation_masks), num_patches=validation_maps.shape[0]),
-        #     batch_size=128, shuffle=False)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         training_patch_dataset = DataLoader(
             FermiCountMapDataset(patches=copy.deepcopy(training_maps), masks=copy.deepcopy(training_masks), num_patches=training_maps.shape[0]),
             batch_size=32, shuffle=True)
@@ -315,15 +255,7 @@ def pspnet(training_maps, training_masks, validation_maps, validation_masks, tes
             FermiCountMapDataset(patches=copy.deepcopy(validation_maps), masks=copy.deepcopy(validation_masks), num_patches=validation_maps.shape[0]),
             batch_size=32, shuffle=False)
 
-
-
-        # CHANGE BACK AT THE END
-
-
-        # Train classifier on data
-        # model, best_epoch = pspnet_train(train_data=training_patch_dataset, test_data=validation_patch_dataset,
-        #                                save_file=save_file, device=device, training_epochs=50)
-
+        # Train classifier
         model, best_epoch = pspnet_train(train_data=training_patch_dataset, test_data=validation_patch_dataset,
                                        save_file=save_file, device=device, training_epochs=70)
 
@@ -332,8 +264,6 @@ def pspnet(training_maps, training_masks, validation_maps, validation_masks, tes
     else:
 
         # Use pre-trained model
-        # model = PSPNet(5, 16, 1, padding=1, downhill=4).to(device)
-
         model = PSPNet().to(device)
 
         model.load_state_dict(torch.load(save_file, weights_only=True, map_location=device))
@@ -371,3 +301,19 @@ def pspnet(training_maps, training_masks, validation_maps, validation_masks, tes
 
         return train_data_predictions, validation_data_predictions, test_data_predictions
 
+
+# REFERENCES
+
+# Batch Size - https://www.coursera.org/articles/what-does-batch-size-mean-in-deep-learning
+# Batch Size and Overfitting - https://stats.stackexchange.com/questions/266368/deep-learning-why-does-increase-batch-
+# size-cause-overfitting-and-how-does-one-r
+# Choosing Models - https://stackoverflow.com/questions/38724623/too-much-data-for-svm
+# Concatenation with Torch - https://stackoverflow.com/questions/69115837/how-to-concatenate-a-list-of-tensors-on-a-
+# specific-axis
+# Learning Rate - https://stackoverflow.com/questions/63108131/pytorch-schedule-learning-rate
+# Loss Convergence - https://www.reddit.com/r/deeplearning/comments/1npv5r6/why_the_loss_is_not_converging_in_my_neural/
+# ResNet - https://medium.com/@raunakgola123/resnet-in-pytorch-unlock-the-magic-of-cnn-architectures-part-4-9a8b6e471b1e
+# ResNet and Skip Connections - https://medium.com/@raunakgola123/resnet-in-pytorch-unlock-the-magic-of-cnn-architecture
+# s-part-4-9a8b6e471b1e
+# Tuning CNNs - https://www.reddit.com/r/MachineLearning/comments/3l5qu7/rules_of_thumb_for_cnn_architectures/
+# Varying LR - https://discuss.pytorch.org/t/change-learning-rate/166336/6
