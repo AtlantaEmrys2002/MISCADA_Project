@@ -1,2 +1,2 @@
 algorithm,segmentation_time (s),localisation_time(s),classification_time (s)
-pspnet_dbscan_cnn,1034.8251130580902,16.61267399787903,87.3093466758728
+pspnet_dbscan_cnn,1158.7650969028473,17.09083580970764,90.2575888633728

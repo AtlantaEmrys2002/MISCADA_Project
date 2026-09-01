@@ -1,14 +1,12 @@
 
 import copy
 from unittest.mock import inplace
-
 from .custom_datasets import FermiCountMapDataset
 import numpy as np
 import torch
 from torch import nn
 from torch.utils.data.dataloader import DataLoader
 from ..utils import loss_values
-from torchvision.transforms.functional import center_crop
 from torch.nn.functional import adaptive_avg_pool2d
 
 
@@ -69,52 +67,17 @@ class FeatureMap(nn.Module):
 
         super(FeatureMap, self).__init__()
 
-        # self.seq_block = nn.Sequential(
-        #
-        #     # TUNE THIS ARCHITECTURE LATER!!!
-        #
-        #     nn.Conv2d(in_channels=5, out_channels=16, kernel_size=3, stride=2, padding=1, bias=True),
-        #
-        #     # nn.LeakyReLU(inplace=True),
-        #
-        #     nn.ReLU(inplace=True),
-        #
-        #     nn.Conv2d(in_channels=16, out_channels=16, kernel_size=3, stride=1, padding=1, bias=True),
-        #
-        #     # nn.LeakyReLU(inplace=True),
-        #     nn.ReLU(inplace=True),
-        #
-        #     nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, stride=2, padding=1, bias=True),
-        #
-        #     # nn.LeakyReLU(inplace=True),
-        #     nn.ReLU(inplace=True),
-        #
-        #     nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, stride=2, padding=1, bias=True),
-        #
-        #     # nn.LeakyReLU(inplace=True),
-        #     nn.ReLU(inplace=True)
-        # )
-
         self.blocks = nn.Sequential(
 
             Block(5, 16, stride=1),
             Block(16, 32, stride=2),
             Block(32, 64, stride=2),
-            # Block(64, 128, stride=2, k_size=2),
-
-            # Block(5, 32, stride=1),
-            # Block(32, 64, stride=2),
-            # Block(64, 128, stride=2),
 
         )
 
     def forward(self, x):
 
-        # x = self.seq_block(x)
-
         x = self.blocks(x)
-
-        # print(x.shape)
 
         return x
 
@@ -125,77 +88,26 @@ class PyramidPoolingModule(nn.Module):
 
         super(PyramidPoolingModule, self).__init__()
 
-        self.conv_1_x_1 = nn.Sequential(
-
-                nn.Conv2d(in_channels=in_chan, out_channels=1, kernel_size=1, padding=0, stride=1),
-                # nn.ReLU(inplace=True)
-            )
-
-        self.conv_2_x_2 = nn.Sequential(
-
-            nn.Conv2d(in_channels=in_chan, out_channels=2, kernel_size=1, padding=0, stride=1),
-            # nn.ReLU(inplace=True)
-        )
-
-        self.conv_3_x_3 = nn.Sequential(
-            nn.Conv2d(in_channels=in_chan, out_channels=3, kernel_size=1, padding=0, stride=1),
-            # nn.ReLU(inplace=True)
-        )
-
-        self.conv_6_x_6 = nn.Sequential(
-            nn.Conv2d(in_channels=in_chan, out_channels=6, kernel_size=1, padding=0, stride=1),
-            # nn.ReLU(inplace=True)
-        )
-
-        # self.pool_6_x_6 = nn.AvgPool2d(kernel_size=3, stride=1)
-        #
-        # self.pool_3_x_3 = nn.AvgPool2d(kernel_size=4, stride=2)
-        #
-        # self.pool_2_x_2 = nn.AvgPool2d(kernel_size=4, stride=3)
-        #
-        # self.pool_1_x_1 = nn.AvgPool2d(kernel_size=8, stride=1)
-
-        # self.pool_6_x_6 = adaptive_avg_pool2d(output_size=(6, 6))
-        #
-        # self.pool_3_x_3 = adaptive_avg_pool2d(output_size=(3, 3))
-        #
-        # self.pool_2_x_2 = adaptive_avg_pool2d(output_size=(2, 2))
-        #
-        # self.pool_1_x_1 = adaptive_avg_pool2d(output_size=(1, 1))
+        self.conv_1_x_1 = nn.Conv2d(in_channels=in_chan, out_channels=1, kernel_size=1, padding=0, stride=1)
+        self.conv_2_x_2 = nn.Conv2d(in_channels=in_chan, out_channels=2, kernel_size=1, padding=0, stride=1)
+        self.conv_3_x_3 = nn.Conv2d(in_channels=in_chan, out_channels=3, kernel_size=1, padding=0, stride=1)
+        self.conv_6_x_6 = nn.Conv2d(in_channels=in_chan, out_channels=6, kernel_size=1, padding=0, stride=1)
 
         self.upsample_conv_1_x_1 = nn.ConvTranspose2d(in_channels=1, out_channels=1, kernel_size=8)
-
         self.upsample_conv_2_x_2 = nn.ConvTranspose2d(in_channels=2, out_channels=2, kernel_size=6, stride=2)
-
         self.upsample_conv_3_x_3 = nn.ConvTranspose2d(in_channels=3, out_channels=3, kernel_size=4, stride=2)
-
         self.upsample_conv_6_x_6 = nn.ConvTranspose2d(in_channels=6, out_channels=6, kernel_size=3, stride=1)
 
-        # self.upsample_1_x_1 = nn.Upsample(size=(8, 8), mode='bilinear')
-        #
-        # self.upsample_2_x_2 = nn.Upsample(size=(8, 8), mode='bilinear')
-        #
-        # self.upsample_3_x_3 = nn.Upsample(size=(8, 8), mode='bilinear')
-        #
-        # self.upsample_6_x_6 = nn.Upsample(size=(8, 8), mode='bilinear')
-
         self.upsample_1_x_1 = nn.Upsample(size=(16, 16), mode='bilinear')
-
         self.upsample_2_x_2 = nn.Upsample(size=(16, 16), mode='bilinear')
-
         self.upsample_3_x_3 = nn.Upsample(size=(16, 16), mode='bilinear')
-
         self.upsample_6_x_6 = nn.Upsample(size=(16, 16), mode='bilinear')
-
-        # self.final_conv = nn.ConvTranspose2d(in_channels=140, out_channels=1, kernel_size=3, stride=1, padding=1)
 
         self.final_conv = nn.Sequential(
             nn.Conv2d(in_channels=76, out_channels=1, kernel_size=3, stride=1, padding=1)
         )
 
         self.bilinear_upsampling = nn.Upsample(size=(64, 64), mode='bilinear')
-
-        # self.batch_norm = nn.BatchNorm2d(num_features=1)
 
     def forward(self, x):
 
@@ -212,40 +124,16 @@ class PyramidPoolingModule(nn.Module):
         pool_1_x_1 = adaptive_avg_pool2d(x_cpu, output_size=(1, 1)).to('mps')
 
         pooled_6 = self.conv_6_x_6(pool_6_x_6)
-
         pooled_3 = self.conv_3_x_3(pool_3_x_3)
-
         pooled_2 = self.conv_2_x_2(pool_2_x_2)
-
         pooled_1 = self.conv_1_x_1(pool_1_x_1)
 
-        # CHANGED SO "LEARNABLE PARAMETERS" FOR UPSAMPLING
-
         upsampled_1 = self.upsample_1_x_1(pooled_1)
-
         upsampled_2 = self.upsample_2_x_2(pooled_2)
-
         upsampled_3 = self.upsample_3_x_3(pooled_3)
-
         upsampled_6 = self.upsample_6_x_6(pooled_6)
 
-        # upsampled_1 = self.upsample_conv_1_x_1(pooled_1)
-        #
-        # upsampled_2 = self.upsample_conv_2_x_2(pooled_2)
-        #
-        # upsampled_3 = self.upsample_conv_3_x_3(pooled_3)
-        #
-        # upsampled_6 = self.upsample_conv_6_x_6(pooled_6)
-
-        # x = torch.concat((x, center_crop(upsampled_6, x.shape[2]), center_crop(upsampled_3, x.shape[2]),
-        #                   center_crop(upsampled_2, x.shape[2]), center_crop(upsampled_1, x.shape[2])), dim=1)
-
-
-        # print(upsampled_1.shape, upsampled_2.shape, upsampled_3.shape, upsampled_6.shape)
-
         x = torch.cat((x, upsampled_6, upsampled_3, upsampled_2, upsampled_1), axis=1)
-
-        # x = torch.stack((x, upsampled_6, upsampled_3, upsampled_2, upsampled_1), axis=1)
 
         x = self.final_conv(self.bilinear_upsampling(x))
 
@@ -287,22 +175,17 @@ def pspnet_train(train_data, test_data, device, training_epochs: int = 50,
         The file in which to save the weights of the best model.
 
     """
-    # Adapted this code from https://docs.pytorch.org/tutorials/beginner/introyt/trainingyt.html
-
-    # HAD TO ADD IN PADDING = 1 FOR THIS TO WORK AND MATCH NO. CHANNELS AND IM SIZE GIVEN IN DIAGRAM IN ID8
-    # EVEN THOUGH ORIGINAL PAPER SAID NO PADDING
 
     # Create U-Net model - padding = 1 ("same convolution") to match no. channels and output sizes given in ID8 diagram
-    # pspnet_model = PSPNet(5, 16, 1, padding=1, downhill=4).to(device)
-
 
     pspnet_model = PSPNet().to(device)
-
 
     # TRAINING
 
     # Define loss function and optimiser - changed from that proposed in ID11 and ID8
     loss_fn = torch.nn.BCEWithLogitsLoss()
+
+    # optimiser = torch.optim.Adam(pspnet_model.parameters(), lr=1.e-4)
 
     optimiser = torch.optim.Adam(pspnet_model.parameters(), lr=1.e-4)
 
@@ -388,17 +271,61 @@ def pspnet(training_maps, training_masks, validation_maps, validation_masks, tes
 
         # CREATE DATASETS
 
+        # training_patch_dataset = DataLoader(
+        #     FermiCountMapDataset(patches=copy.deepcopy(training_maps), masks=copy.deepcopy(training_masks), num_patches=training_maps.shape[0]),
+        #     batch_size=128, shuffle=True)
+        #
+        # validation_patch_dataset = DataLoader(
+        #     FermiCountMapDataset(patches=copy.deepcopy(validation_maps), masks=copy.deepcopy(validation_masks), num_patches=validation_maps.shape[0]),
+        #     batch_size=128, shuffle=False)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         training_patch_dataset = DataLoader(
             FermiCountMapDataset(patches=copy.deepcopy(training_maps), masks=copy.deepcopy(training_masks), num_patches=training_maps.shape[0]),
-            batch_size=128, shuffle=True)
+            batch_size=32, shuffle=True)
 
         validation_patch_dataset = DataLoader(
             FermiCountMapDataset(patches=copy.deepcopy(validation_maps), masks=copy.deepcopy(validation_masks), num_patches=validation_maps.shape[0]),
-            batch_size=128, shuffle=False)
+            batch_size=32, shuffle=False)
+
+
+
+        # CHANGE BACK AT THE END
+
 
         # Train classifier on data
+        # model, best_epoch = pspnet_train(train_data=training_patch_dataset, test_data=validation_patch_dataset,
+        #                                save_file=save_file, device=device, training_epochs=50)
+
         model, best_epoch = pspnet_train(train_data=training_patch_dataset, test_data=validation_patch_dataset,
-                                       save_file=save_file, device=device, training_epochs=50)
+                                       save_file=save_file, device=device, training_epochs=70)
 
         print("BEST EPOCH: {}".format(best_epoch))
 
