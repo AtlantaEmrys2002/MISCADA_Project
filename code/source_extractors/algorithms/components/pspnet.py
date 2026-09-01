@@ -1,12 +1,11 @@
-
 import copy
-from unittest.mock import inplace
 from .custom_datasets import FermiCountMapDataset
 import numpy as np
 import torch
 from torch import nn
 from torch.utils.data.dataloader import DataLoader
 from ..utils import loss_values
+import time
 from torch.nn.functional import adaptive_avg_pool2d
 
 
@@ -40,8 +39,6 @@ class Block(nn.Module):
 
         if self.downsample:
             out += self.downsample(x)
-
-        # out = self.second_relu(out)
 
         return self.second_relu(out)
 
@@ -155,6 +152,8 @@ def pspnet_train(train_data, test_data, device, training_epochs: int = 50,
 
     """
 
+    start = time.time()
+
     # Create model
     pspnet_model = PSPNet().to(device)
 
@@ -215,8 +214,6 @@ def pspnet_train(train_data, test_data, device, training_epochs: int = 50,
 
         avg_vloss = running_vloss / (i + 1)
 
-        print(avg_vloss.item())
-
         loss_record.append(avg_vloss.item())
 
         # if this is the best model (in terms of loss) found so far, save model
@@ -232,6 +229,8 @@ def pspnet_train(train_data, test_data, device, training_epochs: int = 50,
     # Save loss values
     loss_values(epochs=list(range(0, training_epochs)), losses=loss_record, method="pspnet",
                 directory="./../results/analysis_results/")
+
+    print("Training time: {}".format(time.time() - start))
 
     return pspnet_model, best_epoch
 
@@ -287,20 +286,52 @@ def pspnet(training_maps, training_masks, validation_maps, validation_masks, tes
             validation_data_predictions = np.zeros((validation_maps.shape[0], 1, 64, 64))
             test_data_predictions = np.zeros((testing_maps.shape[0], 1, 64, 64))
 
-            # Similar to batch loading - prevents GPU from running out of storage
+            # Similar to batch loading - prevents GPU from running out of memory
             for s in range(0, training_maps.shape[0], 1000):
 
                 lower = s
                 upper = min(s + 1000, training_maps.shape[0])
 
-                train_data_predictions[lower:upper] = model(torch.from_numpy(training_maps[lower:upper]).to(device)).detach().cpu().numpy()
+                train_data_predictions[lower:upper] = model(
+                    torch.from_numpy(training_maps[lower:upper]).to(device)).detach().cpu().numpy()
 
-                validation_data_predictions[lower:upper] = model(torch.from_numpy(validation_maps[lower:upper]).to(device)).detach().cpu().numpy()
+            for s in range(0, validation_maps.shape[0], 1000):
 
-                test_data_predictions[lower:upper] = model(torch.from_numpy(testing_maps[lower:upper]).to(device)).detach().cpu().numpy()
+                lower = s
+                upper = min(s + 1000, validation_maps.shape[0])
+
+                validation_data_predictions[lower:upper] = model(
+                    torch.from_numpy(validation_maps[lower:upper]).to(device)).detach().cpu().numpy()
+
+            for s in range(0, testing_maps.shape[0], 1000):
+
+                lower = s
+                upper = min(s + 1000, testing_maps.shape[0])
+
+                test_data_predictions[lower:upper] = model(
+                    torch.from_numpy(testing_maps[lower:upper]).to(device)).detach().cpu().numpy()
+
+
+
+
+
+
+
+
+
+
+            # for s in range(0, training_maps.shape[0], 1000):
+            #
+            #     lower = s
+            #     upper = min(s + 1000, training_maps.shape[0])
+            #
+            #     train_data_predictions[lower:upper] = model(torch.from_numpy(training_maps[lower:upper]).to(device)).detach().cpu().numpy()
+            #
+            #     validation_data_predictions[lower:upper] = model(torch.from_numpy(validation_maps[lower:upper]).to(device)).detach().cpu().numpy()
+            #
+            #     test_data_predictions[lower:upper] = model(torch.from_numpy(testing_maps[lower:upper]).to(device)).detach().cpu().numpy()
 
         return train_data_predictions, validation_data_predictions, test_data_predictions
-
 
 # REFERENCES
 

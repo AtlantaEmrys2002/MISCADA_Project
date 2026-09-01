@@ -11,9 +11,9 @@ from algorithms.components.classification_algorithms import classification_neura
 from algorithms.components.clustering_algorithms import (blob_detection, dbscan_clustering, k_means_clustering,
                                                          spectral_clustering)
 from algorithms.components.machine_learning_classification_algorithms import random_forest_classifier, svm_classifier
-from algorithms.components.machine_learning_segmentation_algorithms import random_forest_segmentation
 from algorithms.components.pspnet import pspnet
-from algorithms.components.segmentation_algorithms import unet
+from algorithms.components.random_classifier_segmentation import random_forest_segmentation
+from algorithms.components.unet import unet
 from algorithms.components.data_preparation import prepare_classifier_data
 import copy
 import csv
@@ -58,7 +58,7 @@ if __name__ == "__main__":
 
     (train_patch_ids, training_maps, training_masks,
     validation_patch_ids, validation_maps, validation_masks, test_patch_ids, testing_maps, testing_masks) = (
-        read_patches(num_patches=500, directory=patches_directory))
+        read_patches(num_patches=76800, directory=patches_directory))
 
     real_patch_ids, real_maps, real_masks = read_patches(num_patches=768, directory="./real_data/real_patches/patches",
                                                          split=False)
@@ -75,15 +75,13 @@ if __name__ == "__main__":
 
     # ALGORITHMS
 
-    # segmentation_algorithms = ["unet", "random_forest"]
-    #
+    segmentation_algorithms = ["pspnet", "random_forest", "unet"]
+
     # localisation_algorithms = ["dbscan", "kmeans", "spectral", "blob_detection"]
     #
     # classification_algorithms = ["cnn", "random_forest", "svm"]
 
     # CHANGE BACK
-
-    segmentation_algorithms = ["random_forest"] # ["pspnet"] # ["unet"]  # ["adaboost"] # ["unet"]
 
     localisation_algorithms = ["dbscan"] #, "kmeans", "blob_detection", "spectral"]
 
@@ -94,7 +92,11 @@ if __name__ == "__main__":
     execution_times = []
 
 
-    # MAKE SURE NONE ARE PRETRAINED
+
+
+
+
+    # MAKE SURE NONE NONE OF Pretrained parameters are set for hand in - we are training the segmentation algorithms now and using the results repeatedly
 
     for segment in segmentation_algorithms:
 
@@ -109,7 +111,7 @@ if __name__ == "__main__":
                 (train_segmentation_predictions, validation_segmentation_predictions, test_segmentation_predictions) = (
                     unet(training_maps=copy.deepcopy(training_maps), training_masks=copy.deepcopy(training_masks),
                          validation_maps=copy.deepcopy(validation_maps),
-                         validation_masks=copy.deepcopy(validation_masks), testing_maps=copy.deepcopy(testing_maps)))
+                         validation_masks=copy.deepcopy(validation_masks), testing_maps=copy.deepcopy(testing_maps), pretrained=True))
 
                 _, _, real_segmentation_predictions = unet(training_maps=np.array([]), training_masks=np.array([]),
                                                            validation_maps=np.array([]), validation_masks=np.array([]),
@@ -119,9 +121,11 @@ if __name__ == "__main__":
             case "random_forest":
 
                 (train_segmentation_predictions, validation_segmentation_predictions, test_segmentation_predictions) = \
-                    (random_forest_segmentation(training_maps=training_maps, training_masks=training_masks,
-                                                validation_maps=validation_maps, validation_masks=validation_masks,
-                                                testing_maps=testing_maps, tune=True))
+                    (random_forest_segmentation(training_maps=copy.deepcopy(training_maps),
+                                                training_masks=copy.deepcopy(training_masks),
+                                                validation_maps=copy.deepcopy(validation_maps),
+                                                validation_masks=copy.deepcopy(validation_masks),
+                                                testing_maps=copy.deepcopy(testing_maps), pretrained=True))
 
                 _, _, real_segmentation_predictions = random_forest_segmentation(training_maps=np.array([]),
                                                                                  training_masks=np.array([]),
@@ -134,7 +138,7 @@ if __name__ == "__main__":
                 (train_segmentation_predictions, validation_segmentation_predictions, test_segmentation_predictions) = (
                     pspnet(training_maps=copy.deepcopy(training_maps), training_masks=copy.deepcopy(training_masks),
                          validation_maps=copy.deepcopy(validation_maps),
-                         validation_masks=copy.deepcopy(validation_masks), testing_maps=copy.deepcopy(testing_maps)))
+                         validation_masks=copy.deepcopy(validation_masks), testing_maps=copy.deepcopy(testing_maps), pretrained=True))
 
                 _, _, real_segmentation_predictions = pspnet(training_maps=np.array([]), training_masks=np.array([]),
                                                            validation_maps=np.array([]), validation_masks=np.array([]),
@@ -144,8 +148,6 @@ if __name__ == "__main__":
             case _:
 
                 raise NameError("Segmentation algorithm {} could not be found.".format(segment))
-
-
 
         segmentation_time = time.time() - start_segmentation_time
 
@@ -178,53 +180,26 @@ if __name__ == "__main__":
 
                 case "dbscan":
 
-                    if segment != "unet":
-
-                        train_source_locations = dbscan_clustering(train_segmentation_predictions, threshold=0.5)
-                        validation_source_locations = dbscan_clustering(validation_segmentation_predictions,
-                                                                        threshold=0.5)
-                        test_source_locations = dbscan_clustering(test_segmentation_predictions, threshold=0.5)
-                        real_source_locations = dbscan_clustering(real_segmentation_predictions, threshold=0.5)
-
-                    else:
-                        train_source_locations = dbscan_clustering(train_segmentation_predictions, threshold=0.5)
-                        validation_source_locations = dbscan_clustering(validation_segmentation_predictions,
-                                                                        threshold=0.5)
-                        test_source_locations = dbscan_clustering(test_segmentation_predictions, threshold=0.5)
-                        real_source_locations = dbscan_clustering(real_segmentation_predictions, threshold=0.5)
+                    train_source_locations = dbscan_clustering(train_segmentation_predictions, threshold=0.5)
+                    validation_source_locations = dbscan_clustering(validation_segmentation_predictions,
+                                                                    threshold=0.5)
+                    test_source_locations = dbscan_clustering(test_segmentation_predictions, threshold=0.5)
+                    real_source_locations = dbscan_clustering(real_segmentation_predictions, threshold=0.5)
 
                 case "blob_detection":
 
-                    if segment != "unet":
-
-                        train_source_locations = blob_detection(train_segmentation_predictions)
-                        validation_source_locations = blob_detection(validation_segmentation_predictions)
-                        test_source_locations = blob_detection(test_segmentation_predictions)
-                        real_source_locations = blob_detection(real_segmentation_predictions)
-
-                    else:
-                        train_source_locations = blob_detection(train_segmentation_predictions)
-                        validation_source_locations = blob_detection(validation_segmentation_predictions)
-                        test_source_locations = blob_detection(test_segmentation_predictions)
-                        real_source_locations = blob_detection(real_segmentation_predictions)
+                    train_source_locations = blob_detection(train_segmentation_predictions)
+                    validation_source_locations = blob_detection(validation_segmentation_predictions)
+                    test_source_locations = blob_detection(test_segmentation_predictions)
+                    real_source_locations = blob_detection(real_segmentation_predictions)
 
                 case "spectral":
 
-                    if segment != "unet":
-
-                        train_source_locations = spectral_clustering(train_segmentation_predictions, threshold=0.5)
-                        validation_source_locations = spectral_clustering(validation_segmentation_predictions,
-                                                                          threshold=0.5)
-                        test_source_locations = spectral_clustering(test_segmentation_predictions, threshold=0.5)
-
-                        real_source_locations = spectral_clustering(real_segmentation_predictions, threshold=0.5)
-
-                    else:
-                        train_source_locations = spectral_clustering(train_segmentation_predictions, threshold=0.5)
-                        validation_source_locations = spectral_clustering(validation_segmentation_predictions,
-                                                                          threshold=0.5)
-                        test_source_locations = spectral_clustering(test_segmentation_predictions, threshold=0.5)
-                        real_source_locations = spectral_clustering(real_segmentation_predictions, threshold=0.5)
+                    train_source_locations = spectral_clustering(train_segmentation_predictions, threshold=0.5)
+                    validation_source_locations = spectral_clustering(validation_segmentation_predictions,
+                                                                      threshold=0.5)
+                    test_source_locations = spectral_clustering(test_segmentation_predictions, threshold=0.5)
+                    real_source_locations = spectral_clustering(real_segmentation_predictions, threshold=0.5)
 
                 case _:
                     raise NameError("Localisation algorithm {} could not be found.".format(local))
@@ -233,17 +208,18 @@ if __name__ == "__main__":
 
             # Prepare detected sources for classification (effectively, data prep)
             train_batches_class = (
-                prepare_classifier_data(patches=training_maps,
+                prepare_classifier_data(patches=copy.deepcopy(training_maps),
                                         predicted_locations=train_source_locations,
-                                        patch_ids=train_patch_ids))
+                                        patch_ids=copy.deepcopy(train_patch_ids)))
 
             validation_batches_class = (
-                prepare_classifier_data(patches=validation_maps, predicted_locations=validation_source_locations,
-                                        patch_ids=validation_patch_ids))
+                prepare_classifier_data(patches=copy.deepcopy(validation_maps),
+                                        predicted_locations=validation_source_locations,
+                                        patch_ids=copy.deepcopy(validation_patch_ids)))
 
-            test_batches_class = prepare_classifier_data(patches=testing_maps,
+            test_batches_class = prepare_classifier_data(patches=copy.deepcopy(testing_maps),
                                                          predicted_locations=test_source_locations,
-                                                         patch_ids=test_patch_ids, test=True)
+                                                         patch_ids=copy.deepcopy(test_patch_ids), test=True)
 
             real_batches_class = prepare_classifier_data(patches=real_maps, predicted_locations=real_source_locations,
                                                          patch_ids=real_patch_ids, test=True, real_data=True)
@@ -312,13 +288,15 @@ if __name__ == "__main__":
                 # SAVE RESULTS FOR SOURCE EXTRACTION ALGORITHM
 
                 # Save predictions for test patches
-                save_predictions(patch_ids=test_patch_ids, predicted_segmentations=test_segmentation_predictions,
+                save_predictions(patch_ids=copy.deepcopy(test_patch_ids),
+                                 predicted_segmentations=test_segmentation_predictions,
                                  predicted_locations=test_source_locations,
                                  predicted_classes=classifier_predictions, actual_classes=actual_labels,
                                  directory=save_directory, method=f"{segment}_{local}_{classifier}")
 
                 # Save predictions for real data
-                save_predictions(patch_ids=real_patch_ids, predicted_segmentations=real_segmentation_predictions,
+                save_predictions(patch_ids=copy.deepcopy(real_patch_ids),
+                                 predicted_segmentations=real_segmentation_predictions,
                                  predicted_locations=real_source_locations,
                                  predicted_classes=real_classifier_predictions, actual_classes=real_actual_labels,
                                  directory=real_data_save_directory, method=f"{segment}_{local}_{classifier}")
@@ -340,13 +318,12 @@ if __name__ == "__main__":
         writer.writerow(fields)
         writer.writerows(execution_times)
 
-
     print("Complete")
 
 # REFERENCES
 
 # Argparse Errors - https://stackoverflow.com/questions/10900617/getting-syntax-error-near-unexpected-token-in-python
 # Double List Comprehension - https://stackoverflow.com/questions/1198777/double-iteration-in-list-comprehension
-# Interpolation in Imshow - https://stackoverflow.com/questions/55121294/imshow-plot-with-no-data-values-excluded-from-
+# Interpolation in imshow - https://stackoverflow.com/questions/55121294/imshow-plot-with-no-data-values-excluded-from-
 # interpolation
 # Save CSV Results - https://www.geeksforgeeks.org/python/python-save-list-to-csv/

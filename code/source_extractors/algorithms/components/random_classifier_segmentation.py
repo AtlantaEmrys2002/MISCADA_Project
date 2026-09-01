@@ -69,6 +69,8 @@ def random_forest_segmentation(training_maps, training_masks, validation_maps, t
                 training_maps_subset = training_maps
                 training_masks_subset = training_masks
 
+            start = time.time()
+
             # Extract local features from training data and stitch training images together to create giant image upon
             # which to train
             training_features, training_labels = extract_features(training_maps_subset, training_masks_subset)
@@ -79,6 +81,10 @@ def random_forest_segmentation(training_maps, training_masks, validation_maps, t
 
             # GET PREDICTIONS
             clf = future.fit_segmenter(training_labels, training_features, clf)
+
+            end = time.time() - start
+
+            print(f"Training Time: {end}")
 
             # SAVE TRAINED SEGMENTATION ALGORITHM
             with open(save_file, "wb") as f:
@@ -92,6 +98,7 @@ def random_forest_segmentation(training_maps, training_masks, validation_maps, t
 
             best_parameters = [0, 0, 0, 0, 0, 0]
 
+            # N.B. cannot use grid search as not implemented for multi-dimensional targets
             for n in [30, 50, 60, 70, 90, 100, 150]:
 
                 for m in [5, 7, 9, 10, 15, 20]:
@@ -132,7 +139,7 @@ def random_forest_segmentation(training_maps, training_masks, validation_maps, t
                                         best_time = end
                                         best_parameters = [n, m, ms, mf, sm, sx]
 
-                                    print(f"{n}, {m}, {ms}, {mf}, {sm}, {sx}, {time.time() - start}, {bba}")
+                                    print(f"{n}, {m}, {ms}, {mf}, {sm}, {sx}, {end}, {bba}")
 
             if best_parameters == 0:
                 raise RuntimeError("Tuning of random forest classifier for segmentation failed.")
@@ -141,6 +148,7 @@ def random_forest_segmentation(training_maps, training_masks, validation_maps, t
 
             print("Best Binary Balanced Accuracy: {} %".format(best_bba * 100))
             print(f"Best Parameters: {n}, {m}, {ms}, {mf}, {sm}, {sx}")
+            print(f"Training Time: {end}")
 
             # Train using best parameters
             clf = RandomForestClassifier(n_estimators=n, max_depth=m, max_samples=ms, max_features=mf,
@@ -153,8 +161,6 @@ def random_forest_segmentation(training_maps, training_masks, validation_maps, t
                 dump(clf, f)
 
     else:
-
-        # RETRIEVE RANDOM FOREST CLASSIFIER
 
         # Use pre-trained RF segmentor
         with open(save_file, "rb") as f:
@@ -175,21 +181,51 @@ def random_forest_segmentation(training_maps, training_masks, validation_maps, t
 
     else:
 
-        training_features, training_labels = extract_features(training_maps, training_masks)
-        validation_features, validation_labels = extract_features(validation_maps, validation_masks)
-        testing_features, testing_labels = extract_features(testing_maps, np.array([]))
+        train_data_predictions = np.zeros((training_maps.shape[0], 1, 64, 64))
+        validation_data_predictions = np.zeros((validation_maps.shape[0], 1, 64, 64))
+        test_data_predictions = np.zeros((testing_maps.shape[0], 1, 64, 64))
 
-        # Minus 1 such that pixel = 0 indicates background and pixel = 1 indicates foreground
+        # Similar to batch loading - prevents CPU from running out of storage
+        for s in range(0, training_maps.shape[0], 1000):
 
-        train_data_predictions = future.predict_segmenter(training_features, clf) - 1
-        validation_data_predictions = future.predict_segmenter(validation_features, clf) - 1
-        test_data_predictions = future.predict_segmenter(testing_features, clf) - 1
+            lower = s
+            upper = min(s + 1000, training_maps.shape[0])
 
-        train_pred = np.reshape(train_data_predictions, shape=(training_maps.shape[0], 1, 64, 64))
-        valid_pred = np.reshape(validation_data_predictions, shape=(validation_maps.shape[0], 1, 64, 64))
-        test_pred = np.reshape(test_data_predictions, shape=(testing_maps.shape[0], 1, 64, 64))
+            training_features, _ = extract_features(training_maps[lower:upper], np.array([]))
 
-        return train_pred, valid_pred, test_pred
+            train_pred = future.predict_segmenter(training_features, clf) - 1
+
+            train_pred = np.reshape(train_pred, shape=(upper - lower, 1, 64, 64))
+
+            train_data_predictions[lower:upper] = train_pred
+
+        for s in range(0, validation_maps.shape[0], 1000):
+
+            lower = s
+            upper = min(s + 1000, validation_maps.shape[0])
+
+            validation_features, _ = extract_features(validation_maps[lower:upper], np.array([]))
+
+            valid_pred = future.predict_segmenter(validation_features, clf) - 1
+
+            valid_pred = np.reshape(valid_pred, shape=(upper - lower, 1, 64, 64))
+
+            validation_data_predictions[lower:upper] = valid_pred
+
+
+        for s in range(0, testing_maps.shape[0], 1000):
+            lower = s
+            upper = min(s + 1000, testing_maps.shape[0])
+
+            testing_features, _ = extract_features(testing_maps[lower:upper], np.array([]))
+
+            test_pred = future.predict_segmenter(testing_features, clf) - 1
+
+            test_pred = np.reshape(test_pred, shape=(upper - lower, 1, 64, 64))
+
+            test_data_predictions[lower:upper] = test_pred
+
+        return train_data_predictions, validation_data_predictions, test_data_predictions
 
 # REFERENCES
 

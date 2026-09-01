@@ -13,6 +13,7 @@ in report). This author also created their own training loop.
 import copy
 from .custom_datasets import FermiCountMapDataset
 import numpy as np
+import time
 import torch
 from torch import nn
 from torch.utils.data.dataloader import DataLoader
@@ -158,7 +159,6 @@ class Decoder(nn.Module):
                 x = layer(x)
 
             else:
-
                 x = layer(x)
 
         return x
@@ -210,8 +210,9 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
     """
     # Adapted this code from https://docs.pytorch.org/tutorials/beginner/introyt/trainingyt.html
 
-    # HAD TO ADD IN PADDING = 1 FOR THIS TO WORK AND MATCH NO. CHANNELS AND IM SIZE GIVEN IN DIAGRAM IN ID8
-    # EVEN THOUGH ORIGINAL PAPER SAID NO PADDING
+    # N.B. had to add in padding = 1 and match no. channels to image show given in diagramin ID8.
+
+    start = time.time()
 
     # Create U-Net model - padding = 1 ("same convolution") to match no. channels and output sizes given in ID8 diagram
     unet_model = UNET(5, 16, 1, padding=1, downhill=4).to(device)
@@ -289,6 +290,8 @@ def unet_train(train_data, test_data, device, training_epochs: int = 50,
     loss_values(epochs=list(range(0, training_epochs)), losses=loss_record, method="unet",
                 directory="./../results/analysis_results/")
 
+    print("Training Time: {}".format(time.time() - start))
+
     return unet_model, best_epoch
 
 
@@ -342,17 +345,31 @@ def unet(training_maps, training_masks, validation_maps, validation_masks, testi
             validation_data_predictions = np.zeros((validation_maps.shape[0], 1, 64, 64))
             test_data_predictions = np.zeros((testing_maps.shape[0], 1, 64, 64))
 
-            # Similar to batch loading - prevents GPU from running out of storage
+            # Similar to batch loading - below prevents GPU from running out of storage
+
             for s in range(0, training_maps.shape[0], 1000):
 
                 lower = s
                 upper = min(s + 1000, training_maps.shape[0])
 
-                train_data_predictions[lower:upper] = model(torch.from_numpy(training_maps[lower:upper]).to(device)).detach().cpu().numpy()
+                train_data_predictions[lower:upper] = model(
+                    torch.from_numpy(training_maps[lower:upper]).to(device)).detach().cpu().numpy()
 
-                validation_data_predictions[lower:upper] = model(torch.from_numpy(validation_maps[lower:upper]).to(device)).detach().cpu().numpy()
+            for s in range(0, validation_maps.shape[0], 1000):
 
-                test_data_predictions[lower:upper] = model(torch.from_numpy(testing_maps[lower:upper]).to(device)).detach().cpu().numpy()
+                lower = s
+                upper = min(s + 1000, validation_maps.shape[0])
+
+                validation_data_predictions[lower:upper] = model(
+                    torch.from_numpy(validation_maps[lower:upper]).to(device)).detach().cpu().numpy()
+
+            for s in range(0, testing_maps.shape[0], 1000):
+
+                lower = s
+                upper = min(s + 1000, testing_maps.shape[0])
+
+                test_data_predictions[lower:upper] = model(
+                    torch.from_numpy(testing_maps[lower:upper]).to(device)).detach().cpu().numpy()
 
         return train_data_predictions, validation_data_predictions, test_data_predictions
 

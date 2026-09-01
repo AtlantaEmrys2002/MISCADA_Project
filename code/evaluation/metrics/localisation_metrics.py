@@ -56,30 +56,35 @@ def num_sources_correctly_detected(actual_source_centres, predicted_source_centr
     # but whether they are correctly detected and localised as a source). A fraction is returned - the proportion of
     # sources in patch actually detected.
 
-    if predicted_source_centres.shape[0] == 0:
+    num_catalogs = len(actual_source_centres)
 
-        return 0
-
-    total_sources = len(actual_source_centres)
-
-    # Convert predicted source_centres to sky coordinates
-    predicted_source_centres_sky = SkyCoord(ra=predicted_source_centres[:, 0] * u.degree,
-                                            dec=predicted_source_centres[:, 1] * u.degree, frame='icrs')
+    total_sources = sum([actual_source_centres[b].shape[0] for b in range(num_catalogs)])
 
     num_sources_detected = 0
 
-    for a in actual_source_centres:
+    for b in range(num_catalogs):
 
-        separations = (SkyCoord(ra=a[0] * u.degree, dec=a[1] * u.degree, frame='icrs').
-                       separation(predicted_source_centres_sky).degree)
+        if predicted_source_centres[b].shape[0] == 0:
 
-        separation_from_closest_predicted_source = separations[np.argmin(separations)]
+            continue
 
-        if separation_from_closest_predicted_source < separation_threshold:
-            num_sources_detected += 1
+        else:
+
+            # Convert predicted source_centres to sky coordinates
+            predicted_source_centres_sky = SkyCoord(ra=predicted_source_centres[b][:, 0] * u.degree,
+                                                    dec=predicted_source_centres[b][:, 1] * u.degree, frame='icrs')
+
+            for a in actual_source_centres[b]:
+
+                separations = (SkyCoord(ra=a[0] * u.degree, dec=a[1] * u.degree, frame='icrs').
+                               separation(predicted_source_centres_sky).degree)
+
+                separation_from_closest_predicted_source = separations[np.argmin(separations)]
+
+                if separation_from_closest_predicted_source < separation_threshold:
+                    num_sources_detected += 1
 
     return num_sources_detected / total_sources
-
 
 # REFERENCES
 

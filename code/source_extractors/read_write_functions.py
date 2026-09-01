@@ -19,18 +19,22 @@ def read_patches(num_patches=int, directory=str, split=True):
     validation_set_size = math.floor(float(num_patches) * 0.2)
     test_set_size = int(num_patches) - train_set_size - validation_set_size
 
+    # Selects same patches each time - only important here, as may train segmentation models and then work on improving
+    # classifier, but still want the same set-up.
+    rng = np.random.default_rng(42)
+
     if split:
 
         # RANDOM SPLIT OF INDICES - 70% vs 20% v 10%
 
         possible_indices = np.arange(num_patches)
 
-        train_patch_ids = np.random.choice(possible_indices, size=train_set_size, replace=False)
+        train_patch_ids = rng.choice(possible_indices, size=train_set_size, replace=False)
 
-        validation_patch_ids = np.random.choice(np.setdiff1d(possible_indices, train_patch_ids), size=validation_set_size,
+        validation_patch_ids = rng.choice(np.setdiff1d(possible_indices, train_patch_ids), size=validation_set_size,
                                               replace=False)
 
-        test_patch_ids = np.random.choice(np.setdiff1d(possible_indices, np.concatenate((train_patch_ids, validation_patch_ids))),
+        test_patch_ids = rng.choice(np.setdiff1d(possible_indices, np.concatenate((train_patch_ids, validation_patch_ids))),
                                         size=test_set_size, replace=False)
 
         training_maps = np.array([patches[k] for k in train_patch_ids])

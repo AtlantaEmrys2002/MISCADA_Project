@@ -92,7 +92,9 @@ def get_patch_centres(patches_metadata_file="./../data_simulation/simulated_data
     patch_centres = (
         np.stack((source_information["centre_lon"].to_numpy(), source_information["centre_lat"].to_numpy()), axis=1))
 
-    return patch_centres
+    catalog_of_each_patch = dict(zip(list(range(patch_centres.shape[0])), source_information["catalog_id"].to_numpy()))
+
+    return patch_centres, catalog_of_each_patch
 
 
 def vector_labels_to_str(labels):

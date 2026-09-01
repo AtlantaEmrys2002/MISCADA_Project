@@ -1,7 +1,8 @@
 import copy
-from utils import integral_photon_flux_agn, integral_photon_flux_pulsar, get_catalog_data
+from utils import get_catalog_data
 from metrics.utils import im_cartesian_to_physical
 from metrics.classification_metrics import classification_confusion_matrix, classification_precision_recall
+from metrics.detection_metrics import s90
 from metrics.localisation_metrics import chamfer_separation, num_sources_correctly_detected
 from metrics.real_data_application_metrics import (percentage_of_4fgl_sources_detected, plot_predictions_actual,
                                                    percentage_of_4fgl_source_correctly_classified,
@@ -16,6 +17,7 @@ from utils import get_classified_patches
 
 
 def evaluate_classifiers(actual_class, predicted_class, method_name, directory):
+
     # Plot confusion matrices
     classification_confusion_matrix(ground_truth=actual_class, predicted=predicted_class, classifier_name=method_name,
                                     directory=directory)
@@ -25,20 +27,59 @@ def evaluate_classifiers(actual_class, predicted_class, method_name, directory):
     return classification_precision, classification_recall
 
 
-def evaluate_localisation(actual_source_centers, predicted_source_centers):
+
+def get_locations_per_catalog(actual_source_centers, predicted_source_centers, patch_ids, patch_to_catalog_ids):
+
+    # Separates locations into per catalog (celestial coordinates)
+
+    num_catalogs = max(patch_to_catalog_ids.items())[1]
+
     num_patches = len(actual_source_centers)
 
-    actual_source_centers = np.unique(np.array([actual_source_centers[i][j] for i in range(num_patches)
-                                      for j in range(actual_source_centers[i].shape[0])]), axis=0)
+    catalog_separated_actual_locations = []
 
-    predicted_source_centers = np.unique(np.array([predicted_source_centers[i][j] for i in range(len(predicted_source_centers))
-                                      for j in range(predicted_source_centers[i].shape[0])]), axis=0)
+    catalog_separated_predicted_locations = []
 
-    chamfer_distance = chamfer_separation(actual_source_centers, predicted_source_centers)
+    for b in range(num_catalogs):
 
-    percentage_of_sources_detected = num_sources_correctly_detected(actual_source_centers, predicted_source_centers)
+        a_catalog = [actual_source_centers[p] for p in range(num_patches) if int(patch_to_catalog_ids[patch_ids[p]]) == b]
+        p_catalog = [predicted_source_centers[p] for p in range(num_patches) if int(patch_to_catalog_ids[patch_ids[p]]) == b]
 
-    return chamfer_distance, percentage_of_sources_detected
+        a_catalog = np.unique(
+            np.array([a_catalog[i][j] for i in range(len(a_catalog)) for j in range(a_catalog[i].shape[0])]), axis=0)
+
+        p_catalog = np.unique(
+            np.array([p_catalog[i][j] for i in range(len(p_catalog)) for j in range(p_catalog[i].shape[0])]), axis=0)
+
+        catalog_separated_actual_locations.append(a_catalog)
+        catalog_separated_predicted_locations.append(p_catalog)
+
+    return catalog_separated_actual_locations, catalog_separated_predicted_locations
+
+
+def evaluate_localisation(actual_source_centers, predicted_source_centers, ids, catalog_ids):
+
+
+    actual_loc, predicted_loc = get_locations_per_catalog(actual_source_centers=actual_source_centers,
+                                                                      predicted_source_centers=predicted_source_centers,
+                                                                      patch_ids=ids, patch_to_catalog_ids=catalog_ids)
+
+    num_catalogs = len(actual_loc)
+
+    chamfer_distance = 0
+
+    for b in range(num_catalogs):
+
+        chamfer_distance += chamfer_separation(actual_loc[b], predicted_loc[b])
+
+    # percentage_of_sources_detected = num_sources_correctly_detected(actual_source_centers, predicted_source_centers)
+
+    percentage_of_sources_detected = num_sources_correctly_detected(actual_loc, predicted_loc)
+
+
+    # s90_value = s90(actual_source_locations=actual_source_centers, predicted_source_locations=predicted_source_centers)
+
+    return chamfer_distance, percentage_of_sources_detected, s90_value
 
 
 def evaluate_detection(actual_segmentations, predicted_segmentations):
@@ -64,7 +105,7 @@ def evaluate_detection(actual_segmentations, predicted_segmentations):
 
 def evaluate_on_real_data(file_4fgl, model):
 
-    patch_centres = get_patch_centres(patches_metadata_file="./../source_extractors/real_data/real_patches/patches/"
+    patch_centres, _ = get_patch_centres(patches_metadata_file="./../source_extractors/real_data/real_patches/patches/"
                                                             "patch_metadata.csv")
 
     # RESULTS
@@ -137,15 +178,11 @@ if __name__ == "__main__":
 
     # TAKE INPUTS (RECOMMENDED READ IN FILE)
 
-    # segmentation_algorithms = ["unet", "random_forest"]
-    #
+    segmentation_algorithms = ["pspnet", "random_forest", "unet"]
+
     # localisation_algorithms = ["dbscan", "blob_detection", "kmeans", "spectral"]
     #
     # classification_algorithms = ["random_forest", "cnn", "svm"]
-
-    # segmentation_algorithms = ["unet"]
-
-    segmentation_algorithms = ["random_forest"] # ["pspnet"] # "random_forest"]
 
     localisation_algorithms = ["dbscan"]
 
@@ -177,7 +214,7 @@ if __name__ == "__main__":
 
     # # READ IN ACTUAL COORDINATES OF EACH SOURCE IN EACH CATALOG
 
-    patch_centres = get_patch_centres(
+    patch_centres, catalog_of_each_patch = get_patch_centres(
         patches_metadata_file="./../data_simulation/simulated_data/patches/patch_metadata.csv")
 
     # CALCULATE METRICS FOR EACH SOURCE EXTRACTION ALGORITHM
@@ -208,12 +245,12 @@ if __name__ == "__main__":
         # Convert predicted locations to celestial RA/DEC coordinates
 
         predicted_locations_celestial = [
-            im_cartesian_to_physical(coordinates=predicted_locations[p],
-                                                                patch_centre=patch_centres[patch_ids[p]],
-                                                                coordinate_system='C') for p in range(len(patch_ids))]
+            im_cartesian_to_physical(coordinates=copy.deepcopy(predicted_locations[p]),
+                                                                patch_centre=copy.deepcopy(patch_centres[patch_ids[p]]),
+                                                                coordinate_system='C') for p in range(patch_ids.shape[0])]
 
         # Get locations of actual sources (in celestial coordinates) within each patch
-        actual_agn_locations_celestial, actual_psr_locations_celestial = localisation_metadata(patch_ids=patch_ids)
+        actual_agn_locations_celestial, actual_psr_locations_celestial = localisation_metadata(patch_ids=copy.deepcopy(patch_ids))
 
         actual_source_locations = []
 
@@ -230,9 +267,9 @@ if __name__ == "__main__":
             actual_source_locations.append(actual_source_locations_for_patch)
 
         # Evaluate localisation
-        chamfer_distance, av_frac_sources_detected = (
-            evaluate_localisation(actual_source_centers=actual_source_locations, predicted_source_centers=
-            predicted_locations_celestial))
+        chamfer_distance, av_frac_sources_detected, full_s90 = (
+            evaluate_localisation(actual_source_centers=copy.deepcopy(actual_source_locations), predicted_source_centers=
+            copy.deepcopy(predicted_locations_celestial), ids=copy.deepcopy(patch_ids), catalog_ids=copy.deepcopy(catalog_of_each_patch)))
 
         # CLASSIFICATION EVALUATION
 
@@ -242,9 +279,9 @@ if __name__ == "__main__":
             classifications[:, 1])
 
         # This does not take into account any spatial distributions (at the moment!!!!!!)
-        classification_precision, classification_recall = evaluate_classifiers(actual_class=actual_classes,
-                                                                               predicted_class=predicted_classes,
-                                                                               method_name=m, directory=plot_directory)
+        classification_precision, classification_recall = evaluate_classifiers(actual_class=copy.deepcopy(actual_classes),
+                                                                               predicted_class=copy.deepcopy(predicted_classes),
+                                                                               method_name=copy.deepcopy(m), directory=plot_directory)
 
         (frac_of_4fgl_sources_detected,
          frac_correct_classed_4fgl_sources) = evaluate_on_real_data(file_4fgl="/Volumes/T7/data/catalog/4FGL_DR4.fit", model=m)
