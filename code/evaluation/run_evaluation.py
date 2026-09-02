@@ -28,11 +28,12 @@ def evaluate_classifiers(actual_class, predicted_class, method_name, directory):
 
 
 
-def get_locations_per_catalog(actual_source_centers, predicted_source_centers, patch_ids, patch_to_catalog_ids):
+def get_locations_per_catalog(actual_source_centers, predicted_source_centers,
+                              patch_ids, patch_to_catalog_ids):
 
     # Separates locations into per catalog (celestial coordinates)
 
-    num_catalogs = max(patch_to_catalog_ids.items())[1]
+    num_catalogs = max(patch_to_catalog_ids.items())[1] + 1
 
     num_patches = len(actual_source_centers)
 
@@ -40,16 +41,18 @@ def get_locations_per_catalog(actual_source_centers, predicted_source_centers, p
 
     catalog_separated_predicted_locations = []
 
+    # catalog_separated_patch_ids = []
+
     for b in range(num_catalogs):
 
         a_catalog = [actual_source_centers[p] for p in range(num_patches) if int(patch_to_catalog_ids[patch_ids[p]]) == b]
         p_catalog = [predicted_source_centers[p] for p in range(num_patches) if int(patch_to_catalog_ids[patch_ids[p]]) == b]
 
-        a_catalog = np.unique(
-            np.array([a_catalog[i][j] for i in range(len(a_catalog)) for j in range(a_catalog[i].shape[0])]), axis=0)
-
-        p_catalog = np.unique(
-            np.array([p_catalog[i][j] for i in range(len(p_catalog)) for j in range(p_catalog[i].shape[0])]), axis=0)
+        # a_catalog = np.unique(
+        #     np.array([a_catalog[i][j] for i in range(len(a_catalog)) for j in range(a_catalog[i].shape[0])]), axis=0)
+        #
+        # p_catalog = np.unique(
+        #     np.array([p_catalog[i][j] for i in range(len(p_catalog)) for j in range(p_catalog[i].shape[0])]), axis=0)
 
         catalog_separated_actual_locations.append(a_catalog)
         catalog_separated_predicted_locations.append(p_catalog)
@@ -66,20 +69,25 @@ def evaluate_localisation(actual_source_centers, predicted_source_centers, ids, 
 
     num_catalogs = len(actual_loc)
 
-    chamfer_distance = 0
+    s90_value = s90(predicted_source_locations=predicted_loc, test_patch_ids = ids, patch_in_catalog=catalog_ids)
 
-    for b in range(num_catalogs):
+    print(s90_value)
 
-        chamfer_distance += chamfer_separation(actual_loc[b], predicted_loc[b])
+    actual_loc = [np.unique(
+        np.array([actual_loc[b][i][j] for i in range(len(actual_loc[b])) for j in range(actual_loc[b][i].shape[0])]), axis=0) for b in range(num_catalogs)]
 
-    # percentage_of_sources_detected = num_sources_correctly_detected(actual_source_centers, predicted_source_centers)
+    predicted_loc = [np.unique(
+        np.array([predicted_loc[b][i][j] for i in range(len(predicted_loc[b])) for j in range(predicted_loc[b][i].shape[0])]), axis=0) for b in range(num_catalogs)]
+
+    chamfer_distance_val = sum([chamfer_separation(actual_loc[b], predicted_loc[b]) for b in range(num_catalogs)])
 
     percentage_of_sources_detected = num_sources_correctly_detected(actual_loc, predicted_loc)
 
+    print(chamfer_distance_val, percentage_of_sources_detected)
 
-    # s90_value = s90(actual_source_locations=actual_source_centers, predicted_source_locations=predicted_source_centers)
+    print("END")
 
-    return chamfer_distance, percentage_of_sources_detected, s90_value
+    return chamfer_distance_val, percentage_of_sources_detected, s90_value
 
 
 def evaluate_detection(actual_segmentations, predicted_segmentations):
@@ -178,7 +186,7 @@ if __name__ == "__main__":
 
     # TAKE INPUTS (RECOMMENDED READ IN FILE)
 
-    segmentation_algorithms = ["pspnet", "random_forest", "unet"]
+    segmentation_algorithms = ["unet", "pspnet", "random_forest"]
 
     # localisation_algorithms = ["dbscan", "blob_detection", "kmeans", "spectral"]
     #
