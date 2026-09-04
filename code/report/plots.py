@@ -51,6 +51,44 @@ def plot_fermi_lat_count_map(binned_count_map_fermi: str="/Volumes/T7/project_da
     plt.close()
 
 
+def plot_fermi_lat_exposure(binned_count_map_fermi: str="/Volumes/T7/project_data/real_data/fermi_filtered_gti_exposure_map.fits"):
+
+    plt.cla()
+    plt.clf()
+    plt.close()
+
+    # NOTE THAT THIS IS JUST TAKING A LOW ENERGY bin AND NO TITLE INCLUDED
+
+    Path("./plots").mkdir(parents=True, exist_ok=True)
+
+    count_map = np.sum(np.array([hp.read_map(binned_count_map_fermi, hdu="SKYMAP", field=b) for b in range(5)]), axis=0)
+
+    hp.newvisufunc.projview(
+        count_map, coord=["G"], graticule=True, graticule_labels=True, xlabel="Galactic Longitude, $l$ [$\\degree$]",
+        ylabel="Galactic Latitude, $b$ [$\\degree$]", unit="$\\text{cm}^2\\text{s}$", cb_orientation="vertical",
+        projection_type="aitoff", norm='log',
+    )
+
+    plt.tight_layout()
+
+    plt.savefig("./plots/fermi_count_map.png")
+
+    plt.close()
+
+    hp.newvisufunc.projview(
+        count_map, coord=["G"], graticule=True, graticule_labels=True, xlabel="Galactic Longitude, $l$ [$\\degree$]",
+        ylabel="Galactic Latitude, $b$ [$\\degree$]", unit="Photons", cb_orientation="vertical",
+        projection_type="aitoff", norm='log', title="Aitoff Projection of $Fermi$ Exposure Maps",
+    )
+
+    plt.tight_layout()
+
+    plt.savefig("./plots/exposure_map.png")
+
+    plt.close()
+
+
+
 def plot_419(patch_directory="./../source_extractors/real_data/real_patches/patches/patch_419"):
 
     plt.cla()
@@ -184,9 +222,11 @@ def plot_419(patch_directory="./../source_extractors/real_data/real_patches/patc
 
 if __name__ == "__main__":
 
-    plot_fermi_lat_count_map()
+    # plot_fermi_lat_count_map()
+    #
+    # plot_419()
 
-    plot_419()
+    plot_fermi_lat_exposure()
 
 
 # REFERENCES

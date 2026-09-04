@@ -75,24 +75,17 @@ if __name__ == "__main__":
 
     # ALGORITHMS
 
-    segmentation_algorithms = ["unet", "pspnet", "random_forest"]
+    segmentation_algorithms = ["pspnet", "random_forest", "unet"]
 
-    # localisation_algorithms = ["dbscan", "kmeans", "spectral", "blob_detection"]
-    #
-    # classification_algorithms = ["cnn", "random_forest", "svm"]
+    # WE HAVE DONE DBSCAN - DO NOT DO AGAIN
 
-    # CHANGE BACK
+    localisation_algorithms = ["kmeans"]   # ["blob_detection", "dbscan", "kmeans", "spectral"]
 
-    localisation_algorithms = ["dbscan"] #, "kmeans", "blob_detection", "spectral"]
-
-    classification_algorithms = ["cnn"] # ["random_forest"] # ["cnn"]
+    classification_algorithms = ["cnn", "random_forest"]
 
     algorithm_count = 1
 
     execution_times = []
-
-
-
 
 
 
@@ -280,21 +273,6 @@ if __name__ == "__main__":
                                                      test_data=copy.deepcopy(real_batches_class),
                                                      save_file=save_file_classifier, pretrained=True))
 
-                    # case "svm":
-                    #
-                    #     save_file_classifier = ("./algorithms/pre_trained_models/svm_classifier_for_{}_and_{}.pt".
-                    #                             format(segment, local))
-                    #
-                    #     actual_labels, classifier_predictions = (
-                    #         svm_classifier(train_data=copy.deepcopy(train_batches_class),
-                    #                        test_data=copy.deepcopy(test_batches_class),
-                    #                        save_file=save_file_classifier))
-                    #
-                    #     real_actual_labels, real_classifier_predictions = (
-                    #         svm_classifier(train_data=np.array([]), test_data=copy.deepcopy(real_batches_class),
-                    #                        save_file=save_file_classifier,
-                    #                        pretrained=True))
-
                     case _:
                         raise NameError("Classification algorithm {} could not be found.".format(classifier))
 
@@ -325,12 +303,14 @@ if __name__ == "__main__":
 
     # Save execution times
 
-    fields = ["algorithm", "segmentation_time (s)", "localisation_time(s)", "classification_time (s)"]
+    # GO BACK TO w and uncomment fields
 
-    with open("./../results/execution_times.csv", mode="w", newline='') as f:
+    # fields = ["algorithm", "segmentation_time (s)", "localisation_time(s)", "classification_time (s)"]
+
+    with open("./../results/execution_times.csv", mode="a", newline='') as f:
 
         writer = csv.writer(f)
-        writer.writerow(fields)
+        # writer.writerow(fields)
         writer.writerows(execution_times)
 
     print("Complete")

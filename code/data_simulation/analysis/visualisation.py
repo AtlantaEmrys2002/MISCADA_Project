@@ -527,7 +527,9 @@ def plot_parameter_relationships(sources, source_type: str, directory: str) -> N
 # different-coefficients-than-polynomial-p
 # PDFs - https://www.lesswrong.com/posts/jmq3mon8TSC99ittm/common-probability-distributions
 # Scale Font - https://stackoverflow.com/questions/37233108/seaborn-change-font-size-of-the-colorbar
+# Scientific Notation - https://stackoverflow.com/questions/57093572/set-y-axis-to-scientific-notation
 # Scipy Documentation - https://docs.scipy.org/doc/scipy/index.html
+# Seaborn Deactivate - https://stackoverflow.com/questions/33099348/seaborn-configuration-hides-default-matplotlib
 # Seaborn Heatmaps - https://stackoverflow.com/questions/50947776/plot-two-seaborn-heatmap-graphs-side-by-side
 # Shot Noise - https://en.wikipedia.org/wiki/Shot_noise
 # Split-Normal Distributions - https://en.wikipedia.org/wiki/Split_normal_distribution

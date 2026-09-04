@@ -183,7 +183,11 @@ def k_means_clustering(binary_segments, max_num_centroids=50, threshold=0.2):
 
     source_centres_in_each_image = []
 
+    current_segment = 0
+
     for segment in binary_segments:
+
+        print(current_segment)
 
         if isinstance(segment[0], np.ndarray):
 
@@ -251,6 +255,8 @@ def k_means_clustering(binary_segments, max_num_centroids=50, threshold=0.2):
                 best_centres = cluster_centres
 
         source_centres_in_each_image.append(np.array(best_centres))
+
+        current_segment += 1
 
     return source_centres_in_each_image
 
