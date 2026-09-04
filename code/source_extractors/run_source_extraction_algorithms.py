@@ -7,7 +7,7 @@ outputs of each combination of segmentation and localisation algorithm (this is 
 """
 
 import argparse
-from algorithms.components.classification_algorithms import classification_neural_network
+from algorithms.components.cnn_classifier import classification_neural_network
 from algorithms.components.clustering_algorithms import (blob_detection, dbscan_clustering, k_means_clustering,
                                                          spectral_clustering)
 from algorithms.components.machine_learning_classification_algorithms import random_forest_classifier, svm_classifier
@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
     # ALGORITHMS
 
-    segmentation_algorithms = ["pspnet", "random_forest", "unet"]
+    segmentation_algorithms = ["unet", "pspnet", "random_forest"]
 
     # localisation_algorithms = ["dbscan", "kmeans", "spectral", "blob_detection"]
     #
@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
     localisation_algorithms = ["dbscan"] #, "kmeans", "blob_detection", "spectral"]
 
-    classification_algorithms = ["random_forest"] # ["cnn"] # , "random_forest"]
+    classification_algorithms = ["cnn"] # ["random_forest"] # ["cnn"]
 
     algorithm_count = 1
 
@@ -96,7 +96,7 @@ if __name__ == "__main__":
 
 
 
-    # MAKE SURE NONE NONE OF Pretrained parameters are set for hand in - we are training the segmentation algorithms now and using the results repeatedly
+    # MAKE SURE NONE OF Pretrained parameters are set for hand in - we are training the segmentation algorithms now and using the results repeatedly
 
     for segment in segmentation_algorithms:
 
@@ -206,24 +206,6 @@ if __name__ == "__main__":
 
             localisation_time = time.time() - start_localisation_time
 
-            # # Prepare detected sources for classification (effectively, data prep)
-            # train_batches_class = (
-            #     prepare_classifier_data(patches=copy.deepcopy(training_maps),
-            #                             predicted_locations=train_source_locations,
-            #                             patch_ids=copy.deepcopy(train_patch_ids)))
-            #
-            # validation_batches_class = (
-            #     prepare_classifier_data(patches=copy.deepcopy(validation_maps),
-            #                             predicted_locations=validation_source_locations,
-            #                             patch_ids=copy.deepcopy(validation_patch_ids)))
-            #
-            # test_batches_class = prepare_classifier_data(patches=copy.deepcopy(testing_maps),
-            #                                              predicted_locations=test_source_locations,
-            #                                              patch_ids=copy.deepcopy(test_patch_ids), test=True)
-            #
-            # real_batches_class = prepare_classifier_data(patches=real_maps, predicted_locations=real_source_locations,
-            #                                              patch_ids=real_patch_ids, test=True, real_data=True)
-
             for classifier in classification_algorithms:
 
                 start_classification_time = time.time()
@@ -233,15 +215,13 @@ if __name__ == "__main__":
                     case "cnn":
 
                         # Prepare detected sources for classification (effectively, data prep)
-                        train_batches_class = (
-                            prepare_classifier_data(patches=copy.deepcopy(training_maps),
+                        train_batches_class = prepare_classifier_data(patches=copy.deepcopy(training_maps),
                                                     predicted_locations=train_source_locations,
-                                                    patch_ids=copy.deepcopy(train_patch_ids)))
+                                                    patch_ids=copy.deepcopy(train_patch_ids))
 
-                        validation_batches_class = (
-                            prepare_classifier_data(patches=copy.deepcopy(validation_maps),
+                        validation_batches_class = prepare_classifier_data(patches=copy.deepcopy(validation_maps),
                                                     predicted_locations=validation_source_locations,
-                                                    patch_ids=copy.deepcopy(validation_patch_ids)))
+                                                    patch_ids=copy.deepcopy(validation_patch_ids))
 
                         test_batches_class = prepare_classifier_data(patches=copy.deepcopy(testing_maps),
                                                                      predicted_locations=test_source_locations,
@@ -293,27 +273,27 @@ if __name__ == "__main__":
                         actual_labels, classifier_predictions = (
                             random_forest_classifier(train_data=copy.deepcopy(train_batches_class),
                                                      test_data=copy.deepcopy(test_batches_class),
-                                                     save_file=save_file_classifier, tune=True))
+                                                     save_file=save_file_classifier, is_pspnet=segment == "pspnet"))
 
                         real_actual_labels, real_classifier_predictions = (
                             random_forest_classifier(train_data=np.array([]),
                                                      test_data=copy.deepcopy(real_batches_class),
                                                      save_file=save_file_classifier, pretrained=True))
 
-                    case "svm":
-
-                        save_file_classifier = ("./algorithms/pre_trained_models/svm_classifier_for_{}_and_{}.pt".
-                                                format(segment, local))
-
-                        actual_labels, classifier_predictions = (
-                            svm_classifier(train_data=copy.deepcopy(train_batches_class),
-                                           test_data=copy.deepcopy(test_batches_class),
-                                           save_file=save_file_classifier))
-
-                        real_actual_labels, real_classifier_predictions = (
-                            svm_classifier(train_data=np.array([]), test_data=copy.deepcopy(real_batches_class),
-                                           save_file=save_file_classifier,
-                                           pretrained=True))
+                    # case "svm":
+                    #
+                    #     save_file_classifier = ("./algorithms/pre_trained_models/svm_classifier_for_{}_and_{}.pt".
+                    #                             format(segment, local))
+                    #
+                    #     actual_labels, classifier_predictions = (
+                    #         svm_classifier(train_data=copy.deepcopy(train_batches_class),
+                    #                        test_data=copy.deepcopy(test_batches_class),
+                    #                        save_file=save_file_classifier))
+                    #
+                    #     real_actual_labels, real_classifier_predictions = (
+                    #         svm_classifier(train_data=np.array([]), test_data=copy.deepcopy(real_batches_class),
+                    #                        save_file=save_file_classifier,
+                    #                        pretrained=True))
 
                     case _:
                         raise NameError("Classification algorithm {} could not be found.".format(classifier))

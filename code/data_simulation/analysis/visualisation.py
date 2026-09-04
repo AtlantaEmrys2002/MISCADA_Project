@@ -18,8 +18,8 @@ axis_labels = {"LP_Flux_Density": "Differential Flux Density",
                "PLEC_ExpfactorS": "Exponential Factor", "GLAT": "Latitude"}
 
 # Used for mathematical descriptions - gives mathematical notation equivalent to variable
-mathematical_notation = {"Pivot_Energy": "$E_0$", "LP_Flux_Density": "$F_0$", "LP_Index": "$\\alpha$",
-                         "LP_beta": "$\\beta$", "PLEC_Flux_Density": "$F_0$", "PLEC_IndexS": "$\\Gamma$",
+mathematical_notation = {"Pivot_Energy": "$E_0$", "LP_Flux_Density": "$N_0$", "LP_Index": "$\\alpha$",
+                         "LP_beta": "$\\beta$", "PLEC_Flux_Density": "$N_0$", "PLEC_IndexS": "$\\Gamma$",
                          "PLEC_Exp_Index": "$b$", "PLEC_ExpfactorS": "$a$", "GLAT": "Latitude"}
 
 # Used for indicating units
@@ -114,13 +114,20 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
     print("{} - {} Relationship".format(axis_labels[var1.name], axis_labels[var2.name]))
     print('-' * 60)
 
-    plt.rcParams["figure.figsize"] = (10, 5)
+    # reset rc params to defaults
+    sns.reset_orig()
+
+    plt.cla()
+    plt.clf()
+    plt.close()
+
+    plt.rcParams["figure.figsize"] = (6, 10)
 
     log_var1, log_var2 = np.log(var1), np.log(var2)
 
     # Create plot
 
-    fig, ax = plt.subplots(1, 2)
+    fig, ax = plt.subplots(2, 1)
 
     # Plot data
 
@@ -152,7 +159,7 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
 
         polynomial = np.polynomial.Polynomial.fit(log_var1, log_var2, deg=degree)
 
-        ax[0].plot(x_values, np.exp(polynomial(log_x_values)), color=colours[idx], label="Log {}".format(labels[idx]),
+        ax[0].plot(x_values, np.exp(polynomial(log_x_values)), color=colours[idx], label="Log-Log {}".format(labels[idx]),
                    linestyle=linestyles[degree - 1])
         ax[1].plot(log_x_values, polynomial(log_x_values), color=colours[idx], label=labels[idx],
                    linestyle=linestyles[degree - 1])
@@ -181,8 +188,8 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
         # - https://journals-aps-org.ezphost.dur.ac.uk/prd/abstract/10.1103/k5dp-5str
 
         polynomial = np.polynomial.Polynomial.fit(log_var1, var2, deg=1)
-        ax[0].plot(x_values, polynomial(log_x_values), color="black", label="Logarithmic")
-        ax[1].plot(log_x_values, np.log(polynomial(log_x_values)), color="black", label="Logarithmic")
+        ax[0].plot(x_values, polynomial(log_x_values), color="black", label="Log-Linear")
+        ax[1].plot(log_x_values, np.log(polynomial(log_x_values)), color="black", label="Log-Linear")
 
         logarithmic_coefficients = polynomial.convert().coef
 
@@ -190,7 +197,7 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
 
         log_polynomial = np.log(polynomial(log_var1))
 
-        print("RMSE of Logarithmic Fit: {}".format(root_mean_squared_error(log_var2, log_polynomial)))
+        print("RMSE of Log-Linear Fit: {}".format(root_mean_squared_error(log_var2, log_polynomial)))
 
         residuals.append(log_var2 - log_polynomial)
 
@@ -204,12 +211,17 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
 
     # Formatting
 
-    ax[0].set_xlabel("{} {}".format(mathematical_notation[var1.name], units[var1.name]))
-    ax[0].set_ylabel("{} {}".format(mathematical_notation[var2.name], units[var2.name]))
+    ax[0].tick_params(axis="x", which="major", labelsize=12)
+    ax[1].tick_params(axis="x", which="major", labelsize=12)
+    ax[0].tick_params(axis="y", which="major", labelsize=12)
+    ax[1].tick_params(axis="y", which="major", labelsize=12)
 
-    title_0 = "{} vs {}".format(axis_labels[var1.name], axis_labels[var2.name])
+    ax[0].set_xlabel("{} {}".format(mathematical_notation[var1.name], units[var1.name]), fontsize=15)
+    ax[0].set_ylabel("{} {}".format(mathematical_notation[var2.name], units[var2.name]), fontsize=15)
 
-    ax[0].set_title(title_0)
+    title_0 = "{} vs {}".format(axis_labels[var2.name], axis_labels[var1.name])
+
+    ax[0].set_title(title_0, fontsize=16)
     ax[0].legend()
 
     if len(axis_labels[var1.name]) + len(axis_labels[var2.name]) > 20:
@@ -217,15 +229,23 @@ def plot_fitting_correlated_variable_dependency(var1, var2, source_type: str, di
     else:
         new_line = ''
 
-    title_1 = "Log-Log Plot of {} {} vs {}".format(new_line, axis_labels[var1.name], axis_labels[var2.name])
+    title_1 = "Log-Log Plot of {} {} vs {}".format(new_line, axis_labels[var2.name], axis_labels[var1.name])
 
-    ax[1].set_xlabel("log {}".format(mathematical_notation[var1.name]))
-    ax[1].set_ylabel("log {}".format(mathematical_notation[var2.name]))
-    ax[1].set_title(title_1)
+    ax[1].set_xlabel("log {}".format(mathematical_notation[var1.name]), fontsize=15)
+    ax[1].set_ylabel("log {}".format(mathematical_notation[var2.name]), fontsize=15)
+    ax[1].set_title(title_1, fontsize=16)
     ax[1].legend()
 
+    if source_type == "AGN" and mathematical_notation[var2.name] == "$N_0$":
+        ax[0].set_xlim(0, 6000)
+        ax[0].set_ylim(0, 0.7 * 10 ** -11)
+
+    if source_type == "Pulsar":
+        # ax[0].set_xlim(0, 1 * 10 ** -10)
+        ax[0].set_ylim(0, 0.3 * 10 ** -10)
+
     fig.suptitle("Fitting {} {} - {} Dependency".format(source_type, mathematical_notation[var1.name],
-                                                        mathematical_notation[var2.name]))
+                                                        mathematical_notation[var2.name]), fontsize=18)
 
     fig.tight_layout()
 
@@ -324,13 +344,13 @@ def plot_parameter_distributions(sources, source_type: str, directory: str) -> N
 
         cauchy_params = cauchy.fit(values, floc=0)
 
-        subplot.plot(x_values, cauchy.pdf(x_values, *cauchy_params), label="Cauchy", color='green')
+        subplot.plot(x_values, cauchy.pdf(x_values, *cauchy_params), label="Cauchy", color='green', linestyle=":")
 
         # NEW
 
         gumbel_params = gumbel_r.fit(values)
 
-        subplot.plot(x_values, gumbel_r.pdf(x_values, *gumbel_params), label="Gumbel", color='purple')
+        subplot.plot(x_values, gumbel_r.pdf(x_values, *gumbel_params), label="Gumbel", color='purple', linestyle=(0, (3, 1, 1, 1, 1, 1)))
 
         # Long line
         long_line = "\n"
@@ -338,16 +358,32 @@ def plot_parameter_distributions(sources, source_type: str, directory: str) -> N
         if len(axis_labels[values.name]) < 20:
             long_line = ""
 
-        subplot.set_xlabel("{} {}{}".format(axis_labels[values.name], long_line, units[values.name]))
+        subplot.set_xlabel("{} {}{}".format(axis_labels[values.name], long_line, units[values.name]), fontsize=12)
+
+        if source_type == "AGN" and values.name == "LP_Flux_Density":
+
+            subplot.set_xlim(0, 0.5 * 10 ** -10)
+            subplot.set_ylim(0, 0.3 * 10 ** 12)
+
+        if source_type == "Pulsars" and values.name == "PLEC_Flux_Density":
+
+            subplot.set_xlim(0, 1.25 * 10 ** -10)
+            subplot.set_ylim(0, 1 * 10 ** 11)
+
+        if source_type == "Pulsars" and values.name == "GLAT":
+
+            subplot.set_ylim(0, 1.5 * 10)
+
+        subplot.ticklabel_format(axis='both', style='sci', scilimits=(4, 2))
 
     # FORMATTING
 
-    fig.suptitle('Distributions of 4FGL {} Parameters'.format(source_type))
+    fig.suptitle('Distributions of 4FGL {} Parameters'.format(source_type), fontsize=16)
 
     # Label axes and enable legends
     for a in ax.flatten():
-        a.set_ylabel('Source Density')
-        a.legend()
+        a.set_ylabel('Source Density', fontsize=12)
+        a.legend(fontsize=10)
 
     fig.tight_layout()
 
@@ -452,6 +488,7 @@ def plot_parameter_relationships(sources, source_type: str, directory: str) -> N
 # Alphabet-ASCII Relation - https://stackoverflow.com/questions/4528982/convert-alphabet-letters-to-number-in-python
 # Astropy Documentation - https://docs.astropy.org/en/stable/index_user_docs.html
 # Cauchy Distribution - https://en.wikipedia.org/wiki/Cauchy_distribution
+# Change Tick Label - https://stackoverflow.com/questions/6390393/how-to-change-tick-label-font-size
 # Closing Plot - https://stackoverflow.com/questions/741877/how-do-i-tell-matplotlib-that-i-am-done-with-a-plot
 # Correlation Analysis - https://en.wikipedia.org/wiki/Covariance#Examples
 # Covariance - https://en.wikipedia.org/wiki/Covariance_matrix
@@ -460,6 +497,7 @@ def plot_parameter_relationships(sources, source_type: str, directory: str) -> N
 # Fitting Noisy Data - https://stackoverflow.com/questions/49201515/fit-numpy-polynomials-to-noisy-data
 # Fitting Recommendations - https://dataviz.shef.ac.uk/docs/18/03/2021/LearningPath-Statistical-Modeling-1
 # Font Size - https://stackoverflow.com/questions/34706845/change-xticklabels-fontsize-of-seaborn-heatmap
+# Font Size - https://stackoverflow.com/questions/12444716/how-do-i-set-the-figure-title-and-axes-labels-font-size
 # Gaussian Fitting Sharp Peak - https://stackoverflow.com/questions/74146895/gaussian-fitting-of-a-sharply-peaked-curve
 # Gaussian Mixture - https://scikit-learn.org/stable/modules/generated/sklearn.mixture.GaussianMixture.html
 # Kendall Correlation - https://numiqo.com/tutorial/kendalls-tau
@@ -470,6 +508,7 @@ def plot_parameter_relationships(sources, source_type: str, directory: str) -> N
 # location-parameter
 # Logistic Distribution Fitting - https://stackoverflow.com/questions/78113609/how-to-fit-a-logistic-distribution-use-a-
 # fixed-location-parameter
+# Log-Log Plot - https://en.wikipedia.org/wiki/Log–log_plot
 # Log-Normals - https://stackoverflow.com/questions/68361048/how-to-generate-lognormal-distribution-with-specific-mean-
 # and-std-in-python
 # Log-Normal Error - https://stackoverflow.com/questions/65302332/scipy-stats-lognorm-expect-returning-an-odd-result

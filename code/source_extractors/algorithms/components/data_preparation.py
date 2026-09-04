@@ -151,7 +151,7 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, test=False,
     if len(data) == 0:
         raise RuntimeError("Not enough sources were localised - no data is available for the classifier to train on.")
 
-    return data if test else balance_dataset(data, ml=True)
+    return data if test else balance_dataset(data, ml=ml)
 
 
 def source_boxes(patches, predicted_source_locations, patch_ids):

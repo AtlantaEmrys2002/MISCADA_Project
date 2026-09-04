@@ -192,5 +192,6 @@ def save_candidate_sources(actual_source_locations, predicted_source_locations, 
 # matplotlib-pie-chart
 # Legend Position - https://stackoverflow.com/questions/4700614/how-to-put-the-legend-outside-the-plot/43439132#43439132
 # Nearest Neighbours - https://stackoverflow.com/questions/12923586/nearest-neighbor-search-python
+# Nearest Neighbours - https://stackoverflow.com/questions/52166769/astropy-coordinates-second-nearest-neighbour
 # Pickle Files - https://stackoverflow.com/questions/11218477/how-can-i-use-pickle-to-save-a-dict-or-any-other-python-
 # object

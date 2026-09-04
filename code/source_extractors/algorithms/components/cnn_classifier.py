@@ -14,17 +14,19 @@ class SourceClassifier(nn.Module):
 
         super(SourceClassifier, self).__init__()
 
-        self.batch_norm = nn.BatchNorm2d(num_features=5)
+        # self.batch_norm = nn.BatchNorm2d(num_features=5)
 
         self.conv_layers = nn.Sequential(
             nn.Conv2d(in_channels=5, out_channels=8, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
+            nn.Dropout(0.2),
             nn.Conv2d(in_channels=8, out_channels=16, kernel_size=3, padding=1),
             nn.ReLU(inplace=True),
+            nn.Dropout(0.2),
             nn.Conv2d(in_channels=16, out_channels=16, kernel_size=3, stride=2),
             nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True)
+            # nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1),
+            # nn.ReLU(inplace=True)
         )
 
         # SHOULD BE SAME OUTPUT SIZE
@@ -35,7 +37,11 @@ class SourceClassifier(nn.Module):
         # Dense layers - here the activation functions are applied separately
         self.dense_layers = nn.Sequential(
 
-            nn.Linear(in_features=288, out_features=128),
+            # nn.Linear(in_features=288, out_features=128),
+            # nn.ReLU(inplace=True),
+            # nn.Linear(in_features=1568, out_features=128),
+            # nn.ReLU(inplace=True),
+            nn.Linear(in_features=144, out_features=128),
             nn.ReLU(inplace=True),
             nn.Linear(in_features=128, out_features=64),
             nn.ReLU(inplace=True),
@@ -49,7 +55,7 @@ class SourceClassifier(nn.Module):
         )
 
     def forward(self, x):
-        x = self.batch_norm(x)
+        # x = self.batch_norm(x)
         x = self.conv_layers(x)
         x = self.max_pooling(x)
         x = self.flatten(x)
@@ -67,9 +73,9 @@ def classifier_train(train_data, test_data, device, training_epochs=50, save_fil
     loss_fn = nn.CrossEntropyLoss()
 
     # ADDED IN SOME WEIGHT DECAY
-    optimiser = torch.optim.Adam(classifier.parameters(), lr=1.e-3)
+    optimiser = torch.optim.Adam(classifier.parameters(), lr=1.e-4)
 
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimiser, patience=2)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimiser, patience=2, min_lr=1.e-8)
 
     # Start with large value that is easily surpassed
     best_vloss = 100000000000000
@@ -149,10 +155,15 @@ def classification_neural_network(train_data, validation_data, test_data, pretra
 
         # Get data into efficient dataloader
 
-        train_data_loader = DataLoader(ClassifierSubPatchesDataset(data=train_data, num_sub_patches=len(train_data)), batch_size=128, shuffle=True)
+        # train_data_loader = DataLoader(ClassifierSubPatchesDataset(data=train_data, num_sub_patches=len(train_data)), batch_size=128, shuffle=True)
+        #
+        # validation_data_loader = DataLoader(ClassifierSubPatchesDataset(data=validation_data, num_sub_patches=len(validation_data)),
+        #                         batch_size=128, shuffle=True)
+
+        train_data_loader = DataLoader(ClassifierSubPatchesDataset(data=train_data, num_sub_patches=len(train_data)), batch_size=64, shuffle=True)
 
         validation_data_loader = DataLoader(ClassifierSubPatchesDataset(data=validation_data, num_sub_patches=len(validation_data)),
-                                batch_size=128, shuffle=True)
+                                batch_size=64, shuffle=True)
 
         # Train classifier on data
         classifier_model, best_epoch_classifier = classifier_train(train_data=train_data_loader, test_data=validation_data_loader,

@@ -337,3 +337,5 @@ if __name__ == "__main__":
 # Max Value in Dictionary - https://www.reddit.com/r/learnpython/comments/o4qksz/find_a_maximum_value_in_dictionary/
 # One-Hot Encoding - https://stackoverflow.com/questions/20295046/numpy-change-max-in-each-row-to-1-all-other-numbers-to
 # -0
+# Pandas to Numpy - https://stackoverflow.com/questions/49734441/converting-pandas-dataframe-to-numpy-array-with-headers
+# -and-dtypes
