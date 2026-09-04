@@ -347,9 +347,8 @@ def s90(predicted_source_locations, test_patch_ids, patch_in_catalog,
         catalog_sep_predicted_loc.append(predicted_loc)
 
     # Sort unique actual photon fluxes in increasing order
-    flattened_fluxes = [catalog_sep_actual_flux[i][j] for i in range(num_catalogs) for j in range(len(catalog_sep_actual_flux[i]))]
-
-    unique_fluxes = np.unique(flattened_fluxes)
+    unique_fluxes = np.unique([catalog_sep_actual_flux[i][j] for i in range(num_catalogs)
+                               for j in range(len(catalog_sep_actual_flux[i]))])
     increasing_order = np.argsort(unique_fluxes)
 
     for e in increasing_order:
@@ -371,44 +370,33 @@ def s90(predicted_source_locations, test_patch_ids, patch_in_catalog,
             predicted_source_loc_above_min_flux_celestial = SkyCoord(ra=predicted_source_loc_above_min_flux[:, 0] * u.degree,
                                                         dec=predicted_source_loc_above_min_flux[:, 1] * u.degree, frame='icrs')
 
-            # actual_mask = (catalog_sep_actual_flux[c] > min_flux)
-            # predicted_mask = (catalog_sep_predicted_flux[c] > min_flux)
-            #
-            # actual_source_loc_above_min_flux = catalog_sep_actual_loc[c][actual_mask]
-            # predicted_source_loc_above_min_flux = catalog_sep_predicted_loc[predicted_mask]
-
             # Find closest source to each actual source to determine true positives and false negatives
 
-            for a in actual_source_loc_above_min_flux:
+            minimum_seps = np.array([np.min(SkyCoord(ra=a[0] * u.degree, dec=a[1] * u.degree,
+                                             frame='icrs').separation(predicted_source_loc_above_min_flux_celestial).degree) for a in actual_source_loc_above_min_flux])
 
-                sep = SkyCoord(ra=a[0] * u.degree, dec=a[1] * u.degree,
-                                             frame='icrs').separation(predicted_source_loc_above_min_flux_celestial).degree
+            true_positives += np.sum(minimum_seps < distance_threshold)
 
-                if sep[np.argmin(sep)] < distance_threshold:
+            false_negatives += np.sum(minimum_seps >= distance_threshold)
 
-                    true_positives += 1
+            minimum_seps = np.array([np.min(SkyCoord(ra=p[0] * u.degree, dec=p[1] * u.degree,
+                                             frame='icrs').separation(actual_source_loc_above_min_flux_celestial).degree) for p in predicted_source_loc_above_min_flux])
 
-                else:
+            false_positives += np.sum(minimum_seps >= distance_threshold)
 
-                    false_negatives += 1
-
-            for p in predicted_source_loc_above_min_flux:
-
-                sep = SkyCoord(ra=p[0] * u.degree, dec=p[1] * u.degree,
-                                             frame='icrs').separation(actual_source_loc_above_min_flux_celestial).degree
-
-                if sep[np.argmin(sep)] < distance_threshold:
-                    false_positives += 1
-
-            # _, d2d, _ = actual_source_loc_above_min_flux.match_to_catalog_sky(predicted_source_loc_above_min_flux)
+            # for p in predicted_source_loc_above_min_flux:
             #
-            # true_positives += np.sum(d2d.degree <= distance_threshold)
-            # false_negatives += np.sum(d2d.degree > distance_threshold)
+            #     sep = SkyCoord(ra=p[0] * u.degree, dec=p[1] * u.degree,
+            #                                  frame='icrs').separation(actual_source_loc_above_min_flux_celestial).degree
             #
-            # # Find closest source to each predicted source to determine false positives
-            # _, d2d, _ = predicted_source_loc_above_min_flux.match_to_catalog_sky(actual_source_loc_above_min_flux)
-            #
-            # false_positives += np.sum(d2d.degree > distance_threshold)
+            #     if np.min(sep) < distance_threshold:
+            #         false_positives += 1
+
+
+
+        # TYR MATCH COORDINATES AGAN!!!!!!!!!!
+
+
 
         precision = true_positives / (true_positives + false_positives)
 
@@ -423,202 +411,6 @@ def s90(predicted_source_locations, test_patch_ids, patch_in_catalog,
 
     raise RuntimeError("No S90 Metric could be calculated - there was never a minimum SNR above which precision and "
                        "recall were both 0.9.")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        # actual_loc = [np.unique(
-        #     np.array(
-        #         [actual_source_loc_per_patch[b][i][j] for i in range(len(actual_source_loc_per_patch[b]))
-        #          for j in range(actual_source_loc_per_patch[b][i].shape[0])]), axis=0) for b in range(num_catalogs)]
-        #
-        # predicted_loc = [np.unique(
-        #     np.array([predicted_loc[b][i][j] for i in range(len(predicted_loc[b])) for j in
-        #               range(predicted_loc[b][i].shape[0])]), axis=0) for b in range(num_catalogs)]
-
-        # predicted_coordiantes = predicted_source_locations
-
-
-
-
-
-
-
-
-
-
-
-
-    # IF GO BACK TO THIS DON'T USE GALACTIC
-
-
-
-
-
-
-        # Get ID of skymap each patch is taken from - here, 10 is the number of skymaps generated per catalog and 768 is
-        # the number of patches generated per map
-        # lowest_id = 7680 * c
-
-        # skymap_ids = np.array([(c * 10) + m + 1 for p in patch_ids for m in range(10)
-        #                        if lowest_id + (m * 768) <= p < lowest_id + ((m + 1) * 768)])
-
-        # # Get integral photon fluxes of each source in each patch per catalog
-        # actual_photon_fluxes, predicted_photon_fluxes = get_integral_photon_fluxes(patch_ids=patch_ids)
-
-
-
-
-
-    #
-    #     # Select skymaps derived from catalog c
-    #     for m in range((c * 10) + 1, (c * 10) + 11):
-    #
-    #         # snr_count_map = get_snr_map(skymap_file="./../data_simulation/simulated_data/count_maps/skymap_{}/".format(m))
-    #
-    #
-    #
-    #
-    #
-    #         # IDs of patches in skymap
-    #         indices = np.argwhere(skymap_ids == m).flatten()
-    #
-    #         # Actual locations in skymap
-    #         actual_loc_in_skymap = np.array([actual_source_locations[c][i][j] for i in indices for j in range(actual_source_locations[c][i].shape[0])])
-    #
-    #         # Predicted locations in skymap
-    #         predicted_loc_in_skymap = np.array([predicted_source_locations[c][i][j] for i in indices for j in range(predicted_source_locations[c][i].shape[0])])
-    #
-    #         # Convert locations to Galactic longitude and latitude
-    #         a_coordinates = SkyCoord(ra=actual_loc_in_skymap[:, 0] * u.degree, dec=actual_loc_in_skymap[:, 1] * u.degree,
-    #                                frame='icrs').galactic
-    #
-    #         p_coordinates = SkyCoord(ra=predicted_loc_in_skymap[:, 0] * u.degree, dec=predicted_loc_in_skymap[:, 1] * u.degree,
-    #                                frame='icrs').galactic
-    #
-    #
-    #         idx, d2d, _ = p_coordinates.match_to_catalog_sky(a_coordinates)
-    #
-    #         # # For what will come to be known as False Positives, do ID8's recommendation - associate with the SNR of the
-    #         # # actual source closest to it
-    #         #
-    #         # closest_actual_sources = np.array([actual_loc_in_skymap[i] for i in idx])
-    #         #
-    #         # closest_a_coordinates = SkyCoord(ra=closest_actual_sources[:, 0] * u.degree, dec=closest_actual_sources[:, 1] * u.degree,
-    #         #                        frame='icrs').galactic
-    #
-    #
-    #
-    #
-    #         # Get pixels in which each actual and predicted source located in skymap
-    #         actual_source_pixels = hp.ang2pix(nside=256, theta=a_coordinates.l.value, phi=a_coordinates.b.value,
-    #                                           lonlat=True)
-    #
-    #         predicted_source_pixels = hp.ang2pix(nside=256, theta=p_coordinates.l.value, phi=p_coordinates.b.value,
-    #                                           lonlat=True)
-    #
-    #         predicted_source_pixels = hp.ang2pix(nside=256, theta=closest_a_coordinates.l.value, phi=closest_a_coordinates.b.value,
-    #                                           lonlat=True)
-    #
-    #         # Get SNR for each pixel in which actual or predicted source location in
-    #         a_source_pixel_values = np.array([snr_count_map[x] for x in actual_source_pixels])
-    #         p_source_pixel_values = np.array([snr_count_map[x] for x in predicted_source_pixels])
-    #
-    #         actual_locations_separated_by_skymap.append(actual_loc_in_skymap)
-    #         predicted_locations_separated_by_skymap.append(predicted_loc_in_skymap)
-    #         actual_snr_separated_by_skymap.append(a_source_pixel_values)
-    #         predicted_snr_separated_by_skymap.append(p_source_pixel_values)
-    #
-    # # Gradually increase SNR to find minimum SNR at which precision and recall for detection > 0.9
-    # flattened_actual_snr = np.unique(np.array([actual_snr_separated_by_skymap[i][j] for i in range(num_catalogs * 10)
-    #                         for j in range(len(actual_locations_separated_by_skymap))]))
-    #
-    # increasing_order = np.argsort(flattened_actual_snr)
-    #
-    # for i in increasing_order:
-    #
-    #     minimum_snr = flattened_actual_snr[i]
-    #
-    #     # Used to calculate precision and recall
-    #     true_positives = 0
-    #     false_positives = 0
-    #     false_negatives = 0
-    #
-    #     # CHECK IF WE NEED TO MASK PREDICTED
-    #
-    #     for skymap in range(num_catalogs * 10):
-    #
-    #         actual_loc = actual_locations_separated_by_skymap[skymap]
-    #         predicted_loc = predicted_locations_separated_by_skymap[skymap]
-    #
-    #         if actual_loc.shape[0] == 0 or predicted_loc.shape[0] == 0:
-    #             continue
-    #
-    #         # TRUE POSITIVES AND FALSE NEGATIVES
-    #
-    #         # Select all sources in skymap with flux above minimum SNR
-    #
-    #         actual_loc_masked = actual_loc[(actual_snr_separated_by_skymap[skymap] >= minimum_snr)]
-    #         predicted_loc_masked = predicted_loc
-    #
-    #         if actual_loc_masked.shape[0] == 0:
-    #             continue
-    #
-    #         predicted_sources_celestial = SkyCoord(ra=predicted_loc_masked[:, 0] * u.degree,
-    #                                      dec=predicted_loc_masked[:, 1] * u.degree, frame='icrs')
-    #
-    #         actual_sources_celestial = SkyCoord(ra=actual_loc_masked[:, 0] * u.degree,
-    #                                      dec=actual_loc_masked[:, 1] * u.degree, frame='icrs')
-    #
-    #         _, d2d, _ = actual_sources_celestial.match_to_catalog_sky(predicted_sources_celestial)
-    #
-    #         false_negatives += np.sum(d2d.degree >= distance_threshold)
-    #
-    #         true_positives += np.sum(d2d.degree < distance_threshold)
-    #
-    #         # FALSE POSITIVES
-    #
-    #         predicted_loc_masked = predicted_loc[(predicted_snr_separated_by_skymap[skymap] >= minimum_snr)]
-    #         actual_loc_masked = actual_loc
-    #
-    #         if predicted_loc_masked.shape[0] == 0:
-    #             continue
-    #
-    #         predicted_sources_celestial = SkyCoord(ra=predicted_loc_masked[:, 0] * u.degree,
-    #                                      dec=predicted_loc_masked[:, 1] * u.degree, frame='icrs')
-    #
-    #         actual_sources_celestial = SkyCoord(ra=actual_loc_masked[:, 0] * u.degree,
-    #                                      dec=actual_loc_masked[:, 1] * u.degree, frame='icrs')
-    #
-    #         _, d2d, _ = predicted_sources_celestial.match_to_catalog_sky(actual_sources_celestial)
-    #
-    #         false_positives += np.sum(d2d.degree >= distance_threshold)
-    #
-    #     precision = true_positives / (true_positives + false_positives)
-    #
-    #     recall = true_positives / (true_positives + false_negatives)
-    #
-    #     print(precision, recall)
-    #
-    #     if precision > 0.9 and recall > 0.9:
-    #
-    #         # i.e. the SNR above which precision and recall for source detection is 0.9
-    #         return minimum_snr
-    #
-    # raise RuntimeError("No S90 Metric could be calculated - there was never a minimum SNR above which precision and "
-    #                    "recall were both 0.9.")
 
 # REFERENCES
 

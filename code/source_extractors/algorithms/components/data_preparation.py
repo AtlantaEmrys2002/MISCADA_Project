@@ -11,7 +11,7 @@ import warnings
 from xml.dom import minidom
 
 
-def balance_dataset(data):
+def balance_dataset(data, ml=False):
 
     num_sources = len(data)
 
@@ -30,7 +30,13 @@ def balance_dataset(data):
     num_sources_to_sample_of_each_type = np.max([agns.shape[0], psrs.shape[0], fakes.shape[0]])
 
     # Do not want too much oversampling
-    num_sources_to_sample_of_each_type = min(20000, num_sources_to_sample_of_each_type)
+
+    if ml:
+        max_val = 1500
+    else:
+        max_val = 20000
+
+    num_sources_to_sample_of_each_type = min(max_val, num_sources_to_sample_of_each_type)
 
     print(f"No. AGN: {agns.shape[0]} No. PSR: {psrs.shape[0]} No. FAKE: {fakes.shape[0]}")
     print("No. Each Source in Dataset: {}".format(num_sources_to_sample_of_each_type))
@@ -121,7 +127,7 @@ def image_cartesian_coordinates_to_galactic_coordinates(coordinates, patch_centr
         raise TypeError("Coordinate system not supported.")
 
 
-def prepare_classifier_data(patches, predicted_locations, patch_ids, test=False, real_data=False):
+def prepare_classifier_data(patches, predicted_locations, patch_ids, test=False, real_data=False, ml=False):
 
     # REMOVE PATCHES WITH NO PREDICTED SOURCES
 
@@ -145,7 +151,7 @@ def prepare_classifier_data(patches, predicted_locations, patch_ids, test=False,
     if len(data) == 0:
         raise RuntimeError("Not enough sources were localised - no data is available for the classifier to train on.")
 
-    return data if test else balance_dataset(data)
+    return data if test else balance_dataset(data, ml=True)
 
 
 def source_boxes(patches, predicted_source_locations, patch_ids):

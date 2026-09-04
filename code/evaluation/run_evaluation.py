@@ -14,6 +14,7 @@ from pathlib import Path
 import pickle
 from read_write_functions import get_patch_centres, localisation_metadata, vector_labels_to_str
 from utils import get_classified_patches
+import warnings
 
 
 def evaluate_classifiers(actual_class, predicted_class, method_name, directory):
@@ -68,10 +69,10 @@ def evaluate_localisation(actual_source_centers, predicted_source_centers, ids, 
                                                                       patch_ids=ids, patch_to_catalog_ids=catalog_ids)
 
     num_catalogs = len(actual_loc)
-
-    s90_value = s90(predicted_source_locations=predicted_loc, test_patch_ids = ids, patch_in_catalog=catalog_ids)
-
-    print(s90_value)
+    #
+    # s90_value = s90(predicted_source_locations=predicted_loc, test_patch_ids = ids, patch_in_catalog=catalog_ids)
+    #
+    # print(s90_value)
 
     actual_loc = [np.unique(
         np.array([actual_loc[b][i][j] for i in range(len(actual_loc[b])) for j in range(actual_loc[b][i].shape[0])]), axis=0) for b in range(num_catalogs)]
@@ -79,7 +80,14 @@ def evaluate_localisation(actual_source_centers, predicted_source_centers, ids, 
     predicted_loc = [np.unique(
         np.array([predicted_loc[b][i][j] for i in range(len(predicted_loc[b])) for j in range(predicted_loc[b][i].shape[0])]), axis=0) for b in range(num_catalogs)]
 
-    chamfer_distance_val = sum([chamfer_separation(actual_loc[b], predicted_loc[b]) for b in range(num_catalogs)])
+    if np.any(np.array([len(k) for k in actual_loc]) == 0):
+
+        warnings.warn("Catalogs {} do not have any predicted locations".format(
+            str([str(k) + " " for k in range(num_catalogs) if k != num_catalogs - 1 and len(actual_loc[k]) == 0])))
+
+    chamfer_seps = [chamfer_separation(actual_loc[b], predicted_loc[b]) for b in range(num_catalogs)]
+
+    chamfer_distance_val = sum([chamfer_seps[b] for b in range(num_catalogs) if np.isfinite(chamfer_seps[b])])
 
     percentage_of_sources_detected = num_sources_correctly_detected(actual_loc, predicted_loc)
 
@@ -87,7 +95,7 @@ def evaluate_localisation(actual_source_centers, predicted_source_centers, ids, 
 
     print("END")
 
-    return chamfer_distance_val, percentage_of_sources_detected, s90_value
+    return chamfer_distance_val, percentage_of_sources_detected # , s90_value
 
 
 def evaluate_detection(actual_segmentations, predicted_segmentations):
@@ -114,7 +122,7 @@ def evaluate_detection(actual_segmentations, predicted_segmentations):
 def evaluate_on_real_data(file_4fgl, model):
 
     patch_centres, _ = get_patch_centres(patches_metadata_file="./../source_extractors/real_data/real_patches/patches/"
-                                                            "patch_metadata.csv")
+                                                            "patch_metadata.csv", real=True)
 
     # RESULTS
 
@@ -194,7 +202,7 @@ if __name__ == "__main__":
 
     localisation_algorithms = ["dbscan"]
 
-    classification_algorithms = ["cnn"] # , "random_forest"] # , "cnn"]
+    classification_algorithms = ["random_forest"] # ["cnn"] # , "random_forest"] # , "cnn"]
 
     models = ["{}_{}_{}".format(i, j, k) for i in segmentation_algorithms for j in localisation_algorithms
               for k in classification_algorithms]
@@ -275,7 +283,11 @@ if __name__ == "__main__":
             actual_source_locations.append(actual_source_locations_for_patch)
 
         # Evaluate localisation
-        chamfer_distance, av_frac_sources_detected, full_s90 = (
+        # chamfer_distance, av_frac_sources_detected, full_s90 = (
+        #     evaluate_localisation(actual_source_centers=copy.deepcopy(actual_source_locations), predicted_source_centers=
+        #     copy.deepcopy(predicted_locations_celestial), ids=copy.deepcopy(patch_ids), catalog_ids=copy.deepcopy(catalog_of_each_patch)))
+
+        chamfer_distance, av_frac_sources_detected = (
             evaluate_localisation(actual_source_centers=copy.deepcopy(actual_source_locations), predicted_source_centers=
             copy.deepcopy(predicted_locations_celestial), ids=copy.deepcopy(patch_ids), catalog_ids=copy.deepcopy(catalog_of_each_patch)))
 
@@ -319,7 +331,9 @@ if __name__ == "__main__":
 # Array of Arrays - https://stackoverflow.com/questions/12020872/array-of-arrays-python-numpy
 # Cartesian Products - https://stackoverflow.com/questions/11144513/cartesian-product-of-x-and-y-array-points-into-
 # single-array-of-2d-points
+# Is Finite - https://stackoverflow.com/questions/2831516/isnotnan-functionality-in-numpy-can-this-be-more-pythonic
 # Number of Occurrences - https://stackoverflow.com/questions/28663856/how-do-i-count-the-occurrence-of-a-certain-item-
 # in-an-ndarray
+# Max Value in Dictionary - https://www.reddit.com/r/learnpython/comments/o4qksz/find_a_maximum_value_in_dictionary/
 # One-Hot Encoding - https://stackoverflow.com/questions/20295046/numpy-change-max-in-each-row-to-1-all-other-numbers-to
 # -0

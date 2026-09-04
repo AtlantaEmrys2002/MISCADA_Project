@@ -44,9 +44,11 @@ def plot_correlation_matrices(sources, source_type: str, directory: str) -> None
     """
     # CREATE PLOT
 
-    plt.rcParams["figure.figsize"] = (27, 11)
+    # plt.rcParams["figure.figsize"] = (27, 11)
 
-    fig, axs = plt.subplots(1, 2)
+    plt.rcParams["figure.figsize"] = (6, 11)
+
+    fig, axs = plt.subplots(2, 1)
 
     # Calculate both Pearson and Kendall Rank correlation coefficients
     corr_pearson = sources.corr()
@@ -55,17 +57,31 @@ def plot_correlation_matrices(sources, source_type: str, directory: str) -> None
     # Used for labelling matrix
     matrix_labels = [mathematical_notation[k] for k in corr_pearson.columns.values]
 
+    sns.set(font_scale=1.2)
+
     # Plot matrices - took the absolute value of coefficients to highlight suggestions of strong correlation, but
     # continued to label with + and - indicating positive or negative correlation
-    sns.heatmap(np.abs(corr_pearson), xticklabels=matrix_labels, yticklabels=matrix_labels, annot=corr_pearson,
+    a = sns.heatmap(np.abs(corr_pearson), xticklabels=matrix_labels, yticklabels=matrix_labels, annot=corr_pearson,
                 cmap='Greens', ax=axs[0])
-    sns.heatmap(np.abs(corr_kendall), xticklabels=matrix_labels, yticklabels=matrix_labels, annot=corr_kendall,
+    b = sns.heatmap(np.abs(corr_kendall), xticklabels=matrix_labels, yticklabels=matrix_labels, annot=corr_kendall,
                 cmap='Blues', ax=axs[1])
+
+    a.set_xticklabels(a.get_xticklabels(), fontsize=16)
+    b.set_xticklabels(b.get_xticklabels(), fontsize=16)
+    a.set_yticklabels(a.get_yticklabels(), fontsize=16)
+    b.set_yticklabels(b.get_yticklabels(), fontsize=16)
+
+    cbar1 = a.collections[0].colorbar
+    cbar2 = b.collections[0].colorbar
+    cbar1.ax.tick_params(labelsize=12)
+    cbar2.ax.tick_params(labelsize=12)
 
     # FORMATTING
 
-    axs[0].set_title('Pearson Correlation Coefficient Matrix for {} Parameters'.format(source_type), fontsize=20)
-    axs[1].set_title('Kendall Rank Correlation Coefficient Matrix for {} Parameters'.format(source_type), fontsize=20)
+    axs[0].set_title('Pearson Correlation Coefficient Matrix \n for {} Parameters'.format(source_type), fontsize=18)
+    axs[1].set_title('Kendall Rank Correlation Coefficient Matrix \n for {} Parameters'.format(source_type), fontsize=18)
+
+    plt.tight_layout()
 
     plt.savefig(directory + "/{}_parameter_correlation_matrix.png".format(source_type.lower()))
 
@@ -443,10 +459,13 @@ def plot_parameter_relationships(sources, source_type: str, directory: str) -> N
 # Fitting Log-normals - https://stackoverflow.com/questions/18534562/scipy-lognormal-fitting
 # Fitting Noisy Data - https://stackoverflow.com/questions/49201515/fit-numpy-polynomials-to-noisy-data
 # Fitting Recommendations - https://dataviz.shef.ac.uk/docs/18/03/2021/LearningPath-Statistical-Modeling-1
+# Font Size - https://stackoverflow.com/questions/34706845/change-xticklabels-fontsize-of-seaborn-heatmap
 # Gaussian Fitting Sharp Peak - https://stackoverflow.com/questions/74146895/gaussian-fitting-of-a-sharply-peaked-curve
 # Gaussian Mixture - https://scikit-learn.org/stable/modules/generated/sklearn.mixture.GaussianMixture.html
 # Kendall Correlation - https://numiqo.com/tutorial/kendalls-tau
 # Kendall Rank Correlation - https://en.wikipedia.org/wiki/Kendall_rank_correlation_coefficient
+# Label Size - https://stackoverflow.com/questions/75851074/how-to-increase-the-font-size-of-the-x-and-y-axis-for-a-heat
+# -map
 # Logistic Distribution - https://stackoverflow.com/questions/78113609/how-to-fit-a-logistic-distribution-use-a-fixed-
 # location-parameter
 # Logistic Distribution Fitting - https://stackoverflow.com/questions/78113609/how-to-fit-a-logistic-distribution-use-a-
@@ -468,6 +487,7 @@ def plot_parameter_relationships(sources, source_type: str, directory: str) -> N
 # Polynomial Fit Coefficients - https://stackoverflow.com/questions/67371614/numpy-polynomial-polynomial-fit-gives-
 # different-coefficients-than-polynomial-p
 # PDFs - https://www.lesswrong.com/posts/jmq3mon8TSC99ittm/common-probability-distributions
+# Scale Font - https://stackoverflow.com/questions/37233108/seaborn-change-font-size-of-the-colorbar
 # Scipy Documentation - https://docs.scipy.org/doc/scipy/index.html
 # Seaborn Heatmaps - https://stackoverflow.com/questions/50947776/plot-two-seaborn-heatmap-graphs-side-by-side
 # Shot Noise - https://en.wikipedia.org/wiki/Shot_noise

@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
     localisation_algorithms = ["dbscan"] #, "kmeans", "blob_detection", "spectral"]
 
-    classification_algorithms = ["cnn"] # , "random_forest"]
+    classification_algorithms = ["random_forest"] # ["cnn"] # , "random_forest"]
 
     algorithm_count = 1
 
@@ -206,23 +206,23 @@ if __name__ == "__main__":
 
             localisation_time = time.time() - start_localisation_time
 
-            # Prepare detected sources for classification (effectively, data prep)
-            train_batches_class = (
-                prepare_classifier_data(patches=copy.deepcopy(training_maps),
-                                        predicted_locations=train_source_locations,
-                                        patch_ids=copy.deepcopy(train_patch_ids)))
-
-            validation_batches_class = (
-                prepare_classifier_data(patches=copy.deepcopy(validation_maps),
-                                        predicted_locations=validation_source_locations,
-                                        patch_ids=copy.deepcopy(validation_patch_ids)))
-
-            test_batches_class = prepare_classifier_data(patches=copy.deepcopy(testing_maps),
-                                                         predicted_locations=test_source_locations,
-                                                         patch_ids=copy.deepcopy(test_patch_ids), test=True)
-
-            real_batches_class = prepare_classifier_data(patches=real_maps, predicted_locations=real_source_locations,
-                                                         patch_ids=real_patch_ids, test=True, real_data=True)
+            # # Prepare detected sources for classification (effectively, data prep)
+            # train_batches_class = (
+            #     prepare_classifier_data(patches=copy.deepcopy(training_maps),
+            #                             predicted_locations=train_source_locations,
+            #                             patch_ids=copy.deepcopy(train_patch_ids)))
+            #
+            # validation_batches_class = (
+            #     prepare_classifier_data(patches=copy.deepcopy(validation_maps),
+            #                             predicted_locations=validation_source_locations,
+            #                             patch_ids=copy.deepcopy(validation_patch_ids)))
+            #
+            # test_batches_class = prepare_classifier_data(patches=copy.deepcopy(testing_maps),
+            #                                              predicted_locations=test_source_locations,
+            #                                              patch_ids=copy.deepcopy(test_patch_ids), test=True)
+            #
+            # real_batches_class = prepare_classifier_data(patches=real_maps, predicted_locations=real_source_locations,
+            #                                              patch_ids=real_patch_ids, test=True, real_data=True)
 
             for classifier in classification_algorithms:
 
@@ -231,6 +231,26 @@ if __name__ == "__main__":
                 match classifier:
 
                     case "cnn":
+
+                        # Prepare detected sources for classification (effectively, data prep)
+                        train_batches_class = (
+                            prepare_classifier_data(patches=copy.deepcopy(training_maps),
+                                                    predicted_locations=train_source_locations,
+                                                    patch_ids=copy.deepcopy(train_patch_ids)))
+
+                        validation_batches_class = (
+                            prepare_classifier_data(patches=copy.deepcopy(validation_maps),
+                                                    predicted_locations=validation_source_locations,
+                                                    patch_ids=copy.deepcopy(validation_patch_ids)))
+
+                        test_batches_class = prepare_classifier_data(patches=copy.deepcopy(testing_maps),
+                                                                     predicted_locations=test_source_locations,
+                                                                     patch_ids=copy.deepcopy(test_patch_ids), test=True)
+
+                        real_batches_class = prepare_classifier_data(patches=real_maps,
+                                                                     predicted_locations=real_source_locations,
+                                                                     patch_ids=real_patch_ids, test=True,
+                                                                     real_data=True)
 
                         save_file_classifier = ("./algorithms/pre_trained_models/cnn_classifier_for_{}_and_{}.pt".
                                                 format(segment, local))
@@ -252,13 +272,28 @@ if __name__ == "__main__":
                         # N.B. Here, we prepare classifier data as if it were all classifier data (to prevent in being
                         # sorted into batch loaders - that is a process only for data that will be fed to DL algorithms)
 
+                        # Prepare detected sources for classification (effectively, data prep)
+                        train_batches_class = (
+                            prepare_classifier_data(patches=copy.deepcopy(training_maps),
+                                                    predicted_locations=train_source_locations,
+                                                    patch_ids=copy.deepcopy(train_patch_ids), ml=True))
+
+                        test_batches_class = prepare_classifier_data(patches=copy.deepcopy(testing_maps),
+                                                                     predicted_locations=test_source_locations,
+                                                                     patch_ids=copy.deepcopy(test_patch_ids), test=True)
+
+                        real_batches_class = prepare_classifier_data(patches=real_maps,
+                                                                     predicted_locations=real_source_locations,
+                                                                     patch_ids=real_patch_ids, test=True,
+                                                                     real_data=True)
+
                         save_file_classifier = ("./algorithms/pre_trained_models/rf_classifier_for_{}_and_{}.pt".
                                                 format(segment, local))
 
                         actual_labels, classifier_predictions = (
                             random_forest_classifier(train_data=copy.deepcopy(train_batches_class),
                                                      test_data=copy.deepcopy(test_batches_class),
-                                                     save_file=save_file_classifier))
+                                                     save_file=save_file_classifier, tune=True))
 
                         real_actual_labels, real_classifier_predictions = (
                             random_forest_classifier(train_data=np.array([]),

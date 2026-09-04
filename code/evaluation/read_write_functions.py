@@ -84,15 +84,24 @@ def coordinates_of_sources_per_catalog(simulated_data_directory="./../data_simul
     return agn_coordinates_per_catalog, pulsar_coordinates_per_catalog
 
 
-def get_patch_centres(patches_metadata_file="./../data_simulation/simulated_data/patches/patch_metadata.csv"):
+def get_patch_centres(patches_metadata_file="./../data_simulation/simulated_data/patches/patch_metadata.csv", real=False):
 
     source_information = pd.read_csv(patches_metadata_file)
 
     # Get centre of each patch
     patch_centres = (
-        np.stack((source_information["centre_lon"].to_numpy(), source_information["centre_lat"].to_numpy()), axis=1))
+        np.stack((source_information["centre_lon"].to_numpy(), source_information["centre_lat"].to_numpy()),
+                 axis=1))
 
-    catalog_of_each_patch = dict(zip(list(range(patch_centres.shape[0])), source_information["catalog_id"].to_numpy()))
+    if real:
+
+        catalog_of_each_patch = dict(zip(list(range(patch_centres.shape[0])),
+                                         np.zeros_like(source_information["centre_lat"].to_numpy())))
+
+    else:
+
+        catalog_of_each_patch = dict(zip(list(range(patch_centres.shape[0])),
+                                         source_information["catalog_id"].to_numpy()))
 
     return patch_centres, catalog_of_each_patch
 

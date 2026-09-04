@@ -1,19 +1,173 @@
 '''
 This function is for running a separate analysis of 4FGL parameters without generating catalogs.
 '''
-# import pandas as pd
-#
-# from analysis.goodness_of_fit import chi_squared_test, kolmogorov_smirnov_test
-# from analysis.visualisation import *
-# import copy
+
+from analysis.visualisation import *
+import copy
 # import numpy as np
-# from pathlib import Path
-# from read_write_functions import catalog_data_preparation
+from pathlib import Path
+from read_write_functions import catalog_data_preparation
+import argparse
 
 
-import healpy as hp
+# import healpy as hp
 
-print(hp.nside2pixarea(256, degrees=True))
+def analysis(agn_rows, pulsar_rows, signif=0.01, directory: str = "./plots/analysis"):
+    """Conducts a full analysis of all spectral (and one spatial) parameters for chosen gamma-ray sources. Included in
+    this analysis is the fitting of a PDF to the parameters of all sources of a given type within the 4FGL, as well as
+    a correlation analysis of these parameters.
+
+    Parameters
+    ----------
+    agn_rows : ndarray
+        2D m x 7 array of spectral and spatial parameters of m AGN sources.
+    pulsar_rows : ndarray
+        2D n x 7 array of spectral and spatial parameters of n AGN sources.
+    directory : str
+        Directory in which to store plots produced during analysis.
+
+    """
+    # Create directory to store results
+    Path(directory + "/parameter_distributions").mkdir(parents=True, exist_ok=True)
+    Path(directory + "/parameter_correlations").mkdir(parents=True, exist_ok=True)
+
+    # PREPARE DATA
+
+    # Convert to pandas dataframes for covariance and correlation calculations, as well as plotting
+    agns = agn_rows.to_pandas()
+    pulsars = pulsar_rows.to_pandas()
+
+    # Remove sources with NaN values
+    pulsars.dropna(inplace=True)
+    agns.dropna(inplace=True)
+
+    # PARAMETER DISTRIBUTIONS
+
+    print("PARAMETER DISTRIBUTION ANALYSIS")
+    print('-' * 60)
+
+    prob_dist = ['normal', 'lognorm', 'cauchy', 'gumbel']
+
+    # AGNs
+
+    print("AGNs")
+
+    # Plot AGN parameter distributions
+    plot_parameter_distributions(agns, source_type='AGN', directory=directory + "/parameter_distributions")
+
+    # Pulsars
+
+    # Plot pulsar parameter distributions
+    plot_parameter_distributions(pulsars, source_type='Pulsars', directory=directory + "/parameter_distributions")
+
+    # Save Results
+
+    # CORRELATION ANALYSIS
+
+    print("PARAMETER CORRELATION ANALYSIS")
+    print('-' * 60)
+
+    # AGNs
+
+    print("AGNS")
+
+    print('-' * 60)
+
+    # Plot parameters against one another to visualise relationships
+    plot_parameter_relationships(agns, source_type="AGN", directory=directory + "/parameter_correlations")
+
+    # Plot AGN parameter correlation matrices
+    plot_correlation_matrices(agns, source_type="AGN", directory=directory + "/parameter_correlations")
+
+    # Fit relationships to identified correlated variables - pivot energy and spectral slope (alpha)
+    plot_fitting_correlated_variable_dependency(agns["Pivot_Energy"], agns["LP_Index"], source_type="AGN",
+                                                directory=directory + "/parameter_correlations")
+
+    print('-' * 60)
+
+    # Fit relationships to identified correlated variables - pivot energy and flux_density
+    plot_fitting_correlated_variable_dependency(agns["Pivot_Energy"], agns["LP_Flux_Density"], logarithmic_fit=False,
+                                                source_type="AGN", directory=directory + "/parameter_correlations")
+
+    print('-' * 60)
+
+    # Pulsars
+
+    print("Pulsars")
+
+    print('-' * 60)
+
+    # Plot parameters against one another to visualise relationships
+    plot_parameter_relationships(pulsars, source_type="Pulsar", directory=directory + "/parameter_correlations")
+
+    # Plot pulsar parameter correlation matrices
+    plot_correlation_matrices(pulsars, source_type="Pulsar", directory=directory + "/parameter_correlations")
+
+    # Fit relationships to identified correlated variables - pivot energy and flux_density
+    plot_fitting_correlated_variable_dependency(pulsars["Pivot_Energy"], pulsars["PLEC_Flux_Density"],
+                                                source_type="Pulsar", directory=directory + "/parameter_correlations")
+
+
+if __name__ == "__main__":
+
+    # INPUT PARAMETER PARSING
+
+    parser = argparse.ArgumentParser(description="Generates a series of catalogs of simulated gamma-ray sources (AGNs"
+                                                 "and pulsars) with spectral and spatial parameter distributions "
+                                                 "identical to that of a specified catalog (e.g. 4FGL) and stores them "
+                                                 "in a fermitools-compatible XML format.")
+
+    parser.add_argument("--catalog", required=True, type=str, help="File path to catalog in fits format of"
+                                                                   " gamma-ray sources with parameter distributions the"
+                                                                   " simulated sources should follow.",
+                        default="/Volumes/T7/data/catalog/4FGL_DR4.fit")
+
+    parser.add_argument("--number", required=True, type=int, help="The number of catalogs of simulated "
+                                                                  "gamma-ray sources to generate.")
+
+    parser.add_argument("--analyse", required=True, choices=["yes", "no"], help="Indicate whether a "
+                                                                                "statistical analysis of the input "
+                                                                                "catalog's parameters should be "
+                                                                                "conducted.", default="no")
+
+    parser.add_argument("--verify", required=True, choices=["yes", "no", "first"], help="Indicate whether"
+                                                                                        "the distributions and "
+                                                                                        "correlations of the simulated"
+                                                                                        "catalogs' parameters should be"
+                                                                                        "verified. 'yes' will conduct a"
+                                                                                        "verification for each catalog,"
+                                                                                        " 'no' will conduct no "
+                                                                                        "verification and 'first' will "
+                                                                                        "verify the first catalog "
+                                                                                        "simulated.", default="no")
+
+    args = parser.parse_args()
+
+    file = args.catalog
+    num_catalogs = args.number
+    conduct_analysis = args.analyse
+    conduct_verification = args.verify
+
+    print("starting catalog simulation...")
+    print("READ DATA: ", end='')
+
+    # Read in catalog data
+    agn_4fgl, pulsar_4fgl, source_detection_threshold, agn_noise_params, psr_noise_params = (
+        catalog_data_preparation(file))
+
+    # Run analysis if instructed
+    if conduct_analysis == "yes":
+        print("ANALYSIS: ", end='')
+
+        # Analyse parameters, their distributions, and their correlations
+        analysis(agn_4fgl.copy(), pulsar_4fgl.copy())
+
+        print("DONE")
+
+
+
+
+# print(hp.nside2pixarea(256, degrees=True))
 
 # DELETE THIS AT THE END - JUST USED FOR GETTING NUMBERS FROM 4FGL CATALOG
 

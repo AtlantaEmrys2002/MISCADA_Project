@@ -487,27 +487,7 @@ def xml_parser(energy_bins, xml_file: str, give_ids=False, energy_flux_limited: 
     # Parse XML
     for source in sources:
 
-        # source_ids.append(source.getAttribute("name"))
-
         source_type = source.getAttribute("name")[:3]
-
-        # # PARSE SPATIAL PARAMETERS
-        #
-        # spatial_model = source.getElementsByTagName("spatialModel")[0]
-        #
-        # spatial_parameters = spatial_model.getElementsByTagName("parameter")
-        #
-        # coordinate = [0, 0]
-        #
-        # for param in spatial_parameters:
-        #     name = param.getAttribute("name")
-        #
-        #     if name == "RA":
-        #         coordinate[0] = float(param.getAttribute("value"))
-        #     else:
-        #         coordinate[1] = float(param.getAttribute("value"))
-        #
-        # coordinates.append(coordinate)
 
         # PARSE SPECTRAL FEATURES AND CALCULATE FLUX
 
