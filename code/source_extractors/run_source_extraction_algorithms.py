@@ -54,8 +54,6 @@ if __name__ == "__main__":
 
     print("Reading in and formatting patches...")
 
-    # CHANGE BACK FOR FINAL RUN
-
     (train_patch_ids, training_maps, training_masks,
     validation_patch_ids, validation_maps, validation_masks, test_patch_ids, testing_maps, testing_masks) = (
         read_patches(num_patches=76800, directory=patches_directory))
@@ -77,9 +75,9 @@ if __name__ == "__main__":
 
     segmentation_algorithms = ["pspnet", "random_forest", "unet"]
 
-    # WE HAVE DONE DBSCAN - DO NOT DO AGAIN
+    # WE HAVE DONE DBSCAN AND K-MEANS - DO NOT DO AGAIN
 
-    localisation_algorithms = ["kmeans"]   # ["blob_detection", "dbscan", "kmeans", "spectral"]
+    localisation_algorithms = ["blob_detection"]   # ["blob_detection", "dbscan", "kmeans", "spectral"]
 
     classification_algorithms = ["cnn", "random_forest"]
 

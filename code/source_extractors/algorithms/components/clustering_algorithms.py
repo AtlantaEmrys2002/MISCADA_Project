@@ -44,7 +44,11 @@ def blob_detection(binary_segments):
 
     source_centres_in_each_image = []
 
+    current_segment = 0
+
     for segment in binary_segments:
+
+        print(current_segment)
 
         # PREPARE DATA
 
@@ -69,6 +73,8 @@ def blob_detection(binary_segments):
                 grade[i, j] = np.sum(D[pixels_to_sum[0], pixels_to_sum[1]], dtype=np.uint8)
 
         source_centres_in_each_image.append(detector.detect(grade))
+
+        current_segment += 1
 
     # N.B. we index 1 then 0, as coordinates are returned from p.pt in (y, x) format (rather than x, y)
     centres = [np.round((np.array([[p.pt[1], p.pt[0]] for p in source_centres_in_each_image[k]]))).astype(
@@ -183,11 +189,7 @@ def k_means_clustering(binary_segments, max_num_centroids=50, threshold=0.2):
 
     source_centres_in_each_image = []
 
-    current_segment = 0
-
     for segment in binary_segments:
-
-        print(current_segment)
 
         if isinstance(segment[0], np.ndarray):
 
@@ -255,8 +257,6 @@ def k_means_clustering(binary_segments, max_num_centroids=50, threshold=0.2):
                 best_centres = cluster_centres
 
         source_centres_in_each_image.append(np.array(best_centres))
-
-        current_segment += 1
 
     return source_centres_in_each_image
 
