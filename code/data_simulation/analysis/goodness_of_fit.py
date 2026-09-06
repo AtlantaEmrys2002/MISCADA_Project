@@ -314,6 +314,7 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05, verbose=False
 # Chi-Squared with Zero Expected Counts - https://stats.stackexchange.com/questions/78101/chi-squared-test-with-0-
 # expected-values
 # Distributions - https://civil.colorado.edu/~balajir/CVEN5454/lectures/Ang-n-Tang-Chap7-Goodness-of-fit-PDFs-test.pdf
+# Distributions - https://medium.com/@saurabhzodex/statistics-part-4-gaussian-and-non-gaussian-distribution-f03fcc1f1bc0
 # Fitting Distributions - https://cseweb.ucsd.edu/~dasgupta/291w22/distributions-handout.pdf
 # Goodness of Fit - https://www.lboro.ac.uk/media/media/schoolanddepartments/mlsc/downloads/HELM%20Workbook%2042%20
 # Goodness%20of%20Fit%20and%20Contingency%20Tables.pdf
@@ -321,9 +322,10 @@ def kolmogorov_smirnov_test(values, distribution: str, alpha=0.05, verbose=False
 # variables
 # Hypothesis Testing - https://stats.stackexchange.com/questions/421156/how-do-you-decide-what-an-acceptable-p-value-is-
 # for-a-k-s-test
+# K-S Limitations - https://medium.com/@pabaldonedo/kolmogorov-smirnov-test-may-not-be-doing-what-you-think-when-paramet
+# ers-are-estimated-from-the-data-2d5c3303a020
 # Kolmogorov-Smirnov Statistic - https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test
 # K-S Table - https://real-statistics.com/statistics-tables/kolmogorov-smirnov-table/
-# K-S Test Critical Value - https://en.wikipedia.org/wiki/Kolmogorov–Smirnov_test
 # K-S Test Tutorial - https://www.geeksforgeeks.org/machine-learning/kolmogorov-smirnov-test-ks-test/
 # K-S Test Unexpected Values - https://stackoverflow.com/questions/51902996/scipy-kstest-used-on-scipy-lognormal-
 # distribution

@@ -5,7 +5,10 @@
 **.npy
 *DS_Store*
 *.par
+<<<<<<< Updated upstream
 **.data
 **.pt
 code/data_simulation/simulated_data/.DS_Store
+=======
+>>>>>>> Stashed changes
 Previous_Work

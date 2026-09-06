@@ -44,11 +44,7 @@ def blob_detection(binary_segments):
 
     source_centres_in_each_image = []
 
-    current_segment = 0
-
     for segment in binary_segments:
-
-        print(current_segment)
 
         # PREPARE DATA
 
@@ -73,8 +69,6 @@ def blob_detection(binary_segments):
                 grade[i, j] = np.sum(D[pixels_to_sum[0], pixels_to_sum[1]], dtype=np.uint8)
 
         source_centres_in_each_image.append(detector.detect(grade))
-
-        current_segment += 1
 
     # N.B. we index 1 then 0, as coordinates are returned from p.pt in (y, x) format (rather than x, y)
     centres = [np.round((np.array([[p.pt[1], p.pt[0]] for p in source_centres_in_each_image[k]]))).astype(
@@ -154,12 +148,6 @@ def dbscan_clustering(binary_segments, threshold=0.2, tune=False, masks=None):
     for segment in binary_segments:
 
         D = segment[0] if isinstance(segment[0], np.ndarray) else segment[0].detach().numpy()
-
-        # import matplotlib.pyplot as plt
-        #
-        # plt.imshow(D)
-        #
-        # plt.show()
 
         # As we have used SoftMax, our image isn't exactly binary - this will make it so
         source_pixels = np.argwhere(D > threshold)
@@ -302,7 +290,7 @@ def spectral_clustering(binary_segments, max_num_centroids=20, threshold=0.2):
                 # outperform the K-means algorithm). Chose 0.5 as recommended by link below (see Gamma Choice)
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    spectral_classifications = SpectralClustering(n_clusters=k, random_state=0, n_jobs=4, gamma=1,
+                    spectral_classifications = SpectralClustering(n_clusters=k, random_state=0, n_jobs=-1, gamma=1,
                                                                   assign_labels="kmeans").fit_predict(V_D)
 
                 # Get centre of each cluster
@@ -348,6 +336,8 @@ def spectral_clustering(binary_segments, max_num_centroids=20, threshold=0.2):
                 continue
 
         source_centres_in_each_image.append(np.array(best_centres))
+
+        print(current_index)
 
     print("DONE")
 
