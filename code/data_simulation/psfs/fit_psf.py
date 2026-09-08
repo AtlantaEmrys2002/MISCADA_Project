@@ -106,14 +106,6 @@ def fit_point_source_psf(file_name: str) -> npt.NDArray[np.float64]:
 
             probs = normalise_psf(thetas, psf_values)
 
-            # # DIVIDE BY BIN WIDTHS
-            # for k in range(len(probs) - 1):
-            #     if energy_value != 0:
-            #         probs[k] /= ((thetas[k] - thetas[k + 1]) / np.sqrt(((3.5 * ((energy_value / 100) ** (-0.8))) ** 2) + (0.15 ** 2)))
-            #     else:
-            #
-            #         probs[k] /= ((thetas[k] - thetas[k + 1]) / np.sqrt((3.5 ** 2) + (0.15 ** 2)))
-
             # Fit King function (Moffat distribution to values to create a probability density function)
             popt, _ = curve_fit(dual_function, xdata=thetas, ydata=probs, maxfev=10000)
 
