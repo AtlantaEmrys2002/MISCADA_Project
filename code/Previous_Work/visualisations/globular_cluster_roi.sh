@@ -22,8 +22,4 @@ gtselect evclass=128 evtype=3 infile=$EVENTS outfile=$OUTFILE ra=6.0082 dec=-72.
 # Select correct good time intervals and correct exposure
 gtmktime scfile=$SPACECRAFTFILE filter="(DATA_QUAL>0)&&(LAT_CONFIG==1)" roicut=no evfile=$OUTFILE outfile=$OUTFILEGTI
 
-
-
-
-
 conda deactivate

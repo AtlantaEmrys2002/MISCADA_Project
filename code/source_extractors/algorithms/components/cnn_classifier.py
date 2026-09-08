@@ -194,6 +194,8 @@ def classification_neural_network(train_data, validation_data, test_data, pretra
 
 # REFERENCES
 
+# Batch Norm - https://medium.com/@piyushkashyap045/image-normalization-in-pytorch-from-tensor-conversion-to-scaling-
+# 3951b6337bc8
 # Categorical Cross Entropy - https://discuss.pytorch.org/t/categorical-cross-entropy-loss-function-equivalent-in-
 # pytorch/85165/3
 # Categorical Cross Entropy Loss - https://arjun-sarkar786.medium.com/implementation-of-all-loss-functions-deep-learning
@@ -208,6 +210,9 @@ def classification_neural_network(train_data, validation_data, test_data, pretra
 # Fixing Nan Predictions - https://discuss.pytorch.org/t/outputing-nan-as-predictions-in-my-neural-network-training-loop
 # /183151/2
 # Flatten with Linear - https://discuss.pytorch.org/t/should-i-flatten-before-the-linear-layer/43570
+# Kernels - https://medium.com/@abhishekjainindore24/all-about-convolutions-kernels-features-in-cnn-c656616390a1
+# Learning Curves for Debugging - https://machinelearningmastery.com/learning-curves-for-diagnosing-machine-learning-
+# model-performance/
 # ML Image Classification - https://blog.hyperiondev.com/post/machine-learning/
 # Nan Prediction Error - https://discuss.pytorch.org/t/outputing-nan-as-predictions-in-my-neural-network-training-loop/
 # 183151/2

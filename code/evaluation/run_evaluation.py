@@ -4,12 +4,14 @@ from metrics.utils import im_cartesian_to_physical
 from metrics.classification_metrics import classification_confusion_matrix, classification_precision_recall
 from metrics.detection_metrics import s90
 from metrics.localisation_metrics import chamfer_separation, num_sources_correctly_detected
+from metrics.model_metrics import plot_losses
 from metrics.real_data_application_metrics import (percentage_of_4fgl_sources_detected, plot_predictions_actual,
                                                    percentage_of_4fgl_source_correctly_classified,
                                                    save_candidate_sources)
 from metrics.segmentation_metrics import (binary_balanced_accuracy, dice_coefficient, segmentation_precision,
                                           segmentation_recall)
 import numpy as np
+import pandas as pd
 from pathlib import Path
 import pickle
 from read_write_functions import get_patch_centres, localisation_metadata, vector_labels_to_str
@@ -91,9 +93,9 @@ def evaluate_localisation(actual_source_centers, predicted_source_centers, ids, 
 
     percentage_of_sources_detected = num_sources_correctly_detected(actual_loc, predicted_loc)
 
-    print(chamfer_distance_val, percentage_of_sources_detected)
-
-    print("END")
+    # print(chamfer_distance_val, percentage_of_sources_detected)
+    #
+    # print("END")
 
     return chamfer_distance_val, percentage_of_sources_detected # , s90_value
 
@@ -189,6 +191,12 @@ def evaluate_on_real_data(file_4fgl, model):
     return frac_of_4fgl_sources_detected, frac_correct_classed_sources
 
 
+def model_loss_curves(model: str, directory: str = "./../results/analysis_results/{}_loss_per_epoch.npy"):
+
+    loss = np.load(directory.format(model))
+
+    plot_losses(model, loss)
+
 
 if __name__ == "__main__":
 
@@ -197,12 +205,10 @@ if __name__ == "__main__":
     segmentation_algorithms = ["unet", "pspnet", "random_forest"]
 
     # localisation_algorithms = ["dbscan", "blob_detection", "kmeans", "spectral"]
-    #
-    # classification_algorithms = ["random_forest", "cnn", "svm"]
 
-    localisation_algorithms = ["dbscan"]
+    localisation_algorithms = ["dbscan", "blob_detection", "kmeans"]
 
-    classification_algorithms = ["random_forest"] # ["cnn"] # , "random_forest"] # , "cnn"]
+    classification_algorithms = ["random_forest", "cnn"]
 
     models = ["{}_{}_{}".format(i, j, k) for i in segmentation_algorithms for j in localisation_algorithms
               for k in classification_algorithms]
@@ -236,6 +242,8 @@ if __name__ == "__main__":
     # CALCULATE METRICS FOR EACH SOURCE EXTRACTION ALGORITHM
 
     for m in models:
+
+        print(m)
 
         # IDs of patches used to test model
         patch_ids = np.load("./../results/{}/patch_ids.npy".format(m))

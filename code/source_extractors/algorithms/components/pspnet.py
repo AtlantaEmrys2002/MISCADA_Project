@@ -338,13 +338,32 @@ def pspnet(training_maps, training_masks, validation_maps, validation_masks, tes
 # Batch Size - https://www.coursera.org/articles/what-does-batch-size-mean-in-deep-learning
 # Batch Size and Overfitting - https://stats.stackexchange.com/questions/266368/deep-learning-why-does-increase-batch-
 # size-cause-overfitting-and-how-does-one-r
+# BCE High Loss - https://ai.stackexchange.com/questions/18234/why-is-my-loss-binary-cross-entropy-converging-on-0-6-
+# task-natural-languag
 # Choosing Models - https://stackoverflow.com/questions/38724623/too-much-data-for-svm
 # Concatenation with Torch - https://stackoverflow.com/questions/69115837/how-to-concatenate-a-list-of-tensors-on-a-
 # specific-axis
+# Corner Pooling - https://afetulhak.medium.com/brief-explanation-on-corner-pooling-96d1229fd426
+# Global Average Pooling - https://discuss.pytorch.org/t/global-average-pooling-in-pytorch/6721
+# Keras Implementation of PSPNet - https://medium.com/analytics-vidhya/semantic-segmentation-in-pspnet-with-implementati
+# on-in-keras-4843d05fc025
 # Learning Rate - https://stackoverflow.com/questions/63108131/pytorch-schedule-learning-rate
 # Loss Convergence - https://www.reddit.com/r/deeplearning/comments/1npv5r6/why_the_loss_is_not_converging_in_my_neural/
+# Loss Plateau - https://discuss.pytorch.org/t/training-loss-plateau-fix/216586
+# Neurons vs Layers - https://stackoverflow.com/questions/60687236/in-cnn-is-it-number-of-kernels-filters-are-same-as-
+# neuron-in-each-layer
+# PSPNet Overview - https://medium.com/srm-mic/using-pspnet-to-change-your-background-in-under-40-lines-of-code-2faa9b55
+# 62d1
+# PSPNet Dilation - https://developers.arcgis.com/python/latest/guide/how-pspnet-works/
+# ResNet - https://medium.com/@anglilian/image-classification-with-resnet-pytorch-1e48a4c33905
 # ResNet - https://medium.com/@raunakgola123/resnet-in-pytorch-unlock-the-magic-of-cnn-architectures-part-4-9a8b6e471b1e
 # ResNet and Skip Connections - https://medium.com/@raunakgola123/resnet-in-pytorch-unlock-the-magic-of-cnn-architecture
 # s-part-4-9a8b6e471b1e
+# ResNet - https://medium.com/@chkim345/addition-based-skip-connections-vs-concatenation-base-skip-connections-8e25de804
+# fcb
+# ResNet - https://medium.com/@raunakgola123/resnet-in-pytorch-unlock-the-magic-of-cnn-architectures-part-4-9a8b6e471b1e
+# Semantic Segmentation Algorithms - https://keymakr.com/blog/exploring-the-top-algorithms-for-semantic-segmentation/
+# Tensorflow PSPNet - https://www.geeksforgeeks.org/computer-vision/pspnet-pyramid-scene-parsing-network-for-image-
+# segmentation/
 # Tuning CNNs - https://www.reddit.com/r/MachineLearning/comments/3l5qu7/rules_of_thumb_for_cnn_architectures/
 # Varying LR - https://discuss.pytorch.org/t/change-learning-rate/166336/6
