@@ -301,11 +301,9 @@ if __name__ == "__main__":
 
     # Save execution times
 
-    # GO BACK TO w and uncomment fields
+    fields = ["algorithm", "segmentation_time (s)", "localisation_time(s)", "classification_time (s)"]
 
-    # fields = ["algorithm", "segmentation_time (s)", "localisation_time(s)", "classification_time (s)"]
-
-    with open("./../results/execution_times.csv", mode="a", newline='') as f:
+    with open("./../results/execution_times.csv", mode="w", newline='') as f:
 
         writer = csv.writer(f)
         # writer.writerow(fields)

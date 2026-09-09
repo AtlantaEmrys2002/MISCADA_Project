@@ -204,9 +204,7 @@ if __name__ == "__main__":
 
     segmentation_algorithms = ["unet", "pspnet", "random_forest"]
 
-    # localisation_algorithms = ["dbscan", "blob_detection", "kmeans", "spectral"]
-
-    localisation_algorithms = ["dbscan", "blob_detection", "kmeans"]
+    localisation_algorithms = ["dbscan", "blob_detection", "kmeans", "spectral"]
 
     classification_algorithms = ["random_forest", "cnn"]
 
@@ -223,10 +221,13 @@ if __name__ == "__main__":
                    "segmentation_recall,chamfer_separation,frac_sources_detected,classification_precision,"
                    "classification_recall,frac_4fgl_detected,frac_4fgl_detected_and_classified\n")
 
+
+    # UNCOMMENT BEFORE HAND IN
+
     # Set up file
-    file = open("./../results/results.csv", "w+")
-    file.writelines(csv_headers)
-    file.close()
+    # file = open("./../results/results.csv", "w+")
+    # file.writelines(csv_headers)
+    # file.close()
 
     # Create directory in which to save plots
     plot_directory = "./../results/plots"

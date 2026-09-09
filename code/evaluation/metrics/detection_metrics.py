@@ -1,9 +1,7 @@
 from astropy.coordinates import SkyCoord
 import astropy.units as u
-import healpy as hp
 import numpy as np
 import pandas as pd
-from scipy.spatial.distance import cdist
 import warnings
 from xml.dom import minidom
 from scipy.integrate import quad
@@ -21,22 +19,7 @@ def agn_photon_flux(E, E_0, F_0, alpha, beta):
     return dF_dE
 
 def pulsar_photon_flux(E, F_0, E_0, Gamma, a, b):
-    """ Returns the photon flux of pulsar at given energy.
 
-    E
-        Energy at which to calculate photon flux
-    F_0
-        Flux density [photons/cm2/MeV/s] of pulsar.
-    E_0
-        Pivot energy [MeV] of pulsar.
-    Gamma
-        Spectral slope of pulsar spectrum
-    a
-        Pulsar spectrum's exponential factor [Mev^-b]
-    b
-        Exponential index of pulsar spectrum
-
-    """
     division = E / E_0
 
     exponent = a * (np.power(E_0, b) - np.power(E, b))
@@ -64,30 +47,6 @@ def integral_photon_flux_pulsar(pivot_energy, flux_density, spectral_slope, expo
                                                                         exponential_factor, exponential_index))[0]
 
     return energy
-
-# def get_snr_map(skymap_file:str, nside:int = 256):
-#
-#     # Constant to multiply each map by (done when creating original patches) - unit conversion
-#     Npix = 12 * (nside ** 2)
-#     pix_sr = 4.0 * np.pi / Npix
-#
-#     agn_count_map = np.sum(np.array([hp.fitsfunc.read_map(filename=skymap_file + "/agns_{}.fits".format(b),
-#                                                           field=None) / pix_sr for b in range(5)]), axis=0)
-#
-#     background_count_map = (
-#         np.sum(np.array([hp.fitsfunc.read_map(filename=skymap_file + "/background_{}.fits".format(b),
-#                                               field=None) / pix_sr for b in range(5)]), axis=0))
-#
-#     pulsar_count_map = (
-#         np.sum(np.array([hp.fitsfunc.read_map(filename=skymap_file + "/pulsars_{}.fits".format(b),
-#                                               field=None) / pix_sr for b in range(5)]), axis=0))
-#
-#     signal_count_map = agn_count_map + pulsar_count_map
-#
-#     # Create SNR count map - all NaNs are set to 0 (as there must be no signal or background photons)
-#     snr_count_map = np.nan_to_num(signal_count_map / np.sqrt(signal_count_map + background_count_map))
-#
-#     return snr_count_map
 
 
 def get_photon_flux(patch_to_catalog_id):
@@ -137,24 +96,9 @@ def photon_flux_xml_parser(xml_file: str, give_ids=False):
     """ Fetches the location, integral photon flux, and (optionally) unique ID of each source stored in a given XML
     file.
 
-
-
     IMPORTANT DIFFERENCE - THIS RETURNS INTEGRAL PHOTON FLUXES RATHER THAN ENERgY INTEGRAL FLUXES.
 
     WE INTEGRATE OVER 1 ENERGY BIN - 300 - 200000
-
-
-    Parameters
-    ----------
-    energy_bins : ndarray
-        The photon energy bins over which to calculate the binned integral photon fluxes of each source.
-    xml_file : str
-        The name of the XML file from which the spectral parameters, locations, and unique IDs of the sources can be
-        fetched.
-    give_ids : bool, optional
-        Indicates whether the unique IDs of the sources should be returned.
-    energy_flux_limited : bool
-        Only returns sources with energy fluxes higher than given threshold.
 
     """
     # Read XML files to get latitude and longitude of each source (separate into AGN, pulsars, and background - if they
@@ -255,27 +199,13 @@ def photon_flux_xml_parser(xml_file: str, give_ids=False):
 
         fluxes.append(binned_fluxes)
 
-    # Have coordinates in format [RA, DEC] - need to convert them to Lat-lon
-
     # Convert coordinates to np array
     coordinates = np.array(coordinates)
-
-    coordinates = SkyCoord(ra=coordinates[:, 0] * u.degree, dec=coordinates[:, 1] * u.degree, frame='icrs').galactic
-
-    # Convert to galactic coordinates
-    coordinates = np.array([coordinates.l.value, coordinates.b.value]).T
 
     # Convert fluxes to numpy
     fluxes = np.array(fluxes)
 
-    if give_ids:
-
-        return coordinates, fluxes, source_ids
-
-    else:
-
-        return coordinates, fluxes
-
+    return (coordinates, fluxes, source_ids) if give_ids else (coordinates, fluxes)
 
 
 def s90(predicted_source_locations, test_patch_ids, patch_in_catalog,
@@ -292,63 +222,57 @@ def s90(predicted_source_locations, test_patch_ids, patch_in_catalog,
     catalog_sep_actual_flux = []
     catalog_sep_predicted_flux = []
 
-    for c in range(num_catalogs):
+    # Select all patches derived from each catalog - important to only select IDs of patches in the test set
+    patch_ids_per_catalog = [np.array([p for p in range(max_patch_id) if patch_in_catalog[p] == c and p in test_patch_ids]) for c in range(num_catalogs)]
 
-        # Select all patches derived from this catalog - important to only select IDs of patches in the test set
-        patch_ids = np.array([p for p in range(max_patch_id) if patch_in_catalog[p] == c and p in test_patch_ids])
+    for c in range(num_catalogs):
 
         actual_source_loc_per_patch = []
         actual_source_flux_per_patch = []
 
-        for p in patch_ids:
+        catalog_integral_photon_fluxes = integral_photon_fluxes[c]
+        catalog_real_coordinates = real_coordinates[c]
+
+        for p in patch_ids_per_catalog[c]:
 
             # Open metadata file and select relevant source ids
-            patch_file = "./../data_simulation/simulated_data/patches/patch_{}/metadata.csv".format(p)
+            df = pd.read_csv("./../data_simulation/simulated_data/patches/patch_{}/metadata.csv".format(p))
 
-            df = pd.read_csv(patch_file)
+            indices = [np.argwhere(source_ids[c] == s).flatten() for s in df["source_id"].to_numpy()]
 
-            sources_in_patch = df["source_id"].to_numpy()
+            p_fluxes = np.array([catalog_integral_photon_fluxes[i[0]] for i in indices])
+            p_locs = np.array([catalog_real_coordinates[i[0]] for i in indices])
 
-            p_fluxes = []
-            p_locs = []
+            actual_source_loc_per_patch.append(p_locs)
+            actual_source_flux_per_patch.append(p_fluxes)
 
-            for s in sources_in_patch:
+        num_patches = len(actual_source_loc_per_patch)
 
-                i = np.argwhere(source_ids[c] == s).flatten()
-
-                p_fluxes.append(integral_photon_fluxes[c][i[0]])
-                p_locs.append(real_coordinates[c][i[0]])
-
-            actual_source_loc_per_patch.append(np.array(p_locs))
-            actual_source_flux_per_patch.append(np.array(p_fluxes))
-
-        actual_loc = np.array([actual_source_loc_per_patch[i][j] for i in range(len(actual_source_loc_per_patch)) for j
+        actual_loc = np.array([actual_source_loc_per_patch[i][j] for i in range(num_patches) for j
                                in range(actual_source_loc_per_patch[i].shape[0])])
 
-        actual_flux = np.array([actual_source_flux_per_patch[i][j] for i in range(len(actual_source_flux_per_patch))
-                                for j in range(actual_source_flux_per_patch[i].shape[0])])
+        actual_flux = np.array([actual_source_flux_per_patch[i][j] for i in range(num_patches)
+                                for j in range(actual_source_flux_per_patch[i].shape[0])]).flatten()
 
         predicted_loc = np.array([predicted_source_locations[c][i][j] for i in range(len(predicted_source_locations[c]))
                                   for j in range(predicted_source_locations[c][i].shape[0])])
 
-        a_coordinates = SkyCoord(ra=actual_loc[:, 0] * u.degree, dec=actual_loc[:, 1] * u.degree, frame='icrs').galactic
+        a_coordinates = SkyCoord(ra=actual_loc[:, 0] * u.degree, dec=actual_loc[:, 1] * u.degree, frame='icrs')
 
         p_coordinates = SkyCoord(ra=predicted_loc[:, 0] * u.degree, dec=predicted_loc[:, 1] * u.degree,
-                                 frame='icrs').galactic
+                                 frame='icrs')
 
         # Find closest source to each predicted source and set that source's flux as the predicted source's
         idx, _, _ = p_coordinates.match_to_catalog_sky(a_coordinates)
 
-        predicted_flux = np.array([actual_flux[i] for i in idx])
-
         catalog_sep_actual_flux.append(actual_flux)
-        catalog_sep_predicted_flux.append(predicted_flux)
+        catalog_sep_predicted_flux.append(actual_flux[idx])
         catalog_sep_actual_loc.append(actual_loc)
         catalog_sep_predicted_loc.append(predicted_loc)
 
     # Sort unique actual photon fluxes in increasing order
     unique_fluxes = np.unique([catalog_sep_actual_flux[i][j] for i in range(num_catalogs)
-                               for j in range(len(catalog_sep_actual_flux[i]))])
+                               for j in range(catalog_sep_actual_flux[i].shape[0])])
     increasing_order = np.argsort(unique_fluxes)
 
     for e in increasing_order:
@@ -361,8 +285,20 @@ def s90(predicted_source_locations, test_patch_ids, patch_in_catalog,
 
         for c in range(num_catalogs):
 
-            actual_source_loc_above_min_flux = np.array([catalog_sep_actual_loc[c][k] for k in range(len(catalog_sep_actual_loc[c])) if catalog_sep_actual_flux[c][k] > min_flux])
-            predicted_source_loc_above_min_flux = np.array([catalog_sep_predicted_loc[c][k] for k in range(len(catalog_sep_predicted_loc[c])) if catalog_sep_predicted_flux[c][k] > min_flux])
+            catalog_actual_loc = catalog_sep_actual_loc[c]
+            catalog_predicted_loc = catalog_sep_predicted_loc[c]
+
+            catalog_actual_flux = catalog_sep_actual_flux[c]
+            catalog_predicted_flux = catalog_sep_predicted_flux[c]
+
+            # num_actual = catalog_actual_loc.shape[0]
+            # num_predicted = catalog_predicted_loc.shape[0]
+
+            actual_source_loc_above_min_flux = catalog_actual_loc[(catalog_actual_flux > min_flux)]
+            predicted_source_loc_above_min_flux = catalog_predicted_loc[(catalog_predicted_flux > min_flux)]
+
+            # actual_source_loc_above_min_flux = np.array([catalog_actual_loc[k] for k in range(num_actual) if catalog_actual_flux[k] > min_flux])
+            # predicted_source_loc_above_min_flux = np.array([catalog_predicted_loc[k] for k in range(num_predicted) if catalog_predicted_flux[k] > min_flux])
 
             actual_source_loc_above_min_flux_celestial = SkyCoord(ra=actual_source_loc_above_min_flux[:, 0] * u.degree,
                                                         dec=actual_source_loc_above_min_flux[:, 1] * u.degree, frame='icrs')
@@ -371,32 +307,16 @@ def s90(predicted_source_locations, test_patch_ids, patch_in_catalog,
                                                         dec=predicted_source_loc_above_min_flux[:, 1] * u.degree, frame='icrs')
 
             # Find closest source to each actual source to determine true positives and false negatives
+            idx, d2d, _ = actual_source_loc_above_min_flux_celestial.match_to_catalog_sky(predicted_source_loc_above_min_flux_celestial)
 
-            minimum_seps = np.array([np.min(SkyCoord(ra=a[0] * u.degree, dec=a[1] * u.degree,
-                                             frame='icrs').separation(predicted_source_loc_above_min_flux_celestial).degree) for a in actual_source_loc_above_min_flux])
+            true_positives += np.sum(d2d.value < distance_threshold)
 
-            true_positives += np.sum(minimum_seps < distance_threshold)
+            false_negatives += np.sum(d2d.value >= distance_threshold)
 
-            false_negatives += np.sum(minimum_seps >= distance_threshold)
+            idx, d2d, _ = predicted_source_loc_above_min_flux_celestial.match_to_catalog_sky(
+                actual_source_loc_above_min_flux_celestial)
 
-            minimum_seps = np.array([np.min(SkyCoord(ra=p[0] * u.degree, dec=p[1] * u.degree,
-                                             frame='icrs').separation(actual_source_loc_above_min_flux_celestial).degree) for p in predicted_source_loc_above_min_flux])
-
-            false_positives += np.sum(minimum_seps >= distance_threshold)
-
-            # for p in predicted_source_loc_above_min_flux:
-            #
-            #     sep = SkyCoord(ra=p[0] * u.degree, dec=p[1] * u.degree,
-            #                                  frame='icrs').separation(actual_source_loc_above_min_flux_celestial).degree
-            #
-            #     if np.min(sep) < distance_threshold:
-            #         false_positives += 1
-
-
-
-        # TYR MATCH COORDINATES AGAN!!!!!!!!!!
-
-
+            false_positives += np.sum(d2d.value >= distance_threshold)
 
         precision = true_positives / (true_positives + false_positives)
 
@@ -409,8 +329,12 @@ def s90(predicted_source_locations, test_patch_ids, patch_in_catalog,
             # i.e. the integral photon flux above which precision and recall for source detection is 0.9
             return min_flux
 
-    raise RuntimeError("No S90 Metric could be calculated - there was never a minimum SNR above which precision and "
+    warnings.warn("No S90 Metric could be calculated - there was never a minimum SNR above which precision and "
                        "recall were both 0.9.")
+
+    return np.nan
+
+
 
 # REFERENCES
 
