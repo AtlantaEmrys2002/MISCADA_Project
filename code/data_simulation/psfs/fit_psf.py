@@ -133,6 +133,11 @@ def fit_point_source_psf(file_name: str) -> npt.NDArray[np.float64]:
 # function-from-a-data-set
 # PSF Format - https://escholarship.org/content/qt723151vx/qt723151vx.pdf
 # PSF Information - https://gamma-astro-data-formats.readthedocs.io/en/v0.1/irfs/psf/index.html#psf-pdf
+# PSF Information - https://fermi.gsfc.nasa.gov/ssc/data/analysis/documentation/Cicerone/Cicerone_LAT_IRFs/IRF_PSF.html
+# PSF Modelling - https://arxiv.org/pdf/1108.4835
+# PSF Modelling - https://arxiv.org/html/2602.14764v2#S2.E1
+# PSF Modelling - https://gamma-astro-data-formats.readthedocs.io/en/v0.1/irfs/psf/index.html#psf-pdf
+# PSF Modelling - https://escholarship.org/content/qt723151vx/qt723151vx.pdf
 # Radial Profiles - https://cxc.cfa.harvard.edu/ciao/why/radial_profile_correction.html
 # Radial Profiles - https://stackoverflow.com/questions/34965275/radial-profile-from-a-fits-image
 # Theory - https://gamma-astro-data-formats.readthedocs.io/en/v0.1/irfs/psf/index.html#psf-pdf

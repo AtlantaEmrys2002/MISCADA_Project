@@ -206,8 +206,11 @@ def svm_classifier(train_data, test_data, pretrained=False,
 
 # REFERENCES
 
+# Adaboost - https://medium.com/@chaudhurysrijani/tuning-of-adaboost-with-computational-complexity-8727d01a9d20
 # Histogram of Gradients (HoG) - https://scikit-image.org/docs/0.25.x/auto_examples/features_detection/plot_hog.html
 # RF Image Classification - https://machinelearningmastery.com/random-forest-for-image-classification-using-opencv/
+# RF Image Classification - https://www.geeksforgeeks.org/machine-learning/random-forest-for-image-classification-using-
+# opencv/
 # SVM - https://apmonitor.com/pds/index.php/Main/SupportVectorClassifier
 # SVM - https://www.geeksforgeeks.org/machine-learning/image-classification-using-support-vector-machine-svm-in-python/
 # Working with HoG - https://forum.image.sc/t/histogram-equalization-before-extracting-hog-features/30409/3

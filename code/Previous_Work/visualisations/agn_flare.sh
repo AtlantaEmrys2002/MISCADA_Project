@@ -1,11 +1,6 @@
 #!/usr/bin/env bash -l
 
 # File names
-#EVENTS=./agn_flare/L2605220919104D7EA5AE90_PH00.fits
-#OUTFILE=./agn_flare/agn.fits
-#OUTFILEGTI=./agn_flare/agn_gti.fits
-#SPACECRAFTFILE=./agn_flare/L2605220919104D7EA5AE90_SC00.fits
-
 EVENTS=@./agn_flare_2/events.txt
 OUTFILE=./agn_flare_2/agn.fits
 OUTFILEGTI=./agn_flare_2/agn_gti.fits

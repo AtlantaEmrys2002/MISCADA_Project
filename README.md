@@ -1,7 +1,8 @@
-# MISCADA Project
+# Gamma-Ray Astronomical Source Simulation and Extraction (GRASSE) Package
 
 This software package was constructed for my final research project undertaken during a Master's in Scientific Computing
-and Data Analysis (Astrophysics) course.
+and Data Analysis (Astrophysics) course. This code is not fully formatted - I may return to this project in the future,
+tidy up files, and implement more functionality.
 
 ## Set-Up
 
@@ -28,15 +29,33 @@ pip install -r ./requirements.txt
 
 ### Accessing Fermi-LAT Data
 
-**NEED TO FILL IN**
+Please follow the information provided by the *Fermi*-LAT Collaboration regarding access to weekly photon files and 
+catalogues. The bash scripts in ``data_simulation`` will recreate any *Fermi* data used throughout this project. 
 
-## Create Simulation Environment and Dataset
+## Modules
 
-**NEED TO FILL IN**
-
-
-
-
+- ``data_simulation`` - provides a method for simulating realistic, unbiased energy-binned *Fermi*-LAT count maps, 
+combining and improving upon methods presented in 
+[Panes *et al. (2021)*](https://www.aanda.org/articles/aa/full_html/2021/12/aa41193-21/aa41193-21.html) and
+[Eckner *et al.* (2025)](https://arxiv.org/pdf/2505.02906). Functionality includes an analysis pipeline for fitting
+suitable [probability density functions](https://en.wikipedia.org/wiki/Probability_density_function) to the histograms
+of [4FGL](https://heasarc.gsfc.nasa.gov/w3browse/fermi/fermilpsc.html) $\gamma$-ray source spectral and spatial 
+parameters, bash scripts for extracting exposure maps and point spread 
+functions (PSFs) from unprocessed *Fermi* observations, and an Asimovian method for simulating count maps. 
+``simulated_data`` contains a pre-built dataset of 76,800 10$^\circ \times$ 10$^\circ$ count map patches.
+- ``source_extractors`` - this section details a pipeline, as well as several custom/reimplemented algorithms for 
+segmenting, localising, and classifying sources in both simulated and real *Fermi*-LAT count maps. These algorithms make
+use of machine learning and deep learning techniques. The pipeline is designed such that new algorithms can be easily
+introduced.
+- ``evaluation`` - this provides implementations of several popular (and custom) metrics for evaluating each stage of a
+source extraction algorithm.
+- ``report``- this is a work-in-progress file for building plots for my final project report.
+- ``results`` - this provides an overview of my results when applying the source extraction algorithms to my simulated 
+data and real *Fermi*-LAT count maps. We may have found several new $\gamma$-ray sources.
+- ``Previous Work`` - this is my working area. I used this file to store any code from when I was learning about
+*Fermi* data and count map simulation. It also contains a Python version of 
+[Parkinson *et al.*](https://iopscience.iop.org/article/10.3847/0004-637X/820/1/8/meta)'s machine learning algorithms
+for classifying unassociated *Fermi* sources according to their spectral features in the 4FGL.
 
 ## References
 

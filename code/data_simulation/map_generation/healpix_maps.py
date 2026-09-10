@@ -328,11 +328,15 @@ def create_count_map(coordinates: npt.NDArray[np.float64], exposure_maps: npt.ND
 
 # REFERENCES
 
+# Asimov Background - https://indico.stfc.ac.uk/event/119/contributions/1344/attachments/290/430/stats_lecture.pdf
+# Asimov Presentation - https://www.pp.rhul.ac.uk/~cowan/stat/weizmann15/cowan_weizmann15_3.pdf
 # Astropy Affiliated - https://www.astropy.org/affiliated/
 # Background Model Information - https://fermi.gsfc.nasa.gov/ssc/data/access/lat/BackgroundModels.html
+# HEALPix Grid - https://academic.oup.com/mnras/article/381/2/865/1021805
 # Map Cube Formats - https://fermi.gsfc.nasa.gov/ssc/data/analysis/scitools/other_sources.html
 # Reproject Suggestion - https://stackoverflow.com/questions/54715123/converting-a-map-in-cartesian-projection-with-
 # spherical-coordinate-to-healix-p
+# Side Length of Pixel - https://arxiv.org/html/2410.12951v2
 # Sky-coordinates and Arrays - https://stackoverflow.com/questions/36146183/astropy-skycoord-extremely-slow-how-to-
 # resovle-it
 # Unique Counts - https://stackoverflow.com/questions/28663856/how-do-i-count-the-occurrence-of-a-certain-item-in-an-

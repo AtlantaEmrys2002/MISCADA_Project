@@ -19,9 +19,6 @@ months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 
 ranges = np.linspace(min(events['TIME'].value), max(events['TIME'].value), days + 1)
 
 # 0.1 degree x 0.1 degree represented by 1 pixel
-# xedges_bins = np.linspace(325, 335, 100)
-# yedges_bins = np.linspace(37, 47, 100)
-
 xedges_bins = np.linspace(310, 360, 400)
 yedges_bins = np.linspace(22, 62, 400)
 
