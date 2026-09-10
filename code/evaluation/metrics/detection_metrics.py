@@ -291,11 +291,15 @@ def s90(predicted_source_locations, test_patch_ids, patch_in_catalog,
             catalog_actual_flux = catalog_sep_actual_flux[c]
             catalog_predicted_flux = catalog_sep_predicted_flux[c]
 
-            # num_actual = catalog_actual_loc.shape[0]
-            # num_predicted = catalog_predicted_loc.shape[0]
-
             actual_source_loc_above_min_flux = catalog_actual_loc[(catalog_actual_flux > min_flux)]
             predicted_source_loc_above_min_flux = catalog_predicted_loc[(catalog_predicted_flux > min_flux)]
+
+            if actual_source_loc_above_min_flux.shape[0] == 1 or predicted_source_loc_above_min_flux.shape[0] == 1:
+                warnings.warn(
+                    "No S90 Metric could be calculated - there was never a minimum SNR above which precision and "
+                    "recall were both 0.9.")
+
+                return np.nan
 
             # actual_source_loc_above_min_flux = np.array([catalog_actual_loc[k] for k in range(num_actual) if catalog_actual_flux[k] > min_flux])
             # predicted_source_loc_above_min_flux = np.array([catalog_predicted_loc[k] for k in range(num_predicted) if catalog_predicted_flux[k] > min_flux])
@@ -321,8 +325,6 @@ def s90(predicted_source_locations, test_patch_ids, patch_in_catalog,
         precision = true_positives / (true_positives + false_positives)
 
         recall = true_positives / (true_positives + false_negatives)
-
-        print(precision, recall)
 
         if precision > 0.9 and recall > 0.9:
 

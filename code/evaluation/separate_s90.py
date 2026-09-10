@@ -50,7 +50,13 @@ if __name__ == "__main__":
 
     # TAKE INPUTS (RECOMMENDED READ IN FILE)
 
-    segmentation_algorithms = ["unet", "pspnet", "random_forest"]
+    # segmentation_algorithms = ["unet", "pspnet", "random_forest"]
+    #
+    # localisation_algorithms = ["dbscan", "blob_detection", "kmeans", "spectral"]
+    #
+    # classification_algorithms = ["random_forest", "cnn"]
+
+    segmentation_algorithms = ["random_forest", "unet", "pspnet"]
 
     localisation_algorithms = ["dbscan", "blob_detection", "kmeans", "spectral"]
 
@@ -119,7 +125,7 @@ if __name__ == "__main__":
             evaluate_localisation(actual_source_centers=copy.deepcopy(actual_source_locations), predicted_source_centers=
             copy.deepcopy(predicted_locations_celestial), ids=copy.deepcopy(patch_ids), catalog_ids=copy.deepcopy(catalog_of_each_patch)))
 
-        print(full_s90)
+        print("S90: {}".format(full_s90))
 
         # SAVE RESULTS
 
