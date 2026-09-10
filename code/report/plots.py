@@ -6,7 +6,7 @@ This code is used to create extra plots for the report (not all plots in the rep
 from astropy.io import fits
 import copy
 import healpy as hp
-# import matplotlib.colorizer as mcolorizer
+# from matplotlib import colorizer as mcolorizer
 import matplotlib.colors as mcolors
 from matplotlib.patches import Polygon
 import matplotlib.pyplot as plt
@@ -446,11 +446,13 @@ def plot_exposure_map(title: str = "Exposure", directory= "./plots/", logarithmi
 
 def plot_simulated_count_map(title: str = "Simulated Count", directory= "./plots/", logarithmic=False):
 
-    _, energy_bins = create_exposure_map(exposure_file="/Volumes/T7/project_data/real_data/fermi_filtered_gti_exposure_map.fits")
+    energy_bins = np.logspace(np.log(300), np.log(200000), num=6, base=np.e)
 
-    location = "./../data_simulation/simulated_data/"
+    agns_maps = np.array([hp.read_map("./skymap_0_for_plotting/agns_{}.fits".format(b)) for b in range(5)])
+    psrs_maps = np.array([hp.read_map("./skymap_0_for_plotting/pulsars_{}.fits".format(b)) for b in range(5)])
+    background_maps = np.array([hp.read_map("./skymap_0_for_plotting/background_{}.fits".format(b)) for b in range(5)])
 
-    healpix_maps = np.array([hp.read_map(location, hdu="SKYMAP", field=b) for b in range(5)])
+    healpix_maps = agns_maps + psrs_maps + background_maps
 
     # Format energy bins
     energy_bin_labels = format_scientific_notation_label(energy_bins)
@@ -475,13 +477,17 @@ def plot_simulated_count_map(title: str = "Simulated Count", directory= "./plots
     else:
         new_line = ""
 
+    plt.rcParams["figure.figsize"] = (40, 50)
+
     for b in range(len(healpix_maps)):
+
         label = "{} Map \n {}{} - {} MeV".format(title, new_line, energy_bin_labels[b], energy_bin_labels[b + 1])
 
         hp.newvisufunc.projview(
             data[b], coord=["G"], graticule=True, graticule_labels=True, xlabel="Galactic Longitude, $l$ [$\\degree$]",
             ylabel="Galactic Latitude, $b$ [$\\degree$]", cb_orientation="vertical", projection_type="aitoff", title=label,
-            sub=(3, 2, b + 1), unit="cm$^2$s", xtick_label_color='white', fontsize={"cbar_tick_label": 12, "cbar_label": 14, "xlabel":14, "ylabel":14}
+            sub=(3, 2, b + 1), unit="log$_{10}$(photons)", xtick_label_color='white',
+            fontsize={"cbar_tick_label": 12, "cbar_label": 14, "xlabel": 14, "ylabel": 14}
         )
 
     plt.tight_layout()
@@ -499,9 +505,9 @@ def plot_419(patch_directory="./../source_extractors/real_data/real_patches/patc
 
     plt.rcParams["figure.figsize"] = (4, 10)
 
-    binned_patch = np.load(patch_directory + "/patch.npy")[:4]
+    binned_patch = np.load(patch_directory + "/patch.npy")
 
-    fig, axs = plt.subplots(4, 1, gridspec_kw={"height_ratios":[1, 1, 1, 0.05]})
+    fig, axs = plt.subplots(6, 1, gridspec_kw={"height_ratios": [1, 1, 1, 1, 1, 0.05]})
 
     # create a colorizer with a predefined norm to be shared across all images
     norm = mcolors.Normalize(vmin=np.min(binned_patch), vmax=np.max(binned_patch))
@@ -513,7 +519,7 @@ def plot_419(patch_directory="./../source_extractors/real_data/real_patches/patc
 
     for ax, data in zip(axs.flat, binned_patch):
 
-        if count == 3:
+        if count == 5:
             fig.colorbar(images[0], orientation='horizontal', cax=ax, fraction=0.1, label="Photons")
             continue
 
@@ -521,6 +527,8 @@ def plot_419(patch_directory="./../source_extractors/real_data/real_patches/patc
         ax.set_axis_off()
 
         count += 1
+
+    fig.colorbar(images[0], orientation='horizontal', cax=axs.flat[5], fraction=0.1, label="Photons")
 
     fig.tight_layout()
 
@@ -574,7 +582,7 @@ def plot_419(patch_directory="./../source_extractors/real_data/real_patches/patc
 
     for r in regions:
 
-        fig, axs = plt.subplots(1, 3,  gridspec_kw={"width_ratios":[1, 1, 1]})
+        fig, axs = plt.subplots(1, 5, gridspec_kw={"width_ratios":[1, 1, 1, 1, 1]})
         # fig.suptitle("Boxes Around Detected Sources")
 
         images = []
@@ -587,7 +595,7 @@ def plot_419(patch_directory="./../source_extractors/real_data/real_patches/patc
 
         for ax, data in zip(axs.flat, r):
 
-            if count == 3:
+            if count == 5:
                 # fig.colorbar(images[0], orientation='vertical', cax=ax, label="Photons", fraction=0.046, pad=0.04)
                 continue
 
@@ -599,7 +607,7 @@ def plot_419(patch_directory="./../source_extractors/real_data/real_patches/patc
         # cax = fig.add_axes([axs.flat[3].get_position().x1 - 0.25, axs.flat[2].get_position().y0, 0.02,
         #                     axs.flat[2].get_position().y1 - axs.flat[2].get_position().y0])
 
-        cax = axs[2].inset_axes((1.05, 0, 0.08, 1.0))
+        cax = axs[4].inset_axes((1.05, 0, 0.08, 1.0))
 
         fig.colorbar(images[0], orientation='vertical', cax=cax, label="Photons")
 
@@ -716,22 +724,163 @@ def plot_integration_of_spectra():
 
     plt.show()
 
+def plot_fitted_point_source_psf(psf_file: str, function_parameters, directory: str):
+
+    empirical = []
+    energy_bins = []
+
+    # Plot empirical data from gtpsf
+    with fits.open(psf_file) as hdul:
+
+        thetas = np.array([k[0] for k in hdul["THETA"].data])
+
+        psf_data = hdul["PSF"].data
+
+        num_bins = len(psf_data)
+
+        for b in range(num_bins):
+            # Lowest energy (MeV) of this bin
+            energy_value = psf_data[b][0]
+
+            # PSF values dP/dOmega - probability to find event in solid angle dOmega at offset r from point source
+            psf_values = np.array(psf_data[b][2])
+
+            psf_values = scale_psf(psf_values, energy_value)
+
+            probs = normalise_psf(thetas, psf_values)
+
+            empirical.append(probs)
+            energy_bins.append(energy_value)
+
+    # Create figure
+    plt.rcParams["figure.figsize"] = (10, 14)
+
+    fig, ax = plt.subplots((num_bins // 2) + (num_bins % 2), 2)
+
+    # Plotting
+    flattened_axes = ax.flatten()
+
+    for x in range(num_bins):
+
+        flattened_axes[x].scatter(thetas, empirical[x], marker='+', label="Empirical", color="blue")
+
+        popt = function_parameters[x]
+
+        flattened_axes[x].plot(thetas, dual_function(thetas, sigma_core=popt[0], gamma_core=popt[1], sigma_tail=popt[2],
+                                                     gamma_tail=popt[3], f_core=popt[4]), label="Fitted King Function",
+                               color="orange", linestyle='--')
+
+        # Sample random values
+        random_values = monte_carlo_sampler(popt, 5000)
+
+        # Plot sampled values
+        counts, bins = np.histogram(random_values, bins=200, density=True)
+        flattened_axes[x].stairs(counts, bins, color="green", label="Random Samples")
+
+    # Formatting
+
+    if num_bins % 2 == 1:
+        fig.delaxes(ax[-1, -1])
+
+    labels = format_scientific_notation_label(energy_bins)
+
+    for x in range(len(energy_bins)):
+
+        a = flattened_axes[x]
+
+        a.set_xlim(0, 5)
+        a.set_ylim(0, )
+
+        a.set_xlabel("Energy Scaled Angular Deviation of $\\gamma$-Ray, $x$ [$\\degree$]")
+        a.set_ylabel("PSF($x, E$)")
+
+        if x == len(energy_bins) - 1:
+            a.set_title("PDF of Angular Deviation for $\\gamma$-Rays \nwith Energy {}+ MeV".format(labels[x]))
+        else:
+            a.set_title("PDF of Angular Deviation for $\\gamma$-Rays \nwith Energy {}-{} MeV".format(labels[x], labels[x+1]))
+
+        a.legend()
+
+    fig.suptitle("Point Spread Function Fitting")
+
+    fig.tight_layout()
+
+    fig.savefig(directory + "/fitted_point_source_psf.png")
+
+    plt.close()
+
+
+def plot_localisation_times():
+
+    # https: // matplotlib.org / stable / gallery / lines_bars_and_markers / barchart.html
+
+    # Increasing order of times
+    algorithm = ["DBSCAN", "$k$-Means", "Blob Detection", "Spectral"]
+
+    time_1 = [26.24301791191101, 1483.1209070682526, 12609.620107889175, 0] # REPLACE THE ZERO
+
+    time_2 = [25.34082794189453, 1458.6058359146118, 12607.771565198898, 0]
+
+    time_3 = [29.49886393547058, 7470.353355169296, 12587.637760162354, 0]
+
+    average = [12600, 27, 3470] # FILL IN WITH SPECTRAL
+
+    times = {
+        "Applied to PSPNet Segmentation": (26.24301791191101, 1483.1209070682526, 12609.620107889175, 88219.83941984177), # REPLACE 0 with spectral
+        "Applied to RF Segmentation": (25.34082794189453, 1458.6058359146118, 12607.771565198898, 56694.98472213745),
+        "Applied to U-Net Segmentation": (29.49886393547058, 7470.353355169296, 12587.637760162354, 145519.62906694412),
+        "Average": (27, 3470, 12600, 96811.484403)
+
+    }
+
+    clustering = ("DBSCAN", "Blob Detection", "$k$-Means", "Spectral")
+
+    plt.rcParams["figure.figsize"] = (7, 5)
+
+    fig, ax = plt.subplots(layout='constrained')
+
+    ax.set_yscale('log')
+
+    res = ax.grouped_bar(times, tick_labels=clustering, group_spacing=1, facecolor=("lightblue", "lightcoral", "palegreen", "palegoldenrod"), edgecolor='black', hatch=("/", "\\", "x", ""))
+
+    # for container in res.bar_containers:
+
+    # for container in res.bar_containers:
+    #
+    #     ax.bar_label(container, padding=3)
+
+    ax.bar_label(res.bar_containers[-1], padding=3, fontsize=12, rotation=90)
+
+    # Add some text for labels, title, etc.
+    ax.set_ylabel('Time (s)', fontsize=14)
+    ax.set_title('Execution Times of Localisation Algorithms', fontsize=18)
+    ax.legend(loc='upper left', fontsize=13)
+    ax.set_ylim(None, 750000)
+
+    ax.tick_params(axis="both", which="major", labelsize=14)
+
+    fig.savefig("./plots/test.png")
+
 
 
 
 if __name__ == "__main__":
 
+    plot_localisation_times()
+
     # plot_fermi_lat_count_map()
     #
     # plot_419()
 
-    plot_fermi_lat_exposure()
+    # plot_fermi_lat_exposure()
+    #
+    # # plot_psf_blur()
+    #
+    # # plot_integration_of_spectra()
+    #
+    # plot_exposure_map()
 
-    # plot_psf_blur()
-
-    # plot_integration_of_spectra()
-
-    plot_exposure_map()
+    # plot_simulated_count_map(logarithmic=True)
 
 
 # REFERENCES
